@@ -140,7 +140,7 @@ export default function Home() {
                 <Card key={index} className="hover:shadow-lg transition-shadow duration-300">
                   <CardHeader className="flex flex-row items-center gap-4">
                     {feature.icon}
-                    <CardTitle className="font-headline">{feature.title}</CardTitle>
+                    <CardTitle>{feature.title}</CardTitle>
 
                   </CardHeader>
                   <CardContent>
