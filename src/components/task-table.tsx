@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Table,
@@ -8,7 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { tasks as mockTasks, Task } from '@/lib/mock-data';
+import type { Task } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
 import { Flag, MoreHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
@@ -18,7 +19,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { format } from 'date-fns';
+import { useAuth } from '@/hooks/use-auth';
+import { useState, useEffect } from 'react';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const priorityColors = {
     Low: 'text-gray-500',
@@ -32,12 +36,22 @@ const statusColors = {
     'In Progress': 'default',
     Done: 'default',
 };
-const statusBg = {
-    Done: 'bg-green-500/20 text-green-700 border-green-500/30',
-};
-
 
 export function TaskTable() {
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      const q = query(collection(db, 'users', user.uid, 'tasks'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+        setTasks(tasksData);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
   return (
     <div className="border rounded-lg">
       <Table>
@@ -54,7 +68,7 @@ export function TaskTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockTasks.map((task: Task) => (
+          {tasks.map((task: Task) => (
             <TableRow key={task.id}>
               <TableCell>
                 <Checkbox />
@@ -71,7 +85,7 @@ export function TaskTable() {
                     <span>{task.priority}</span>
                 </div>
               </TableCell>
-              <TableCell>{format(task.dueDate, 'MMM d, yyyy')}</TableCell>
+              <TableCell>{task.dueDate.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</TableCell>
               <TableCell>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

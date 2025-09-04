@@ -1,3 +1,6 @@
+
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, List, LayoutGrid, Calendar, Table2 } from 'lucide-react';
@@ -6,12 +9,30 @@ import { TaskTable } from '@/components/task-table';
 import { AiTaskSuggester } from '@/components/ai-task-suggester';
 import { tasks } from '@/lib/mock-data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TaskList } from '@/components/task-list';
+import { TaskCalendar } from '@/components/task-calendar';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+  
   const userGoal = "Launch the new version of the Donevia productivity app by the end of the quarter.";
   const currentTasks = tasks
     .filter(t => t.status === 'In Progress' || t.status === 'To Do')
     .map(t => ({ id: t.id, title: t.title }));
+    
+  if (loading || !user) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
 
   return (
     <div className="space-y-6">
@@ -33,8 +54,8 @@ export default function DashboardPage() {
         <TabsList className="grid w-full grid-cols-2 md:w-auto md:grid-cols-4">
           <TabsTrigger value="board"><LayoutGrid className="mr-2 h-4 w-4" />Board</TabsTrigger>
           <TabsTrigger value="table"><Table2 className="mr-2 h-4 w-4" />Table</TabsTrigger>
-          <TabsTrigger value="list" disabled><List className="mr-2 h-4 w-4" />List</TabsTrigger>
-          <TabsTrigger value="calendar" disabled><Calendar className="mr-2 h-4 w-4" />Calendar</TabsTrigger>
+          <TabsTrigger value="list"><List className="mr-2 h-4 w-4" />List</TabsTrigger>
+          <TabsTrigger value="calendar"><Calendar className="mr-2 h-4 w-4" />Calendar</TabsTrigger>
         </TabsList>
         <TabsContent value="board" className="mt-6">
           <TaskBoard />
@@ -42,27 +63,11 @@ export default function DashboardPage() {
         <TabsContent value="table" className="mt-6">
           <TaskTable />
         </TabsContent>
-        <TabsContent value="list">
-          <Card>
-            <CardHeader>
-              <CardTitle>List View</CardTitle>
-              <CardDescription>This feature is coming soon!</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>A compact list of all your tasks is on the way.</p>
-            </CardContent>
-          </Card>
+        <TabsContent value="list" className="mt-6">
+          <TaskList />
         </TabsContent>
-        <TabsContent value="calendar">
-          <Card>
-            <CardHeader>
-              <CardTitle>Calendar View</CardTitle>
-              <CardDescription>This feature is coming soon!</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>A full-featured calendar to visualize your schedule is under construction.</p>
-            </CardContent>
-          </Card>
+        <TabsContent value="calendar" className="mt-6">
+          <TaskCalendar />
         </TabsContent>
       </Tabs>
     </div>

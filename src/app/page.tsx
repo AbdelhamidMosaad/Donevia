@@ -1,11 +1,29 @@
+
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutDashboard, FileText, BotMessageSquare, GitBranch, PenSquare, BrainCircuit } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DoneviaLogo } from '@/components/logo';
+import { auth } from '@/lib/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
+import { useEffect } from 'react';
+
 
 export default function Home() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
   const features = [
     {
       icon: <LayoutDashboard className="h-8 w-8 text-primary" />,
@@ -39,6 +57,20 @@ export default function Home() {
     }
   ];
 
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error("Error signing in with Google: ", error);
+    }
+  };
+  
+  if (loading || user) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-16 flex items-center bg-card shadow-sm">
@@ -59,9 +91,7 @@ export default function Home() {
           >
             Pricing
           </Link>
-          <Button asChild>
-            <Link href="/dashboard">Get Started</Link>
-          </Button>
+          <Button onClick={handleGoogleSignIn}>Get Started</Button>
         </nav>
       </header>
       <main className="flex-1">
@@ -78,10 +108,8 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button asChild size="lg">
-                    <Link href="/dashboard">
-                      Start for Free
-                    </Link>
+                  <Button onClick={handleGoogleSignIn} size="lg">
+                    Start for Free
                   </Button>
                 </div>
               </div>

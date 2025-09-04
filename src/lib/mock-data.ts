@@ -1,13 +1,8 @@
-export type Task = {
-  id: string;
-  title: string;
-  status: 'Backlog' | 'To Do' | 'In Progress' | 'Done';
-  priority: 'Low' | 'Medium' | 'High';
-  dueDate: Date;
-  tags: string[];
-};
 
-export const tasks: Task[] = [
+import { Timestamp } from 'firebase/firestore';
+import type { Task } from './types';
+
+export const tasks: Omit<Task, 'createdAt' | 'dueDate'> & { dueDate: Date }[] = [
   {
     id: 'TASK-1',
     title: 'Design the landing page hero section',
@@ -72,4 +67,4 @@ export const tasks: Task[] = [
     dueDate: new Date('2024-09-15'),
     tags: ['DevOps'],
   },
-];
+].map(task => ({ ...task }));
