@@ -73,11 +73,11 @@ const DayCellWrapper = ({ children, value }: { children: ReactNode, value: Date 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     return (
         <div className="relative h-full group">
-            <div className="h-full w-full" onClick={() => setIsDialogOpen(true)}>{children}</div>
+            {children}
             <AddTaskDialog defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <div className="absolute top-1 right-1 opacity-100 transition-opacity">
-                   <PlusCircle className="h-5 w-5 text-primary cursor-pointer" />
-                </div>
+                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 text-primary opacity-20 group-hover:opacity-100 transition-opacity cursor-pointer">
+                   <PlusCircle className="h-5 w-5" />
+                </Button>
             </AddTaskDialog>
         </div>
     );
