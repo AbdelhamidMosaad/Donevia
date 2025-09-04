@@ -9,7 +9,7 @@ import { Calendar, momentLocalizer, Views, EventProps, ToolbarProps } from 'reac
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Button } from './ui/button';
-import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AddTaskDialog } from './add-task-dialog';
 
 const localizer = momentLocalizer(moment);
@@ -69,27 +69,22 @@ const CustomEvent = ({ event }: EventProps<Task>) => {
     );
 };
 
-const DayCellWrapper = ({ children, value }: { children: ReactNode, value: Date }) => {
+const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value: Date }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleOpenDialog = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsDialogOpen(true);
+      // only handle clicks on the day cell background, not on events
+      if ((e.target as HTMLElement).classList.contains('rbc-day-bg')) {
+        setIsDialogOpen(true);
+      }
     }
     
     return (
-        <div className="relative h-full group">
+      <AddTaskDialog defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div className="relative h-full" onClick={handleOpenDialog}>
             {children}
-            <AddTaskDialog defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={handleOpenDialog}
-                  className="absolute top-1 right-1 h-6 w-6 text-primary opacity-20 group-hover:opacity-100 transition-opacity cursor-pointer">
-                   <PlusCircle className="h-5 w-5" />
-                </Button>
-            </AddTaskDialog>
         </div>
+      </AddTaskDialog>
     );
 };
 
