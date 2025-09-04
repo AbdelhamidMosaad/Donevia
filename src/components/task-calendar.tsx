@@ -9,7 +9,7 @@ import { Calendar, momentLocalizer, Views, EventProps, ToolbarProps } from 'reac
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Button } from './ui/button';
-import { PlusCircle, ChevronLeft, ChevronRight, CalendarIcon, AlignCenter, Columns } from 'lucide-react';
+import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
