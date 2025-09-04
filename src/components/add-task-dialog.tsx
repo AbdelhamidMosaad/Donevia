@@ -29,9 +29,16 @@ interface AddTaskDialogProps {
   defaultTitle?: string;
   defaultStatus?: Task['status'];
   defaultDueDate?: Date;
+  onTaskAdded?: () => void;
 }
 
-export function AddTaskDialog({ children, defaultTitle = '', defaultStatus = 'To Do', defaultDueDate }: AddTaskDialogProps) {
+export function AddTaskDialog({ 
+  children, 
+  defaultTitle = '', 
+  defaultStatus = 'To Do', 
+  defaultDueDate,
+  onTaskAdded
+}: AddTaskDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -89,6 +96,9 @@ export function AddTaskDialog({ children, defaultTitle = '', defaultStatus = 'To
         description: `"${title}" has been added successfully.`,
       });
       setOpen(false);
+      if (onTaskAdded) {
+        onTaskAdded();
+      }
     } catch (e) {
       console.error("Error adding document: ", e);
       toast({
