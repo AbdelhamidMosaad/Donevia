@@ -86,7 +86,7 @@ export default function Home() {
                 </div>
               </div>
               <Image
-                src="https://storage.googleapis.com/project-os-prod/images/4a7f5a43-41a6-4199-87c2-df3e370857ac.png"
+                src="https://images.unsplash.com/photo-1555212697-194d092e3b8f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx2aWJyYW50JTIwcHJvZHVjdGl2aXR5fGVufDB8fHx8MTc1NzAyMTQxN3ww&ixlib=rb-4.1.0&q=80&w=1080"
                 width="600"
                 height="338"
                 alt="Hero"
