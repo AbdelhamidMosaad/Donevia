@@ -63,22 +63,23 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
 
 const CustomEvent = ({ event }: EventProps<Task>) => {
     return (
-        <div className="text-xs p-0.5">
+        <div className="text-xs p-0.5 whitespace-normal">
             <strong>{event.title}</strong>
         </div>
     );
 };
 
 const DayCellWrapper = ({ children, value }: { children: ReactNode, value: Date }) => {
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
     return (
-        <AddTaskDialog defaultDueDate={value}>
-            <div className="relative h-full group cursor-pointer">
-                {children}
-                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <PlusCircle className="h-5 w-5 text-primary" />
+        <div className="relative h-full group">
+            <div className="h-full w-full" onClick={() => setIsDialogOpen(true)}>{children}</div>
+            <AddTaskDialog defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <div className="absolute top-1 right-1 opacity-100 transition-opacity">
+                   <PlusCircle className="h-5 w-5 text-primary cursor-pointer" />
                 </div>
-            </div>
-        </AddTaskDialog>
+            </AddTaskDialog>
+        </div>
     );
 };
 

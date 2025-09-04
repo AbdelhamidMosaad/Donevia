@@ -30,6 +30,8 @@ interface AddTaskDialogProps {
   defaultStatus?: Task['status'];
   defaultDueDate?: Date;
   onTaskAdded?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function AddTaskDialog({ 
@@ -37,11 +39,16 @@ export function AddTaskDialog({
   defaultTitle = '', 
   defaultStatus = 'To Do', 
   defaultDueDate,
-  onTaskAdded
+  onTaskAdded,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen
 }: AddTaskDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = setControlledOpen ?? setInternalOpen;
   
   const memoizedDefaultDueDate = useMemo(() => defaultDueDate || new Date(), [defaultDueDate]);
 
