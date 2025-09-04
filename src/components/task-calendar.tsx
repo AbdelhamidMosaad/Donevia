@@ -63,7 +63,7 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
 
 const CustomEvent = ({ event }: EventProps<Task>) => {
     return (
-        <div className="p-0.5 text-xs truncate">
+        <div className="text-xs">
             <strong>{event.title}</strong>
         </div>
     );
@@ -84,4 +84,97 @@ const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value:
 
 
 export function TaskCalendar() {
-  const { user }.
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [events, setEvents] = useState<Task[]>([]);
+  const [view, setView] = useState<keyof typeof Views>(Views.MONTH);
+  const [date, setDate] = useState(new Date());
+
+  useEffect(() => {
+    if (user) {
+      const q = query(collection(db, 'users', user.uid, 'tasks'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+        setTasks(tasksData);
+        setEvents(tasksData.map(task => ({
+          ...task,
+          start: task.dueDate.toDate(),
+          end: task.dueDate.toDate(),
+        })));
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  const handleSelectSlot = useCallback(
+    ({ start, end }: { start: Date, end: Date }) => {
+      // For now, we'll just log the selection.
+      // In the future, this could open an AddTaskDialog.
+      console.log('Selected slot:', start, end);
+    },
+    []
+  );
+
+  const handleSelectEvent = useCallback(
+    (event: Task) => {
+      // In the future, this could open an EditTaskDialog.
+      console.log('Selected event:', event);
+    },
+    []
+  );
+
+  const handleEventDrop = useCallback(
+    async ({ event, start, end }: { event: any, start: any, end: any }) => {
+      if (user && event.id) {
+        const taskRef = doc(db, 'users', user.uid, 'tasks', event.id);
+        await updateDoc(taskRef, {
+          dueDate: Timestamp.fromDate(start),
+        });
+      }
+    },
+    [user]
+  );
+  
+
+  return (
+    <div className="h-[calc(100vh-200px)] bg-card rounded-lg border">
+      <Calendar
+        localizer={localizer}
+        events={events}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: '100%' }}
+        selectable
+        onSelectSlot={handleSelectSlot}
+        onSelectEvent={handleSelectEvent}
+        onEventDrop={handleEventDrop}
+        view={view}
+        date={date}
+        onView={(v) => setView(v)}
+        onNavigate={(d) => setDate(d)}
+        components={{
+          toolbar: CustomToolbar,
+          event: CustomEvent,
+          month: {
+            dateHeader: ({ label, date }) => {
+                const isToday = moment(date).isSame(new Date(), 'day');
+                return (
+                    <div className="flex items-center gap-2">
+                        {isToday && <div className="w-2 h-2 rounded-full bg-primary" />}
+                        <span>{label}</span>
+                    </div>
+                );
+            },
+            dayWrapper: DayCellWrapper,
+          },
+          week: {
+             dayWrapper: DayCellWrapper,
+          },
+          day: {
+             dayWrapper: DayCellWrapper,
+          }
+        }}
+      />
+    </div>
+  );
+}

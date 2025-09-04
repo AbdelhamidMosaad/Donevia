@@ -170,6 +170,10 @@ body {
     border-radius: var(--radius);
     background-color: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
+    padding: 4px 6px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    white-space: normal;
 }
 .rbc-day-slot .rbc-event {
     border: 1px solid hsl(var(--border));
