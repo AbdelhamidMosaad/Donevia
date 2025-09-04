@@ -1,7 +1,7 @@
 
 'use client';
-import { useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, doc, updateDoc, addDoc, Timestamp, query } from 'firebase/firestore';
+import { useState, useEffect, useCallback, ReactNode } from 'react';
+import { collection, onSnapshot, doc, updateDoc, Timestamp, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import type { Task } from '@/lib/types';
@@ -63,22 +63,22 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
 
 const CustomEvent = ({ event }: EventProps<Task>) => {
     return (
-        <div>
+        <div className="text-xs p-0.5">
             <strong>{event.title}</strong>
         </div>
     );
 };
 
-const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value: Date }) => {
+const DayCellWrapper = ({ children, value }: { children: ReactNode, value: Date }) => {
     return (
-        <div className="relative h-full group">
-            {children}
-            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <AddTaskDialog defaultDueDate={value}>
-                    <Button variant="ghost" size="icon"><PlusCircle className="h-5 w-5" /></Button>
-                </AddTaskDialog>
+        <AddTaskDialog defaultDueDate={value}>
+            <div className="relative h-full group cursor-pointer">
+                {children}
+                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <PlusCircle className="h-5 w-5 text-primary" />
+                </div>
             </div>
-        </div>
+        </AddTaskDialog>
     );
 };
 
