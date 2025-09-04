@@ -165,7 +165,7 @@ export function AddTaskDialog({
           <DialogClose asChild>
             <Button type="button" variant="secondary">Cancel</Button>
           </DialogClose>
-          <Button onClick={handleSave}>Save Task</Button>
+          <Button onClick={handleSave}>Ok</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
