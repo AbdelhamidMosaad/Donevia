@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -39,10 +40,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarRail />
       <SidebarHeader>
-        <div className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <DoneviaLogo className="size-6 shrink-0" />
           <span className="text-lg font-semibold font-headline">Donevia</span>
-        </div>
+        </Link>
         <SidebarTrigger className="[&_svg]:size-4 ml-auto" />
       </SidebarHeader>
       <SidebarContent>
