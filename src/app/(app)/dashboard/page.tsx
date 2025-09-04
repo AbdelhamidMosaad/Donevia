@@ -22,7 +22,7 @@ type View = 'calendar' | 'list' | 'board' | 'table';
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [view, setView] = useState<View>('calendar');
+  const [view, setView] = useState<View>('board');
   const [tasks, setTasks] = useState<Task[]>([]);
   
   useEffect(() => {
@@ -74,17 +74,17 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
            <ToggleGroup type="single" value={view} onValueChange={(value: View) => value && setView(value)} aria-label="Task view">
-              <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                <CalendarIcon className="h-4 w-4" />
+              <ToggleGroupItem value="board" aria-label="Board view">
+                <LayoutGrid className="h-4 w-4" />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
                 <List className="h-4 w-4" />
               </ToggleGroupItem>
-              <ToggleGroupItem value="board" aria-label="Board view">
-                <LayoutGrid className="h-4 w-4" />
-              </ToggleGroupItem>
               <ToggleGroupItem value="table" aria-label="Table view">
                 <Table className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="calendar" aria-label="Calendar view">
+                <CalendarIcon className="h-4 w-4" />
               </ToggleGroupItem>
             </ToggleGroup>
           <AiTaskSuggester currentTasks={currentTasks} userGoal={userGoal} />
