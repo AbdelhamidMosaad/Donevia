@@ -71,11 +71,21 @@ const CustomEvent = ({ event }: EventProps<Task>) => {
 
 const DayCellWrapper = ({ children, value }: { children: ReactNode, value: Date }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleOpenDialog = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsDialogOpen(true);
+    }
+    
     return (
         <div className="relative h-full group">
             {children}
             <AddTaskDialog defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 text-primary opacity-20 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleOpenDialog}
+                  className="absolute top-1 right-1 h-6 w-6 text-primary opacity-20 group-hover:opacity-100 transition-opacity cursor-pointer">
                    <PlusCircle className="h-5 w-5" />
                 </Button>
             </AddTaskDialog>
