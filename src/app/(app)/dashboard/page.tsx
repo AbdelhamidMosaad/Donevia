@@ -88,12 +88,6 @@ export default function DashboardPage() {
               </ToggleGroupItem>
             </ToggleGroup>
           <AiTaskSuggester currentTasks={currentTasks} userGoal={userGoal} />
-          <AddTaskDialog>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Task
-            </Button>
-          </AddTaskDialog>
         </div>
       </div>
       
