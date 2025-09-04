@@ -8,6 +8,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarTrigger,
+  SidebarRail,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -34,12 +36,14 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
+      <SidebarRail />
       <SidebarHeader>
         <div className="flex items-center gap-2">
-          <DoneviaLogo className="size-6" />
+          <DoneviaLogo className="size-6 shrink-0" />
           <span className="text-lg font-semibold font-headline">Donevia</span>
         </div>
+        <SidebarTrigger className="[&_svg]:size-4 ml-auto" />
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
