@@ -86,11 +86,11 @@ export default function Home() {
                 </div>
               </div>
               <Image
-                src="https://picsum.photos/600/400"
+                src="https://storage.googleapis.com/project-os-prod/images/4a7f5a43-41a6-4199-87c2-df3e370857ac.png"
                 width="600"
-                height="400"
+                height="338"
                 alt="Hero"
-                data-ai-hint="productivity abstract"
+                data-ai-hint="creativity productivity"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
               />
             </div>
@@ -113,6 +113,7 @@ export default function Home() {
                   <CardHeader className="flex flex-row items-center gap-4">
                     {feature.icon}
                     <CardTitle className="font-headline">{feature.title}</CardTitle>
+
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">{feature.description}</p>
