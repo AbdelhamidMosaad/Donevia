@@ -133,11 +133,41 @@ export function TaskCalendar() {
         components={{
           event: CustomEvent,
           toolbar: CustomToolbar,
-          day: {
-            cell: DayCellWrapper
+          month: {
+            dateHeader: ({ label, date }) => (
+                <div className="relative group p-2 text-center">
+                    <div>{label}</div>
+                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <AddTaskDialog defaultDueDate={date}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6"><PlusCircle className="h-4 w-4" /></Button>
+                        </AddTaskDialog>
+                    </div>
+                </div>
+            )
           },
-          week: {
-            cell: DayCellWrapper
+          day: {
+            header: ({ label, date }) => (
+                <div className="relative group p-2 text-center">
+                    <div>{label}</div>
+                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <AddTaskDialog defaultDueDate={date}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6"><PlusCircle className="h-4 w-4" /></Button>
+                        </AddTaskDialog>
+                    </div>
+                </div>
+            )
+          },
+           week: {
+            header: ({ label, date }) => (
+                <div className="relative group p-2 text-center">
+                    <div>{label}</div>
+                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <AddTaskDialog defaultDueDate={date}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6"><PlusCircle className="h-4 w-4" /></Button>
+                        </AddTaskDialog>
+                    </div>
+                </div>
+            )
           },
         }}
       />
