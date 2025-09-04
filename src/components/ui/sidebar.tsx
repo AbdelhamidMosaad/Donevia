@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -359,7 +360,7 @@ const SidebarHeader = React.forwardRef<
       ref={ref}
       data-sidebar="header"
       className={cn(
-        "flex flex-col gap-2 p-2 group-data-[collapsible=icon]:items-center [&_span]:group-data-[collapsible=icon]:hidden",
+        "flex h-14 items-center gap-2 p-2 px-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 [&_span]:group-data-[collapsible=icon]:hidden",
         className
       )}
       {...props}

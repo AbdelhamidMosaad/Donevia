@@ -47,7 +47,7 @@ export function AppSidebar() {
         <SidebarTrigger className="[&_svg]:size-4 ml-auto" />
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
+        <SidebarMenu className="px-2">
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
@@ -65,7 +65,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
+        <SidebarMenu className="px-2">
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === '/settings'} tooltip={{ children: 'Settings' }}>
               <Link href="/settings">
