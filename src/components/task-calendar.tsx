@@ -10,20 +10,7 @@ import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Button } from './ui/button';
 import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-  DialogClose
-} from '@/components/ui/dialog';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Label } from './ui/label';
+import { AddTaskDialog } from './add-task-dialog';
 
 const localizer = momentLocalizer(moment);
 
@@ -74,85 +61,6 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
   );
 };
 
-
-const AddTaskDialog = ({ onSave }: { onSave: (task: Omit<Task, 'id' | 'createdAt'>) => void }) => {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [dueDate, setDueDate] = useState(new Date());
-    const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
-    const [status, setStatus] = useState<'Backlog' | 'To Do' | 'In Progress' | 'Done'>('To Do');
-
-    const handleSave = () => {
-        onSave({
-            title,
-            description,
-            dueDate: Timestamp.fromDate(dueDate),
-            priority,
-            status,
-            tags: [],
-        });
-    };
-
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="icon"><PlusCircle className="h-5 w-5" /></Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add New Task</DialogTitle>
-                    <DialogDescription>Fill in the details for your new task.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="title" className="text-right">Title</Label>
-                        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="description" className="text-right">Description</Label>
-                        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="dueDate" className="text-right">Due Date</Label>
-                        <Input id="dueDate" type="date" value={moment(dueDate).format('YYYY-MM-DD')} onChange={(e) => setDueDate(new Date(e.target.value))} className="col-span-3" />
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="priority" className="text-right">Priority</Label>
-                        <Select onValueChange={(v: any) => setPriority(v)} defaultValue={priority}>
-                            <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Low">Low</SelectItem>
-                                <SelectItem value="Medium">Medium</SelectItem>
-                                <SelectItem value="High">High</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="status" className="text-right">Status</Label>
-                        <Select onValueChange={(v: any) => setStatus(v)} defaultValue={status}>
-                           <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Backlog">Backlog</SelectItem>
-                                <SelectItem value="To Do">To Do</SelectItem>
-                                <SelectItem value="In Progress">In Progress</SelectItem>
-                                <SelectItem value="Done">Done</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">Cancel</Button>
-                    </DialogClose>
-                    <DialogClose asChild>
-                        <Button onClick={handleSave}>Save</Button>
-                    </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
 const CustomEvent = ({ event }: EventProps<Task>) => {
     return (
         <div className="p-1">
@@ -163,26 +71,13 @@ const CustomEvent = ({ event }: EventProps<Task>) => {
 };
 
 const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value: Date }) => {
-    const { user } = useAuth();
-
-    const handleAddTask = async (task: Omit<Task, 'id' | 'createdAt'>) => {
-        if (!user) return;
-        try {
-            const docRef = await addDoc(collection(db, 'users', user.uid, 'tasks'), {
-                ...task,
-                createdAt: Timestamp.now(),
-            });
-            console.log("Document written with ID: ", docRef.id);
-        } catch (e) {
-            console.error("Error adding document: ", e);
-        }
-    };
-    
     return (
         <div className="relative h-full group">
             {children}
             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <AddTaskDialog onSave={(task) => handleAddTask({...task, dueDate: Timestamp.fromDate(value)})} />
+                <AddTaskDialog defaultDueDate={value}>
+                    <Button variant="ghost" size="icon"><PlusCircle className="h-5 w-5" /></Button>
+                </AddTaskDialog>
             </div>
         </div>
     );

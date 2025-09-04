@@ -13,6 +13,8 @@ import { TaskTable } from '@/components/task-table';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { AddTaskDialog } from '@/components/add-task-dialog';
+import type { Task } from '@/lib/types';
 
 type View = 'calendar' | 'list' | 'board' | 'table';
 
@@ -73,10 +75,12 @@ export default function DashboardPage() {
               </ToggleGroupItem>
             </ToggleGroup>
           <AiTaskSuggester currentTasks={currentTasks} userGoal={userGoal} />
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Task
-          </Button>
+          <AddTaskDialog>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Task
+            </Button>
+          </AddTaskDialog>
         </div>
       </div>
       

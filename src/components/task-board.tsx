@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { AddTaskDialog } from './add-task-dialog';
 
 type Column = 'Backlog' | 'To Do' | 'In Progress' | 'Done';
 
@@ -57,10 +58,12 @@ export function TaskBoard() {
                     <span className="text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5">
                       {tasksByColumn[column].length}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <PlusCircle className="h-4 w-4" />
-                      <span className="sr-only">Add task</span>
-                    </Button>
+                    <AddTaskDialog defaultStatus={column}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <PlusCircle className="h-4 w-4" />
+                        <span className="sr-only">Add task</span>
+                      </Button>
+                    </AddTaskDialog>
                   </div>
                 </div>
                 <div className="p-4 flex-1 overflow-y-auto">

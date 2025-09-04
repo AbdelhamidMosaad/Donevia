@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -17,6 +18,7 @@ import { BotMessageSquare, Sparkles, PlusCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { AddTaskDialog } from './add-task-dialog';
 
 interface AiTaskSuggesterProps {
   currentTasks: { id: string; title: string }[];
@@ -46,15 +48,6 @@ export function AiTaskSuggester({ currentTasks, userGoal }: AiTaskSuggesterProps
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleAddTask = (taskTitle: string) => {
-    // Here you would typically call a server action to add the task
-    console.log('Adding task:', taskTitle);
-    toast({
-      title: 'Task Added',
-      description: `"${taskTitle}" has been added to your backlog.`,
-    });
   };
 
   return (
@@ -94,10 +87,12 @@ export function AiTaskSuggester({ currentTasks, userGoal }: AiTaskSuggesterProps
               {suggestions.map((suggestion, index) => (
                 <li key={index} className="flex items-center justify-between gap-2 p-2 rounded-md bg-secondary/50">
                   <span className="text-sm">{suggestion}</span>
-                  <Button variant="ghost" size="icon" onClick={() => handleAddTask(suggestion)}>
-                    <PlusCircle className="h-5 w-5 text-muted-foreground hover:text-primary" />
-                    <span className="sr-only">Add task</span>
-                  </Button>
+                  <AddTaskDialog defaultTitle={suggestion}>
+                    <Button variant="ghost" size="icon">
+                      <PlusCircle className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                      <span className="sr-only">Add task</span>
+                    </Button>
+                  </AddTaskDialog>
                 </li>
               ))}
             </ul>
