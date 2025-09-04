@@ -17,10 +17,10 @@ import {
   BrainCircuit,
   Settings,
   HelpCircle,
-  CheckCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { DoneviaLogo } from './logo';
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -37,7 +37,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2">
-          <CheckCircle className="size-6 text-primary" />
+          <DoneviaLogo className="size-6" />
           <span className="text-lg font-semibold font-headline">Donevia</span>
         </div>
       </SidebarHeader>

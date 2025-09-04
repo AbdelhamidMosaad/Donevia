@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, LayoutDashboard, FileText, BotMessageSquare, GitBranch, PenSquare, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, FileText, BotMessageSquare, GitBranch, PenSquare, BrainCircuit } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { DoneviaLogo } from '@/components/logo';
 
 export default function Home() {
   const features = [
@@ -42,7 +43,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-16 flex items-center bg-card shadow-sm">
         <Link href="#" className="flex items-center justify-center">
-          <CheckCircle className="h-6 w-6 text-primary" />
+          <DoneviaLogo className="h-6 w-6" />
           <span className="ml-2 text-xl font-headline font-semibold">Donevia</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
