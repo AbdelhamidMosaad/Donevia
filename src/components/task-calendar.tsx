@@ -63,9 +63,8 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
 
 const CustomEvent = ({ event }: EventProps<Task>) => {
     return (
-        <div className="p-1">
+        <div className="p-0.5 text-xs truncate">
             <strong>{event.title}</strong>
-            <p className="text-xs">{event.priority}</p>
         </div>
     );
 };
@@ -85,92 +84,4 @@ const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value:
 
 
 export function TaskCalendar() {
-  const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-
-  useEffect(() => {
-    if (user) {
-      const q = collection(db, 'users', user.uid, 'tasks');
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-        setTasks(tasksData);
-      });
-      return () => unsubscribe();
-    }
-  }, [user]);
-
-  const handleEventDrop = useCallback(async (args: { event: any, start: any, end: any }) => {
-    const { event, start } = args;
-    if (user) {
-      const taskRef = doc(db, 'users', user.uid, 'tasks', event.id);
-      try {
-        await updateDoc(taskRef, {
-          dueDate: Timestamp.fromDate(new Date(start)),
-        });
-      } catch (error) {
-        console.error("Error updating task dueDate: ", error);
-      }
-    }
-  }, [user]);
-
-  const calendarEvents = tasks.map(task => ({
-    ...task,
-    start: task.dueDate.toDate(),
-    end: task.dueDate.toDate(),
-    allDay: true,
-  }));
-
-  return (
-    <div className="h-[calc(100vh-200px)] bg-card rounded-lg border">
-      <Calendar
-        localizer={localizer}
-        events={calendarEvents}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ flex: 1 }}
-        onEventDrop={handleEventDrop as any}
-        selectable
-        components={{
-          event: CustomEvent,
-          toolbar: CustomToolbar,
-          month: {
-            dateHeader: ({ label, date }) => (
-                <div className="relative group p-2 text-center">
-                    <div>{label}</div>
-                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <AddTaskDialog defaultDueDate={date}>
-                            <Button variant="ghost" size="icon" className="h-6 w-6"><PlusCircle className="h-4 w-4" /></Button>
-                        </AddTaskDialog>
-                    </div>
-                </div>
-            )
-          },
-          day: {
-            header: ({ label, date }) => (
-                <div className="relative group p-2 text-center">
-                    <div>{label}</div>
-                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <AddTaskDialog defaultDueDate={date}>
-                            <Button variant="ghost" size="icon" className="h-6 w-6"><PlusCircle className="h-4 w-4" /></Button>
-                        </AddTaskDialog>
-                    </div>
-                </div>
-            )
-          },
-           week: {
-            header: ({ label, date }) => (
-                <div className="relative group p-2 text-center">
-                    <div>{label}</div>
-                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <AddTaskDialog defaultDueDate={date}>
-                            <Button variant="ghost" size="icon" className="h-6 w-6"><PlusCircle className="h-4 w-4" /></Button>
-                        </AddTaskDialog>
-                    </div>
-                </div>
-            )
-          },
-        }}
-      />
-    </div>
-  );
-}
+  const { user }.
