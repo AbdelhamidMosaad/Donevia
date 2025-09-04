@@ -86,3 +86,51 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.rbc-calendar {
+  height: 100% !important;
+}
+
+.rbc-toolbar {
+    margin-bottom: 0px;
+    padding: 0;
+}
+.rbc-toolbar button {
+    cursor: pointer;
+}
+.rbc-event {
+    border: none;
+    border-radius: var(--radius);
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+}
+.rbc-day-slot .rbc-event {
+    border: 1px solid hsl(var(--border));
+}
+
+.rbc-day-bg {
+    border-left: 1px solid hsl(var(--border));
+}
+.rbc-month-view {
+    border: none;
+}
+.rbc-month-row {
+    border-color: hsl(var(--border));
+}
+.rbc-header {
+    border-bottom: 1px solid hsl(var(--border));
+    padding: 8px;
+    text-align: left;
+}
+.rbc-header + .rbc-header {
+    border-left: 1px solid hsl(var(--border));
+}
+.rbc-time-view, .rbc-month-view {
+    border-top: 1px solid hsl(var(--border));
+}
+.rbc-time-header-content {
+    border-left: 1px solid hsl(var(--border));
+}
+.rbc-today {
+    background-color: hsl(var(--secondary));
+}
