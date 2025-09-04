@@ -46,6 +46,7 @@ export function AddTaskDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const open = controlledOpen ?? internalOpen;
   const setOpen = setControlledOpen ?? setInternalOpen;
@@ -66,6 +67,7 @@ export function AddTaskDialog({
       // Reset other fields
       setDescription('');
       setPriority('Medium');
+      setIsSaving(false);
     }
   }, [defaultTitle, defaultStatus, memoizedDefaultDueDate, open]);
 
@@ -88,6 +90,7 @@ export function AddTaskDialog({
         return;
     }
 
+    setIsSaving(true);
     try {
       await addDoc(collection(db, 'users', user.uid, 'tasks'), {
         title,
@@ -113,6 +116,8 @@ export function AddTaskDialog({
         title: 'Error',
         description: 'Failed to add task. Please try again.',
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -165,7 +170,9 @@ export function AddTaskDialog({
           <DialogClose asChild>
             <Button type="button" variant="secondary">Cancel</Button>
           </DialogClose>
-          <Button onClick={handleSave}>Ok</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Ok'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
