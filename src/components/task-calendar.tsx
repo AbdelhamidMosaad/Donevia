@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, addDoc, Timestamp, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import type { Task } from '@/lib/types';
@@ -63,7 +63,7 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
 
 const CustomEvent = ({ event }: EventProps<Task>) => {
     return (
-        <div className="text-xs">
+        <div>
             <strong>{event.title}</strong>
         </div>
     );
@@ -150,7 +150,7 @@ export function TaskCalendar() {
         onEventDrop={handleEventDrop}
         view={view}
         date={date}
-        onView={(v) => setView(v)}
+        onView={(v) => setView(v as keyof typeof Views)}
         onNavigate={(d) => setDate(d)}
         components={{
           toolbar: CustomToolbar,
