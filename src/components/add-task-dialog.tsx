@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, ReactNode, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -31,21 +31,29 @@ interface AddTaskDialogProps {
   defaultDueDate?: Date;
 }
 
-export function AddTaskDialog({ children, defaultTitle = '', defaultStatus = 'To Do', defaultDueDate = new Date() }: AddTaskDialogProps) {
+export function AddTaskDialog({ children, defaultTitle = '', defaultStatus = 'To Do', defaultDueDate }: AddTaskDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  
+  const memoizedDefaultDueDate = useMemo(() => defaultDueDate || new Date(), [defaultDueDate]);
+
   const [title, setTitle] = useState(defaultTitle);
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState(defaultDueDate);
+  const [dueDate, setDueDate] = useState(memoizedDefaultDueDate);
   const [priority, setPriority] = useState<Task['priority']>('Medium');
   const [status, setStatus] = useState<Task['status']>(defaultStatus);
 
   useEffect(() => {
-    setTitle(defaultTitle);
-    setStatus(defaultStatus);
-    setDueDate(defaultDueDate);
-  }, [defaultTitle, defaultStatus, defaultDueDate, open]);
+    if (open) {
+      setTitle(defaultTitle);
+      setStatus(defaultStatus);
+      setDueDate(memoizedDefaultDueDate);
+      // Reset other fields
+      setDescription('');
+      setPriority('Medium');
+    }
+  }, [defaultTitle, defaultStatus, memoizedDefaultDueDate, open]);
 
 
   const handleSave = async () => {
@@ -67,7 +75,7 @@ export function AddTaskDialog({ children, defaultTitle = '', defaultStatus = 'To
     }
 
     try {
-      const docRef = await addDoc(collection(db, 'users', user.uid, 'tasks'), {
+      await addDoc(collection(db, 'users', user.uid, 'tasks'), {
         title,
         description,
         dueDate: Timestamp.fromDate(dueDate),
@@ -81,13 +89,6 @@ export function AddTaskDialog({ children, defaultTitle = '', defaultStatus = 'To
         description: `"${title}" has been added successfully.`,
       });
       setOpen(false);
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setDueDate(new Date());
-      setPriority('Medium');
-      setStatus('To Do');
-
     } catch (e) {
       console.error("Error adding document: ", e);
       toast({
@@ -132,7 +133,7 @@ export function AddTaskDialog({ children, defaultTitle = '', defaultStatus = 'To
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="status" className="text-right">Status</Label>
-            <Select onValuecha_product_reviewe={(v: Task['status']) => setStatus(v)} defaultValue={status}>
+            <Select onValueChange={(v: Task['status']) => setStatus(v)} defaultValue={status}>
               <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Backlog">Backlog</SelectItem>
