@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table } from 'lucide-react';
 import { AiTaskSuggester } from '@/components/ai-task-suggester';
-import { tasks } from '@/lib/mock-data';
 import { TaskCalendar } from '@/components/task-calendar';
 import { TaskList } from '@/components/task-list';
 import { TaskBoard } from '@/components/task-board';
@@ -15,6 +14,8 @@ import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { AddTaskDialog } from '@/components/add-task-dialog';
 import type { Task } from '@/lib/types';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type View = 'calendar' | 'list' | 'board' | 'table';
 
@@ -22,6 +23,7 @@ export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [view, setView] = useState<View>('calendar');
+  const [tasks, setTasks] = useState<Task[]>([]);
   
   useEffect(() => {
     if (!loading && !user) {
@@ -29,6 +31,17 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
   
+  useEffect(() => {
+    if (user) {
+      const q = query(collection(db, 'users', user.uid, 'tasks'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+        setTasks(tasksData);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
   const userGoal = "Launch the new version of the Donevia productivity app by the end of the quarter.";
   const currentTasks = tasks
     .filter(t => t.status === 'In Progress' || t.status === 'To Do')
