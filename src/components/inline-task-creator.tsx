@@ -23,6 +23,18 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
 
     useEffect(() => {
         inputRef.current?.focus();
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
+                handleSave();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSave = async () => {
@@ -65,6 +77,7 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
             e.preventDefault();
             handleSave();
         } else if (e.key === 'Escape') {
+            e.preventDefault();
             onFinish();
         }
     };

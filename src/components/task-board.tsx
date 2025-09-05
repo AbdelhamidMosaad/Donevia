@@ -136,6 +136,9 @@ export function TaskBoard({ listId }: TaskBoardProps) {
       if ((e.target as HTMLElement).closest('.task-card-wrapper')) {
           return;
       }
+      // If already adding a task, don't do anything
+      if (addingTaskToStage) return;
+
       setAddingTaskToStage(stageId);
   };
 
@@ -176,7 +179,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                     <div 
                                         ref={droppableProvided.innerRef}
                                         {...droppableProvided.droppableProps}
-                                        className="p-4 flex-1 overflow-y-auto min-h-[100px] cursor-pointer"
+                                        className={`p-4 flex-1 overflow-y-auto min-h-[100px] ${addingTaskToStage ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                                         onClick={(e) => handleStageClick(stage.id, e)}
                                     >
                                         {addingTaskToStage === stage.id && (
