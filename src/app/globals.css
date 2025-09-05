@@ -20,7 +20,7 @@ body {
     --secondary: 210 40% 80%;
     --secondary-foreground: 215 40% 15%;
     --muted: 210 40% 85%;
-    --muted-foreground: 215 20% 45%;
+    --muted-foreground: 215 25% 40%;
     --accent: 270 70% 60%; /* HSL(270, 70%, 60%) -> #8040FF */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
@@ -56,7 +56,7 @@ body {
     --secondary: 215 20% 25%;
     --secondary-foreground: 210 40% 98%;
     --muted: 215 20% 25%;
-    --muted-foreground: 215 15% 65%;
+    --muted-foreground: 215 20% 75%;
     --accent: 270 70% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
