@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Sun, Moon, Droplets, Leaf, Grape, SunMedium, Palette, Type } from 'lucide-react';
+import { Check, Sun, Moon, Palette, Type } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -15,17 +15,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
-type Theme = 'light' | 'dark' | 'blue' | 'green' | 'purple' | 'sunset-orange' | 'monochrome';
+type Theme = 'light' | 'dark';
 type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
 
 const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg: string; text: string; primary: string; secondary: string } }[] = [
   { name: 'light', label: 'Light', icon: <Sun className="h-5 w-5" />, colors: { bg: 'hsl(210 100% 95%)', text: 'hsl(215 40% 15%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(210 40% 90%)' } },
   { name: 'dark', label: 'Dark', icon: <Moon className="h-5 w-5" />, colors: { bg: 'hsl(215 30% 12%)', text: 'hsl(210 40% 98%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(215 20% 25%)' } },
-  { name: 'blue', label: 'Ocean Blue', icon: <Droplets className="h-5 w-5" />, colors: { bg: 'hsl(220 60% 10%)', text: 'hsl(220 20% 95%)', primary: 'hsl(220 90% 60%)', secondary: 'hsl(220 40% 25%)' } },
-  { name: 'green', label: 'Forest Green', icon: <Leaf className="h-5 w-5" />, colors: { bg: 'hsl(140 60% 10%)', text: 'hsl(140 10% 95%)', primary: 'hsl(140 80% 50%)', secondary: 'hsl(140 40% 25%)' } },
-  { name: 'purple', label: 'Purple Haze', icon: <Grape className="h-5 w-5" />, colors: { bg: 'hsl(280 60% 10%)', text: 'hsl(280 10% 95%)', primary: 'hsl(280 80% 60%)', secondary: 'hsl(280 40% 25%)' } },
-  { name: 'sunset-orange', label: 'Sunset Orange', icon: <SunMedium className="h-5 w-5" />, colors: { bg: 'hsl(25 50% 10%)', text: 'hsl(25 20% 95%)', primary: 'hsl(25 90% 55%)', secondary: 'hsl(25 40% 25%)' } },
-  { name: 'monochrome', label: 'Monochrome', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(0 0% 10%)', text: 'hsl(0 0% 95%)', primary: 'hsl(0 0% 80%)', secondary: 'hsl(0 0% 25%)' } },
 ];
 
 const fonts: { name: Font; label: string; variable: string }[] = [
@@ -82,7 +77,7 @@ export default function SettingsPage() {
   const applyTheme = (theme: Theme) => {
     document.body.className = ''; // Clear existing theme classes
     if (theme !== 'light') {
-      document.body.classList.add(theme === 'dark' ? 'dark' : `theme-${theme}`);
+      document.body.classList.add('dark');
     }
   };
 
