@@ -28,6 +28,11 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
         setIsEditing(false);
     };
 
+    const handleStartEditing = () => {
+        setTitle(''); // Clear previous title
+        setIsEditing(true);
+    }
+
     const handleSave = async () => {
         if (!title.trim()) {
             resetAndClose();
@@ -70,7 +75,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
         return (
             <Card 
                 className="p-3 bg-transparent hover:bg-card-foreground/5 transition-colors duration-200 cursor-pointer"
-                onClick={() => setIsEditing(true)}
+                onClick={handleStartEditing}
             >
                <div className="flex items-center text-muted-foreground">
                  <Plus className="mr-2 h-4 w-4" />
