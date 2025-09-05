@@ -9,7 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import type { Task } from '@/lib/types';
+import type { Task, Stage } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
 import { Flag, MoreHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
@@ -21,20 +21,13 @@ import {
 } from './ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const priorityColors = {
     Low: 'text-gray-500',
     Medium: 'text-yellow-500',
     High: 'text-red-500',
-};
-
-const statusColors = {
-    Backlog: 'outline',
-    'To Do': 'secondary',
-    'In Progress': 'default',
-    Done: 'default',
 };
 
 interface TaskTableProps {
@@ -44,17 +37,36 @@ interface TaskTableProps {
 export function TaskTable({ listId }: TaskTableProps) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-
+  const [stages, setStages] = useState<Stage[]>([]);
+  
   useEffect(() => {
     if (user && listId) {
+      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
+      const unsubscribeStages = onSnapshot(listRef, (docSnap) => {
+        if(docSnap.exists()) {
+          const listData = docSnap.data();
+          setStages(listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || []);
+        }
+      });
+
       const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribeTasks = onSnapshot(q, (snapshot) => {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(tasksData);
       });
-      return () => unsubscribe();
+      
+      return () => {
+          unsubscribeStages();
+          unsubscribeTasks();
+      };
     }
   }, [user, listId]);
+
+  const getStageName = (statusId: string) => {
+      return stages.find(s => s.id === statusId)?.name || statusId;
+  }
+
+  const doneStageId = stages.find(s => s.name.toLowerCase() === 'done')?.id;
 
   return (
     <div className="border rounded-lg">
@@ -79,8 +91,8 @@ export function TaskTable({ listId }: TaskTableProps) {
               </TableCell>
               <TableCell className="font-medium">{task.title}</TableCell>
               <TableCell>
-                <Badge variant={statusColors[task.status] as any} className={task.status === 'Done' ? 'bg-green-600/80 text-primary-foreground' : ''}>
-                    {task.status}
+                <Badge variant={task.status === doneStageId ? 'default' : 'secondary'} className={task.status === doneStageId ? 'bg-green-600/80 text-primary-foreground' : ''}>
+                    {getStageName(task.status)}
                 </Badge>
               </TableCell>
               <TableCell>

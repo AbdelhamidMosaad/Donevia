@@ -1,10 +1,10 @@
 
 'use client';
 import { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, orderBy, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
-import type { Task } from '@/lib/types';
+import type { Task, Stage } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { MoreHorizontal, Edit, Trash2, CheckCircle } from 'lucide-react';
@@ -19,31 +19,40 @@ interface TaskListProps {
 export function TaskList({ listId }: TaskListProps) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
   const [sortBy, setSortBy] = useState('createdAt');
   const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
     if (user && listId) {
+      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
+      const unsubscribeStages = onSnapshot(listRef, (docSnap) => {
+        if(docSnap.exists()) {
+          const listData = docSnap.data();
+          setStages(listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || []);
+        }
+      });
+
       let q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), orderBy(sortBy, 'desc'));
       
-      if (filterStatus !== 'all') {
-        // This is tricky with Firestore. You can't have multiple inequality filters on different fields.
-        // And orderBy is considered one. If we want to filter by status, we might have to do it client side
-        // or restructure data. For now, let's stick to the simple query and then filter client-side.
-        // The query will just be for the listId, ordered by the selected field.
-         q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), orderBy(sortBy, 'desc'));
-      }
-
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribeTasks = onSnapshot(q, (snapshot) => {
         let tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         if (filterStatus !== 'all') {
             tasksData = tasksData.filter(task => task.status === filterStatus);
         }
         setTasks(tasksData);
       });
-      return () => unsubscribe();
+
+      return () => {
+          unsubscribeStages();
+          unsubscribeTasks();
+      };
     }
   }, [user, listId, sortBy, filterStatus]);
+
+  const getStageName = (statusId: string) => {
+      return stages.find(s => s.id === statusId)?.name || statusId;
+  }
 
   return (
     <Card className="p-4">
@@ -66,10 +75,9 @@ export function TaskList({ listId }: TaskListProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="To Do">To Do</SelectItem>
-              <SelectItem value="In Progress">In Progress</SelectItem>
-              <SelectItem value="Done">Done</SelectItem>
-              <SelectItem value="Backlog">Backlog</SelectItem>
+              {stages.map(stage => (
+                  <SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -82,7 +90,7 @@ export function TaskList({ listId }: TaskListProps) {
               <p className="text-sm text-muted-foreground truncate">{task.description}</p>
             </div>
             <div className="flex items-center gap-4 mx-4">
-               <Badge variant={task.status === 'Done' ? 'default' : 'secondary'} className={task.status === 'Done' ? 'bg-green-500' : ''}>{task.status}</Badge>
+               <Badge variant={task.status === stages.find(s => s.name === 'Done')?.id ? 'default' : 'secondary'} className={task.status === stages.find(s => s.name === 'Done')?.id ? 'bg-green-500' : ''}>{getStageName(task.status)}</Badge>
                <Badge variant="outline">{task.priority}</Badge>
                <span className="text-sm text-muted-foreground">{task.dueDate.toDate().toLocaleDateString()}</span>
             </div>

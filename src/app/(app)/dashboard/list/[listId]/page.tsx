@@ -100,7 +100,7 @@ export default function TaskListPage() {
                 <CalendarIcon className="h-4 w-4" />
               </ToggleGroupItem>
             </ToggleGroup>
-          <AddTaskDialog listId={listId}>
+          <AddTaskDialog listId={listId} defaultStatus="todo">
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Task
@@ -109,10 +109,9 @@ export default function TaskListPage() {
         </div>
       </div>
       
-      <div className="flex-1">
+      <div className="flex-1 overflow-x-auto">
         {renderView()}
       </div>
     </div>
   );
 }
-
