@@ -11,11 +11,10 @@ import { Timestamp } from 'firebase/firestore';
 interface InlineTaskCreatorProps {
     listId: string;
     stageId: string;
-    onCancel: () => void;
-    onCreated: (taskId: string) => void;
+    onFinish: () => void;
 }
 
-export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: InlineTaskCreatorProps) {
+export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreatorProps) {
     const [title, setTitle] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +29,7 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
         if (isSaving) return;
 
         if (!title.trim()) {
-            onCancel();
+            onFinish();
             return;
         }
         if (!user) {
@@ -40,7 +39,7 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
         
         setIsSaving(true);
         try {
-            const docRef = await addTask(user.uid, {
+            await addTask(user.uid, {
                 title: title.trim(),
                 listId,
                 status: stageId,
@@ -49,10 +48,10 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
                 tags: [],
             });
             toast({ title: 'Task created!' });
-            onCreated(docRef.id);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Failed to create task' });
-            onCancel();
+        } finally {
+            onFinish();
         }
     };
 
@@ -60,7 +59,7 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
         if (e.key === 'Enter') {
             handleSave();
         } else if (e.key === 'Escape') {
-            onCancel();
+            onFinish();
         }
     };
 

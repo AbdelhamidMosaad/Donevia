@@ -127,6 +127,10 @@ export function TaskBoard({ listId }: TaskBoardProps) {
       return <div>Loading board...</div>;
   }
 
+  const handleFinishCreating = () => {
+    setAddingTaskToStage(null);
+  };
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
         <div className="mb-4 flex justify-end">
@@ -174,8 +178,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                             <InlineTaskCreator 
                                                 listId={listId}
                                                 stageId={stage.id}
-                                                onCancel={() => setAddingTaskToStage(null)}
-                                                onCreated={() => setAddingTaskToStage(null)}
+                                                onFinish={handleFinishCreating}
                                             />
                                         )}
                                         {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
