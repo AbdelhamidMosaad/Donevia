@@ -98,14 +98,6 @@ export function AppSidebar() {
                     </div>
                     <CollapsibleContent>
                         <SidebarMenuSub>
-                            <SidebarMenuSubItem>
-                                <SidebarMenuSubButton asChild isActive={pathname === '/dashboard'}>
-                                    <Link href="/dashboard">
-                                        <LayoutDashboard className="h-4 w-4" />
-                                        <span>All Tasks</span>
-                                    </Link>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
                              {taskLists.map(list => (
                                 <SidebarMenuSubItem key={list.id}>
                                     <SidebarMenuSubButton asChild isActive={pathname === `/dashboard/list/${list.id}`}>
