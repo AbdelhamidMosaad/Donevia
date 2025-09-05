@@ -7,7 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Input } from './ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, setDoc, getDocs, collection, addDoc, query, where } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc, getDocs, collection, addDoc, query, where, writeBatch } from 'firebase/firestore';
 import type { Stage, BoardTemplate } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -29,7 +29,7 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
     const [newTemplateName, setNewTemplateName] = useState('');
 
     useEffect(() => {
-        setStages(currentStages.sort((a, b) => a.order - b.order));
+        setStages(currentStages.map((s, i) => ({...s, order: i})).sort((a, b) => a.order - b.order));
     }, [currentStages, open]);
     
     useEffect(() => {
@@ -49,7 +49,7 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
     const handleAddStage = () => {
         if (!newStageName.trim()) return;
         const newStage: Stage = {
-            id: `stage_${Date.now()}`,
+            id: `new_stage_${Date.now()}`, // Ensure unique temporary ID for new stages
             name: newStageName.trim(),
             order: stages.length,
         };
@@ -62,7 +62,7 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
             toast({ variant: 'destructive', title: 'Cannot delete the last stage.'});
             return;
         }
-        setStages(stages.filter(stage => stage.id !== id));
+        setStages(stages.filter(stage => stage.id !== id).map((s, i) => ({...s, order: i})));
     };
 
     const handleDragEnd = (result: DropResult) => {
@@ -77,41 +77,61 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
         if (!user) return;
         const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
 
+        const batch = writeBatch(db);
+
         // Find deleted stages to reassign tasks
-        const deletedStageIds = currentStages.filter(cs => !stages.find(s => s.id === cs.id)).map(s => s.id);
+        const currentStageIds = stages.map(s => s.id);
+        const deletedStageIds = currentStages.filter(cs => !currentStageIds.includes(cs.id)).map(s => s.id);
+        
         if (deletedStageIds.length > 0 && stages.length > 0) {
             const tasksRef = collection(db, 'users', user.uid, 'tasks');
             const q = query(tasksRef, where('listId', '==', listId), where('status', 'in', deletedStageIds));
             const tasksToUpdateSnap = await getDocs(q);
             const firstStageId = stages[0].id;
-            const batch = new (await import('firebase/firestore')).WriteBatch(db);
             tasksToUpdateSnap.forEach(taskDoc => {
                 batch.update(taskDoc.ref, { status: firstStageId });
             });
-            await batch.commit();
         }
 
-        await updateDoc(listRef, { stages: stages.map((s, i) => ({...s, order: i})) });
+        batch.update(listRef, { stages: stages.map(({ ...rest }, i) => ({...rest, order: i})) });
+
+        await batch.commit();
+
         toast({ title: "Board settings saved!" });
         setOpen(false);
     };
     
     const handleSaveAsTemplate = async () => {
-        if (!user || !newTemplateName.trim()) return;
+        if (!user || !newTemplateName.trim()) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Template name cannot be empty.' });
+            return;
+        }
+
+        const orderedStages = stages.sort((a,b) => a.order - b.order);
+
         const templateData = {
-            name: newTemplateName,
-            stages: stages.map(({id, ...rest}) => rest) // remove id
+            name: newTemplateName.trim(),
+            stages: orderedStages.map(({ name, order }) => ({ name, order }))
         };
-        const templateRef = await addDoc(collection(db, 'users', user.uid, 'boardTemplates'), templateData);
-        setTemplates([...templates, { id: templateRef.id, ...templateData }]);
-        setNewTemplateName('');
-        toast({ title: 'Template saved!', description: `"${newTemplateName}" is now available.`});
+
+        try {
+            const templateRef = await addDoc(collection(db, 'users', user.uid, 'boardTemplates'), templateData);
+            setTemplates([...templates, { id: templateRef.id, ...templateData }]);
+            setNewTemplateName('');
+            toast({ title: 'Template saved!', description: `"${templateData.name}" is now available.`});
+        } catch (error) {
+            console.error("Error saving template: ", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to save template.'});
+        }
     };
     
     const handleApplyTemplate = async (templateId: string) => {
         const template = templates.find(t => t.id === templateId);
         if (template) {
-            const newStages = template.stages.map((s, i) => ({...s, id: `stage_${Date.now()}_${i}`}));
+            // Assign new unique IDs to stages from the template
+            const newStages = template.stages
+                .sort((a, b) => a.order - b.order)
+                .map((s, i) => ({...s, id: `stage_${Date.now()}_${i}`}));
             setStages(newStages);
             toast({ title: 'Template applied!', description: `"${template.name}" stages are ready to be saved.`});
         }

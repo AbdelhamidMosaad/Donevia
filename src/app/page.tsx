@@ -25,12 +25,7 @@ export default function Home() {
   }, [user, router]);
   
   useEffect(() => {
-    // Reset any theme styles when on landing page
-    const body = document.body;
-    const font = body.style.fontFamily;
-    body.className = '';
-    body.style.fontFamily = font || 'var(--font-inter)';
-
+    // This is handled globally by AuthProvider now
   }, []);
 
   const features = [

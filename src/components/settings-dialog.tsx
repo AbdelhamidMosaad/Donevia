@@ -32,17 +32,22 @@ const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg:
 ];
 
 const fonts: { name: Font; label: string; variable: string }[] = [
-    { name: 'inter', label: 'Inter', variable: 'font-inter' },
-    { name: 'roboto', label: 'Roboto', variable: 'font-roboto' },
-    { name: 'open-sans', label: 'Open Sans', variable: 'font-open-sans' },
-    { name: 'lato', label: 'Lato', variable: 'font-lato' },
-    { name: 'poppins', label: 'Poppins', variable: 'font-poppins' },
-    { name: 'source-sans-pro', label: 'Source Sans Pro', variable: 'font-source-sans-pro' },
-    { name: 'nunito', label: 'Nunito', variable: 'font-nunito' },
-    { name: 'montserrat', label: 'Montserrat', variable: 'font-montserrat' },
-    { name: 'playfair-display', label: 'Playfair Display', variable: 'font-playfair-display' },
-    { name: 'jetbrains-mono', label: 'JetBrains Mono', variable: 'font-jetbrains-mono' },
+    { name: 'inter', label: 'Inter', variable: 'var(--font-inter)' },
+    { name: 'roboto', label: 'Roboto', variable: 'var(--font-roboto)' },
+    { name: 'open-sans', label: 'Open Sans', variable: 'var(--font-open-sans)' },
+    { name: 'lato', label: 'Lato', variable: 'var(--font-lato)' },
+    { name: 'poppins', label: 'Poppins', variable: 'var(--font-poppins)' },
+    { name: 'source-sans-pro', label: 'Source Sans Pro', variable: 'var(--font-source-sans-pro)' },
+    { name: 'nunito', label: 'Nunito', variable: 'var(--font-nunito)' },
+    { name: 'montserrat', label: 'Montserrat', variable: 'var(--font-montserrat)' },
+    { name: 'playfair-display', label: 'Playfair Display', variable: 'var(--font-playfair-display)' },
+    { name: 'jetbrains-mono', label: 'JetBrains Mono', variable: 'var(--font-jetbrains-mono)' },
 ];
+
+const fontVariables: Record<Font, string> = fonts.reduce((acc, font) => {
+    acc[font.name] = font.variable;
+    return acc;
+}, {} as Record<Font, string>);
 
 export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -60,11 +65,9 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
           const { theme, font } = settingsSnap.data();
           if (theme) {
             setSelectedTheme(theme);
-            applyTheme(theme);
           }
           if (font) {
             setSelectedFont(font);
-            applyFont(font);
           }
         }
       };
@@ -74,17 +77,21 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   
   const applyTheme = (theme: Theme) => {
     const body = document.body;
-    const currentFont = body.style.fontFamily;
-    body.className = body.className.split(' ').filter(c => !c.startsWith('theme-') && c !== 'light' && c !== 'dark').join(' ');
+    // Keep font style when changing theme
+    const currentFontFamily = body.style.fontFamily;
+    body.className = body.className.split(' ').filter(c => !c.startsWith('theme-') && c !== 'light' && c !== 'dark' && !c.startsWith('font-')).join(' ');
     
     if (theme) {
       body.classList.add(theme);
     }
-    body.style.fontFamily = currentFont;
+    body.style.fontFamily = currentFontFamily;
   };
   
   const applyFont = (font: Font) => {
-    document.body.style.fontFamily = `var(--font-${font})`;
+    const fontVariable = fontVariables[font];
+    if (fontVariable) {
+        document.body.style.fontFamily = fontVariable;
+    }
   }
 
   const savePreferences = async (newSettings: { theme?: Theme; font?: Font }) => {
@@ -155,7 +162,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                         <SelectContent>
                             {fonts.map(font => (
                                 <SelectItem key={font.name} value={font.name}>
-                                    <span style={{ fontFamily: `var(--font-${font.name})` }}>{font.label}</span>
+                                    <span style={{ fontFamily: font.variable }}>{font.label}</span>
                                 </SelectItem>
                             ))}
                         </SelectContent>

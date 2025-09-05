@@ -11,6 +11,20 @@ interface AuthContextType {
   loading: boolean;
 }
 
+const fonts: Record<string, string> = {
+    inter: 'var(--font-inter)',
+    roboto: 'var(--font-roboto)',
+    'open-sans': 'var(--font-open-sans)',
+    lato: 'var(--font-lato)',
+    poppins: 'var(--font-poppins)',
+    'source-sans-pro': 'var(--font-source-sans-pro)',
+    nunito: 'var(--font-nunito)',
+    montserrat: 'var(--font-montserrat)',
+    'playfair-display': 'var(--font-playfair-display)',
+    'jetbrains-mono': 'var(--font-jetbrains-mono)',
+};
+
+
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -28,33 +42,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let unsubscribeSettings = () => {};
+    const body = document.body;
+    
+    // Function to strip all theme and font classes
+    const resetStyling = () => {
+        const themeClasses = ['light', 'dark', 'theme-indigo', 'theme-purple', 'theme-green'];
+        body.classList.remove(...themeClasses);
+        body.style.fontFamily = ''; // Reset inline font style
+    }
+
     if (user) {
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
       unsubscribeSettings = onSnapshot(settingsRef, (doc) => {
+        resetStyling(); // Reset before applying new styles
         if (doc.exists() && doc.data()) {
             const { theme, font } = doc.data();
             
-            const body = document.body;
-            
-            // Remove any existing theme classes
-            body.className = body.className.split(' ').filter(c => !c.startsWith('theme-') && c !== 'light' && c !== 'dark').join(' ');
-
             if (theme) {
               body.classList.add(theme);
+            } else {
+              body.classList.add('light'); // Default to light theme
             }
             
-            if (font) {
-              body.style.fontFamily = `var(--font-${font})`;
+            if (font && fonts[font]) {
+              body.style.fontFamily = fonts[font];
             } else {
-              body.style.fontFamily = 'var(--font-inter)';
+              body.style.fontFamily = fonts['inter']; // Default to inter
             }
+        } else {
+            // No settings doc, apply defaults
+            body.classList.add('light');
+            body.style.fontFamily = fonts['inter'];
         }
       });
     } else {
-        // Not logged in, so clear any theme styles
-        const body = document.body;
-        body.className = body.className.split(' ').filter(c => !c.startsWith('theme-') && c !== 'light' && c !== 'dark').join(' ');
-        body.style.fontFamily = 'var(--font-inter)';
+        // Not logged in, so clear any theme styles and apply defaults for landing page
+        resetStyling();
+        body.style.fontFamily = fonts['inter'];
     }
      return () => unsubscribeSettings();
   }, [user]);

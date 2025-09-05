@@ -28,5 +28,5 @@ export type TaskList = {
 export type BoardTemplate = {
     id: string;
     name:string;
-    stages: Omit<Stage, 'id'>[];
+    stages: { name: string; order: number }[];
 }
