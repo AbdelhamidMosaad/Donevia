@@ -75,8 +75,9 @@ export default function SettingsPage() {
   }, [user]);
 
   const applyTheme = (theme: Theme) => {
+    const fontToApply = document.body.style.fontFamily || `var(--font-${initialFont})`;
     document.body.className = '';
-    document.body.style.fontFamily = `var(--font-${selectedFont})`;
+    document.body.style.fontFamily = fontToApply;
     if (theme !== 'light') {
       document.body.classList.add(theme);
     }
@@ -115,6 +116,7 @@ export default function SettingsPage() {
             title: 'Settings Saved',
             description: 'Your new preferences have been saved.',
         });
+        router.back();
     } catch (error) {
         console.error("Error saving settings: ", error);
         toast({
@@ -132,6 +134,7 @@ export default function SettingsPage() {
     setSelectedFont(initialFont);
     applyTheme(initialTheme);
     applyFont(initialFont);
+    router.back();
   };
   
   if (loading || !user) {
