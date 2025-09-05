@@ -18,8 +18,9 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jet
 
 
 export const metadata: Metadata = {
-  title: 'Donevia',
+  title: 'Clarity Hub',
   description: 'A personal productivity management web application.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -29,6 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+       <head>
+        <meta name="theme-color" content="#3399FF" />
+      </head>
       <body className={`antialiased ${inter.variable} ${roboto.variable} ${openSans.variable} ${lato.variable} ${poppins.variable} ${sourceSansPro.variable} ${nunito.variable} ${montserrat.variable} ${playfairDisplay.variable} ${jetbrainsMono.variable}`}>
         <AuthProvider>
             {children}

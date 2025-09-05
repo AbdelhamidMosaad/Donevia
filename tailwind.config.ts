@@ -1,5 +1,6 @@
 
 import type {Config} from 'tailwindcss';
+import { PluginAPI } from 'tailwindcss/types/config';
 
 export default {
   darkMode: ['class'],
@@ -11,16 +12,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        inter: ['var(--font-inter)'],
-        roboto: ['var(--font-roboto)'],
-        'open-sans': ['var(--font-open-sans)'],
-        lato: ['var(--font-lato)'],
-        poppins: ['var(--font-poppins)'],
-        'source-sans-pro': ['var(--font-source-sans-pro)'],
-        nunito: ['var(--font-nunito)'],
-        montserrat: ['var(--font-montserrat)'],
-        'playfair-display': ['var(--font-playfair-display)'],
-        'jetbrains-mono': ['var(--font-jetbrains-mono)'],
+        'pt-sans': ['"PT Sans"', 'sans-serif'],
+        poppins: ['"Poppins"', 'sans-serif'],
         headline: ['Poppins', 'sans-serif'],
         code: ['monospace'],
       },
