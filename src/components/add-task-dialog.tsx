@@ -47,6 +47,7 @@ export function AddTaskDialog({
   const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [stages, setStages] = useState<Stage[]>([]);
 
   const isEditMode = !!task;
@@ -93,6 +94,7 @@ export function AddTaskDialog({
         }
       }
       setIsSaving(false);
+      setIsSaved(false);
     }
   }, [open, task, isEditMode, stages]);
 
@@ -141,7 +143,8 @@ export function AddTaskDialog({
           });
           onTaskAdded?.(docRef.id);
       }
-      setOpen(false);
+      setIsSaved(true);
+      setTimeout(() => setOpen(false), 500);
     } catch (e) {
       console.error("Error saving document: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to save task.' });
@@ -198,8 +201,8 @@ export function AddTaskDialog({
           <DialogClose asChild>
             <Button type="button" variant="secondary">Cancel</Button>
           </DialogClose>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+          <Button onClick={handleSave} disabled={isSaving || isSaved}>
+            {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>
