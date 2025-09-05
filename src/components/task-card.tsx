@@ -19,6 +19,7 @@ import { deleteTask } from '@/lib/tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import moment from 'moment';
 
 
 interface TaskCardProps {
@@ -45,6 +46,9 @@ export function TaskCard({ task }: TaskCardProps) {
         toast({ variant: 'destructive', title: 'Error deleting task' });
       }
   }
+  
+  const isDueSoon = moment(task.dueDate.toDate()).isBefore(moment().add(3, 'days'));
+  const isOverdue = moment(task.dueDate.toDate()).isBefore(moment(), 'day');
 
   return (
     <>
@@ -94,16 +98,22 @@ export function TaskCard({ task }: TaskCardProps) {
           </DropdownMenu>
         </div>
       </CardHeader>
-      {(task.priority || (task.tags && task.tags.length > 0)) &&
+      {(task.priority || task.dueDate || (task.tags && task.tags.length > 0)) &&
         <CardContent className="p-3 pt-0">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-                {task.priority &&
-                <div className="flex items-center gap-1" title={task.priority}>
-                {priorityIcons[task.priority]}
+                <div className="flex items-center gap-2">
+                    {task.priority &&
+                    <div className="flex items-center gap-1" title={task.priority}>
+                    {priorityIcons[task.priority]}
+                    </div>
+                    }
+                     {task.dueDate && (
+                        <div className={`flex items-center gap-1 ${isOverdue ? 'text-destructive' : isDueSoon ? 'text-yellow-600' : ''}`}>
+                            <Calendar className="h-3 w-3" />
+                            <span>{moment(task.dueDate.toDate()).format('MMM D')}</span>
+                        </div>
+                    )}
                 </div>
-                }
-            </div>
             </div>
             {task.tags && task.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
@@ -126,4 +136,3 @@ export function TaskCard({ task }: TaskCardProps) {
     </>
   );
 }
-
