@@ -6,8 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Check, Sun, Moon, Palette, Type } from 'lucide-react';
+import { Sun, Moon, Palette, Type } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -16,7 +15,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -52,9 +50,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<Theme>('light');
   const [selectedFont, setSelectedFont] = useState<Font>('inter');
-  const [isSaving, setIsSaving] = useState(false);
-  const [initialTheme, setInitialTheme] = useState<Theme>('light');
-  const [initialFont, setInitialFont] = useState<Font>('inter');
 
   useEffect(() => {
     if (user && open) {
@@ -65,12 +60,10 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
           const { theme, font } = settingsSnap.data();
           if (theme) {
             setSelectedTheme(theme);
-            setInitialTheme(theme);
             applyTheme(theme);
           }
           if (font) {
             setSelectedFont(font);
-            setInitialFont(font);
             applyFont(font);
           }
         }
@@ -82,7 +75,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const applyTheme = (theme: Theme) => {
     const body = document.body;
     const currentFont = body.style.fontFamily;
-    // Remove only theme-related classes
     body.className = body.className.split(' ').filter(c => !c.startsWith('theme-') && c !== 'light' && c !== 'dark').join(' ');
     
     if (theme) {
@@ -95,17 +87,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     document.body.style.fontFamily = `var(--font-${font})`;
   }
 
-  const handleThemeChange = (theme: Theme) => {
-    setSelectedTheme(theme);
-    applyTheme(theme);
-  };
-
-  const handleFontChange = (font: Font) => {
-    setSelectedFont(font);
-    applyFont(font);
-  };
-
-  const handleSaveChanges = async () => {
+  const savePreferences = async (newSettings: { theme?: Theme; font?: Font }) => {
     if (!user) {
         toast({
             variant: 'destructive',
@@ -114,17 +96,13 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
         });
         return;
     }
-    setIsSaving(true);
     try {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-        await setDoc(settingsRef, { theme: selectedTheme, font: selectedFont }, { merge: true });
-        setInitialTheme(selectedTheme);
-        setInitialFont(selectedFont);
+        await setDoc(settingsRef, newSettings, { merge: true });
         toast({
             title: 'Settings Saved',
             description: 'Your new preferences have been saved.',
         });
-        setOpen(false); // Close dialog on success
     } catch (error) {
         console.error("Error saving settings: ", error);
         toast({
@@ -132,32 +110,28 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             title: 'Error',
             description: 'Failed to save your settings. Please try again.',
         });
-    } finally {
-        setIsSaving(false); // Reset button state
     }
   };
 
-  const handleCancelChanges = () => {
-    setSelectedTheme(initialTheme);
-    setSelectedFont(initialFont);
-    applyTheme(initialTheme);
-    applyFont(initialFont);
-    setOpen(false);
+
+  const handleThemeChange = (theme: Theme) => {
+    setSelectedTheme(theme);
+    applyTheme(theme);
+    savePreferences({ theme });
+  };
+
+  const handleFontChange = (font: Font) => {
+    setSelectedFont(font);
+    applyFont(font);
+    savePreferences({ font });
   };
   
-  const onOpenChange = (isOpen: boolean) => {
-    if (!isOpen && !isSaving) {
-        handleCancelChanges();
-    }
-    setOpen(isOpen);
-  }
-
   if (loading) {
     return null;
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
@@ -223,18 +197,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                 </CardContent>
             </Card>
         </div>
-
-        <DialogFooter>
-          <Button onClick={handleCancelChanges} variant="outline" disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSaveChanges} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-    
