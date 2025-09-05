@@ -1,6 +1,6 @@
 
 'use client';
-import type { TaskList } from '@/lib/types';
+import type { TaskList, Task } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { Folder, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Input } from './ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 
@@ -26,6 +26,7 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
   const { user } = useAuth();
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
   
   useEffect(() => {
     if (editingListId && inputRef.current) {
@@ -33,6 +34,23 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
         inputRef.current.select();
     }
   }, [editingListId]);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const unsubscribes = taskLists.map(list => {
+      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', list.id));
+      return onSnapshot(q, (snapshot) => {
+        setTaskCounts(prevCounts => ({
+          ...prevCounts,
+          [list.id]: snapshot.size,
+        }));
+      });
+    });
+
+    return () => unsubscribes.forEach(unsub => unsub());
+
+  }, [user, taskLists]);
 
   const handleStartEdit = (list: TaskList) => {
     setEditingListId(list.id);
@@ -118,7 +136,7 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
                 )}
               </TableCell>
               <TableCell>{list.createdAt.toDate().toLocaleDateString()}</TableCell>
-              <TableCell>0</TableCell>
+              <TableCell>{taskCounts[list.id] || 0}</TableCell>
               <TableCell>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

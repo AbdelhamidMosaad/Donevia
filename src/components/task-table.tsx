@@ -11,18 +11,22 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { Task, Stage } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
-import { Flag, MoreHorizontal } from 'lucide-react';
+import { Flag, MoreHorizontal, Eye } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
 } from './ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import moment from 'moment';
 
 const priorityColors = {
     Low: 'text-gray-500',
@@ -34,10 +38,31 @@ interface TaskTableProps {
     listId: string;
 }
 
+type Column = 'title' | 'status' | 'priority' | 'dueDate' | 'tags' | 'createdAt';
+
+const allColumns: { id: Column; label: string }[] = [
+    { id: 'title', label: 'Task' },
+    { id: 'status', label: 'Status' },
+    { id: 'priority', label: 'Priority' },
+    { id: 'dueDate', label: 'Due Date' },
+    { id: 'tags', label: 'Tags' },
+    { id: 'createdAt', label: 'Created At' },
+];
+
 export function TaskTable({ listId }: TaskTableProps) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [visibleColumns, setVisibleColumns] = useState<Column[]>(['title', 'status', 'priority', 'dueDate']);
+
+  useEffect(() => {
+    if (listId) {
+      const savedColumns = localStorage.getItem(`table-columns-${listId}`);
+      if (savedColumns) {
+        setVisibleColumns(JSON.parse(savedColumns));
+      }
+    }
+  }, [listId]);
   
   useEffect(() => {
     if (user && listId) {
@@ -67,8 +92,45 @@ export function TaskTable({ listId }: TaskTableProps) {
   }
 
   const doneStageId = stages.find(s => s.name.toLowerCase() === 'done')?.id;
+  
+  const handleColumnVisibilityChange = (columnId: Column) => {
+    const newVisibleColumns = visibleColumns.includes(columnId)
+      ? visibleColumns.filter(id => id !== columnId)
+      : [...visibleColumns, columnId];
+    setVisibleColumns(newVisibleColumns);
+    localStorage.setItem(`table-columns-${listId}`, JSON.stringify(newVisibleColumns));
+  };
+  
+  const columnsToRender = useMemo(() => {
+    return allColumns.filter(c => visibleColumns.includes(c.id));
+  }, [visibleColumns]);
 
   return (
+    <>
+    <div className="flex justify-end mb-4">
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    <Eye className="mr-2 h-4 w-4" />
+                    View
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {allColumns.map(column => (
+                     <DropdownMenuCheckboxItem
+                        key={column.id}
+                        checked={visibleColumns.includes(column.id)}
+                        onCheckedChange={() => handleColumnVisibilityChange(column.id)}
+                        disabled={column.id === 'title'}
+                     >
+                        {column.label}
+                    </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    </div>
     <div className="border rounded-lg">
       <Table>
         <TableHeader>
@@ -76,10 +138,9 @@ export function TaskTable({ listId }: TaskTableProps) {
             <TableHead className="w-[50px]">
               <Checkbox />
             </TableHead>
-            <TableHead>Task</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Due Date</TableHead>
+            {columnsToRender.map(column => (
+                <TableHead key={column.id}>{column.label}</TableHead>
+            ))}
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -89,19 +150,25 @@ export function TaskTable({ listId }: TaskTableProps) {
               <TableCell>
                 <Checkbox />
               </TableCell>
-              <TableCell className="font-medium">{task.title}</TableCell>
-              <TableCell>
-                <Badge variant={task.status === doneStageId ? 'default' : 'secondary'} className={task.status === doneStageId ? 'bg-green-600/80 text-primary-foreground' : ''}>
-                    {getStageName(task.status)}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                    <Flag className={`w-4 h-4 ${priorityColors[task.priority]}`} />
-                    <span>{task.priority}</span>
-                </div>
-              </TableCell>
-              <TableCell>{task.dueDate.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</TableCell>
+              {columnsToRender.map(column => (
+                 <TableCell key={column.id}>
+                    {column.id === 'title' && <span className="font-medium">{task.title}</span>}
+                    {column.id === 'status' && (
+                        <Badge variant={task.status === doneStageId ? 'default' : 'secondary'} className={task.status === doneStageId ? 'bg-green-600/80 text-primary-foreground' : ''}>
+                            {getStageName(task.status)}
+                        </Badge>
+                    )}
+                    {column.id === 'priority' && (
+                        <div className="flex items-center gap-2">
+                            <Flag className={`w-4 h-4 ${priorityColors[task.priority]}`} />
+                            <span>{task.priority}</span>
+                        </div>
+                    )}
+                    {column.id === 'dueDate' && task.dueDate && moment(task.dueDate.toDate()).format('MMM D, YYYY')}
+                    {column.id === 'tags' && task.tags?.join(', ')}
+                    {column.id === 'createdAt' && task.createdAt && moment(task.createdAt.toDate()).format('MMM D, YYYY')}
+                 </TableCell>
+              ))}
               <TableCell>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -121,5 +188,6 @@ export function TaskTable({ listId }: TaskTableProps) {
         </TableBody>
       </Table>
     </div>
+    </>
   );
 }
