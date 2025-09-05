@@ -78,7 +78,7 @@ export function AppSidebar() {
   const handleAddList = async () => {
     if (!user) return;
     try {
-      const docRef = await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
+      await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
         name: 'Untitled List',
         createdAt: Timestamp.now(),
       });
@@ -86,8 +86,6 @@ export function AppSidebar() {
         title: '✓ List Added',
         description: `"Untitled List" has been added.`,
       });
-      setEditingListId(docRef.id);
-      setEditingListName('Untitled List');
     } catch (e) {
       console.error("Error adding document: ", e);
       toast({
@@ -113,7 +111,7 @@ export function AppSidebar() {
 
     const trimmedName = editingListName.trim();
     if (!trimmedName) {
-      handleDeleteList(editingListId); // Delete if name is empty
+      handleDeleteList(editingListId);
       handleCancelEdit();
       return;
     }
@@ -182,8 +180,8 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
-              <div className="flex items-center w-full justify-between relative group">
-                <CollapsibleTrigger asChild className="w-full">
+              <div className="flex items-center w-full justify-between">
+                 <CollapsibleTrigger asChild className="w-full">
                   <SidebarMenuButton
                     isActive={pathname.startsWith('/dashboard')}
                     tooltip={{ children: "Task Management" }}
@@ -193,10 +191,10 @@ export function AppSidebar() {
                     <ChevronDown className={cn("transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 group-data-[collapsible=icon]:hidden">
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleAddList}>
-                    <PlusCircle className="h-4 w-4" />
-                  </Button>
+                <div className="group-data-[collapsible=icon]:hidden pr-2">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleAddList}>
+                        <PlusCircle className="h-4 w-4" />
+                    </Button>
                 </div>
               </div>
               <CollapsibleContent>
