@@ -96,10 +96,6 @@ export function TaskCard({ task }: TaskCardProps) {
               <span>{task.dueDate.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
           </div>
-          <Avatar className="h-6 w-6">
-            <AvatarImage src="https://picsum.photos/24/24" data-ai-hint="person avatar"/>
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
         </div>
         {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
