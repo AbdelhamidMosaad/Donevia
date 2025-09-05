@@ -156,7 +156,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
             <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex gap-6 h-full items-start"
+                className="flex flex-wrap gap-6 items-start"
             >
             {sortedStages.map((stage, index) => {
                 const isCollapsed = collapsedStages[stage.id];
