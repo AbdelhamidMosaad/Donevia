@@ -102,7 +102,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
             />
             <div className="flex items-center gap-2">
                  <Button onClick={handleSave} disabled={!title.trim() || isSaving} size="sm">
-                    {isSaving ? 'Adding...' : 'Add card'}
+                    Add card
                  </Button>
                  <Button variant="ghost" size="icon" onClick={resetAndClose} className="h-8 w-8">
                     <X className="h-4 w-4" />
