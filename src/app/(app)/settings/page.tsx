@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 
 type Theme = 'light' | 'dark';
 type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
@@ -46,7 +45,6 @@ export default function SettingsPage() {
   const [initialTheme, setInitialTheme] = useState<Theme>('light');
   const [initialFont, setInitialFont] = useState<Font>('inter');
 
-
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
@@ -63,10 +61,12 @@ export default function SettingsPage() {
           if (theme) {
             setSelectedTheme(theme);
             setInitialTheme(theme);
+            applyTheme(theme);
           }
           if (font) {
             setSelectedFont(font);
             setInitialFont(font);
+            applyFont(font);
           }
         }
       };
@@ -75,9 +75,10 @@ export default function SettingsPage() {
   }, [user]);
 
   const applyTheme = (theme: Theme) => {
-    document.body.className = ''; // Clear existing theme classes
+    document.body.className = '';
+    document.body.style.fontFamily = `var(--font-${selectedFont})`;
     if (theme !== 'light') {
-      document.body.classList.add('dark');
+      document.body.classList.add(theme);
     }
   };
 

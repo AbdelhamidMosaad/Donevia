@@ -29,8 +29,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             const { theme, font } = doc.data();
             
             document.body.className = '';
-            if (theme && theme === 'dark') {
-                document.body.classList.add('dark');
+            if (theme) {
+                document.body.classList.add(theme);
             }
 
             if (font) {
