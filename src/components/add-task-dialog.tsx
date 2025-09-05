@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, Timestamp, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, doc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import moment from 'moment';
 import type { Task, Stage } from '@/lib/types';
@@ -140,7 +140,6 @@ export function AddTaskDialog({
             description: `"${title}" has been updated.`,
           });
           onTaskUpdated?.();
-          setTimeout(() => setOpen(false), 500);
       } else {
           const docRef = await addDoc(collection(db, 'users', user.uid, 'tasks'), taskData);
           toast({
@@ -148,9 +147,9 @@ export function AddTaskDialog({
             description: `"${title}" has been added successfully.`,
           });
           onTaskAdded?.(docRef.id);
-          setTimeout(() => setOpen(false), 500);
       }
       setIsSaved(true);
+      setTimeout(() => setOpen(false), 500);
     } catch (e) {
       console.error("Error saving document: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to save task.' });
