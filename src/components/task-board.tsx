@@ -130,6 +130,14 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   const handleFinishCreating = () => {
     setAddingTaskToStage(null);
   };
+  
+  const handleStageClick = (stageId: string, e: React.MouseEvent<HTMLDivElement>) => {
+      // Only trigger if clicking on the background, not on a task card itself
+      if ((e.target as HTMLElement).closest('.task-card-wrapper')) {
+          return;
+      }
+      setAddingTaskToStage(stageId);
+  };
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -163,16 +171,13 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                             <span className="text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5">
                                                 {tasksByColumn[stage.id]?.length || 0}
                                             </span>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAddingTaskToStage(stage.id)}>
-                                                <PlusCircle className="h-4 w-4" />
-                                                <span className="sr-only">Add task</span>
-                                            </Button>
                                         </div>
                                     </div>
                                     <div 
                                         ref={droppableProvided.innerRef}
                                         {...droppableProvided.droppableProps}
-                                        className="p-4 flex-1 overflow-y-auto min-h-[100px]"
+                                        className="p-4 flex-1 overflow-y-auto min-h-[100px] cursor-pointer"
+                                        onClick={(e) => handleStageClick(stage.id, e)}
                                     >
                                         {addingTaskToStage === stage.id && (
                                             <InlineTaskCreator 
@@ -185,12 +190,13 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                             <Draggable key={task.id} draggableId={task.id} index={index}>
                                             {(taskProvided, taskSnapshot) => (
                                                 <div
-                                                ref={taskProvided.innerRef}
-                                                {...taskProvided.draggableProps}
-                                                {...taskProvided.dragHandleProps}
-                                                style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
+                                                    ref={taskProvided.innerRef}
+                                                    {...taskProvided.draggableProps}
+                                                    {...taskProvided.dragHandleProps}
+                                                    style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
+                                                    className="task-card-wrapper"
                                                 >
-                                                <TaskCard task={task} />
+                                                    <TaskCard task={task} />
                                                 </div>
                                             )}
                                             </Draggable>
