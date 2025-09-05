@@ -26,6 +26,7 @@ import {
   HelpCircle,
   PlusCircle,
   Folder,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -36,6 +37,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AddTaskListDialog } from './add-task-list-dialog';
+import { cn } from '@/lib/utils';
 
 interface TaskList {
   id: string;
@@ -80,26 +82,24 @@ export function AppSidebar() {
         <SidebarMenu>
             <SidebarMenuItem>
                 <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
-                    <CollapsibleTrigger asChild>
-                         <div className="flex items-center w-full">
+                    <div className="flex items-center w-full">
+                        <CollapsibleTrigger asChild>
                             <SidebarMenuButton
-                                asChild
                                 isActive={pathname.startsWith('/dashboard')}
                                 tooltip={{ children: "Task Management" }}
                                 className="flex-1"
                             >
-                                <div className="flex items-center w-full" onClick={(e) => e.preventDefault()}>
-                                    <LayoutDashboard />
-                                    <span>Task Management</span>
-                                </div>
+                                <LayoutDashboard />
+                                <span>Task Management</span>
+                                <ChevronDown className={cn("ml-auto transition-transform duration-200", isCollapsibleOpen && "rotate-180")} />
                             </SidebarMenuButton>
-                             <AddTaskListDialog>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto shrink-0 group-data-[collapsible=icon]:hidden">
-                                    <PlusCircle className="h-4 w-4" />
-                                </Button>
-                            </AddTaskListDialog>
-                        </div>
-                    </CollapsibleTrigger>
+                        </CollapsibleTrigger>
+                         <AddTaskListDialog>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto shrink-0 group-data-[collapsible=icon]:hidden absolute right-1 top-1.5">
+                                <PlusCircle className="h-4 w-4" />
+                            </Button>
+                        </AddTaskListDialog>
+                    </div>
                     <CollapsibleContent>
                         <SidebarMenuSub>
                             <SidebarMenuSubItem>
