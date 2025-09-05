@@ -88,8 +88,10 @@ export function AppSidebar() {
                                 isActive={pathname.startsWith('/dashboard')}
                                 tooltip={{ children: "Task Management" }}
                             >
-                                <Folder />
-                                <span>Task Management</span>
+                                <div className="flex items-center gap-2">
+                                    <Folder />
+                                    <span>Task Management</span>
+                                </div>
                                 <ChevronDown className={cn("ml-auto transition-transform duration-200", isCollapsibleOpen && "rotate-180")} />
                             </SidebarMenuButton>
                         </CollapsibleTrigger>
