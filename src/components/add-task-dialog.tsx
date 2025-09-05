@@ -70,8 +70,12 @@ export function AddTaskDialog({
                   const listData = docSnap.data();
                   const listStages = listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || [];
                   setStages(listStages);
-                  if (!defaultStatus && listStages.length > 0) {
-                      setStatus(listStages[0].id);
+                  if (open) { // only set status if dialog is open
+                    if (defaultStatus) {
+                        setStatus(defaultStatus);
+                    } else if (listStages.length > 0) {
+                        setStatus(listStages[0].id);
+                    }
                   }
               }
           });
@@ -81,14 +85,19 @@ export function AddTaskDialog({
   useEffect(() => {
     if (open) {
       setTitle(defaultTitle);
-      setStatus(defaultStatus || (stages.length > 0 ? stages[0].id : undefined));
-      setDueDate(memoizedDefaultDueDate);
-      // Reset other fields
       setDescription('');
+      setDueDate(memoizedDefaultDueDate);
       setPriority('Medium');
       setIsSaving(false);
+       if (defaultStatus) {
+        setStatus(defaultStatus);
+      } else if (stages.length > 0) {
+        setStatus(stages[0].id);
+      } else {
+        setStatus(undefined);
+      }
     }
-  }, [defaultTitle, defaultStatus, memoizedDefaultDueDate, open, stages]);
+  }, [open, defaultTitle, defaultStatus, memoizedDefaultDueDate, stages]);
 
 
   const handleSave = async () => {
@@ -154,7 +163,7 @@ export function AddTaskDialog({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="priority" className="text-right">Priority</Label>
-            <Select onValueChange={(v: Task['priority']) => setPriority(v)} defaultValue={priority}>
+            <Select onValueChange={(v: Task['priority']) => setPriority(v)} value={priority}>
               <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Low">Low</SelectItem>
@@ -166,7 +175,7 @@ export function AddTaskDialog({
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="status" className="text-right">Status</Label>
             <Select onValueChange={(v: Task['status']) => setStatus(v)} value={status}>
-              <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="col-span-3"><SelectValue placeholder="Select a status" /></SelectTrigger>
               <SelectContent>
                 {stages.map(stage => (
                     <SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>
