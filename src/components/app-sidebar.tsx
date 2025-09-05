@@ -71,9 +71,9 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarRail />
-      <SidebarHeader>
+      <SidebarHeader className="px-3">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <DoneviaLogo className="size-7 shrink-0" />
+          <DoneviaLogo className="size-8 shrink-0" />
           <span className="text-lg font-semibold font-headline">Donevia</span>
         </Link>
         <SidebarTrigger className="[&_svg]:size-4 ml-auto" />
@@ -133,7 +133,7 @@ export function AppSidebar() {
               >
                 <Link href={item.href}>
                   {item.icon}
-                  <span>{item.label}</span>
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -146,7 +146,7 @@ export function AppSidebar() {
              <SettingsDialog>
                 <SidebarMenuButton tooltip={{ children: 'Settings' }}>
                     <Settings />
-                    <span>Settings</span>
+                    <span className="group-data-[collapsible=icon]:hidden">Settings</span>
                 </SidebarMenuButton>
              </SettingsDialog>
           </SidebarMenuItem>
@@ -154,7 +154,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild tooltip={{ children: 'Help' }}>
               <Link href="#">
                 <HelpCircle />
-                <span>Help</span>
+                <span className="group-data-[collapsible=icon]:hidden">Help</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

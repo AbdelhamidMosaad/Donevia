@@ -360,7 +360,7 @@ const SidebarHeader = React.forwardRef<
       ref={ref}
       data-sidebar="header"
       className={cn(
-        "flex h-14 items-center gap-2 p-4 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2 [&_span]:group-data-[collapsible=icon]:hidden",
+        "flex h-14 items-center gap-2 p-4 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-4 [&_span]:group-data-[collapsible=icon]:hidden",
         className
       )}
       {...props}
