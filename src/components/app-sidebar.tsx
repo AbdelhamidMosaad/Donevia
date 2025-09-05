@@ -109,11 +109,23 @@ export function AppSidebar() {
   const handleFinishEdit = async () => {
     if (!editingListId || !user) return;
 
+    const originalList = taskLists.find(l => l.id === editingListId);
     const trimmedName = editingListName.trim();
+    
+    // Reset editing state immediately to remove input from UI
+    handleCancelEdit();
+
     if (!trimmedName) {
-      handleDeleteList(editingListId);
-      handleCancelEdit();
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'List name cannot be empty.',
+      });
       return;
+    }
+
+    if (originalList && originalList.name === trimmedName) {
+      return; // No change, so no need to update
     }
 
     const listRef = doc(db, 'users', user.uid, 'taskLists', editingListId);
@@ -130,8 +142,6 @@ export function AppSidebar() {
         title: 'Error',
         description: 'Failed to rename list.',
       });
-    } finally {
-      handleCancelEdit();
     }
   };
 
@@ -180,8 +190,8 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
-              <div className="flex items-center w-full justify-between">
-                 <CollapsibleTrigger asChild className="w-full">
+               <div className="flex items-center w-full justify-between pr-2">
+                 <CollapsibleTrigger asChild className="flex-1">
                   <SidebarMenuButton
                     isActive={pathname.startsWith('/dashboard')}
                     tooltip={{ children: "Task Management" }}
@@ -191,7 +201,7 @@ export function AppSidebar() {
                     <ChevronDown className={cn("transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
-                <div className="group-data-[collapsible=icon]:hidden pr-2">
+                <div className="group-data-[collapsible=icon]:hidden">
                     <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleAddList}>
                         <PlusCircle className="h-4 w-4" />
                     </Button>
@@ -203,7 +213,7 @@ export function AppSidebar() {
                     <SidebarMenuSubItem key={list.id} className="group/sub-item">
                       {editingListId === list.id ? (
                         <div className="flex items-center gap-2 pl-2 py-1">
-                          <Folder className="h-4 w-4" />
+                          <Folder className="h-4 w-4 shrink-0" />
                           <Input
                             ref={inputRef}
                             type="text"
