@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { ChevronLeft, ChevronRight, PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -290,30 +290,30 @@ const SidebarRail = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button">
 >(({ className, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, state } = useSidebar();
+  const Arrow = state === 'expanded' ? ChevronLeft : ChevronRight;
 
   return (
     <button
       ref={ref}
       data-sidebar="rail"
       aria-label="Toggle Sidebar"
-      tabIndex={-1}
       onClick={toggleSidebar}
       title="Toggle Sidebar"
       className={cn(
-        "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
-        "[[data-side=left]_&]:cursor-w-resize [[data-side=right]_&]:cursor-e-resize",
-        "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
-        "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full group-data-[collapsible=offcanvas]:hover:bg-sidebar",
-        "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
-        "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
+        "absolute top-1/2 z-20 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-foreground shadow-sm transition-all ease-linear hover:bg-muted group-data-[side=left]:-right-3 group-data-[side=right]:-left-3 group-data-[side=right]:rotate-180 md:flex",
+        "[[data-side=left][data-state=collapsed]_&]:rotate-180",
+        "group-data-[collapsible=offcanvas]:hidden",
         className
       )}
       {...props}
-    />
-  )
-})
-SidebarRail.displayName = "SidebarRail"
+    >
+        <Arrow className="h-4 w-4" />
+    </button>
+  );
+});
+SidebarRail.displayName = "SidebarRail";
+
 
 const SidebarInset = React.forwardRef<
   HTMLDivElement,

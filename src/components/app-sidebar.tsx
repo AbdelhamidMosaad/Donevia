@@ -10,7 +10,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarTrigger,
   SidebarRail,
   SidebarMenuSub,
   SidebarMenuSubItem,
@@ -30,7 +29,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DoneviaLogo } from './logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -73,7 +71,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarRail />
       <SidebarHeader className="p-3 justify-center">
-         <SidebarTrigger className="[&_svg]:size-4" />
+         {/* SidebarTrigger has been removed from here and integrated into SidebarRail */}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
