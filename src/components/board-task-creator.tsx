@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { addTask } from '@/lib/tasks';
@@ -107,11 +107,10 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                     Add card
                  </Button>
                  <Button variant="ghost" size="icon" onClick={resetAndClose} className="h-8 w-8">
-                    <X className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4" />
                     <span className="sr-only">Cancel</span>
                  </Button>
             </div>
         </div>
     );
 }
-
