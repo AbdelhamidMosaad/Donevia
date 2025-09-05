@@ -72,7 +72,7 @@ export function AppSidebar() {
       <SidebarRail />
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2">
-          <DoneviaLogo className="size-6 shrink-0" />
+          <DoneviaLogo className="size-7 shrink-0" />
           <span className="text-lg font-semibold font-headline">Donevia</span>
         </Link>
         <SidebarTrigger className="[&_svg]:size-4 ml-auto" />
