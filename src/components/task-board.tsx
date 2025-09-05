@@ -126,10 +126,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   if (!user || stages.length === 0) {
       return <div>Loading board...</div>;
   }
-  
-  const handleTaskCreated = () => {
-    setAddingTaskToStage(null);
-  }
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -179,7 +175,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                                 listId={listId}
                                                 stageId={stage.id}
                                                 onCancel={() => setAddingTaskToStage(null)}
-                                                onCreated={handleTaskCreated}
+                                                onCreated={() => setAddingTaskToStage(null)}
                                             />
                                         )}
                                         {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
