@@ -45,7 +45,10 @@ export function AppHeader() {
       <div className="hidden items-center gap-4 md:flex">
         <Link href="/dashboard" className="items-center gap-2 flex">
           <DoneviaLogo className="size-6 shrink-0" />
-          <span className="text-lg font-semibold font-headline">Donevia</span>
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold font-headline leading-none">Donevia</span>
+            <span className="text-xs text-muted-foreground hidden lg:block">Get it done, your way.</span>
+          </div>
         </Link>
       </div>
       <div className="w-full flex-1">
