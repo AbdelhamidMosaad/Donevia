@@ -82,12 +82,11 @@ export function AppSidebar() {
         <SidebarMenu>
             <SidebarMenuItem>
                 <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
-                    <div className="flex items-center w-full">
-                        <CollapsibleTrigger asChild>
+                    <div className="flex items-center w-full relative">
+                        <CollapsibleTrigger asChild className="flex-1">
                             <SidebarMenuButton
                                 isActive={pathname.startsWith('/dashboard')}
                                 tooltip={{ children: "Task Management" }}
-                                className="flex-1"
                             >
                                 <LayoutDashboard />
                                 <span>Task Management</span>
@@ -95,7 +94,7 @@ export function AppSidebar() {
                             </SidebarMenuButton>
                         </CollapsibleTrigger>
                          <AddTaskListDialog>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto shrink-0 group-data-[collapsible=icon]:hidden absolute right-1 top-1.5">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 group-data-[collapsible=icon]:hidden absolute right-1.5 top-1/2 -translate-y-1/2">
                                 <PlusCircle className="h-4 w-4" />
                             </Button>
                         </AddTaskListDialog>
