@@ -18,7 +18,7 @@ import { Search, Settings, LogOut } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useAuth } from '@/hooks/use-auth';
-import Link from 'next/link';
+import { SettingsDialog } from './settings-dialog';
 
 export function AppHeader() {
   const [isClient, setIsClient] = React.useState(false);
@@ -63,12 +63,12 @@ export function AppHeader() {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>{user?.displayName || user?.email}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href="/settings">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-          </DropdownMenuItem>
+          <SettingsDialog>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+            </DropdownMenuItem>
+          </SettingsDialog>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />

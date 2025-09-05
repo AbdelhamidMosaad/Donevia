@@ -10,9 +10,18 @@ import { Button } from '@/components/ui/button';
 import { Check, Sun, Moon, Palette, Type } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 type Theme = 'light' | 'dark';
 type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
@@ -35,10 +44,10 @@ const fonts: { name: Font; label: string; variable: string }[] = [
     { name: 'jetbrains-mono', label: 'JetBrains Mono', variable: 'font-jetbrains-mono' },
 ];
 
-export default function SettingsPage() {
+export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<Theme>('light');
   const [selectedFont, setSelectedFont] = useState<Font>('inter');
   const [isSaving, setIsSaving] = useState(false);
@@ -46,13 +55,7 @@ export default function SettingsPage() {
   const [initialFont, setInitialFont] = useState<Font>('inter');
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
-  
-  useEffect(() => {
-    if (user) {
+    if (user && open) {
       const fetchSettings = async () => {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
         const settingsSnap = await getDoc(settingsRef);
@@ -72,15 +75,15 @@ export default function SettingsPage() {
       };
       fetchSettings();
     }
-  }, [user]);
+  }, [user, open]);
 
   const applyTheme = (theme: Theme) => {
-    const fontToApply = document.body.style.fontFamily || `var(--font-${initialFont})`;
     document.body.className = '';
-    document.body.style.fontFamily = fontToApply;
+    const currentFont = document.body.style.fontFamily;
     if (theme !== 'light') {
       document.body.classList.add(theme);
     }
+    document.body.style.fontFamily = currentFont;
   };
 
   const applyFont = (font: Font) => {
@@ -116,7 +119,7 @@ export default function SettingsPage() {
             title: 'Settings Saved',
             description: 'Your new preferences have been saved.',
         });
-        router.back();
+        setOpen(false);
     } catch (error) {
         console.error("Error saving settings: ", error);
         toast({
@@ -134,84 +137,90 @@ export default function SettingsPage() {
     setSelectedFont(initialFont);
     applyTheme(initialTheme);
     applyFont(initialFont);
-    router.back();
+    setOpen(false);
   };
   
-  if (loading || !user) {
-    return <div>Loading...</div>; // Or a spinner component
+  if (loading) {
+    return null;
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold font-headline">Settings</h1>
-        <p className="text-muted-foreground">Manage your application preferences.</p>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Type /> Typography System</CardTitle>
-          <CardDescription>Choose the font that best suits your reading preference. The change will apply across the entire application.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           <div className="w-full max-w-sm">
-             <Label htmlFor="font-select">Font Family</Label>
-             <Select value={selectedFont} onValueChange={(v: Font) => handleFontChange(v)}>
-                <SelectTrigger id="font-select">
-                    <SelectValue placeholder="Select a font" />
-                </SelectTrigger>
-                <SelectContent>
-                    {fonts.map(font => (
-                        <SelectItem key={font.name} value={font.name}>
-                            <span style={{ fontFamily: `var(--font-${font.name})` }}>{font.label}</span>
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-             </Select>
-           </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Palette/> Theme Engine</CardTitle>
-          <CardDescription>Select a theme to personalize your experience. Your choice will be saved to your profile and applied across the app.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-            {themes.map((theme) => (
-              <div key={theme.name} onClick={() => handleThemeChange(theme.name)} className="cursor-pointer group">
-                <div className={cn(
-                  'rounded-lg border-2 p-2 transition-all',
-                  selectedTheme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
-                )}>
-                  <div className="space-y-1.5 rounded-md p-2 flex flex-col items-center justify-center aspect-square" style={{ backgroundColor: theme.colors.bg }}>
-                     <div className="flex items-center justify-center h-10 w-10 rounded-full mb-2" style={{backgroundColor: theme.colors.secondary}}>
-                        {theme.icon}
-                     </div>
-                     <div className="space-y-1">
-                      <div className="h-1.5 w-12 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
-                      <div className="h-1.5 w-16 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Settings</DialogTitle>
+          <DialogDescription>Manage your application preferences.</DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-6 py-4">
+             <Card>
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Type /> Typography System</CardTitle>
+                <CardDescription>Choose the font that best suits your reading preference.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <div className="w-full max-w-sm">
+                    <Label htmlFor="font-select">Font Family</Label>
+                    <Select value={selectedFont} onValueChange={(v: Font) => handleFontChange(v)}>
+                        <SelectTrigger id="font-select">
+                            <SelectValue placeholder="Select a font" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {fonts.map(font => (
+                                <SelectItem key={font.name} value={font.name}>
+                                    <span style={{ fontFamily: `var(--font-${font.name})` }}>{font.label}</span>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Palette/> Theme Engine</CardTitle>
+                <CardDescription>Select a theme to personalize your experience.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+                    {themes.map((theme) => (
+                    <div key={theme.name} onClick={() => handleThemeChange(theme.name)} className="cursor-pointer group">
+                        <div className={cn(
+                        'rounded-lg border-2 p-2 transition-all',
+                        selectedTheme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
+                        )}>
+                        <div className="space-y-1.5 rounded-md p-2 flex flex-col items-center justify-center aspect-square" style={{ backgroundColor: theme.colors.bg }}>
+                            <div className="flex items-center justify-center h-10 w-10 rounded-full mb-2" style={{backgroundColor: theme.colors.secondary}}>
+                                {theme.icon}
+                            </div>
+                            <div className="space-y-1">
+                            <div className="h-1.5 w-12 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
+                            <div className="h-1.5 w-16 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
+                            </div>
+                        </div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-center gap-2">
+                        {selectedTheme === theme.name && <Check className="h-4 w-4 text-primary" />}
+                        <span className="text-sm font-medium">{theme.label}</span>
+                        </div>
                     </div>
-                  </div>
+                    ))}
                 </div>
-                <div className="mt-2 flex items-center justify-center gap-2">
-                   {selectedTheme === theme.name && <Check className="h-4 w-4 text-primary" />}
-                   <span className="text-sm font-medium">{theme.label}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-       <div className="mt-6 flex justify-end gap-2">
-        <Button onClick={handleCancelChanges} variant="outline" disabled={isSaving}>
-          Cancel
-        </Button>
-        <Button onClick={handleSaveChanges} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
-    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+        <DialogFooter>
+          <Button onClick={handleCancelChanges} variant="outline" disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveChanges} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
