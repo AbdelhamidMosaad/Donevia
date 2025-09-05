@@ -32,6 +32,7 @@ interface AddTaskDialogProps {
   onTaskUpdated?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  defaultDueDate?: Date;
 }
 
 export function AddTaskDialog({
@@ -42,12 +43,12 @@ export function AddTaskDialog({
   onTaskUpdated,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
+  defaultDueDate,
 }: AddTaskDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
   const [stages, setStages] = useState<Stage[]>([]);
 
   const isEditMode = !!task;
@@ -56,9 +57,21 @@ export function AddTaskDialog({
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState<Date>(new Date());
+  const [dueDate, setDueDate] = useState<Date>(defaultDueDate || new Date());
   const [priority, setPriority] = useState<Task['priority']>('Medium');
   const [status, setStatus] = useState<Task['status'] | undefined>();
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setDueDate(defaultDueDate || new Date());
+    setPriority('Medium');
+    if (stages.length > 0) {
+      setStatus(stages[0].id);
+    } else {
+      setStatus(undefined);
+    }
+  }
 
   useEffect(() => {
     if (user && listId) {
@@ -87,24 +100,14 @@ export function AddTaskDialog({
         setPriority(task.priority);
         setStatus(task.status);
       } else {
-        // Reset for new task
-        setTitle('');
-        setDescription('');
-        setDueDate(new Date());
-        setPriority('Medium');
-        if (stages.length > 0) {
-            setStatus(stages[0].id);
-        } else {
-            setStatus(undefined);
-        }
+        resetForm();
       }
       setIsSaving(false);
-      setIsSaved(false);
     }
-  }, [open, task, isEditMode, stages]);
+  }, [open, task, isEditMode, stages, defaultDueDate]);
 
 
-  const handleSave = async () => {
+  const handleSave = async (andAddNew: boolean = false) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
@@ -140,6 +143,7 @@ export function AddTaskDialog({
             description: `"${title}" has been updated.`,
           });
           onTaskUpdated?.();
+          setOpen(false); // Close after editing
       } else {
           const docRef = await addDoc(collection(db, 'users', user.uid, 'tasks'), taskData);
           toast({
@@ -147,9 +151,13 @@ export function AddTaskDialog({
             description: `"${title}" has been added successfully.`,
           });
           onTaskAdded?.(docRef.id);
+          
+          if (andAddNew) {
+            resetForm();
+          } else {
+            setTimeout(() => setOpen(false), 500);
+          }
       }
-      setIsSaved(true);
-      setTimeout(() => setOpen(false), 500);
     } catch (e) {
       console.error("Error saving document: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to save task.' });
@@ -206,11 +214,17 @@ export function AddTaskDialog({
           <DialogClose asChild>
             <Button type="button" variant="secondary">Cancel</Button>
           </DialogClose>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
+          {!isEditMode && (
+            <Button onClick={() => handleSave(true)} disabled={isSaving} variant="outline">
+              {isSaving ? 'Saving...' : 'Save & Add Another'}
+            </Button>
+          )}
+          <Button onClick={() => handleSave(false)} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
