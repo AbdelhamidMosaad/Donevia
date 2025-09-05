@@ -176,7 +176,7 @@ export function AppSidebar() {
   };
 
   const menuItems = [
-    { href: '/notes', icon: <FileText />, label: 'Notes', tooltip: 'Notes' },
+    { href: '/notes', icon: <FileText />, label: 'Sticky Notes', tooltip: 'Sticky Notes' },
     { href: '/whiteboard', icon: <PenSquare />, label: 'Whiteboard', tooltip: 'Whiteboard' },
     { href: '/mind-map', icon: <GitBranch />, label: 'Mind Map', tooltip: 'Mind Map' },
     { href: '/notebooks', icon: <BrainCircuit />, label: 'Notebooks', tooltip: 'Notebooks' },

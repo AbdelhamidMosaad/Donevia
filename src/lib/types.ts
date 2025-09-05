@@ -30,3 +30,12 @@ export type BoardTemplate = {
     name:string;
     stages: { name: string; order: number }[];
 }
+
+export type StickyNote = {
+  id: string;
+  title: string;
+  text: string;
+  color: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
