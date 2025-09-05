@@ -20,9 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
-import { useRouter } from 'next/navigation';
 
 type Theme = 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
 type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
@@ -51,7 +49,6 @@ const fonts: { name: Font; label: string; variable: string }[] = [
 export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<Theme>('light');
   const [selectedFont, setSelectedFont] = useState<Font>('inter');
@@ -81,11 +78,13 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
       fetchSettings();
     }
   }, [user, open]);
-
+  
   const applyTheme = (theme: Theme) => {
     const body = document.body;
     const currentFont = body.style.fontFamily;
-    body.className = ''; // Reset classes first
+    // Remove only theme-related classes
+    body.className = body.className.split(' ').filter(c => !c.startsWith('theme-') && c !== 'light' && c !== 'dark').join(' ');
+    
     if (theme) {
       body.classList.add(theme);
     }
@@ -125,7 +124,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             title: 'Settings Saved',
             description: 'Your new preferences have been saved.',
         });
-        setOpen(false);
+        setOpen(false); // Close dialog on success
     } catch (error) {
         console.error("Error saving settings: ", error);
         toast({
@@ -134,7 +133,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             description: 'Failed to save your settings. Please try again.',
         });
     } finally {
-        setIsSaving(false);
+        setIsSaving(false); // Reset button state
     }
   };
 
@@ -146,12 +145,19 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     setOpen(false);
   };
   
+  const onOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+        handleCancelChanges();
+    }
+    setOpen(isOpen);
+  }
+
   if (loading) {
     return null;
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
