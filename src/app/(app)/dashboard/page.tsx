@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table } from 'lucide-react';
-import { AiTaskSuggester } from '@/components/ai-task-suggester';
 import { TaskCalendar } from '@/components/task-calendar';
 import { TaskList } from '@/components/task-list';
 import { TaskBoard } from '@/components/task-board';
@@ -42,10 +41,6 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  const userGoal = "Launch the new version of the Donevia productivity app by the end of the quarter.";
-  const currentTasks = tasks
-    .filter(t => t.status === 'In Progress' || t.status === 'To Do')
-    .map(t => ({ id: t.id, title: t.title }));
     
   if (loading || !user) {
     return <div>Loading...</div>; // Or a spinner component
@@ -87,7 +82,6 @@ export default function DashboardPage() {
                 <CalendarIcon className="h-4 w-4" />
               </ToggleGroupItem>
             </ToggleGroup>
-          <AiTaskSuggester currentTasks={currentTasks} userGoal={userGoal} />
           <AddTaskDialog>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />

@@ -46,11 +46,6 @@ export default function Home() {
       description: 'Create intuitive mind maps to visualize your ideas and strategies.'
     },
     {
-      icon: <BotMessageSquare className="h-8 w-8 text-primary" />,
-      title: 'AI Task Suggestions',
-      description: 'Get smart, in-context suggestions for related or prerequisite tasks.'
-    },
-    {
       icon: <BrainCircuit className="h-8 w-8 text-primary" />,
       title: 'Notebooks',
       description: 'Organize your notes into notebooks, sections, and pages, just like OneNote.'
