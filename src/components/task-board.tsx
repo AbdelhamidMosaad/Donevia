@@ -116,7 +116,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
         if (a.createdAt && b.createdAt) {
           return a.createdAt.toMillis() - b.createdAt.toMillis();
         }
-        // Fallback if createdAt is not available on one of the tasks
         if (a.createdAt) return -1;
         if (b.createdAt) return 1;
         return 0;
@@ -126,6 +125,10 @@ export function TaskBoard({ listId }: TaskBoardProps) {
 
   if (!user || stages.length === 0) {
       return <div>Loading board...</div>;
+  }
+  
+  const handleTaskCreated = () => {
+    setAddingTaskToStage(null);
   }
 
   return (
@@ -176,7 +179,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                                 listId={listId}
                                                 stageId={stage.id}
                                                 onCancel={() => setAddingTaskToStage(null)}
-                                                onCreated={() => setAddingTaskToStage(null)}
+                                                onCreated={handleTaskCreated}
                                             />
                                         )}
                                         {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (

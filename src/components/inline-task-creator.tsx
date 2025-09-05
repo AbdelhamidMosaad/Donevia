@@ -53,8 +53,6 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
         } catch (error) {
             toast({ variant: 'destructive', title: 'Failed to create task' });
             onCancel();
-        } finally {
-            // No need to set isSaving back to false, as the component will unmount.
         }
     };
 
