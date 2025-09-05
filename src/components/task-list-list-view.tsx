@@ -36,7 +36,7 @@ export function TaskListListView({ taskLists }: TaskListListViewProps) {
           {taskLists.map(list => (
             <TableRow key={list.id}>
               <TableCell>
-                <Link href={`/dashboard/list/${list.id}`} className="flex items-center gap-2 font-medium text-primary hover:underline">
+                <Link href={`/dashboard/lists/${list.id}`} className="flex items-center gap-2 font-medium text-primary hover:underline">
                     <Folder className="h-4 w-4" />
                     {list.name}
                 </Link>

@@ -2,87 +2,78 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import type { TaskList } from '@/lib/types';
-import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { TaskListCardView } from '@/components/task-list-card-view';
-import { TaskListListView } from '@/components/task-list-list-view';
-import { useToast } from '@/hooks/use-toast';
+import type { Task } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowRight, Clock, Flag, PlusSquare, Folder } from 'lucide-react';
+import moment from 'moment';
 
-
-type View = 'card' | 'list';
+function TaskItem({ task }: { task: Task }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b">
+        <Link href={`/dashboard/lists/${task.listId}`}>
+            <p className="font-medium hover:underline">{task.title}</p>
+        </Link>
+      <span className="text-sm text-muted-foreground">
+        {moment(task.dueDate.toDate()).format('MMM D')}
+      </span>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
-  const [view, setView] = useState<View>('card');
-  const [taskLists, setTaskLists] = useState<TaskList[]>([]);
-  
+  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [highPriorityTasks, setHighPriorityTasks] = useState<Task[]>([]);
+  const [dueSoonTasks, setDueSoonTasks] = useState<Task[]>([]);
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
     }
   }, [user, loading, router]);
-  
-  useEffect(() => {
-    if (user) {
-      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-      getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists() && docSnap.data().taskListView) {
-          setView(docSnap.data().taskListView);
-        }
-      });
-    }
-  }, [user]);
 
   useEffect(() => {
     if (user) {
-      const q = query(collection(db, 'users', user.uid, 'taskLists'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const listsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TaskList));
-        setTaskLists(listsData);
+      // Recent Tasks
+      const recentQuery = query(collection(db, 'users', user.uid, 'tasks'), orderBy('createdAt', 'desc'), limit(5));
+      const unsubscribeRecent = onSnapshot(recentQuery, (snapshot) => {
+        setRecentTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
       });
-      return () => unsubscribe();
+
+      // High Priority Tasks
+      const priorityQuery = query(collection(db, 'users', user.uid, 'tasks'), where('priority', '==', 'High'), limit(5));
+      const unsubscribePriority = onSnapshot(priorityQuery, (snapshot) => {
+        setHighPriorityTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
+      });
+
+      // Due Soon Tasks (e.g., within next 7 days)
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+      const dueSoonQuery = query(
+        collection(db, 'users', user.uid, 'tasks'), 
+        where('dueDate', '>=', new Date()),
+        where('dueDate', '<=', sevenDaysFromNow), 
+        orderBy('dueDate', 'asc'), 
+        limit(5)
+      );
+      const unsubscribeDueSoon = onSnapshot(dueSoonQuery, (snapshot) => {
+        setDueSoonTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
+      });
+
+      return () => {
+        unsubscribeRecent();
+        unsubscribePriority();
+        unsubscribeDueSoon();
+      };
     }
   }, [user]);
-
-  const handleViewChange = (newView: View) => {
-    if (newView) {
-        setView(newView);
-        if (user) {
-            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            setDoc(settingsRef, { taskListView: newView }, { merge: true });
-        }
-    }
-  }
-
-  const handleAddList = async () => {
-    if (!user) return;
-    try {
-      const docRef = await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
-        name: 'Untitled List',
-        createdAt: Timestamp.now(),
-      });
-      toast({
-        title: '✓ List Added',
-        description: `"Untitled List" has been added.`,
-      });
-      router.push(`/dashboard/list/${docRef.id}`);
-    } catch (e) {
-      console.error("Error adding document: ", e);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to add task list. Please try again.',
-      });
-    }
-  };
 
   if (loading || !user) {
     return <div>Loading...</div>;
@@ -90,34 +81,48 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-            <h1 className="text-3xl font-bold font-headline">Task Lists</h1>
-            <p className="text-muted-foreground">Organize your tasks into lists.</p>
+        <div className="mb-6">
+            <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
+            <p className="text-muted-foreground">Here’s a quick overview of your workspace.</p>
         </div>
-        <div className="flex items-center gap-2">
-           <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task list view">
-              <ToggleGroupItem value="card" aria-label="Card view">
-                <LayoutGrid className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="list" aria-label="List view">
-                <List className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
-            <Button onClick={handleAddList}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New List
-            </Button>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2"><PlusSquare /> Recently Created</CardTitle>
+                    <Button variant="ghost" size="sm" asChild>
+                        <Link href="/dashboard/lists">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    {recentTasks.length > 0 ? recentTasks.map(task => <TaskItem key={task.id} task={task} />) : <p className="text-muted-foreground text-sm">No recent tasks.</p>}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2"><Flag /> High Priority</CardTitle>
+                     <Button variant="ghost" size="sm" asChild>
+                        <Link href="/dashboard/lists">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    {highPriorityTasks.length > 0 ? highPriorityTasks.map(task => <TaskItem key={task.id} task={task} />) : <p className="text-muted-foreground text-sm">No high priority tasks.</p>}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2"><Clock /> Due Soon</CardTitle>
+                     <Button variant="ghost" size="sm" asChild>
+                        <Link href="/dashboard/lists">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                     {dueSoonTasks.length > 0 ? dueSoonTasks.map(task => <TaskItem key={task.id} task={task} />) : <p className="text-muted-foreground text-sm">No tasks due soon.</p>}
+                </CardContent>
+            </Card>
         </div>
-      </div>
-      
-      <div className="flex-1">
-        {view === 'card' ? (
-          <TaskListCardView taskLists={taskLists} />
-        ) : (
-          <TaskListListView taskLists={taskLists} />
-        )}
-      </div>
     </div>
   );
 }

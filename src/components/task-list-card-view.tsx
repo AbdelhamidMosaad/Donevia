@@ -23,7 +23,7 @@ export function TaskListCardView({ taskLists }: TaskListCardViewProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {taskLists.map(list => (
-        <Link key={list.id} href={`/dashboard/list/${list.id}`} passHref>
+        <Link key={list.id} href={`/dashboard/lists/${list.id}`} passHref>
           <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-headline">

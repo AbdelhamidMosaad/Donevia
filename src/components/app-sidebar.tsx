@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
+  LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -189,18 +190,31 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/dashboard'}
+                    tooltip={{ children: "Dashboard" }}
+                >
+                    <Link href="/dashboard">
+                        <LayoutDashboard />
+                        <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+
           <SidebarMenuItem>
             <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
                <div className="flex items-center w-full justify-between pr-2">
                  <CollapsibleTrigger asChild className="flex-1">
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname.startsWith('/dashboard')}
-                    tooltip={{ children: "Task Management" }}
+                    isActive={pathname.startsWith('/dashboard/lists')}
+                    tooltip={{ children: "Task Lists" }}
                   >
-                    <Link href="/dashboard">
+                    <Link href="/dashboard/lists">
                       <Folder />
-                      <span className="group-data-[collapsible=icon]:hidden flex-1 text-left">Task Management</span>
+                      <span className="group-data-[collapsible=icon]:hidden flex-1 text-left">Task Lists</span>
                       <ChevronDown className={cn("transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
                     </Link>
                   </SidebarMenuButton>
@@ -230,8 +244,8 @@ export function AppSidebar() {
                         </div>
                       ) : (
                         <div className="flex items-center w-full">
-                           <SidebarMenuSubButton asChild isActive={pathname === `/dashboard/list/${list.id}`} className="flex-1">
-                              <Link href={`/dashboard/list/${list.id}`}>
+                           <SidebarMenuSubButton asChild isActive={pathname === `/dashboard/lists/${list.id}`} className="flex-1">
+                              <Link href={`/dashboard/lists/${list.id}`}>
                                   <Folder className="h-4 w-4" />
                                   <span>{list.name}</span>
                               </Link>
