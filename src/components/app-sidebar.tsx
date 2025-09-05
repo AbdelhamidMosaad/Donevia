@@ -77,23 +77,24 @@ export function AppSidebar() {
         <SidebarMenu>
             <SidebarMenuItem>
                 <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
-                    <div className="flex items-center w-full justify-between">
-                        <CollapsibleTrigger asChild>
+                    <div className="flex items-center w-full justify-between relative">
+                        <CollapsibleTrigger asChild className="w-full">
                             <SidebarMenuButton
                                 isActive={pathname.startsWith('/dashboard')}
                                 tooltip={{ children: "Task Management" }}
-                                className="group-data-[collapsible=icon]:w-8 pr-12"
                             >
                                 <Folder />
                                 <span className="group-data-[collapsible=icon]:hidden flex-1 text-left">Task Management</span>
-                                <ChevronDown className={cn("absolute right-2 top-1/2 -translate-y-1/2 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
+                                <ChevronDown className={cn("transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
                             </SidebarMenuButton>
                         </CollapsibleTrigger>
-                         <AddTaskListDialog>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 group-data-[collapsible=icon]:hidden absolute right-10 top-1/2 -translate-y-1/2">
-                                <PlusCircle className="h-4 w-4" />
-                            </Button>
-                        </AddTaskListDialog>
+                         <div className="absolute right-8 top-1/2 -translate-y-1/2 group-data-[collapsible=icon]:hidden">
+                            <AddTaskListDialog>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                                    <PlusCircle className="h-4 w-4" />
+                                </Button>
+                            </AddTaskListDialog>
+                         </div>
                     </div>
                     <CollapsibleContent>
                         <SidebarMenuSub>
