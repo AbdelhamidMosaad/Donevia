@@ -11,12 +11,14 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { StickyNote } from '@/lib/types';
 import { StickyNoteCard } from '@/components/sticky-note-card';
+import { StickyNoteDialog } from '@/components/sticky-note-dialog';
 
 export default function StickyNotesPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [notes, setNotes] = useState<StickyNote[]>([]);
+  const [editingNote, setEditingNote] = useState<StickyNote | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -43,6 +45,7 @@ export default function StickyNotesPage() {
         title: 'New Note',
         text: '',
         color: '#fff176', // Default yellow
+        textColor: '#000000', // Default black text
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
@@ -59,6 +62,14 @@ export default function StickyNotesPage() {
       });
     }
   };
+
+  const handleNoteClick = (note: StickyNote) => {
+    setEditingNote(note);
+  };
+  
+  const handleDialogClose = () => {
+    setEditingNote(null);
+  }
 
   if (loading || !user) {
     return <div>Loading...</div>;
@@ -86,9 +97,21 @@ export default function StickyNotesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {notes.map(note => (
-            <StickyNoteCard key={note.id} note={note} />
+            <StickyNoteCard key={note.id} note={note} onClick={() => handleNoteClick(note)} />
           ))}
         </div>
+      )}
+
+      {editingNote && (
+        <StickyNoteDialog 
+            note={editingNote} 
+            isOpen={!!editingNote} 
+            onOpenChange={(isOpen) => {
+                if (!isOpen) {
+                    handleDialogClose();
+                }
+            }} 
+        />
       )}
     </div>
   );

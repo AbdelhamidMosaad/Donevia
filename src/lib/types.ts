@@ -36,6 +36,7 @@ export type StickyNote = {
   title: string;
   text: string;
   color: string;
+  textColor: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
