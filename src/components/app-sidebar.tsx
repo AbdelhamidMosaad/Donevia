@@ -25,18 +25,22 @@ import {
   PlusCircle,
   Folder,
   ChevronDown,
+  MoreHorizontal,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { collection, onSnapshot, query, orderBy, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, addDoc, Timestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 import { SettingsDialog } from './settings-dialog';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 interface TaskList {
   id: string;
@@ -49,16 +53,16 @@ export function AppSidebar() {
   const { toast } = useToast();
   const [taskLists, setTaskLists] = React.useState<TaskList[]>([]);
   const [isCollapsibleOpen, setIsCollapsibleOpen] = React.useState(true);
-  const [isCreating, setIsCreating] = React.useState(false);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [newListName, setNewListName] = React.useState('');
+  const [editingListId, setEditingListId] = React.useState<string | null>(null);
+  const [editingListName, setEditingListName] = React.useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
-    if (isCreating && inputRef.current) {
+    if (editingListId && inputRef.current) {
       inputRef.current.focus();
+      inputRef.current.select();
     }
-  }, [isCreating]);
+  }, [editingListId]);
 
   React.useEffect(() => {
     if (user) {
@@ -70,59 +74,96 @@ export function AppSidebar() {
       return () => unsubscribe();
     }
   }, [user]);
-  
-  const handleAddList = () => {
-    if (isCreating) return;
-    setIsCreating(true);
-  }
 
-  const handleFinishCreate = async () => {
-    if (isSaving || !isCreating) return;
-
-    const trimmedName = newListName.trim();
-    if (!user || !trimmedName) {
-      handleCancelCreate();
-      return;
-    }
-    
-    setIsSaving(true);
+  const handleAddList = async () => {
+    if (!user) return;
     try {
-      await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
-        name: trimmedName,
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
+        name: 'Untitled List',
         createdAt: Timestamp.now(),
       });
       toast({
         title: '✓ List Added',
-        description: `"${trimmedName}" has been added successfully.`,
+        description: `"Untitled List" has been added.`,
       });
+      setEditingListId(docRef.id);
+      setEditingListName('Untitled List');
     } catch (e) {
-       console.error("Error adding document: ", e);
-       toast({
+      console.error("Error adding document: ", e);
+      toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to add task list. Please try again.',
       });
-    } finally {
-      setNewListName('');
-      setIsCreating(false);
-      setIsSaving(false);
     }
   };
-  
-  const handleCancelCreate = () => {
-    setNewListName('');
-    setIsCreating(false);
-  }
+
+  const handleStartEdit = (list: TaskList) => {
+    setEditingListId(list.id);
+    setEditingListName(list.name);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingListId(null);
+    setEditingListName('');
+  };
+
+  const handleFinishEdit = async () => {
+    if (!editingListId || !user) return;
+
+    const trimmedName = editingListName.trim();
+    if (!trimmedName) {
+      handleDeleteList(editingListId); // Delete if name is empty
+      handleCancelEdit();
+      return;
+    }
+
+    const listRef = doc(db, 'users', user.uid, 'taskLists', editingListId);
+    try {
+      await updateDoc(listRef, { name: trimmedName });
+      toast({
+        title: '✓ List Updated',
+        description: `List renamed to "${trimmedName}".`,
+      });
+    } catch (e) {
+      console.error("Error updating document: ", e);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to rename list.',
+      });
+    } finally {
+      handleCancelEdit();
+    }
+  };
+
+  const handleDeleteList = async (listId: string) => {
+    if (!user) return;
+    const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
+    try {
+      await deleteDoc(listRef);
+      toast({
+        title: '✓ List Deleted',
+      });
+    } catch (e) {
+      console.error("Error deleting document: ", e);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete list.',
+      });
+    }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleFinishCreate();
+      handleFinishEdit();
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      handleCancelCreate();
+      handleCancelEdit();
     }
-  }
+  };
 
   const menuItems = [
     { href: '/notes', icon: <FileText />, label: 'Notes', tooltip: 'Notes' },
@@ -139,58 +180,75 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-            <SidebarMenuItem>
-                <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
-                    <div className="flex items-center w-full justify-between relative">
-                        <CollapsibleTrigger asChild className="w-full">
-                            <SidebarMenuButton
-                                isActive={pathname.startsWith('/dashboard')}
-                                tooltip={{ children: "Task Management" }}
-                            >
-                                <Folder />
-                                <span className="group-data-[collapsible=icon]:hidden flex-1 text-left">Task Management</span>
-                                <ChevronDown className={cn("transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
-                            </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                         <div className="absolute right-8 top-1/2 -translate-y-1/2 group-data-[collapsible=icon]:hidden">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleAddList}>
-                                <PlusCircle className="h-4 w-4" />
-                            </Button>
-                         </div>
-                    </div>
-                    <CollapsibleContent>
-                        <SidebarMenuSub>
-                             {taskLists.map(list => (
-                                <SidebarMenuSubItem key={list.id}>
-                                    <SidebarMenuSubButton asChild isActive={pathname === `/dashboard/list/${list.id}`}>
-                                        <Link href={`/dashboard/list/${list.id}`}>
-                                            <Folder className="h-4 w-4" />
-                                            <span>{list.name}</span>
-                                        </Link>
-                                    </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                            ))}
-                            {isCreating && (
-                              <SidebarMenuSubItem>
-                                <div className="flex items-center gap-2 pl-2 py-1">
+          <SidebarMenuItem>
+            <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
+              <div className="flex items-center w-full justify-between relative group">
+                <CollapsibleTrigger asChild className="w-full">
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith('/dashboard')}
+                    tooltip={{ children: "Task Management" }}
+                  >
+                    <Folder />
+                    <span className="group-data-[collapsible=icon]:hidden flex-1 text-left">Task Management</span>
+                    <ChevronDown className={cn("transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 group-data-[collapsible=icon]:hidden">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleAddList}>
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {taskLists.map(list => (
+                    <SidebarMenuSubItem key={list.id} className="group/sub-item">
+                      {editingListId === list.id ? (
+                        <div className="flex items-center gap-2 pl-2 py-1">
+                          <Folder className="h-4 w-4" />
+                          <Input
+                            ref={inputRef}
+                            type="text"
+                            value={editingListName}
+                            onChange={(e) => setEditingListName(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onBlur={handleFinishEdit}
+                            className="h-7 text-sm"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center w-full">
+                           <SidebarMenuSubButton asChild isActive={pathname === `/dashboard/list/${list.id}`} className="flex-1">
+                              <Link href={`/dashboard/list/${list.id}`}>
                                   <Folder className="h-4 w-4" />
-                                  <Input 
-                                    ref={inputRef}
-                                    type="text"
-                                    value={newListName}
-                                    onChange={(e) => setNewListName(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    onBlur={handleFinishCreate}
-                                    placeholder="New list name"
-                                    className="h-7 text-sm"
-                                  />
-                                </div>
-                              </SidebarMenuSubItem>
-                            )}
-                        </SidebarMenuSub>
-                    </CollapsibleContent>
-                </Collapsible>
-            </SidebarMenuItem>
+                                  <span>{list.name}</span>
+                              </Link>
+                          </SidebarMenuSubButton>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover/sub-item:opacity-100">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onSelect={() => handleStartEdit(list)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Rename</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handleDeleteList(list.id)} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
+                    </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </Collapsible>
+          </SidebarMenuItem>
 
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
