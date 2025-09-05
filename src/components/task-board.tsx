@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useToast } from '@/hooks/use-toast';
 import { BoardSettings } from './board-settings';
-import { InlineTaskCreator } from './inline-task-creator';
+import { BoardTaskCreator } from './board-task-creator';
 
 interface TaskBoardProps {
   listId: string;
@@ -27,8 +27,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
-  const [addingTaskToStage, setAddingTaskToStage] = useState<string | null>(null);
-
+  
   useEffect(() => {
     if (user && listId) {
       const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
@@ -38,6 +37,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
           if (data.stages && data.stages.length > 0) {
             setStages(data.stages.sort((a: any, b: any) => a.order - b.order));
           } else {
+            // Set default stages if none exist
             await updateDoc(listRef, { stages: defaultStages });
             setStages(defaultStages);
           }
@@ -125,18 +125,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
       return <div>Loading board...</div>;
   }
 
-  const handleFinishCreating = () => {
-    setAddingTaskToStage(null);
-  };
-  
-  const handleStageClick = (stageId: string, e: React.MouseEvent<HTMLDivElement>) => {
-      // Only trigger if clicking on the background, not on a task card itself
-      if ((e.target as HTMLElement).closest('.task-card-wrapper')) {
-          return;
-      }
-      setAddingTaskToStage(stageId);
-  };
-
   return (
     <DragDropContext onDragEnd={onDragEnd}>
         <div className="mb-4 flex justify-end">
@@ -174,33 +162,27 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                     <div 
                                         ref={droppableProvided.innerRef}
                                         {...droppableProvided.droppableProps}
-                                        className={`p-4 flex-1 overflow-y-auto min-h-[100px] ${addingTaskToStage ? '' : 'cursor-pointer'}`}
-                                        onClick={(e) => handleStageClick(stage.id, e)}
+                                        className="p-4 flex-1 overflow-y-auto min-h-[100px]"
                                     >
-                                        {addingTaskToStage === stage.id ? (
-                                            <InlineTaskCreator 
-                                                listId={listId}
-                                                stageId={stage.id}
-                                                onFinish={handleFinishCreating}
-                                            />
-                                        ) : (
-                                          tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
-                                            <Draggable key={task.id} draggableId={task.id} index={index}>
-                                            {(taskProvided, taskSnapshot) => (
-                                                <div
-                                                    ref={taskProvided.innerRef}
-                                                    {...taskProvided.draggableProps}
-                                                    {...taskProvided.dragHandleProps}
-                                                    style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
-                                                    className="task-card-wrapper"
-                                                >
-                                                    <TaskCard task={task} />
-                                                </div>
-                                            )}
-                                            </Draggable>
-                                          ))
-                                        )}
-                                        {addingTaskToStage !== stage.id && droppableProvided.placeholder}
+                                        {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
+                                          <Draggable key={task.id} draggableId={task.id} index={index}>
+                                          {(taskProvided, taskSnapshot) => (
+                                              <div
+                                                  ref={taskProvided.innerRef}
+                                                  {...taskProvided.draggableProps}
+                                                  {...taskProvided.dragHandleProps}
+                                                  style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
+                                                  className="task-card-wrapper"
+                                              >
+                                                  <TaskCard task={task} />
+                                              </div>
+                                          )}
+                                          </Draggable>
+                                        ))}
+                                        {droppableProvided.placeholder}
+                                    </div>
+                                    <div className="p-2 border-t">
+                                      <BoardTaskCreator listId={listId} stageId={stage.id} />
                                     </div>
                                 </div>
                                 )}
