@@ -76,7 +76,7 @@ export function AppSidebar() {
     setIsCreating(true);
   }
 
-  const handleCreateList = async () => {
+  const handleFinishCreate = async () => {
     if (isSaving) return;
 
     if (!user || !newListName.trim()) {
@@ -108,13 +108,17 @@ export function AppSidebar() {
       setIsSaving(false);
     }
   };
+  
+  const handleCancelCreate = () => {
+    setNewListName('');
+    setIsCreating(false);
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleCreateList();
+      handleFinishCreate();
     } else if (e.key === 'Escape') {
-      setNewListName('');
-      setIsCreating(false);
+      handleCancelCreate();
     }
   }
 
@@ -174,7 +178,7 @@ export function AppSidebar() {
                                     value={newListName}
                                     onChange={(e) => setNewListName(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    onBlur={handleCreateList}
+                                    onBlur={handleFinishCreate}
                                     placeholder="New list name"
                                     className="h-7 text-sm"
                                   />
