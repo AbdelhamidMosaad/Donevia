@@ -25,18 +25,18 @@ import {
   PlusCircle,
   Folder,
   ChevronDown,
-  LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { AddTaskListDialog } from './add-task-list-dialog';
 import { cn } from '@/lib/utils';
 import { SettingsDialog } from './settings-dialog';
+import { Input } from './ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 interface TaskList {
   id: string;
@@ -46,8 +46,18 @@ interface TaskList {
 export function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [taskLists, setTaskLists] = React.useState<TaskList[]>([]);
   const [isCollapsibleOpen, setIsCollapsibleOpen] = React.useState(true);
+  const [isCreating, setIsCreating] = React.useState(false);
+  const [newListName, setNewListName] = React.useState('');
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (isCreating && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isCreating]);
 
   React.useEffect(() => {
     if (user) {
@@ -59,6 +69,51 @@ export function AppSidebar() {
       return () => unsubscribe();
     }
   }, [user]);
+  
+  const handleAddList = () => {
+    setIsCreating(true);
+  }
+
+  const handleCreateList = async () => {
+    if (!user || !newListName.trim()) {
+      if (!newListName.trim()) {
+        // If name is empty, just cancel creation
+        setNewListName('');
+        setIsCreating(false);
+      }
+      return;
+    }
+    
+    try {
+      await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
+        name: newListName,
+        createdAt: Timestamp.now(),
+      });
+      toast({
+        title: '✓ List Added',
+        description: `"${newListName}" has been added successfully.`,
+      });
+    } catch (e) {
+       console.error("Error adding document: ", e);
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to add task list. Please try again.',
+      });
+    } finally {
+      setNewListName('');
+      setIsCreating(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleCreateList();
+    } else if (e.key === 'Escape') {
+      setNewListName('');
+      setIsCreating(false);
+    }
+  }
 
   const menuItems = [
     { href: '/notes', icon: <FileText />, label: 'Notes', tooltip: 'Notes' },
@@ -89,11 +144,9 @@ export function AppSidebar() {
                             </SidebarMenuButton>
                         </CollapsibleTrigger>
                          <div className="absolute right-8 top-1/2 -translate-y-1/2 group-data-[collapsible=icon]:hidden">
-                            <AddTaskListDialog>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                                    <PlusCircle className="h-4 w-4" />
-                                </Button>
-                            </AddTaskListDialog>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleAddList}>
+                                <PlusCircle className="h-4 w-4" />
+                            </Button>
                          </div>
                     </div>
                     <CollapsibleContent>
@@ -108,6 +161,23 @@ export function AppSidebar() {
                                     </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
                             ))}
+                            {isCreating && (
+                              <SidebarMenuSubItem>
+                                <div className="flex items-center gap-2 pl-2 py-1">
+                                  <Folder className="h-4 w-4" />
+                                  <Input 
+                                    ref={inputRef}
+                                    type="text"
+                                    value={newListName}
+                                    onChange={(e) => setNewListName(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    onBlur={handleCreateList}
+                                    placeholder="New list name"
+                                    className="h-7 text-sm"
+                                  />
+                                </div>
+                              </SidebarMenuSubItem>
+                            )}
                         </SidebarMenuSub>
                     </CollapsibleContent>
                 </Collapsible>
