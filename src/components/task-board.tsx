@@ -10,6 +10,9 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { useToast } from '@/hooks/use-toast';
 import { BoardSettings } from './board-settings';
 import { BoardTaskCreator } from './board-task-creator';
+import { Button } from './ui/button';
+import { ChevronDown, ChevronRight, ChevronsDown, ChevronsRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TaskBoardProps {
   listId: string;
@@ -27,6 +30,37 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+      const storedCollapsedState = localStorage.getItem(`collapsed-stages-${listId}`);
+      if (storedCollapsedState) {
+          setCollapsedStages(JSON.parse(storedCollapsedState));
+      }
+  }, [listId]);
+
+  const updateCollapsedState = (newState: Record<string, boolean>) => {
+      setCollapsedStages(newState);
+      localStorage.setItem(`collapsed-stages-${listId}`, JSON.stringify(newState));
+  }
+
+  const toggleCollapseStage = (stageId: string) => {
+      const newState = {...collapsedStages, [stageId]: !collapsedStages[stageId]};
+      updateCollapsedState(newState);
+  };
+
+  const collapseAll = () => {
+      const newState = stages.reduce((acc, stage) => {
+          acc[stage.id] = true;
+          return acc;
+      }, {} as Record<string, boolean>);
+      updateCollapsedState(newState);
+  };
+
+  const expandAll = () => {
+      updateCollapsedState({});
+  }
+
   
   useEffect(() => {
     if (user && listId) {
@@ -127,7 +161,9 @@ export function TaskBoard({ listId }: TaskBoardProps) {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex justify-end items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={expandAll}><ChevronsRight className="mr-2 h-4 w-4" /> Expand All</Button>
+            <Button variant="ghost" size="sm" onClick={collapseAll}><ChevronsDown className="mr-2 h-4 w-4" /> Collapse All</Button>
              <BoardSettings listId={listId} currentStages={stages} />
         </div>
       <Droppable droppableId="board" direction="horizontal" type="COLUMN">
@@ -135,66 +171,84 @@ export function TaskBoard({ listId }: TaskBoardProps) {
             <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full items-start"
-                style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(280px, 1fr))` }}
+                className="flex gap-6 h-full items-start"
             >
-            {sortedStages.map((stage, index) => (
+            {sortedStages.map((stage, index) => {
+                const isCollapsed = collapsedStages[stage.id];
+                return (
                 <Draggable key={stage.id} draggableId={stage.id} index={index}>
                     {(provided) => (
                         <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            className="flex flex-col"
+                            className={cn(
+                                "flex flex-col transition-all duration-300",
+                                isCollapsed ? 'w-16' : 'w-[280px] shrink-0'
+                            )}
                         >
-                            <Droppable droppableId={stage.id} type="TASK">
+                            <Droppable droppableId={stage.id} type="TASK" isDropDisabled={isCollapsed}>
                                 {(droppableProvided, droppableSnapshot) => (
                                 <div 
-                                    className={`flex flex-col bg-muted/50 rounded-lg transition-colors duration-200 ${droppableSnapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
+                                    className={`flex flex-col bg-muted/50 rounded-lg transition-colors duration-200 h-full ${droppableSnapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
                                 >
-                                    <div {...provided.dragHandleProps} className="flex items-center justify-between p-3 border-b cursor-grab">
-                                        <h2 className="font-semibold font-headline text-lg">{stage.name}</h2>
+                                    <div 
+                                        {...provided.dragHandleProps} 
+                                        className="flex items-center justify-between p-3 border-b cursor-grab"
+                                        onClick={() => toggleCollapseStage(stage.id)}
+                                    >
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5">
+                                            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                            <h2 className={cn("font-semibold font-headline text-lg", isCollapsed && "transform -rotate-90 origin-center whitespace-nowrap")}>
+                                                {!isCollapsed && stage.name}
+                                            </h2>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={cn("text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5", isCollapsed && "transform -rotate-90")}>
                                                 {tasksByColumn[stage.id]?.length || 0}
                                             </span>
                                         </div>
                                     </div>
-                                    <div 
-                                        className="flex-1 overflow-y-auto"
-                                    >
+                                    {!isCollapsed && (
+                                        <>
                                         <div 
-                                            ref={droppableProvided.innerRef}
-                                            {...droppableProvided.droppableProps}
-                                            className="p-2 min-h-[100px]"
+                                            className="flex-1 overflow-y-auto"
                                         >
-                                            {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
-                                            <Draggable key={task.id} draggableId={task.id} index={index}>
-                                            {(taskProvided, taskSnapshot) => (
-                                                <div
-                                                    ref={taskProvided.innerRef}
-                                                    {...taskProvided.draggableProps}
-                                                    {...taskProvided.dragHandleProps}
-                                                    style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
-                                                    className="task-card-wrapper mb-2"
-                                                >
-                                                    <TaskCard task={task} />
-                                                </div>
-                                            )}
-                                            </Draggable>
-                                            ))}
-                                            {droppableProvided.placeholder}
+                                            <div 
+                                                ref={droppableProvided.innerRef}
+                                                {...droppableProvided.droppableProps}
+                                                className="p-2 min-h-[100px]"
+                                            >
+                                                {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
+                                                <Draggable key={task.id} draggableId={task.id} index={index}>
+                                                {(taskProvided, taskSnapshot) => (
+                                                    <div
+                                                        ref={taskProvided.innerRef}
+                                                        {...taskProvided.draggableProps}
+                                                        {...taskProvided.dragHandleProps}
+                                                        style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
+                                                        className="task-card-wrapper mb-2"
+                                                    >
+                                                        <TaskCard task={task} />
+                                                    </div>
+                                                )}
+                                                </Draggable>
+                                                ))}
+                                                {droppableProvided.placeholder}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="p-1 border-t mt-auto">
-                                      <BoardTaskCreator listId={listId} stageId={stage.id} />
-                                    </div>
+                                        <div className="p-1 border-t mt-auto">
+                                          <BoardTaskCreator listId={listId} stageId={stage.id} />
+                                        </div>
+                                        </>
+                                    )}
                                 </div>
                                 )}
                             </Droppable>
                         </div>
                     )}
                 </Draggable>
-            ))}
+                )
+            })}
             {provided.placeholder}
             </div>
         )}
