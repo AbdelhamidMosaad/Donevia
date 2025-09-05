@@ -3,6 +3,7 @@ import type {Metadata} from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { Poppins, Inter, Roboto, Open_Sans, Lato, Source_Sans_3, Nunito, Montserrat, Playfair_Display, JetBrains_Mono } from 'next/font/google';
+import { AuthProvider } from '@/hooks/use-auth-provider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const roboto = Roboto({ weight: ['400', '500', '700'], subsets: ['latin'], variable: '--font-roboto' });
@@ -29,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`antialiased ${inter.variable} ${roboto.variable} ${openSans.variable} ${lato.variable} ${poppins.variable} ${sourceSansPro.variable} ${nunito.variable} ${montserrat.variable} ${playfairDisplay.variable} ${jetbrainsMono.variable}`}>
-        {children}
+        <AuthProvider>
+            {children}
+        </AuthProvider>
         <Toaster />
       </body>
     </html>

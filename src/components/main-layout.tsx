@@ -6,9 +6,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useEffect } from 'react';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -20,33 +18,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    let unsubscribe = () => {};
-    if (user) {
-      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-      unsubscribe = onSnapshot(settingsRef, (doc) => {
-        if (doc.exists() && doc.data()) {
-            const { theme, font } = doc.data();
-            
-            const body = document.body;
-            // Keep existing font style if any, and reset theme classes
-            const currentFontFamily = body.style.fontFamily;
-            body.className = ''; 
-
-            if (theme) {
-              body.classList.add(theme);
-            }
-            
-            if (font) {
-              body.style.fontFamily = `var(--font-${font})`;
-            } else {
-              body.style.fontFamily = 'var(--font-inter)';
-            }
-        }
-      });
-    }
-     return () => unsubscribe();
-  }, [user]);
 
   if (loading || !user) {
     return (

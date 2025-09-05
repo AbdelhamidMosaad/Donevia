@@ -23,6 +23,13 @@ export default function Home() {
       router.push('/dashboard');
     }
   }, [user, router]);
+  
+  useEffect(() => {
+    // Reset any theme styles when on landing page
+    const body = document.body;
+    body.className = '';
+    body.style.fontFamily = 'var(--font-inter)';
+  }, []);
 
   const features = [
     {
