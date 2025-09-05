@@ -17,6 +17,7 @@ interface InlineTaskCreatorProps {
 
 export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: InlineTaskCreatorProps) {
     const [title, setTitle] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -26,6 +27,8 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
     }, []);
 
     const handleSave = async () => {
+        if (isSaving) return;
+
         if (!title.trim()) {
             onCancel();
             return;
@@ -35,6 +38,7 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
             return;
         }
         
+        setIsSaving(true);
         try {
             const docRef = await addTask(user.uid, {
                 title: title.trim(),
@@ -49,6 +53,8 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
         } catch (error) {
             toast({ variant: 'destructive', title: 'Failed to create task' });
             onCancel();
+        } finally {
+            // No need to set isSaving back to false, as the component will unmount.
         }
     };
 
@@ -70,6 +76,7 @@ export function InlineTaskCreator({ listId, stageId, onCancel, onCreated }: Inli
                 onBlur={handleSave}
                 placeholder="New task title..."
                 className="text-sm"
+                disabled={isSaving}
             />
         </div>
     );
