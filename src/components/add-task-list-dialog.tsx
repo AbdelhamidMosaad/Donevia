@@ -31,7 +31,8 @@ export function AddTaskListDialog({ children }: AddTaskListDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState('');
 
-  const handleSave = async () => {
+  const handleSave = async (event?: React.FormEvent<HTMLFormElement>) => {
+    if (event) event.preventDefault();
     if (!user) {
       toast({
         variant: 'destructive',
@@ -56,7 +57,7 @@ export function AddTaskListDialog({ children }: AddTaskListDialogProps) {
         createdAt: Timestamp.now(),
       });
       toast({
-        title: 'Task List Added',
+        title: '✓ List Added',
         description: `"${name}" has been added successfully.`,
       });
       setName('');
@@ -81,20 +82,28 @@ export function AddTaskListDialog({ children }: AddTaskListDialogProps) {
           <DialogTitle>Add New Task List</DialogTitle>
           <DialogDescription>Enter a name for your new task list.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+        <form onSubmit={handleSave}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Name</Label>
+              <Input 
+                id="name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                className="col-span-3"
+                autoFocus
+              />
+            </div>
           </div>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary">Cancel</Button>
-          </DialogClose>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">Cancel</Button>
+            </DialogClose>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? 'Adding...' : 'Add List'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
