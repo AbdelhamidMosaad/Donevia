@@ -94,11 +94,11 @@ export function TaskCard({ task }: TaskCardProps) {
           </DropdownMenu>
         </div>
       </CardHeader>
-      {(task.priority !== 'Medium' || (task.tags && task.tags.length > 0)) &&
+      {(task.priority || (task.tags && task.tags.length > 0)) &&
         <CardContent className="p-3 pt-0">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-                {task.priority !== 'Medium' &&
+                {task.priority &&
                 <div className="flex items-center gap-1" title={task.priority}>
                 {priorityIcons[task.priority]}
                 </div>
