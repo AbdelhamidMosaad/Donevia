@@ -146,7 +146,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   };
   
   const onOpenChange = (isOpen: boolean) => {
-    if (!isOpen) {
+    if (!isOpen && !isSaving) {
         handleCancelChanges();
     }
     setOpen(isOpen);
@@ -236,3 +236,5 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
+
+    
