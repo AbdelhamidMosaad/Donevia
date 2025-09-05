@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -31,9 +32,32 @@ import { usePathname } from 'next/navigation';
 import { DoneviaLogo } from './logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';
+import { useAuth } from '@/hooks/use-auth';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { AddTaskListDialog } from './add-task-list-dialog';
+
+interface TaskList {
+  id: string;
+  name: string;
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const [taskLists, setTaskLists] = React.useState<TaskList[]>([]);
+  const [isCollapsibleOpen, setIsCollapsibleOpen] = React.useState(true);
+
+  React.useEffect(() => {
+    if (user) {
+      const q = query(collection(db, 'users', user.uid, 'taskLists'), orderBy('createdAt'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TaskList));
+        setTaskLists(lists);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   const menuItems = [
     { href: '/notes', icon: <FileText />, label: 'Notes', tooltip: 'Notes' },
@@ -55,7 +79,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarMenu>
             <SidebarMenuItem>
-                <Collapsible className="w-full">
+                <Collapsible className="w-full" open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
                     <CollapsibleTrigger asChild>
                          <div className="flex items-center w-full">
                             <SidebarMenuButton
@@ -64,14 +88,16 @@ export function AppSidebar() {
                                 tooltip={{ children: "Task Management" }}
                                 className="flex-1"
                             >
-                                <Link href="/dashboard">
+                                <div className="flex items-center w-full" onClick={(e) => e.preventDefault()}>
                                     <LayoutDashboard />
                                     <span>Task Management</span>
-                                </Link>
+                                </div>
                             </SidebarMenuButton>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto shrink-0 group-data-[collapsible=icon]:hidden">
-                                <PlusCircle className="h-4 w-4" />
-                            </Button>
+                             <AddTaskListDialog>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto shrink-0 group-data-[collapsible=icon]:hidden">
+                                    <PlusCircle className="h-4 w-4" />
+                                </Button>
+                            </AddTaskListDialog>
                         </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
@@ -84,6 +110,16 @@ export function AppSidebar() {
                                     </Link>
                                 </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
+                             {taskLists.map(list => (
+                                <SidebarMenuSubItem key={list.id}>
+                                    <SidebarMenuSubButton asChild isActive={pathname === `/dashboard/list/${list.id}`}>
+                                        <Link href={`/dashboard/list/${list.id}`}>
+                                            <Folder className="h-3 w-3" />
+                                            <span>{list.name}</span>
+                                        </Link>
+                                    </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                            ))}
                         </SidebarMenuSub>
                     </CollapsibleContent>
                 </Collapsible>
