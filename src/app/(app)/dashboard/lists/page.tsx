@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import type { TaskList } from '@/lib/types';
-import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, writeBatch, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TaskListCardView } from '@/components/task-list-card-view';
 import { TaskListListView } from '@/components/task-list-list-view';
@@ -61,6 +61,42 @@ export default function TaskListsPage() {
         }
     }
   }
+  
+    const handleDeleteList = async (listId: string) => {
+    if (!user) return;
+
+    try {
+      const batch = writeBatch(db);
+
+      // Delete the task list document
+      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
+      batch.delete(listRef);
+
+      // Query for all tasks in that list
+      const tasksRef = collection(db, 'users', user.uid, 'tasks');
+      const q = query(tasksRef, where('listId', '==', listId));
+      const tasksSnapshot = await getDocs(q);
+
+      // Delete all tasks in the list
+      tasksSnapshot.forEach((taskDoc) => {
+        batch.delete(taskDoc.ref);
+      });
+
+      await batch.commit();
+      toast({
+        title: '✓ List Deleted',
+        description: 'The list and all its tasks have been deleted.',
+      });
+    } catch (e) {
+      console.error('Error deleting list and its tasks: ', e);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete task list. Please try again.',
+      });
+    }
+  };
+
 
   const handleAddList = async () => {
     if (!user) return;
@@ -113,9 +149,9 @@ export default function TaskListsPage() {
       
       <div className="flex-1">
         {view === 'card' ? (
-          <TaskListCardView taskLists={taskLists} />
+          <TaskListCardView taskLists={taskLists} onDelete={handleDeleteList} />
         ) : (
-          <TaskListListView taskLists={taskLists} />
+          <TaskListListView taskLists={taskLists} onDelete={handleDeleteList} />
         )}
       </div>
     </div>
