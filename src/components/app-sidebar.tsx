@@ -50,6 +50,7 @@ export function AppSidebar() {
   const [taskLists, setTaskLists] = React.useState<TaskList[]>([]);
   const [isCollapsibleOpen, setIsCollapsibleOpen] = React.useState(true);
   const [isCreating, setIsCreating] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
   const [newListName, setNewListName] = React.useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -71,19 +72,20 @@ export function AppSidebar() {
   }, [user]);
   
   const handleAddList = () => {
+    if (isCreating) return;
     setIsCreating(true);
   }
 
   const handleCreateList = async () => {
+    if (isSaving) return;
+
     if (!user || !newListName.trim()) {
-      if (!newListName.trim()) {
-        // If name is empty, just cancel creation
-        setNewListName('');
-        setIsCreating(false);
-      }
+      setNewListName('');
+      setIsCreating(false);
       return;
     }
     
+    setIsSaving(true);
     try {
       await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
         name: newListName,
@@ -103,6 +105,7 @@ export function AppSidebar() {
     } finally {
       setNewListName('');
       setIsCreating(false);
+      setIsSaving(false);
     }
   };
 
