@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 type Theme = 'light' | 'dark' | 'blue' | 'green' | 'purple';
 
@@ -22,11 +23,18 @@ const themes: { name: Theme; label: string; colors: { bg: string; text: string; 
 ];
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
   const [selectedTheme, setSelectedTheme] = useState<Theme>('light');
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+  
   useEffect(() => {
     if (user) {
       const fetchTheme = async () => {
@@ -39,16 +47,13 @@ export default function SettingsPage() {
       fetchTheme();
     }
   }, [user]);
-  
-  useEffect(() => {
-    document.body.className = '';
-    if (selectedTheme !== 'light') {
-        document.body.classList.add(selectedTheme === 'dark' ? 'dark' : `theme-${selectedTheme}`);
-    }
-  }, [selectedTheme]);
 
   const handleThemeChange = (theme: Theme) => {
     setSelectedTheme(theme);
+    document.body.className = '';
+    if (theme !== 'light') {
+        document.body.classList.add(theme === 'dark' ? 'dark' : `theme-${theme}`);
+    }
   };
 
   const handleSaveChanges = async () => {
@@ -79,6 +84,10 @@ export default function SettingsPage() {
         setIsSaving(false);
     }
   };
+  
+  if (loading || !user) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
 
   return (
     <div className="space-y-6">

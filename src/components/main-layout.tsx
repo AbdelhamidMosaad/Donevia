@@ -1,3 +1,4 @@
+
 'use client';
 
 import { AppHeader } from '@/components/app-header';
@@ -6,7 +7,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
@@ -21,25 +22,22 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
 
   useEffect(() => {
+    let unsubscribe = () => {};
     if (user) {
-      const fetchTheme = async () => {
-        const profileRef = doc(db, 'users', user.uid, 'profile', 'theme');
-        const profileSnap = await getDoc(profileRef);
-        if (profileSnap.exists() && profileSnap.data().theme) {
-          setTheme(profileSnap.data().theme);
+      const profileRef = doc(db, 'users', user.uid, 'profile', 'theme');
+      unsubscribe = onSnapshot(profileRef, (doc) => {
+        if (doc.exists() && doc.data().theme) {
+            const newTheme = doc.data().theme;
+             setTheme(newTheme);
+             document.body.className = '';
+             if (newTheme !== 'light') {
+                document.body.classList.add(newTheme === 'dark' ? 'dark' : `theme-${newTheme}`);
+             }
         }
-      };
-      fetchTheme();
+      });
     }
+     return () => unsubscribe();
   }, [user]);
-
-  useEffect(() => {
-    document.body.className = '';
-    if (theme !== 'light') {
-        document.body.classList.add(theme);
-    }
-  }, [theme]);
-
 
   if (loading || !user) {
     return (
