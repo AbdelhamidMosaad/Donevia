@@ -7,19 +7,38 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Sun, Moon, Droplets, Leaf, Grape, SunMedium, Palette, Type } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
-type Theme = 'light' | 'dark' | 'blue' | 'green' | 'purple';
+type Theme = 'light' | 'dark' | 'blue' | 'green' | 'purple' | 'sunset-orange' | 'monochrome';
+type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
 
-const themes: { name: Theme; label: string; colors: { bg: string; text: string; primary: string; secondary: string } }[] = [
-  { name: 'light', label: 'Light', colors: { bg: 'hsl(210 100% 95%)', text: 'hsl(215 40% 15%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(210 40% 90%)' } },
-  { name: 'dark', label: 'Dark', colors: { bg: 'hsl(215 30% 12%)', text: 'hsl(210 40% 98%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(215 20% 25%)' } },
-  { name: 'blue', label: 'Blue', colors: { bg: 'hsl(220 60% 10%)', text: 'hsl(220 20% 95%)', primary: 'hsl(220 90% 60%)', secondary: 'hsl(220 40% 25%)' } },
-  { name: 'green', label: 'Green', colors: { bg: 'hsl(140 60% 10%)', text: 'hsl(140 10% 95%)', primary: 'hsl(140 80% 50%)', secondary: 'hsl(140 40% 25%)' } },
-  { name: 'purple', label: 'Purple', colors: { bg: 'hsl(280 60% 10%)', text: 'hsl(280 10% 95%)', primary: 'hsl(280 80% 60%)', secondary: 'hsl(280 40% 25%)' } },
+const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg: string; text: string; primary: string; secondary: string } }[] = [
+  { name: 'light', label: 'Light', icon: <Sun className="h-5 w-5" />, colors: { bg: 'hsl(210 100% 95%)', text: 'hsl(215 40% 15%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(210 40% 90%)' } },
+  { name: 'dark', label: 'Dark', icon: <Moon className="h-5 w-5" />, colors: { bg: 'hsl(215 30% 12%)', text: 'hsl(210 40% 98%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(215 20% 25%)' } },
+  { name: 'blue', label: 'Ocean Blue', icon: <Droplets className="h-5 w-5" />, colors: { bg: 'hsl(220 60% 10%)', text: 'hsl(220 20% 95%)', primary: 'hsl(220 90% 60%)', secondary: 'hsl(220 40% 25%)' } },
+  { name: 'green', label: 'Forest Green', icon: <Leaf className="h-5 w-5" />, colors: { bg: 'hsl(140 60% 10%)', text: 'hsl(140 10% 95%)', primary: 'hsl(140 80% 50%)', secondary: 'hsl(140 40% 25%)' } },
+  { name: 'purple', label: 'Purple Haze', icon: <Grape className="h-5 w-5" />, colors: { bg: 'hsl(280 60% 10%)', text: 'hsl(280 10% 95%)', primary: 'hsl(280 80% 60%)', secondary: 'hsl(280 40% 25%)' } },
+  { name: 'sunset-orange', label: 'Sunset Orange', icon: <SunMedium className="h-5 w-5" />, colors: { bg: 'hsl(25 50% 10%)', text: 'hsl(25 20% 95%)', primary: 'hsl(25 90% 55%)', secondary: 'hsl(25 40% 25%)' } },
+  { name: 'monochrome', label: 'Monochrome', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(0 0% 10%)', text: 'hsl(0 0% 95%)', primary: 'hsl(0 0% 80%)', secondary: 'hsl(0 0% 25%)' } },
+];
+
+const fonts: { name: Font; label: string; variable: string }[] = [
+    { name: 'inter', label: 'Inter', variable: 'font-inter' },
+    { name: 'roboto', label: 'Roboto', variable: 'font-roboto' },
+    { name: 'open-sans', label: 'Open Sans', variable: 'font-open-sans' },
+    { name: 'lato', label: 'Lato', variable: 'font-lato' },
+    { name: 'poppins', label: 'Poppins', variable: 'font-poppins' },
+    { name: 'source-sans-pro', label: 'Source Sans Pro', variable: 'font-source-sans-pro' },
+    { name: 'nunito', label: 'Nunito', variable: 'font-nunito' },
+    { name: 'montserrat', label: 'Montserrat', variable: 'font-montserrat' },
+    { name: 'playfair-display', label: 'Playfair Display', variable: 'font-playfair-display' },
+    { name: 'jetbrains-mono', label: 'JetBrains Mono', variable: 'font-jetbrains-mono' },
 ];
 
 export default function SettingsPage() {
@@ -27,6 +46,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [selectedTheme, setSelectedTheme] = useState<Theme>('light');
+  const [selectedFont, setSelectedFont] = useState<Font>('inter');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -37,23 +57,25 @@ export default function SettingsPage() {
   
   useEffect(() => {
     if (user) {
-      const fetchTheme = async () => {
-        const themeRef = doc(db, 'users', user.uid, 'profile', 'theme');
-        const themeSnap = await getDoc(themeRef);
-        if (themeSnap.exists() && themeSnap.data().theme) {
-          setSelectedTheme(themeSnap.data().theme);
+      const fetchSettings = async () => {
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists() && settingsSnap.data()) {
+          const { theme, font } = settingsSnap.data();
+          if (theme) setSelectedTheme(theme);
+          if (font) setSelectedFont(font);
         }
       };
-      fetchTheme();
+      fetchSettings();
     }
   }, [user]);
 
   const handleThemeChange = (theme: Theme) => {
     setSelectedTheme(theme);
-    document.body.className = '';
-    if (theme !== 'light') {
-        document.body.classList.add(theme === 'dark' ? 'dark' : `theme-${theme}`);
-    }
+  };
+
+  const handleFontChange = (font: Font) => {
+    setSelectedFont(font);
   };
 
   const handleSaveChanges = async () => {
@@ -67,18 +89,18 @@ export default function SettingsPage() {
     }
     setIsSaving(true);
     try {
-        const themeRef = doc(db, 'users', user.uid, 'profile', 'theme');
-        await setDoc(themeRef, { theme: selectedTheme });
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { theme: selectedTheme, font: selectedFont }, { merge: true });
         toast({
             title: 'Settings Saved',
-            description: 'Your theme has been updated successfully.',
+            description: 'Your new preferences have been saved.',
         });
     } catch (error) {
-        console.error("Error saving theme: ", error);
+        console.error("Error saving settings: ", error);
         toast({
             variant: 'destructive',
             title: 'Error',
-            description: 'Failed to save your theme. Please try again.',
+            description: 'Failed to save your settings. Please try again.',
         });
     } finally {
         setIsSaving(false);
@@ -90,7 +112,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold font-headline">Settings</h1>
         <p className="text-muted-foreground">Manage your application preferences.</p>
@@ -98,25 +120,48 @@ export default function SettingsPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Theme Customization</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Type /> Typography System</CardTitle>
+          <CardDescription>Choose the font that best suits your reading preference. The change will apply across the entire application.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           <div className="w-full max-w-sm">
+             <Label htmlFor="font-select">Font Family</Label>
+             <Select value={selectedFont} onValueChange={(v: Font) => handleFontChange(v)}>
+                <SelectTrigger id="font-select">
+                    <SelectValue placeholder="Select a font" />
+                </SelectTrigger>
+                <SelectContent>
+                    {fonts.map(font => (
+                        <SelectItem key={font.name} value={font.name}>
+                            <span style={{ fontFamily: `var(--font-${font.name})` }}>{font.label}</span>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+             </Select>
+           </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Palette/> Theme Engine</CardTitle>
           <CardDescription>Select a theme to personalize your experience. Your choice will be saved to your profile and applied across the app.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
             {themes.map((theme) => (
-              <div key={theme.name} onClick={() => handleThemeChange(theme.name)} className="cursor-pointer">
+              <div key={theme.name} onClick={() => handleThemeChange(theme.name)} className="cursor-pointer group">
                 <div className={cn(
                   'rounded-lg border-2 p-2 transition-all',
-                  selectedTheme === theme.name ? 'border-primary' : 'border-transparent hover:border-primary/50'
+                  selectedTheme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
                 )}>
-                  <div className="space-y-1.5 rounded-md p-2" style={{ backgroundColor: theme.colors.bg }}>
-                    <div className="space-y-1">
-                      <div className="h-2 w-10 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
-                      <div className="h-2 w-16 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
-                    </div>
-                    <div className="flex items-center gap-2 pt-1">
-                      <div className="h-4 w-4 rounded-full" style={{ backgroundColor: theme.colors.primary }} />
-                      <div className="h-4 w-4 rounded-full" style={{ backgroundColor: theme.colors.secondary }} />
+                  <div className="space-y-1.5 rounded-md p-2 flex flex-col items-center justify-center aspect-square" style={{ backgroundColor: theme.colors.bg }}>
+                     <div className="flex items-center justify-center h-10 w-10 rounded-full mb-2" style={{backgroundColor: theme.colors.secondary}}>
+                        {theme.icon}
+                     </div>
+                     <div className="space-y-1">
+                      <div className="h-1.5 w-12 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
+                      <div className="h-1.5 w-16 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
                     </div>
                   </div>
                 </div>
@@ -127,13 +172,13 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-          <div className="mt-6 flex justify-end">
-            <Button onClick={handleSaveChanges} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
         </CardContent>
       </Card>
+       <div className="mt-6 flex justify-end">
+        <Button onClick={handleSaveChanges} disabled={isSaving}>
+          {isSaving ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
     </div>
   );
 }

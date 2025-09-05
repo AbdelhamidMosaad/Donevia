@@ -7,13 +7,12 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -24,15 +23,23 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let unsubscribe = () => {};
     if (user) {
-      const profileRef = doc(db, 'users', user.uid, 'profile', 'theme');
-      unsubscribe = onSnapshot(profileRef, (doc) => {
-        if (doc.exists() && doc.data().theme) {
-            const newTheme = doc.data().theme;
-             setTheme(newTheme);
-             document.body.className = '';
-             if (newTheme !== 'light') {
-                document.body.classList.add(newTheme === 'dark' ? 'dark' : `theme-${newTheme}`);
-             }
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      unsubscribe = onSnapshot(settingsRef, (doc) => {
+        if (doc.exists() && doc.data()) {
+            const { theme, font } = doc.data();
+            
+            if (theme) {
+              document.body.className = '';
+              if (theme !== 'light') {
+                  document.body.classList.add(theme === 'dark' ? 'dark' : `theme-${theme}`);
+              }
+            }
+
+            if (font) {
+                document.body.style.fontFamily = `var(--font-${font})`;
+            } else {
+                document.body.style.fontFamily = `var(--font-inter)`;
+            }
         }
       });
     }

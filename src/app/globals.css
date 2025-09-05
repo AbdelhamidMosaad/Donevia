@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter);
 }
 
 @layer base {
@@ -142,6 +142,50 @@ body {
     --border: 280 40% 25%;
     --input: 280 40% 25%;
     --ring: 280 80% 60%;
+  }
+  
+  .theme-sunset-orange {
+    --background: 25 50% 10%;
+    --foreground: 25 20% 95%;
+    --card: 25 50% 15%;
+    --card-foreground: 25 20% 95%;
+    --popover: 25 50% 15%;
+    --popover-foreground: 25 20% 95%;
+    --primary: 25 90% 55%;
+    --primary-foreground: 25 20% 10%;
+    --secondary: 25 40% 25%;
+    --secondary-foreground: 25 20% 95%;
+    --muted: 25 40% 25%;
+    --muted-foreground: 25 15% 70%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 45 20% 10%;
+    --destructive: 0 80% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 25 40% 25%;
+    --input: 25 40% 25%;
+    --ring: 25 90% 55%;
+  }
+
+  .theme-monochrome {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 80%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 25%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 0 0% 50%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 80% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 0 0% 80%;
   }
 }
 

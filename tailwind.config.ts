@@ -10,7 +10,16 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"PT Sans"', 'sans-serif'],
+        inter: ['var(--font-inter)'],
+        roboto: ['var(--font-roboto)'],
+        'open-sans': ['var(--font-open-sans)'],
+        lato: ['var(--font-lato)'],
+        poppins: ['var(--font-poppins)'],
+        'source-sans-pro': ['var(--font-source-sans-pro)'],
+        nunito: ['var(--font-nunito)'],
+        montserrat: ['var(--font-montserrat)'],
+        'playfair-display': ['var(--font-playfair-display)'],
+        'jetbrains-mono': ['var(--font-jetbrains-mono)'],
         headline: ['Poppins', 'sans-serif'],
         code: ['monospace'],
       },
