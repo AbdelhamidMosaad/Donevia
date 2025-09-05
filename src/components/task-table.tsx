@@ -21,7 +21,7 @@ import {
 } from './ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const priorityColors = {
@@ -37,20 +37,24 @@ const statusColors = {
     Done: 'default',
 };
 
-export function TaskTable() {
+interface TaskTableProps {
+    listId: string;
+}
+
+export function TaskTable({ listId }: TaskTableProps) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
-    if (user) {
-      const q = query(collection(db, 'users', user.uid, 'tasks'));
+    if (user && listId) {
+      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(tasksData);
       });
       return () => unsubscribe();
     }
-  }, [user]);
+  }, [user, listId]);
 
   return (
     <div className="border rounded-lg">

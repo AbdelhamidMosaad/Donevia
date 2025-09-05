@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback, ReactNode } from 'react';
-import { collection, onSnapshot, doc, updateDoc, Timestamp, query } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, Timestamp, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import type { Task } from '@/lib/types';
@@ -69,7 +69,13 @@ const CustomEvent = ({ event }: EventProps<Task>) => {
     );
 };
 
-const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value: Date }) => {
+interface DayCellWrapperProps {
+    children: React.ReactNode;
+    value: Date;
+    listId: string;
+}
+
+const DayCellWrapper = ({ children, value, listId }: DayCellWrapperProps) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleOpenDialog = (e: React.MouseEvent) => {
@@ -80,7 +86,7 @@ const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value:
     }
     
     return (
-      <AddTaskDialog defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <AddTaskDialog listId={listId} defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <div className="relative h-full" onClick={handleOpenDialog}>
             {children}
         </div>
@@ -88,8 +94,11 @@ const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value:
     );
 };
 
+interface TaskCalendarProps {
+    listId: string;
+}
 
-export function TaskCalendar() {
+export function TaskCalendar({ listId }: TaskCalendarProps) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [events, setEvents] = useState<Task[]>([]);
@@ -97,8 +106,8 @@ export function TaskCalendar() {
   const [date, setDate] = useState(new Date());
 
   useEffect(() => {
-    if (user) {
-      const q = query(collection(db, 'users', user.uid, 'tasks'));
+    if (user && listId) {
+      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(tasksData);
@@ -110,7 +119,7 @@ export function TaskCalendar() {
       });
       return () => unsubscribe();
     }
-  }, [user]);
+  }, [user, listId]);
 
   const handleSelectSlot = useCallback(
     ({ start, end }: { start: Date, end: Date }) => {
@@ -171,13 +180,13 @@ export function TaskCalendar() {
                     </div>
                 );
             },
-            dayWrapper: DayCellWrapper,
+            dayWrapper: (props) => <DayCellWrapper {...props} listId={listId} />,
           },
           week: {
-             dayWrapper: DayCellWrapper,
+             dayWrapper: (props) => <DayCellWrapper {...props} listId={listId} />,
           },
           day: {
-             dayWrapper: DayCellWrapper,
+             dayWrapper: (props) => <DayCellWrapper {...props} listId={listId} />,
           }
         }}
       />

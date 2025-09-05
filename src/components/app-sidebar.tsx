@@ -41,11 +41,8 @@ import { SettingsDialog } from './settings-dialog';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import type { TaskList } from '@/lib/types';
 
-interface TaskList {
-  id: string;
-  name: string;
-}
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -107,12 +104,16 @@ export function AppSidebar() {
   };
 
   const handleFinishEdit = async () => {
-    if (!editingListId || !user) return;
+    if (!editingListId || !user) {
+        handleCancelEdit();
+        return;
+    };
 
+    const listRef = doc(db, 'users', user.uid, 'taskLists', editingListId);
     const originalList = taskLists.find(l => l.id === editingListId);
     const trimmedName = editingListName.trim();
-    
-    // Reset editing state immediately to remove input from UI
+
+    // Immediately reset editing state to provide optimistic UI update
     handleCancelEdit();
 
     if (!trimmedName) {
@@ -123,12 +124,11 @@ export function AppSidebar() {
       });
       return;
     }
-
+    
     if (originalList && originalList.name === trimmedName) {
-      return; // No change, so no need to update
+        return; // No change
     }
 
-    const listRef = doc(db, 'users', user.uid, 'taskLists', editingListId);
     try {
       await updateDoc(listRef, { name: trimmedName });
       toast({
@@ -142,6 +142,7 @@ export function AppSidebar() {
         title: 'Error',
         description: 'Failed to rename list.',
       });
+      // Optionally revert optimistic UI update here
     }
   };
 
@@ -193,12 +194,15 @@ export function AppSidebar() {
                <div className="flex items-center w-full justify-between pr-2">
                  <CollapsibleTrigger asChild className="flex-1">
                   <SidebarMenuButton
+                    asChild
                     isActive={pathname.startsWith('/dashboard')}
                     tooltip={{ children: "Task Management" }}
                   >
-                    <Folder />
-                    <span className="group-data-[collapsible=icon]:hidden flex-1 text-left">Task Management</span>
-                    <ChevronDown className={cn("transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
+                    <Link href="/dashboard">
+                      <Folder />
+                      <span className="group-data-[collapsible=icon]:hidden flex-1 text-left">Task Management</span>
+                      <ChevronDown className={cn("transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
+                    </Link>
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <div className="group-data-[collapsible=icon]:hidden">

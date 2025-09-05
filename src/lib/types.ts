@@ -9,4 +9,11 @@ export type Task = {
   dueDate: Timestamp;
   tags: string[];
   createdAt: Timestamp;
+  listId: string;
 };
+
+export type TaskList = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+}

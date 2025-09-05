@@ -26,6 +26,7 @@ import type { Task } from '@/lib/types';
 
 interface AddTaskDialogProps {
   children: ReactNode;
+  listId: string;
   defaultTitle?: string;
   defaultStatus?: Task['status'];
   defaultDueDate?: Date;
@@ -35,7 +36,8 @@ interface AddTaskDialogProps {
 }
 
 export function AddTaskDialog({ 
-  children, 
+  children,
+  listId,
   defaultTitle = '', 
   defaultStatus = 'To Do', 
   defaultDueDate,
@@ -100,6 +102,7 @@ export function AddTaskDialog({
         status,
         tags: [],
         createdAt: Timestamp.now(),
+        listId: listId,
       });
       toast({
         title: 'Task Added',

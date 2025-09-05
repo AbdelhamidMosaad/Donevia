@@ -12,26 +12,38 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 
-export function TaskList() {
+interface TaskListProps {
+    listId: string;
+}
+
+export function TaskList({ listId }: TaskListProps) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [sortBy, setSortBy] = useState('createdAt');
   const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
-    if (user) {
-      let q = query(collection(db, 'users', user.uid, 'tasks'), orderBy(sortBy, 'desc'));
+    if (user && listId) {
+      let q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), orderBy(sortBy, 'desc'));
+      
       if (filterStatus !== 'all') {
-        q = query(q, where('status', '==', filterStatus));
+        // This is tricky with Firestore. You can't have multiple inequality filters on different fields.
+        // And orderBy is considered one. If we want to filter by status, we might have to do it client side
+        // or restructure data. For now, let's stick to the simple query and then filter client-side.
+        // The query will just be for the listId, ordered by the selected field.
+         q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), orderBy(sortBy, 'desc'));
       }
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+        let tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+        if (filterStatus !== 'all') {
+            tasksData = tasksData.filter(task => task.status === filterStatus);
+        }
         setTasks(tasksData);
       });
       return () => unsubscribe();
     }
-  }, [user, sortBy, filterStatus]);
+  }, [user, listId, sortBy, filterStatus]);
 
   return (
     <Card className="p-4">

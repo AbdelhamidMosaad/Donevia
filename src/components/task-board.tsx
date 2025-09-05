@@ -6,7 +6,7 @@ import { PlusCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { AddTaskDialog } from './add-task-dialog';
@@ -16,21 +16,25 @@ type Column = 'Backlog' | 'To Do' | 'In Progress' | 'Done';
 
 const columns: Column[] = ['Backlog', 'To Do', 'In Progress', 'Done'];
 
-export function TaskBoard() {
+interface TaskBoardProps {
+  listId: string;
+}
+
+export function TaskBoard({ listId }: TaskBoardProps) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      const q = query(collection(db, 'users', user.uid, 'tasks'));
+    if (user && listId) {
+      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(tasksData);
       });
       return () => unsubscribe();
     }
-  }, [user]);
+  }, [user, listId]);
 
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -89,7 +93,7 @@ export function TaskBoard() {
                     <span className="text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5">
                       {tasksByColumn[column].length}
                     </span>
-                    <AddTaskDialog defaultStatus={column}>
+                    <AddTaskDialog listId={listId} defaultStatus={column}>
                       <Button variant="ghost" size="icon" className="h-7 w-7">
                         <PlusCircle className="h-4 w-4" />
                         <span className="sr-only">Add task</span>
