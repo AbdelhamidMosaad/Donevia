@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Search, Settings, LogOut } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
@@ -21,10 +20,13 @@ import { useAuth } from '@/hooks/use-auth';
 import { SettingsDialog } from './settings-dialog';
 import { DoneviaLogo } from './logo';
 import Link from 'next/link';
+import { useSidebar } from './ui/sidebar';
 
 export function AppHeader() {
   const [isClient, setIsClient] = React.useState(false);
   const { user } = useAuth();
+  const { toggleSidebar } = useSidebar();
+
 
   React.useEffect(() => {
     setIsClient(true);
@@ -37,9 +39,11 @@ export function AppHeader() {
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-      <SidebarTrigger className="md:hidden" />
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard" className="hidden items-center gap-2 md:flex">
+      <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={toggleSidebar}>
+          <DoneviaLogo className="size-5 shrink-0" />
+      </Button>
+      <div className="hidden items-center gap-4 md:flex">
+        <Link href="/dashboard" className="items-center gap-2 flex">
           <DoneviaLogo className="size-6 shrink-0" />
           <span className="text-lg font-semibold font-headline">Donevia</span>
         </Link>

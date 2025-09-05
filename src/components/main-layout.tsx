@@ -28,15 +28,20 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         if (doc.exists() && doc.data()) {
             const { theme, font } = doc.data();
             
-            document.body.className = '';
-            if (theme) {
-                document.body.classList.add(theme);
-            }
+            const body = document.body;
+            const currentFontFamily = body.style.fontFamily;
+            body.className = ''; // Reset classes first
 
+            if (theme) {
+              body.classList.add(theme);
+            }
+            
             if (font) {
-                document.body.style.fontFamily = `var(--font-${font})`;
+              body.style.fontFamily = `var(--font-${font})`;
+            } else if (currentFontFamily) {
+              body.style.fontFamily = currentFontFamily;
             } else {
-                document.body.style.fontFamily = `var(--font-inter)`;
+              body.style.fontFamily = 'var(--font-inter)';
             }
         }
       });
