@@ -26,6 +26,7 @@ import {
   PlusCircle,
   Folder,
   ChevronDown,
+  LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -71,12 +72,8 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarRail />
-      <SidebarHeader className="px-3">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <DoneviaLogo className="size-8 shrink-0" />
-          <span className="text-lg font-semibold font-headline">Donevia</span>
-        </Link>
-        <SidebarTrigger className="[&_svg]:size-4 ml-auto" />
+      <SidebarHeader className="p-3 justify-center">
+         <SidebarTrigger className="[&_svg]:size-4" />
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
@@ -87,9 +84,10 @@ export function AppSidebar() {
                             <SidebarMenuButton
                                 isActive={pathname.startsWith('/dashboard')}
                                 tooltip={{ children: "Task Management" }}
+                                className="group-data-[collapsible=icon]:w-8"
                             >
                                 <Folder />
-                                <span className="group-data-[collapsible=icon]:hidden">Task Management</span>
+                                <span className="group-data-[collapsible=icon]:hidden flex-1 text-left">Task Management</span>
                                 <ChevronDown className={cn("ml-auto transition-transform duration-200 group-data-[collapsible=icon]:hidden", isCollapsibleOpen && "rotate-180")} />
                             </SidebarMenuButton>
                         </CollapsibleTrigger>
@@ -104,7 +102,7 @@ export function AppSidebar() {
                             <SidebarMenuSubItem>
                                 <SidebarMenuSubButton asChild isActive={pathname === '/dashboard'}>
                                     <Link href="/dashboard">
-                                        <Folder className="h-4 w-4" />
+                                        <LayoutDashboard className="h-4 w-4" />
                                         <span>All Tasks</span>
                                     </Link>
                                 </SidebarMenuSubButton>
