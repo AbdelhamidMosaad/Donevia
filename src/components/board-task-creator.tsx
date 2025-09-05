@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { addTask } from '@/lib/tasks';
 import { Timestamp } from 'firebase/firestore';
 import { Textarea } from './ui/textarea';
+import { Card } from './ui/card';
 
 interface BoardTaskCreatorProps {
     listId: string;
@@ -19,7 +20,6 @@ interface BoardTaskCreatorProps {
 export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
     const { user } = useAuth();
     const { toast } = useToast();
 
@@ -34,9 +34,8 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
             return;
         }
 
-        if (!user || isSaving) return;
+        if (!user) return;
         
-        setIsSaving(true);
         try {
             await addTask(user.uid, {
                 title: title.trim(),
@@ -54,8 +53,6 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
             console.error("Error creating task: ", error);
             toast({ variant: 'destructive', title: 'Failed to create task' });
             resetAndClose();
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -71,19 +68,20 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
     
     if (!isEditing) {
         return (
-            <Button 
-                variant="ghost" 
-                className="w-full justify-start text-muted-foreground h-auto py-2 px-3"
+            <Card 
+                className="p-3 bg-transparent hover:bg-card-foreground/5 transition-colors duration-200 cursor-pointer"
                 onClick={() => setIsEditing(true)}
             >
-                <Plus className="mr-2 h-4 w-4" />
-                Add a card
-            </Button>
+               <div className="flex items-center text-muted-foreground">
+                 <Plus className="mr-2 h-4 w-4" />
+                 <span>Add a card</span>
+               </div>
+            </Card>
         );
     }
 
     return (
-        <div className="space-y-2 p-1">
+        <div className="space-y-2">
              <Textarea 
                 id={`task-creator-input-${stageId}`}
                 autoFocus
@@ -98,10 +96,9 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                 }}
                 placeholder="Enter a title for this card..."
                 className="text-sm shadow-sm min-h-[60px] resize-y"
-                disabled={isSaving}
             />
             <div className="flex items-center gap-2">
-                 <Button onClick={handleSave} disabled={!title.trim() || isSaving} size="sm">
+                 <Button onClick={handleSave} disabled={!title.trim()} size="sm">
                     Add card
                  </Button>
                  <Button variant="ghost" size="icon" onClick={resetAndClose} className="h-8 w-8">
