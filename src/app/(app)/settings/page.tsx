@@ -48,6 +48,9 @@ export default function SettingsPage() {
   const [selectedTheme, setSelectedTheme] = useState<Theme>('light');
   const [selectedFont, setSelectedFont] = useState<Font>('inter');
   const [isSaving, setIsSaving] = useState(false);
+  const [initialTheme, setInitialTheme] = useState<Theme>('light');
+  const [initialFont, setInitialFont] = useState<Font>('inter');
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,20 +65,39 @@ export default function SettingsPage() {
         const settingsSnap = await getDoc(settingsRef);
         if (settingsSnap.exists() && settingsSnap.data()) {
           const { theme, font } = settingsSnap.data();
-          if (theme) setSelectedTheme(theme);
-          if (font) setSelectedFont(font);
+          if (theme) {
+            setSelectedTheme(theme);
+            setInitialTheme(theme);
+          }
+          if (font) {
+            setSelectedFont(font);
+            setInitialFont(font);
+          }
         }
       };
       fetchSettings();
     }
   }, [user]);
 
+  const applyTheme = (theme: Theme) => {
+    document.body.className = ''; // Clear existing theme classes
+    if (theme !== 'light') {
+      document.body.classList.add(theme === 'dark' ? 'dark' : `theme-${theme}`);
+    }
+  };
+
+  const applyFont = (font: Font) => {
+    document.body.style.fontFamily = `var(--font-${font})`;
+  }
+
   const handleThemeChange = (theme: Theme) => {
     setSelectedTheme(theme);
+    applyTheme(theme);
   };
 
   const handleFontChange = (font: Font) => {
     setSelectedFont(font);
+    applyFont(font);
   };
 
   const handleSaveChanges = async () => {
@@ -91,6 +113,8 @@ export default function SettingsPage() {
     try {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
         await setDoc(settingsRef, { theme: selectedTheme, font: selectedFont }, { merge: true });
+        setInitialTheme(selectedTheme);
+        setInitialFont(selectedFont);
         toast({
             title: 'Settings Saved',
             description: 'Your new preferences have been saved.',
@@ -105,6 +129,13 @@ export default function SettingsPage() {
     } finally {
         setIsSaving(false);
     }
+  };
+
+  const handleCancelChanges = () => {
+    setSelectedTheme(initialTheme);
+    setSelectedFont(initialFont);
+    applyTheme(initialTheme);
+    applyFont(initialFont);
   };
   
   if (loading || !user) {
@@ -174,7 +205,10 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-       <div className="mt-6 flex justify-end">
+       <div className="mt-6 flex justify-end gap-2">
+        <Button onClick={handleCancelChanges} variant="outline" disabled={isSaving}>
+          Cancel
+        </Button>
         <Button onClick={handleSaveChanges} disabled={isSaving}>
           {isSaving ? 'Saving...' : 'Save Changes'}
         </Button>
