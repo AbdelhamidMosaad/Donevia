@@ -151,7 +151,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                 <div 
                                     className={`flex flex-col bg-muted/50 rounded-lg transition-colors duration-200 ${droppableSnapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
                                 >
-                                    <div {...provided.dragHandleProps} className="flex items-center justify-between p-4 border-b cursor-grab">
+                                    <div {...provided.dragHandleProps} className="flex items-center justify-between p-3 border-b cursor-grab">
                                         <h2 className="font-semibold font-headline text-lg">{stage.name}</h2>
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5">
@@ -160,28 +160,32 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                         </div>
                                     </div>
                                     <div 
-                                        ref={droppableProvided.innerRef}
-                                        {...droppableProvided.droppableProps}
-                                        className="p-4 flex-1 overflow-y-auto min-h-[100px]"
+                                        className="flex-1 overflow-y-auto"
                                     >
-                                        {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
-                                          <Draggable key={task.id} draggableId={task.id} index={index}>
-                                          {(taskProvided, taskSnapshot) => (
-                                              <div
-                                                  ref={taskProvided.innerRef}
-                                                  {...taskProvided.draggableProps}
-                                                  {...taskProvided.dragHandleProps}
-                                                  style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
-                                                  className="task-card-wrapper"
-                                              >
-                                                  <TaskCard task={task} />
-                                              </div>
-                                          )}
-                                          </Draggable>
-                                        ))}
-                                        {droppableProvided.placeholder}
+                                        <div 
+                                            ref={droppableProvided.innerRef}
+                                            {...droppableProvided.droppableProps}
+                                            className="p-2 min-h-[100px]"
+                                        >
+                                            {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
+                                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                                            {(taskProvided, taskSnapshot) => (
+                                                <div
+                                                    ref={taskProvided.innerRef}
+                                                    {...taskProvided.draggableProps}
+                                                    {...taskProvided.dragHandleProps}
+                                                    style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
+                                                    className="task-card-wrapper mb-2"
+                                                >
+                                                    <TaskCard task={task} />
+                                                </div>
+                                            )}
+                                            </Draggable>
+                                            ))}
+                                            {droppableProvided.placeholder}
+                                        </div>
                                     </div>
-                                    <div className="p-2 border-t">
+                                    <div className="p-1 border-t mt-auto">
                                       <BoardTaskCreator listId={listId} stageId={stage.id} />
                                     </div>
                                 </div>
@@ -198,3 +202,4 @@ export function TaskBoard({ listId }: TaskBoardProps) {
     </DragDropContext>
   );
 }
+

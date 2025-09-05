@@ -48,17 +48,26 @@ export function TaskCard({ task }: TaskCardProps) {
 
   return (
     <>
-    <Card className="mb-4 hover:shadow-md transition-shadow duration-200 cursor-grab active:cursor-grabbing">
-      <CardHeader className="p-4">
+    <Card 
+        className="hover:shadow-md transition-shadow duration-200 cursor-pointer active:cursor-grabbing"
+        onClick={() => setIsEditDialogOpen(true)}
+    >
+      <CardHeader className="p-3">
         <div className="flex justify-between items-start">
-          <p className="font-semibold text-sm leading-tight">{task.title}</p>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
+          <p className="font-semibold text-sm leading-tight pr-2">{task.title}</p>
+          <DropdownMenu onOpenChange={(e) => {
+              // Stop propagation to prevent the card's onClick from firing
+              if (e) {
+                const card = document.querySelector(`[data-task-id="${task.id}"]`);
+                card?.setAttribute('data-menu-open', 'true');
+              }
+          }}>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
               <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
                 <Edit className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
@@ -85,28 +94,28 @@ export function TaskCard({ task }: TaskCardProps) {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1" title={task.priority}>
-              {priorityIcons[task.priority]}
+      {(task.priority !== 'Medium' || (task.tags && task.tags.length > 0)) &&
+        <CardContent className="p-3 pt-0">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+                {task.priority !== 'Medium' &&
+                <div className="flex items-center gap-1" title={task.priority}>
+                {priorityIcons[task.priority]}
+                </div>
+                }
             </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>{task.dueDate.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
-          </div>
-        </div>
-        {task.tags && task.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-3">
-            {task.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
-      </CardContent>
+            {task.tags && task.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+                {task.tags.map((tag) => (
+                <Badge key={tag} variant="secondary">
+                    {tag}
+                </Badge>
+                ))}
+            </div>
+            )}
+        </CardContent>
+      }
     </Card>
     <AddTaskDialog 
         listId={task.listId}
@@ -117,3 +126,4 @@ export function TaskCard({ task }: TaskCardProps) {
     </>
   );
 }
+
