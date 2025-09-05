@@ -31,13 +31,13 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https' as const,
         hostname: 'storage.googleapis.com',
         port: '',
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https' as const,
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
@@ -46,4 +46,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(nextConfig);
+// Apply PWA only in production or when not using Turbopack
+const config = process.env.NODE_ENV === 'development' && process.argv.includes('--turbopack') 
+  ? nextConfig 
+  : withPWA(nextConfig);
+
+export default config;
