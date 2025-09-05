@@ -29,7 +29,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
     };
 
     const handleStartEditing = () => {
-        setTitle(''); // Clear previous title
+        setTitle(''); // Always clear title when starting to edit
         setIsEditing(true);
     }
 
