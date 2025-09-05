@@ -23,24 +23,32 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
 
     useEffect(() => {
         inputRef.current?.focus();
-    }, []);
+        
+        // This cleanup function will be called when the component unmounts
+        return () => {
+            onFinish();
+        };
+    }, [onFinish]);
 
     const handleSave = async () => {
         if (isSaving) return;
 
-        if (!title.trim()) {
+        const trimmedTitle = title.trim();
+        if (!trimmedTitle) {
             onFinish();
             return;
         }
+
         if (!user) {
             toast({ variant: 'destructive', title: 'You must be logged in' });
+            onFinish();
             return;
         }
         
         setIsSaving(true);
         try {
             await addTask(user.uid, {
-                title: title.trim(),
+                title: trimmedTitle,
                 listId,
                 status: stageId,
                 priority: 'Medium',
@@ -49,14 +57,17 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
             });
             toast({ title: 'Task created!' });
         } catch (error) {
+            console.error("Error creating task: ", error);
             toast({ variant: 'destructive', title: 'Failed to create task' });
         } finally {
-            onFinish();
+            setIsSaving(false);
+            onFinish(); // Ensure we always call onFinish
         }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
             handleSave();
         } else if (e.key === 'Escape') {
             onFinish();
