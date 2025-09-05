@@ -156,7 +156,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
             <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex flex-wrap gap-6 items-start"
+                className="flex flex-row gap-6 items-start"
             >
             {sortedStages.map((stage, index) => {
                 const isCollapsed = collapsedStages[stage.id];
@@ -168,7 +168,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                             {...provided.draggableProps}
                             className={cn(
                                 "flex flex-col transition-all duration-300",
-                                isCollapsed ? 'w-16' : 'w-[280px] shrink-0'
+                                isCollapsed ? 'w-16' : 'flex-1 min-w-[220px]'
                             )}
                         >
                             <Droppable droppableId={stage.id} type="TASK" isDropDisabled={isCollapsed}>
