@@ -1,11 +1,10 @@
 
 {
-  "name": "Clarity Hub",
-  "short_name": "ClarityHub",
-  "description": "A personal productivity management web application.",
+  "name": "Donevia",
+  "short_name": "Donevia",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#E5F2FF",
+  "background_color": "#ffffff",
   "theme_color": "#3399FF",
   "icons": [
     {

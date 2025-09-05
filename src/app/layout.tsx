@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jet
 
 
 export const metadata: Metadata = {
-  title: 'Clarity Hub',
+  title: 'Donevia',
   description: 'A personal productivity management web application.',
   manifest: '/manifest.json',
 };

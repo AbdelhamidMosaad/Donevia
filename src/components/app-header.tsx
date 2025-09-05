@@ -45,7 +45,7 @@ export function AppHeader() {
       <div className="hidden items-center gap-4 md:flex">
         <Link href="/dashboard" className="items-center gap-2 flex">
           <DoneviaLogo className="size-6 shrink-0" />
-          <span className="text-lg font-semibold font-headline">Clarity Hub</span>
+          <span className="text-lg font-semibold font-headline">Donevia</span>
         </Link>
       </div>
       <div className="w-full flex-1">
