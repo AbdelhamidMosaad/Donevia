@@ -17,7 +17,6 @@ import {
   SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
-  LayoutDashboard,
   FileText,
   PenSquare,
   GitBranch,
@@ -88,7 +87,7 @@ export function AppSidebar() {
                                 isActive={pathname.startsWith('/dashboard')}
                                 tooltip={{ children: "Task Management" }}
                             >
-                                <LayoutDashboard />
+                                <Folder />
                                 <span>Task Management</span>
                                 <ChevronDown className={cn("ml-auto transition-transform duration-200", isCollapsibleOpen && "rotate-180")} />
                             </SidebarMenuButton>
@@ -104,7 +103,7 @@ export function AppSidebar() {
                             <SidebarMenuSubItem>
                                 <SidebarMenuSubButton asChild isActive={pathname === '/dashboard'}>
                                     <Link href="/dashboard">
-                                        <Folder className="h-3 w-3" />
+                                        <Folder className="h-4 w-4" />
                                         <span>All Tasks</span>
                                     </Link>
                                 </SidebarMenuSubButton>
@@ -113,7 +112,7 @@ export function AppSidebar() {
                                 <SidebarMenuSubItem key={list.id}>
                                     <SidebarMenuSubButton asChild isActive={pathname === `/dashboard/list/${list.id}`}>
                                         <Link href={`/dashboard/list/${list.id}`}>
-                                            <Folder className="h-3 w-3" />
+                                            <Folder className="h-4 w-4" />
                                             <span>{list.name}</span>
                                         </Link>
                                     </SidebarMenuSubButton>
