@@ -77,23 +77,23 @@ export function AppSidebar() {
   }
 
   const handleFinishCreate = async () => {
-    if (isSaving) return;
+    if (isSaving || !isCreating) return;
 
-    if (!user || !newListName.trim()) {
-      setNewListName('');
-      setIsCreating(false);
+    const trimmedName = newListName.trim();
+    if (!user || !trimmedName) {
+      handleCancelCreate();
       return;
     }
     
     setIsSaving(true);
     try {
       await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
-        name: newListName,
+        name: trimmedName,
         createdAt: Timestamp.now(),
       });
       toast({
         title: '✓ List Added',
-        description: `"${newListName}" has been added successfully.`,
+        description: `"${trimmedName}" has been added successfully.`,
       });
     } catch (e) {
        console.error("Error adding document: ", e);
@@ -116,8 +116,10 @@ export function AppSidebar() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleFinishCreate();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       handleCancelCreate();
     }
   }
