@@ -47,7 +47,7 @@ export function AppHeader() {
           <DoneviaLogo className="size-6 shrink-0" />
           <div className="flex flex-col">
             <span className="text-lg font-semibold font-headline leading-none">Donevia</span>
-            <span className="text-xs text-muted-foreground hidden lg:block">Get it done, your way.</span>
+            <span className="text-xs text-muted-foreground">Get it done, your way.</span>
           </div>
         </Link>
       </div>
