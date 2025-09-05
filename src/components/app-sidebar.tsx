@@ -11,6 +11,9 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarRail,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -20,16 +23,19 @@ import {
   BrainCircuit,
   Settings,
   HelpCircle,
+  PlusCircle,
+  Folder,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { DoneviaLogo } from './logo';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { Button } from './ui/button';
 
 export function AppSidebar() {
   const pathname = usePathname();
 
   const menuItems = [
-    { href: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard', tooltip: 'Dashboard' },
     { href: '/notes', icon: <FileText />, label: 'Notes', tooltip: 'Notes' },
     { href: '/whiteboard', icon: <PenSquare />, label: 'Whiteboard', tooltip: 'Whiteboard' },
     { href: '/mind-map', icon: <GitBranch />, label: 'Mind Map', tooltip: 'Mind Map' },
@@ -48,6 +54,41 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
+            <SidebarMenuItem>
+                <Collapsible className="w-full">
+                    <CollapsibleTrigger asChild>
+                         <div className="flex items-center w-full">
+                            <SidebarMenuButton
+                                asChild
+                                isActive={pathname.startsWith('/dashboard')}
+                                tooltip={{ children: "Task Management" }}
+                                className="flex-1"
+                            >
+                                <Link href="/dashboard">
+                                    <LayoutDashboard />
+                                    <span>Task Management</span>
+                                </Link>
+                            </SidebarMenuButton>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto shrink-0 group-data-[collapsible=icon]:hidden">
+                                <PlusCircle className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                        <SidebarMenuSub>
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild isActive={pathname === '/dashboard'}>
+                                    <Link href="/dashboard">
+                                        <Folder className="h-3 w-3" />
+                                        <span>All Tasks</span>
+                                    </Link>
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </CollapsibleContent>
+                </Collapsible>
+            </SidebarMenuItem>
+
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
