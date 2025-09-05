@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Settings, PlusCircle, Save, Trash2, GripVertical } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from './ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from './ui/dialog';
 import { Input } from './ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
