@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,31 +18,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import moment from 'moment';
 import type { Task, Stage } from '@/lib/types';
+import { DialogTrigger } from './ui/dialog';
 
 interface AddTaskDialogProps {
-  children: ReactNode;
+  children?: ReactNode;
   listId: string;
-  defaultTitle?: string;
-  defaultStatus?: string;
-  defaultDueDate?: Date;
-  onTaskAdded?: () => void;
+  task?: Task | null;
+  onTaskAdded?: (id: string) => void;
+  onTaskUpdated?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-export function AddTaskDialog({ 
+export function AddTaskDialog({
   children,
   listId,
-  defaultTitle = '', 
-  defaultStatus,
-  defaultDueDate,
+  task,
   onTaskAdded,
+  onTaskUpdated,
   open: controlledOpen,
-  onOpenChange: setControlledOpen
+  onOpenChange: setControlledOpen,
 }: AddTaskDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -51,58 +49,57 @@ export function AddTaskDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [stages, setStages] = useState<Stage[]>([]);
 
+  const isEditMode = !!task;
   const open = controlledOpen ?? internalOpen;
   const setOpen = setControlledOpen ?? setInternalOpen;
   
-  const memoizedDefaultDueDate = useMemo(() => defaultDueDate || new Date(), [defaultDueDate]);
-
-  const [title, setTitle] = useState(defaultTitle);
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState(memoizedDefaultDueDate);
+  const [dueDate, setDueDate] = useState<Date>(new Date());
   const [priority, setPriority] = useState<Task['priority']>('Medium');
-  const [status, setStatus] = useState<Task['status'] | undefined>(defaultStatus);
+  const [status, setStatus] = useState<Task['status'] | undefined>();
 
   useEffect(() => {
-      if (user && listId) {
-          const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-          getDoc(listRef).then(docSnap => {
-              if(docSnap.exists()) {
-                  const listData = docSnap.data();
-                  const listStages = listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || [];
-                  setStages(listStages);
-                  if (open) { // only set status if dialog is open
-                    if (defaultStatus) {
-                        setStatus(defaultStatus);
-                    } else if (listStages.length > 0) {
-                        setStatus(listStages[0].id);
-                    }
-                  }
-              }
-          });
-      }
-  }, [user, listId, open, defaultStatus]);
+    if (user && listId) {
+      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
+      getDoc(listRef).then(docSnap => {
+        if (docSnap.exists()) {
+          const listData = docSnap.data();
+          const listStages = listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || [];
+          setStages(listStages);
+        }
+      });
+    }
+  }, [user, listId]);
 
   useEffect(() => {
     if (open) {
-      setTitle(defaultTitle);
-      setDescription('');
-      setDueDate(memoizedDefaultDueDate);
-      setPriority('Medium');
-      setIsSaving(false);
-       if (defaultStatus) {
-        setStatus(defaultStatus);
-      } else if (stages.length > 0) {
-        setStatus(stages[0].id);
+      if (isEditMode && task) {
+        setTitle(task.title);
+        setDescription(task.description || '');
+        setDueDate(task.dueDate.toDate());
+        setPriority(task.priority);
+        setStatus(task.status);
       } else {
-        setStatus(undefined);
+        // Reset for new task
+        setTitle('');
+        setDescription('');
+        setDueDate(new Date());
+        setPriority('Medium');
+        if (stages.length > 0) {
+            setStatus(stages[0].id);
+        } else {
+            setStatus(undefined);
+        }
       }
+      setIsSaving(false);
     }
-  }, [open, defaultTitle, defaultStatus, memoizedDefaultDueDate, stages]);
+  }, [open, task, isEditMode, stages]);
 
 
   const handleSave = async () => {
     if (!user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a task.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
     }
     if (!title) {
@@ -115,26 +112,39 @@ export function AddTaskDialog({
     }
 
     setIsSaving(true);
-    try {
-      await addDoc(collection(db, 'users', user.uid, 'tasks'), {
+    const taskData = {
         title,
         description,
         dueDate: Timestamp.fromDate(dueDate),
         priority,
         status,
-        tags: [],
-        createdAt: Timestamp.now(),
-        listId: listId,
-      });
-      toast({
-        title: 'Task Added',
-        description: `"${title}" has been added successfully.`,
-      });
+        tags: task?.tags || [],
+        listId,
+        ...(isEditMode ? {} : { createdAt: serverTimestamp() }),
+        updatedAt: serverTimestamp(),
+    };
+
+    try {
+      if (isEditMode && task) {
+          const taskRef = doc(db, 'users', user.uid, 'tasks', task.id);
+          await updateDoc(taskRef, taskData);
+          toast({
+            title: 'Task Updated',
+            description: `"${title}" has been updated.`,
+          });
+          onTaskUpdated?.();
+      } else {
+          const docRef = await addDoc(collection(db, 'users', user.uid, 'tasks'), taskData);
+          toast({
+            title: 'Task Added',
+            description: `"${title}" has been added successfully.`,
+          });
+          onTaskAdded?.(docRef.id);
+      }
       setOpen(false);
-      onTaskAdded?.();
     } catch (e) {
-      console.error("Error adding document: ", e);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to add task. Please try again.' });
+      console.error("Error saving document: ", e);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save task.' });
     } finally {
       setIsSaving(false);
     }
@@ -142,11 +152,11 @@ export function AddTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Task</DialogTitle>
-          <DialogDescription>Fill in the details for your new task.</DialogDescription>
+          <DialogTitle>{isEditMode ? 'Edit Task' : 'Add New Task'}</DialogTitle>
+          <DialogDescription>{isEditMode ? 'Update the details of your task.' : 'Fill in the details for your new task.'}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -189,7 +199,7 @@ export function AddTaskDialog({
             <Button type="button" variant="secondary">Cancel</Button>
           </DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Ok'}
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

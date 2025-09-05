@@ -1,9 +1,11 @@
 
+'use client'
+
 import type { Task } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, MoreHorizontal, Flag } from 'lucide-react';
+import { Calendar, MoreHorizontal, Flag, Edit, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
+import { AddTaskDialog } from './add-task-dialog';
+import { useState } from 'react';
+import { deleteTask } from '@/lib/tasks';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+
 
 interface TaskCardProps {
   task: Task;
@@ -23,7 +32,22 @@ const priorityIcons = {
 };
 
 export function TaskCard({ task }: TaskCardProps) {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleDelete = async () => {
+      if(!user) return;
+      try {
+        await deleteTask(user.uid, task.id);
+        toast({ title: 'Task deleted' });
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error deleting task' });
+      }
+  }
+
   return (
+    <>
     <Card className="mb-4 hover:shadow-md transition-shadow duration-200 cursor-grab active:cursor-grabbing">
       <CardHeader className="p-4">
         <div className="flex justify-between items-start">
@@ -35,9 +59,28 @@ export function TaskCard({ task }: TaskCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem>Archive</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
+                <Edit className="mr-2 h-4 w-4" /> Edit
+              </DropdownMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-destructive">
+                         <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete this task.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -69,5 +112,12 @@ export function TaskCard({ task }: TaskCardProps) {
         )}
       </CardContent>
     </Card>
+    <AddTaskDialog 
+        listId={task.listId}
+        task={task}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+    />
+    </>
   );
 }

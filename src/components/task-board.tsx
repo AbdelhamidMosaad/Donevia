@@ -9,9 +9,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, doc, updateDoc, where, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { AddTaskDialog } from './add-task-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { BoardSettings } from './board-settings';
+import { InlineTaskCreator } from './inline-task-creator';
 
 interface TaskBoardProps {
   listId: string;
@@ -29,6 +29,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [addingTaskToStage, setAddingTaskToStage] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && listId) {
@@ -39,7 +40,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
           if (data.stages && data.stages.length > 0) {
             setStages(data.stages.sort((a, b) => a.order - b.order));
           } else {
-            // If no stages, set default and update Firestore
             await updateDoc(listRef, { stages: defaultStages });
             setStages(defaultStages);
           }
@@ -145,39 +145,45 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                     className={`flex flex-col bg-muted/50 rounded-lg transition-colors duration-200 ${droppableSnapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
                                 >
                                     <div {...provided.dragHandleProps} className="flex items-center justify-between p-4 border-b cursor-grab">
-                                    <h2 className="font-semibold font-headline text-lg">{stage.name}</h2>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5">
-                                        {tasksByColumn[stage.id]?.length || 0}
-                                        </span>
-                                        <AddTaskDialog listId={listId} defaultStatus={stage.id}>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                                            <PlusCircle className="h-4 w-4" />
-                                            <span className="sr-only">Add task</span>
-                                        </Button>
-                                        </AddTaskDialog>
-                                    </div>
+                                        <h2 className="font-semibold font-headline text-lg">{stage.name}</h2>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5">
+                                                {tasksByColumn[stage.id]?.length || 0}
+                                            </span>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAddingTaskToStage(stage.id)}>
+                                                <PlusCircle className="h-4 w-4" />
+                                                <span className="sr-only">Add task</span>
+                                            </Button>
+                                        </div>
                                     </div>
                                     <div 
                                         ref={droppableProvided.innerRef}
                                         {...droppableProvided.droppableProps}
                                         className="p-4 flex-1 overflow-y-auto min-h-[100px]"
                                     >
-                                    {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
-                                        <Draggable key={task.id} draggableId={task.id} index={index}>
-                                        {(taskProvided, taskSnapshot) => (
-                                            <div
-                                            ref={taskProvided.innerRef}
-                                            {...taskProvided.draggableProps}
-                                            {...taskProvided.dragHandleProps}
-                                            style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
-                                            >
-                                            <TaskCard task={task} />
-                                            </div>
+                                        {addingTaskToStage === stage.id && (
+                                            <InlineTaskCreator 
+                                                listId={listId}
+                                                stageId={stage.id}
+                                                onCancel={() => setAddingTaskToStage(null)}
+                                                onCreated={() => setAddingTaskToStage(null)}
+                                            />
                                         )}
-                                        </Draggable>
-                                    ))}
-                                    {droppableProvided.placeholder}
+                                        {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
+                                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                                            {(taskProvided, taskSnapshot) => (
+                                                <div
+                                                ref={taskProvided.innerRef}
+                                                {...taskProvided.draggableProps}
+                                                {...taskProvided.dragHandleProps}
+                                                style={{...taskProvided.draggableProps.style, opacity: taskSnapshot.isDragging ? 0.8 : 1}}
+                                                >
+                                                <TaskCard task={task} />
+                                                </div>
+                                            )}
+                                            </Draggable>
+                                        ))}
+                                        {droppableProvided.placeholder}
                                     </div>
                                 </div>
                                 )}
