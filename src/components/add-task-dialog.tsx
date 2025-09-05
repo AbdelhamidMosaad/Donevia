@@ -63,15 +63,20 @@ export function AddTaskDialog({
   useEffect(() => {
     if (user && listId) {
       const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-      getDoc(listRef).then(docSnap => {
+      const unsubscribe = onSnapshot(listRef, (docSnap) => {
         if (docSnap.exists()) {
           const listData = docSnap.data();
           const listStages = listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || [];
           setStages(listStages);
+          // Set default status when stages are loaded for a new task
+          if (!isEditMode && listStages.length > 0) {
+            setStatus(listStages[0].id);
+          }
         }
       });
+      return () => unsubscribe();
     }
-  }, [user, listId]);
+  }, [user, listId, isEditMode]);
 
   useEffect(() => {
     if (open) {
@@ -135,6 +140,7 @@ export function AddTaskDialog({
             description: `"${title}" has been updated.`,
           });
           onTaskUpdated?.();
+          setTimeout(() => setOpen(false), 500);
       } else {
           const docRef = await addDoc(collection(db, 'users', user.uid, 'tasks'), taskData);
           toast({
@@ -142,9 +148,9 @@ export function AddTaskDialog({
             description: `"${title}" has been added successfully.`,
           });
           onTaskAdded?.(docRef.id);
+          setTimeout(() => setOpen(false), 500);
       }
       setIsSaved(true);
-      setTimeout(() => setOpen(false), 500);
     } catch (e) {
       console.error("Error saving document: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to save task.' });
@@ -201,7 +207,7 @@ export function AddTaskDialog({
           <DialogClose asChild>
             <Button type="button" variant="secondary">Cancel</Button>
           </DialogClose>
-          <Button onClick={handleSave} disabled={isSaving || isSaved}>
+          <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
           </Button>
         </DialogFooter>
