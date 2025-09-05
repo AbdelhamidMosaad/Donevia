@@ -23,24 +23,15 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
 
     useEffect(() => {
         inputRef.current?.focus();
-
-        const handleClickOutside = (event: MouseEvent) => {
-            if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
-                handleSave();
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSave = async () => {
+        // Prevent multiple saves
         if (isSaving) return;
 
         const trimmedTitle = title.trim();
+        
+        // If the title is empty, just finish without saving.
         if (!trimmedTitle) {
             onFinish();
             return;
@@ -62,13 +53,13 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
                 dueDate: Timestamp.now(),
                 tags: [],
             });
-            toast({ title: 'Task created!' });
+            // Don't show toast for inline creation to keep flow smooth
         } catch (error) {
             console.error("Error creating task: ", error);
             toast({ variant: 'destructive', title: 'Failed to create task' });
         } finally {
             setIsSaving(false);
-            onFinish();
+            onFinish(); // Always call onFinish to reset the board's state
         }
     };
 
@@ -91,7 +82,7 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
                 onKeyDown={handleKeyDown}
                 onBlur={handleSave}
                 placeholder="New task title..."
-                className="text-sm"
+                className="text-sm h-9"
                 disabled={isSaving}
             />
         </div>

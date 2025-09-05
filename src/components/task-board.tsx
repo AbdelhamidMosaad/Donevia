@@ -2,11 +2,9 @@
 'use client';
 import type { Task, Stage } from '@/lib/types';
 import { TaskCard } from './task-card';
-import { PlusCircle } from 'lucide-react';
-import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, doc, updateDoc, where, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useToast } from '@/hooks/use-toast';
@@ -38,7 +36,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data.stages && data.stages.length > 0) {
-            setStages(data.stages.sort((a, b) => a.order - b.order));
+            setStages(data.stages.sort((a: any, b: any) => a.order - b.order));
           } else {
             await updateDoc(listRef, { stages: defaultStages });
             setStages(defaultStages);
@@ -136,9 +134,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
       if ((e.target as HTMLElement).closest('.task-card-wrapper')) {
           return;
       }
-      // If already adding a task, don't do anything
-      if (addingTaskToStage) return;
-
       setAddingTaskToStage(stageId);
   };
 
@@ -179,17 +174,17 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                     <div 
                                         ref={droppableProvided.innerRef}
                                         {...droppableProvided.droppableProps}
-                                        className={`p-4 flex-1 overflow-y-auto min-h-[100px] ${addingTaskToStage ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                        className={`p-4 flex-1 overflow-y-auto min-h-[100px] ${addingTaskToStage ? '' : 'cursor-pointer'}`}
                                         onClick={(e) => handleStageClick(stage.id, e)}
                                     >
-                                        {addingTaskToStage === stage.id && (
+                                        {addingTaskToStage === stage.id ? (
                                             <InlineTaskCreator 
                                                 listId={listId}
                                                 stageId={stage.id}
                                                 onFinish={handleFinishCreating}
                                             />
-                                        )}
-                                        {tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
+                                        ) : (
+                                          tasksByColumn[stage.id] && tasksByColumn[stage.id].map((task, index) => (
                                             <Draggable key={task.id} draggableId={task.id} index={index}>
                                             {(taskProvided, taskSnapshot) => (
                                                 <div
@@ -203,8 +198,9 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                                 </div>
                                             )}
                                             </Draggable>
-                                        ))}
-                                        {droppableProvided.placeholder}
+                                          ))
+                                        )}
+                                        {addingTaskToStage !== stage.id && droppableProvided.placeholder}
                                     </div>
                                 </div>
                                 )}
