@@ -110,7 +110,17 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   };
 
   const tasksByColumn = useMemo(() => sortedStages.reduce((acc, stage) => {
-    acc[stage.id] = tasks.filter((task) => task.status === stage.id).sort((a,b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+    acc[stage.id] = tasks
+      .filter((task) => task.status === stage.id)
+      .sort((a, b) => {
+        if (a.createdAt && b.createdAt) {
+          return a.createdAt.toMillis() - b.createdAt.toMillis();
+        }
+        // Fallback if createdAt is not available on one of the tasks
+        if (a.createdAt) return -1;
+        if (b.createdAt) return 1;
+        return 0;
+      });
     return acc;
   }, {} as Record<string, Task[]>), [sortedStages, tasks]);
 
