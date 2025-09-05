@@ -83,14 +83,15 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   }, [user, open]);
 
   const applyTheme = (theme: Theme) => {
-    document.body.className = '';
-    const currentFont = document.body.style.fontFamily;
-    if (theme !== 'light') {
-      document.body.classList.add(theme);
+    const body = document.body;
+    const currentFont = body.style.fontFamily;
+    body.className = ''; // Reset classes first
+    if (theme) {
+      body.classList.add(theme);
     }
-    document.body.style.fontFamily = currentFont;
+    body.style.fontFamily = currentFont;
   };
-
+  
   const applyFont = (font: Font) => {
     document.body.style.fontFamily = `var(--font-${font})`;
   }
@@ -125,7 +126,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             description: 'Your new preferences have been saved.',
         });
         setOpen(false);
-        router.back();
     } catch (error) {
         console.error("Error saving settings: ", error);
         toast({
@@ -144,7 +144,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     applyTheme(initialTheme);
     applyFont(initialFont);
     setOpen(false);
-    router.back();
   };
   
   if (loading) {

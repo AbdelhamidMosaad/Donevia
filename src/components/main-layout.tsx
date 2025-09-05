@@ -29,9 +29,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             const { theme, font } = doc.data();
             
             const body = document.body;
-            body.className = ''; // Reset classes first
+            // Keep existing font style if any, and reset theme classes
+            const currentFontFamily = body.style.fontFamily;
+            body.className = ''; 
 
-            if (theme && theme !== 'light') {
+            if (theme) {
               body.classList.add(theme);
             }
             
