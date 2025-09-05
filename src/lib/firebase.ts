@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import {initializeApp, getApps, getApp} from 'firebase/app';
 import {getAuth} from 'firebase/auth';
-import {getFirestore, enablePersistence, initializeFirestore} from 'firebase/firestore';
+import {getFirestore, initializeFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -17,11 +17,19 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = initializeFirestore(app, {
-    localCache: {
-        kind: 'persistent'
+const db = getFirestore(app);
+
+// Enable persistence
+try {
+    enableIndexedDbPersistence(db)
+    console.log("Firebase Offline Caching Enabled");
+} catch (error: any) {
+    if (error.code == 'failed-precondition') {
+        console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.");
+    } else if (error.code == 'unimplemented') {
+        console.warn("The current browser does not support all of the features required to enable persistence.");
     }
-});
+}
 
 
 export {app, auth, db};
