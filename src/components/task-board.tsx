@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BoardSettings } from './board-settings';
 import { BoardTaskCreator } from './board-task-creator';
 import { Button } from './ui/button';
-import { ChevronDown, ChevronRight, ChevronsDown, ChevronsRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TaskBoardProps {
@@ -49,19 +49,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
       updateCollapsedState(newState);
   };
 
-  const collapseAll = () => {
-      const newState = stages.reduce((acc, stage) => {
-          acc[stage.id] = true;
-          return acc;
-      }, {} as Record<string, boolean>);
-      updateCollapsedState(newState);
-  };
-
-  const expandAll = () => {
-      updateCollapsedState({});
-  }
-
-  
   useEffect(() => {
     if (user && listId) {
       const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
@@ -162,8 +149,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
         <div className="mb-4 flex justify-end items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={expandAll}><ChevronsRight className="mr-2 h-4 w-4" /> Expand All</Button>
-            <Button variant="ghost" size="sm" onClick={collapseAll}><ChevronsDown className="mr-2 h-4 w-4" /> Collapse All</Button>
              <BoardSettings listId={listId} currentStages={stages} />
         </div>
       <Droppable droppableId="board" direction="horizontal" type="COLUMN">
@@ -256,4 +241,3 @@ export function TaskBoard({ listId }: TaskBoardProps) {
     </DragDropContext>
   );
 }
-
