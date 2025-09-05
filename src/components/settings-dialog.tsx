@@ -22,13 +22,17 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import { useRouter } from 'next/navigation';
 
-type Theme = 'light' | 'dark';
+type Theme = 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
 type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
 
 const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg: string; text: string; primary: string; secondary: string } }[] = [
-  { name: 'light', label: 'Light', icon: <Sun className="h-5 w-5" />, colors: { bg: 'hsl(210 100% 95%)', text: 'hsl(215 40% 15%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(210 40% 90%)' } },
+  { name: 'light', label: 'Light', icon: <Sun className="h-5 w-5" />, colors: { bg: 'hsl(210 100% 95%)', text: 'hsl(215 40% 15%)', primary: 'hsl(175 42% 64%)', secondary: 'hsl(210 40% 90%)' } },
   { name: 'dark', label: 'Dark', icon: <Moon className="h-5 w-5" />, colors: { bg: 'hsl(215 30% 12%)', text: 'hsl(210 40% 98%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(215 20% 25%)' } },
+  { name: 'theme-indigo', label: 'Indigo', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(232 46% 16%)', text: 'hsl(230 80% 98%)', primary: 'hsl(234 65% 26%)', secondary: 'hsl(232 46% 28%)' } },
+  { name: 'theme-purple', label: 'Purple', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(279 40% 15%)', text: 'hsl(280 80% 98%)', primary: 'hsl(279 65% 40%)', secondary: 'hsl(279 40% 27%)' } },
+  { name: 'theme-green', label: 'Green', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(145 25% 15%)', text: 'hsl(145 60% 98%)', primary: 'hsl(145 38% 25%)', secondary: 'hsl(145 25% 26%)' } },
 ];
 
 const fonts: { name: Font; label: string; variable: string }[] = [
@@ -47,6 +51,7 @@ const fonts: { name: Font; label: string; variable: string }[] = [
 export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<Theme>('light');
   const [selectedFont, setSelectedFont] = useState<Font>('inter');
@@ -120,6 +125,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             description: 'Your new preferences have been saved.',
         });
         setOpen(false);
+        router.back();
     } catch (error) {
         console.error("Error saving settings: ", error);
         toast({
@@ -138,6 +144,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     applyTheme(initialTheme);
     applyFont(initialFont);
     setOpen(false);
+    router.back();
   };
   
   if (loading) {

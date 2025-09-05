@@ -29,17 +29,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             const { theme, font } = doc.data();
             
             const body = document.body;
-            const currentFontFamily = body.style.fontFamily;
             body.className = ''; // Reset classes first
 
-            if (theme) {
+            if (theme && theme !== 'light') {
               body.classList.add(theme);
             }
             
             if (font) {
               body.style.fontFamily = `var(--font-${font})`;
-            } else if (currentFontFamily) {
-              body.style.fontFamily = currentFontFamily;
             } else {
               body.style.fontFamily = 'var(--font-inter)';
             }
