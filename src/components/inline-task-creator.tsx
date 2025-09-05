@@ -23,12 +23,7 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
 
     useEffect(() => {
         inputRef.current?.focus();
-        
-        // This cleanup function will be called when the component unmounts
-        return () => {
-            onFinish();
-        };
-    }, [onFinish]);
+    }, []);
 
     const handleSave = async () => {
         if (isSaving) return;
@@ -61,7 +56,7 @@ export function InlineTaskCreator({ listId, stageId, onFinish }: InlineTaskCreat
             toast({ variant: 'destructive', title: 'Failed to create task' });
         } finally {
             setIsSaving(false);
-            onFinish(); // Ensure we always call onFinish
+            onFinish();
         }
     };
 
