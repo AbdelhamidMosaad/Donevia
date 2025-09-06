@@ -1,17 +1,18 @@
 
 'use client';
 
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { PageEditor } from '@/components/notebooks/page-editor';
 import { useAtom } from 'jotai';
 import { selectedPageAtom, selectedNotebookAtom, selectedSectionAtom } from '@/lib/notebook-store';
-import { BrainCircuit } from 'lucide-react';
+import { BrainCircuit, Maximize, Minimize } from 'lucide-react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Page } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 export default function NotebooksPageWithId() {
   const { user } = useAuth();
@@ -19,10 +20,32 @@ export default function NotebooksPageWithId() {
   const router = useRouter();
   const {toast} = useToast();
   const pageId = params.pageId as string;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [selectedPage, setSelectedPage] = useAtom(selectedPageAtom);
   const [, setSelectedNotebook] = useAtom(selectedNotebookAtom);
   const [, setSelectedSection] = useAtom(selectedSectionAtom);
+
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+
+    if (!document.fullscreenElement) {
+        containerRef.current.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+  };
+
+   useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   useEffect(() => {
     if (user && pageId) {
@@ -74,7 +97,17 @@ export default function NotebooksPageWithId() {
   }, [user, setSelectedNotebook, setSelectedSection, setSelectedPage]);
 
   return (
-    <div className="h-[calc(100vh-theme(height.14)-2rem)] flex flex-col">
+    <div ref={containerRef} className="h-[calc(100vh-theme(height.14)-2rem)] flex flex-col relative bg-card">
+         <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleFullscreen}
+            className="absolute top-2 right-2 z-20"
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+         >
+            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+        </Button>
+
         {selectedPage ? (
           <PageEditor key={selectedPage.id} page={selectedPage} />
         ) : (
