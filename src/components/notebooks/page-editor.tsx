@@ -96,15 +96,6 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
         heading: {
           levels: [1, 2, 3],
         },
-        textStyle: false,
-        bulletList: {
-            keepMarks: true,
-            keepAttributes: false, 
-        },
-        orderedList: {
-            keepMarks: true,
-            keepAttributes: false,
-        },
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
@@ -155,6 +146,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
 
   // Auto-save timer
   useEffect(() => {
+    if (!editor) return;
     let intervalId: NodeJS.Timeout;
     if (state.status === 'unsaved') {
       intervalId = setInterval(() => {
@@ -162,12 +154,12 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
       }, 5 * 60 * 1000); // 5 minutes
     }
     return () => clearInterval(intervalId);
-  }, [state.status, handleSave]);
+  }, [state.status, handleSave, editor]);
 
 
   // Live updates from Firestore for external changes
   useEffect(() => {
-      if (!user) return;
+      if (!user || !editor) return;
       const unsub = onSnapshot(doc(db, "users", user.uid, "pages", initialPage.id), (doc) => {
           const serverPage = doc.data() as Page;
           if (serverPage && serverPage.version > state.clientVersion) {
@@ -176,7 +168,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
           }
       });
       return () => unsub();
-  }, [initialPage.id, user, state.clientVersion]);
+  }, [initialPage.id, user, state.clientVersion, editor]);
 
 
   // Effect to reset state when the page prop changes
@@ -282,5 +274,3 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
     </>
   );
 }
-
-    

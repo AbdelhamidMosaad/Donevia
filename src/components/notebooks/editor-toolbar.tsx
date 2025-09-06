@@ -48,7 +48,14 @@ const fonts = [
     { name: 'Ubuntu', value: 'Ubuntu, sans-serif' },
 ];
 
-const canvasColors = ['#FFFFFF', '#F3F4F6', '#FEFCE8', '#F0F9FF', '#FDF2F8', '#F5F3FF', '#ECFDF5'];
+const canvasColors = [
+    '#FFFFFF', '#F8F8F8', // Whites
+    '#FFFACD', '#FFFFE0', // Light Yellows
+    '#F0FFF0', '#F5FFFA', // Mint Greens
+    '#F0F8FF', '#E6E6FA', // Light Blues & Lavenders
+    '#FFF0F5', '#FFE4E1', // Pinks
+    '#FAFAD2', '#FFEFD5', // Light Goldenrod & PapayaWhip
+];
 
 
 interface EditorToolbarProps {
@@ -206,7 +213,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 </TooltipContent>
             </Tooltip>
             <PopoverContent className="w-auto p-2">
-                <div className="flex gap-1">
+                <div className="grid grid-cols-6 gap-1">
                 {canvasColors.map((c) => (
                     <button
                     key={c}
