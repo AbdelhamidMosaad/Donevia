@@ -46,7 +46,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
 export async function savePageClient(pageId: string, title: string, contentJSON: any, version: number, canvasColor: string | null) {
   const response = await fetchWithAuth('/api/pages/save', {
     method: 'POST',
-    body: JSON.stringify({ pageId, title, contentJSON, version, canvasColor }),
+    body: JSON.stringify({ pageId, title, contentJSON, version, canvasColor: canvasColor || null }),
   });
   return response.json();
 }

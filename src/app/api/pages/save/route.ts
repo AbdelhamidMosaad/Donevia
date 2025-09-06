@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
         lastEditedBy: userId,
       };
 
-      if(canvasColor) {
+      if (typeof canvasColor === 'string') {
         updateData.canvasColor = canvasColor;
       }
 
