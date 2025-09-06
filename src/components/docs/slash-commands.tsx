@@ -1,11 +1,14 @@
 
 import { Extension } from '@tiptap/core';
-import Suggestion from '@tiptap/suggestion';
+import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 import { ReactRenderer } from '@tiptap/react';
 import {
   Heading1, Heading2, Heading3, List, ListOrdered, Code, Quote, Image, Table
 } from 'lucide-react';
-import tippy from 'tippy.js';
+import tippy, { Instance } from 'tippy.js';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { cn } from '@/lib/utils';
+
 
 const commands = [
   { title: 'Heading 1', icon: Heading1, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 1 }).run() },
@@ -24,22 +27,73 @@ const commands = [
   { title: 'Table', icon: Table, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
 ];
 
-const CommandList = ({ items, command }: { items: any[], command: (item: any) => void }) => {
+const CommandList = forwardRef((props: { items: any[], command: (item: any) => void }, ref) => {
+    const [selectedIndex, setSelectedIndex] = useState(0);
+
+    useEffect(() => setSelectedIndex(0), [props.items]);
+    
+    const selectItem = (index: number) => {
+        const item = props.items[index];
+        if (item) {
+            props.command(item);
+        }
+    };
+    
+    const upHandler = () => {
+        setSelectedIndex((selectedIndex + props.items.length - 1) % props.items.length);
+    };
+
+    const downHandler = () => {
+        setSelectedIndex((selectedIndex + 1) % props.items.length);
+    };
+
+    const enterHandler = () => {
+        selectItem(selectedIndex);
+    };
+
+    useImperativeHandle(ref, () => ({
+        onKeyDown: ({ event }: { event: React.KeyboardEvent }) => {
+            if (event.key === 'ArrowUp') {
+                upHandler();
+                return true;
+            }
+            if (event.key === 'ArrowDown') {
+                downHandler();
+                return true;
+            }
+            if (event.key === 'Enter') {
+                enterHandler();
+                return true;
+            }
+            return false;
+        }
+    }));
+
+
   return (
     <div className="bg-card border shadow-lg rounded-lg p-2">
-      {items.map((item, index) => (
-        <button
-          key={index}
-          onClick={() => command(item)}
-          className="flex items-center gap-2 p-2 rounded-md hover:bg-accent w-full text-left"
-        >
-          <item.icon className="w-5 h-5" />
-          {item.title}
-        </button>
-      ))}
+      {props.items.length ? (
+        props.items.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => selectItem(index)}
+              className={cn("flex items-center gap-2 p-2 rounded-md hover:bg-accent w-full text-left",
+                index === selectedIndex && "bg-accent"
+              )}
+            >
+              <item.icon className="w-5 h-5" />
+              {item.title}
+            </button>
+        ))
+      ) : (
+        <div className="p-2">No results</div>
+      )}
     </div>
   );
-};
+});
+
+CommandList.displayName = "CommandList";
+
 
 export const slashCommands = Extension.create({
   name: 'slashCommands',
@@ -55,15 +109,19 @@ export const slashCommands = Extension.create({
           return commands.filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()));
         },
         render: () => {
-          let component: any;
-          let popup: any;
+          let component: ReactRenderer;
+          let popup: Instance[];
 
           return {
-            onStart: props => {
+            onStart: (props: SuggestionProps) => {
               component = new ReactRenderer(CommandList, {
                 props,
                 editor: props.editor,
               });
+
+              if (!props.clientRect) {
+                  return;
+              }
 
               popup = tippy('body', {
                 getReferenceClientRect: props.clientRect,
@@ -75,20 +133,23 @@ export const slashCommands = Extension.create({
                 placement: 'bottom-start',
               });
             },
-            onUpdate(props) {
+            onUpdate(props: SuggestionProps) {
               component.updateProps(props);
+              
+               if (!props.clientRect) {
+                  return;
+              }
+
               popup[0].setProps({
                 getReferenceClientRect: props.clientRect,
               });
             },
-            onKeyDown(props) {
+            onKeyDown(props: {event: React.KeyboardEvent}) {
               if (props.event.key === 'Escape') {
                 popup[0].hide();
                 return true;
               }
-              // This is a type error in tiptap's suggestion plugin, component.ref does not exist.
-              // but the type says it does. So we cast to any to avoid the error.
-              return (component as any).onKeyDown(props);
+              return component.ref?.onKeyDown(props);
             },
             onExit() {
               popup[0].destroy();
@@ -96,7 +157,7 @@ export const slashCommands = Extension.create({
             },
           };
         },
-      }),
+      } as Omit<SuggestionOptions, 'editor'>),
     ];
   },
 });
