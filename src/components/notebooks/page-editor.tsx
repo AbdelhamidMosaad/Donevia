@@ -26,6 +26,9 @@ import { VersionHistoryDrawer } from './version-history/version-history-drawer';
 import { saveRevisionClient } from '@/lib/client-helpers';
 import { slashCommands } from '../docs/slash-commands';
 import { Image as TipTapImage } from '@tiptap/extension-image';
+import BulletList from '@tiptap/extension-bullet-list'
+import OrderedList from '@tiptap/extension-ordered-list'
+import ListItem from '@tiptap/extension-list-item'
 import { History as HistoryExtension } from '@tiptap/extension-history';
 
 interface PageEditorProps {
@@ -54,15 +57,13 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
   const editor = useEditor({
     extensions: [
        StarterKit.configure({
-        // Disable the default heading configuration
-        heading: false,
+        heading: {
+          levels: [1, 2, 3],
+        },
+        bulletList: false,
+        orderedList: false,
+        listItem: false,
       }),
-      // Re-add the heading extension with custom levels
-      StarterKit.configure({
-          heading: {
-            levels: [1, 2, 3],
-          },
-      }).heading,
       Placeholder.configure({ placeholder: "Type '/' for commands or start writing..." }),
       Underline,
       Link.configure({ openOnClick: true, autolink: true, linkOnPaste: true }),
@@ -74,6 +75,9 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
       TableCell,
       slashCommands,
       TipTapImage,
+      BulletList,
+      OrderedList,
+      ListItem,
     ],
     content: page.content,
     editorProps: {
