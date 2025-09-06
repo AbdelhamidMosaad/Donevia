@@ -73,6 +73,8 @@ export type Section = {
     notebookId: string;
     title: string;
     order: number; // For ordering sections within a notebook
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
 };
 
 /**
