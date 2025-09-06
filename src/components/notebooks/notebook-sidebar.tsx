@@ -124,6 +124,8 @@ export function NotebookSidebar() {
         notebookId: parentId,
         title: 'Untitled Section',
         order: sections[parentId]?.length || 0,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
       });
     } else if (type === 'page' && parentId) {
         await addDoc(collection(db, 'users', user.uid, 'pages'), {
@@ -215,86 +217,49 @@ export function NotebookSidebar() {
       router.push(`/notebooks/${page.id}`);
   }
 
-  const renderItem = (item: Notebook | Section | Page, type: 'notebook' | 'section' | 'page') => {
-      const isSelected = (type === 'notebook' && selectedNotebook?.id === item.id) ||
-                         (type === 'section' && selectedSection?.id === item.id) ||
-                         (type === 'page' && selectedPage?.id === item.id);
-      
-      const onSelect = () => {
-          if (type === 'page') {
-            handleSelectPage(item as Page);
-          }
-      };
-      
-      const icon = type === 'notebook' ? <Book className="h-4 w-4"/> : <FileText className="h-4 w-4"/>;
-
-      return (
-           <div 
-            key={item.id} 
-            className={cn(
-                "flex items-center justify-between rounded-md px-2 py-1.5 text-sm group hover:bg-accent",
-                isSelected && "bg-accent text-accent-foreground",
-                type === 'section' && "pl-6",
-                type === 'page' && "pl-10",
-            )}
-           >
-                {editingItemId === item.id ? (
-                    <Input
-                        value={editingItemName}
-                        onChange={(e) => setEditingItemName(e.target.value)}
-                        onBlur={() => handleRename(type, item.id)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleRename(type, item.id)}
-                        className="h-7"
-                        autoFocus
-                    />
-                ) : (
-                    <div className="flex items-center gap-2 cursor-pointer flex-1 truncate" onClick={onSelect}>
-                        {type !== 'section' && icon}
-                        <span className="truncate">{item.title}</span>
-                    </div>
-                )}
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                         <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0">
-                            <MoreVertical className="h-4 w-4"/>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => startEditing(item.id, item.title)}><Edit className="mr-2 h-4 w-4"/>Rename</DropdownMenuItem>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>This will delete "{item.title}" and all its contents. This action is irreversible.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => {
-                                        if (type === 'notebook') handleDeleteNotebook(item.id);
-                                        else if (type === 'section') handleDeleteSection(item.id);
-                                        else if (type === 'page') handleDeletePage(item.id);
-                                    }}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+  const renderItemActions = (item: Notebook | Section | Page, type: 'notebook' | 'section' | 'page') => {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0">
+                    <MoreVertical className="h-4 w-4"/>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => startEditing(item.id, item.title)}><Edit className="mr-2 h-4 w-4"/>Rename</DropdownMenuItem>
+                    <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>This will delete "{item.title}" and all its contents. This action is irreversible.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => {
+                                if (type === 'notebook') handleDeleteNotebook(item.id);
+                                else if (type === 'section') handleDeleteSection(item.id);
+                                else if (type === 'page') handleDeletePage(item.id);
+                            }}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                <DropdownMenuSeparator />
+                {type === 'notebook' && <DropdownMenuItem onSelect={() => handleCreate('section', item.id)}><Plus className="mr-2 h-4 w-4"/>New Section</DropdownMenuItem>}
+                {type === 'section' && <DropdownMenuItem onSelect={() => handleCreate('page', item.id)}><Plus className="mr-2 h-4 w-4"/>New Page</DropdownMenuItem>}
+                    {type === 'notebook' && (
+                        <>
                         <DropdownMenuSeparator />
-                        {type === 'notebook' && <DropdownMenuItem onSelect={() => handleCreate('section', item.id)}><Plus className="mr-2 h-4 w-4"/>New Section</DropdownMenuItem>}
-                        {type === 'section' && <DropdownMenuItem onSelect={() => handleCreate('page', item.id)}><Plus className="mr-2 h-4 w-4"/>New Page</DropdownMenuItem>}
-                         {type === 'notebook' && (
-                             <>
-                             <DropdownMenuSeparator />
-                             <DropdownMenuItem onSelect={() => setExportingNotebook(item as Notebook)}>
-                                <Download className="mr-2 h-4 w-4" /> Export
-                             </DropdownMenuItem>
-                            </>
-                         )}
-                    </DropdownMenuContent>
-                 </DropdownMenu>
-           </div>
-      )
+                        <DropdownMenuItem onSelect={() => setExportingNotebook(item as Notebook)}>
+                        <Download className="mr-2 h-4 w-4" /> Export
+                        </DropdownMenuItem>
+                    </>
+                    )}
+            </DropdownMenuContent>
+            </DropdownMenu>
+    )
   }
 
   return (
@@ -318,27 +283,90 @@ export function NotebookSidebar() {
         <div className="space-y-1">
           {notebooks.map(notebook => (
               <Collapsible key={notebook.id} defaultOpen={selectedNotebook?.id === notebook.id} className="w-full">
-                {renderItem(notebook, 'notebook')}
+                <div className={cn(
+                    "flex items-center justify-between rounded-md px-2 py-1.5 text-sm group hover:bg-accent",
+                    selectedNotebook?.id === notebook.id && "bg-accent text-accent-foreground"
+                )}>
+                    {editingItemId === notebook.id ? (
+                        <Input
+                            value={editingItemName}
+                            onChange={(e) => setEditingItemName(e.target.value)}
+                            onBlur={() => handleRename('notebook', notebook.id)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleRename('notebook', notebook.id)}
+                            className="h-7"
+                            autoFocus
+                        />
+                    ) : (
+                        <CollapsibleTrigger asChild>
+                            <div className="flex items-center gap-2 cursor-pointer flex-1 truncate">
+                                <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90"/>
+                                <Book className="h-4 w-4"/>
+                                <span className="truncate">{notebook.title}</span>
+                            </div>
+                        </CollapsibleTrigger>
+                    )}
+                     {renderItemActions(notebook, 'notebook')}
+                </div>
                 <CollapsibleContent>
-                    {(sections[notebook.id] || []).map(section => (
-                        <Collapsible key={section.id} defaultOpen={selectedSection?.id === section.id} className="w-full">
-                            <CollapsibleTrigger asChild>
-                                <div
-                                    className={cn(
-                                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm group hover:bg-accent w-full",
+                    <div className="pl-6 space-y-1 py-1">
+                        {(sections[notebook.id] || []).map(section => (
+                            <Collapsible key={section.id} defaultOpen={selectedSection?.id === section.id} className="w-full">
+                                <div className={cn(
+                                    "flex items-center justify-between rounded-md pr-2 text-sm group hover:bg-accent",
                                     selectedSection?.id === section.id && "bg-accent text-accent-foreground"
+                                )}>
+                                    {editingItemId === section.id ? (
+                                         <Input
+                                            value={editingItemName}
+                                            onChange={(e) => setEditingItemName(e.target.value)}
+                                            onBlur={() => handleRename('section', section.id)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleRename('section', section.id)}
+                                            className="h-7"
+                                            autoFocus
+                                        />
+                                    ) : (
+                                        <CollapsibleTrigger asChild>
+                                             <div className="flex items-center gap-2 cursor-pointer flex-1 truncate p-1.5">
+                                                <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90"/>
+                                                <span className="truncate">{section.title}</span>
+                                            </div>
+                                        </CollapsibleTrigger>
                                     )}
-                                >
-                                    <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90"/>
-                                    <span className="truncate flex-1 text-left">{section.title}</span>
-                                    {renderItem(section, 'section')}
+                                     {renderItemActions(section, 'section')}
                                 </div>
-                            </CollapsibleTrigger>
-                             <CollapsibleContent>
-                                {(pages[section.id] || []).map(page => renderItem(page, 'page'))}
-                             </CollapsibleContent>
-                        </Collapsible>
-                    ))}
+                                <CollapsibleContent>
+                                    <div className="pl-8 space-y-1 py-1">
+                                        {(pages[section.id] || []).map(page => (
+                                            <div 
+                                                key={page.id}
+                                                className={cn(
+                                                    "flex items-center justify-between rounded-md pr-2 text-sm group hover:bg-accent",
+                                                    selectedPage?.id === page.id && "bg-accent text-accent-foreground"
+                                                )}
+                                            >
+                                                {editingItemId === page.id ? (
+                                                    <Input
+                                                        value={editingItemName}
+                                                        onChange={(e) => setEditingItemName(e.target.value)}
+                                                        onBlur={() => handleRename('page', page.id)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleRename('page', page.id)}
+                                                        className="h-7"
+                                                        autoFocus
+                                                    />
+                                                ): (
+                                                    <div className="flex items-center gap-2 cursor-pointer flex-1 truncate p-1.5" onClick={() => handleSelectPage(page)}>
+                                                        <FileText className="h-4 w-4"/>
+                                                        <span className="truncate">{page.title}</span>
+                                                    </div>
+                                                )}
+                                                 {renderItemActions(page, 'page')}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
+                        ))}
+                    </div>
                 </CollapsibleContent>
               </Collapsible>
           ))}
