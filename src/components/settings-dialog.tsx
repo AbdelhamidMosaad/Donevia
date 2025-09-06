@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Moon, Palette, Type, Check, Bell } from 'lucide-react';
+import { Sun, Moon, Palette, Type, Check, Bell, PanelLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { NotificationSettings } from './notification-settings';
+import { Switch } from './ui/switch';
 
 type Theme = 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
 type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
@@ -50,12 +51,21 @@ const fontVariables: Record<Font, string> = fonts.reduce((acc, font) => {
     return acc;
 }, {} as Record<Font, string>);
 
+interface UserSettings {
+    theme: Theme;
+    font: Font;
+    sidebarOpen: boolean;
+}
+
 export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState<Theme>('light');
-  const [selectedFont, setSelectedFont] = useState<Font>('inter');
+  const [settings, setSettings] = useState<UserSettings>({
+      theme: 'light',
+      font: 'inter',
+      sidebarOpen: true
+  });
 
   useEffect(() => {
     if (user && open) {
@@ -63,13 +73,12 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
         const settingsSnap = await getDoc(settingsRef);
         if (settingsSnap.exists() && settingsSnap.data()) {
-          const { theme, font } = settingsSnap.data();
-          if (theme) {
-            setSelectedTheme(theme);
-          }
-          if (font) {
-            setSelectedFont(font);
-          }
+          const data = settingsSnap.data();
+          setSettings({
+            theme: data.theme || 'light',
+            font: data.font || 'inter',
+            sidebarOpen: data.sidebarOpen !== false // default to true
+          });
         }
       };
       fetchSettings();
@@ -78,7 +87,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   
   const applyTheme = (theme: Theme) => {
     const body = document.body;
-    // Keep font style when changing theme
     const currentFontFamily = body.style.fontFamily;
     body.className = body.className.split(' ').filter(c => !c.startsWith('theme-') && c !== 'light' && c !== 'dark' && !c.startsWith('font-')).join(' ');
     
@@ -95,7 +103,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const savePreferences = async (newSettings: { theme?: Theme; font?: Font }) => {
+  const savePreferences = async (newSettings: Partial<UserSettings>) => {
     if (!user) {
         toast({
             variant: 'destructive',
@@ -123,16 +131,21 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
 
 
   const handleThemeChange = (theme: Theme) => {
-    setSelectedTheme(theme);
+    setSettings(s => ({...s, theme}));
     applyTheme(theme);
     savePreferences({ theme });
   };
 
   const handleFontChange = (font: Font) => {
-    setSelectedFont(font);
+    setSettings(s => ({...s, font}));
     applyFont(font);
     savePreferences({ font });
   };
+
+  const handleSidebarChange = (isOpen: boolean) => {
+    setSettings(s => ({...s, sidebarOpen: isOpen}));
+    savePreferences({ sidebarOpen: isOpen });
+  }
   
   if (loading) {
     return null;
@@ -152,13 +165,30 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
 
              <Card>
                 <CardHeader>
+                <CardTitle className="flex items-center gap-2"><PanelLeft /> Sidebar</CardTitle>
+                <CardDescription>Customize the behavior of the main sidebar.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="sidebar-switch">Open by Default</Label>
+                        <Switch
+                            id="sidebar-switch"
+                            checked={settings.sidebarOpen}
+                            onCheckedChange={handleSidebarChange}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Type /> Typography System</CardTitle>
                 <CardDescription>Choose the font that best suits your reading preference.</CardDescription>
                 </CardHeader>
                 <CardContent>
                 <div className="w-full max-w-sm">
                     <Label htmlFor="font-select">Font Family</Label>
-                    <Select value={selectedFont} onValueChange={(v: Font) => handleFontChange(v)}>
+                    <Select value={settings.font} onValueChange={(v: Font) => handleFontChange(v)}>
                         <SelectTrigger id="font-select">
                             <SelectValue placeholder="Select a font" />
                         </SelectTrigger>
@@ -185,7 +215,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                     <div key={theme.name} onClick={() => handleThemeChange(theme.name)} className="cursor-pointer group">
                         <div className={cn(
                         'rounded-lg border-2 p-2 transition-all',
-                        selectedTheme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
+                        settings.theme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
                         )}>
                         <div className="space-y-1.5 rounded-md p-2 flex flex-col items-center justify-center aspect-square" style={{ backgroundColor: theme.colors.bg }}>
                             <div className="flex items-center justify-center h-10 w-10 rounded-full mb-2" style={{backgroundColor: theme.colors.secondary}}>
@@ -198,7 +228,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                         </div>
                         </div>
                         <div className="mt-2 flex items-center justify-center gap-2">
-                        {selectedTheme === theme.name && <Check className="h-4 w-4 text-primary" />}
+                        {settings.theme === theme.name && <Check className="h-4 w-4 text-primary" />}
                         <span className="text-sm font-medium">{theme.label}</span>
                         </div>
                     </div>
