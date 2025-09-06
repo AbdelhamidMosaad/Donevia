@@ -5,7 +5,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -114,6 +114,7 @@ const ToolbarButton = ({
   icon: Icon,
   onClick,
   level,
+  align
 }: {
   editor: Editor;
   name: string;
@@ -121,10 +122,16 @@ const ToolbarButton = ({
   icon: React.ElementType;
   onClick?: () => void;
   level?: number;
+  align?: string;
 }) => {
-  const isActive = level ? editor.isActive(name, { level }) : editor.isActive(name);
+  const isActive = level ? editor.isActive(name, { level }) : (align ? editor.isActive({ textAlign: align }) : editor.isActive(name));
+  
   const action = onClick || (() => {
     const chain = editor.chain().focus();
+    if (align) {
+        (chain as any).setTextAlign(align).run();
+        return;
+    }
     const command = `toggle${name.charAt(0).toUpperCase() + name.slice(1)}`;
     if (typeof (chain as any)[command] === 'function') {
       if (level) {
@@ -334,6 +341,13 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
             <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
             <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
+
+            <Separator orientation="vertical" className="h-6 mx-1" />
+
+             <ToolbarButton editor={editor} name="align" label="Align Left" icon={AlignLeft} align="left" />
+             <ToolbarButton editor={editor} name="align" label="Align Center" icon={AlignCenter} align="center" />
+             <ToolbarButton editor={editor} name="align" label="Align Right" icon={AlignRight} align="right" />
+             <ToolbarButton editor={editor} name="align" label="Align Justify" icon={AlignJustify} align="justify" />
 
             <Separator orientation="vertical" className="h-6 mx-1" />
 

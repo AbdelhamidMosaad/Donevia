@@ -9,6 +9,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Highlight from '@tiptap/extension-highlight';
+import TextAlign from '@tiptap/extension-text-align';
 import type { Page } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
@@ -100,6 +101,9 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
         types: ['heading', 'paragraph'],
       }),
       Highlight.configure({ multicolor: true }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
       FontFamily,
       FontSize,
       StarterKit.configure({
