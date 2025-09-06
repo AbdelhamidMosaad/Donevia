@@ -127,7 +127,7 @@ const ToolbarButton = ({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Toggle size="sm" pressed={isActive} onPressedChange={action} className="text-black">
+        <Toggle size="sm" pressed={isActive} onPressedChange={action} className="text-white">
           <Icon className="h-4 w-4" />
         </Toggle>
       </TooltipTrigger>
@@ -195,7 +195,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
         <Tab name="File">
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'} className="text-black">
+                    <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'} className="text-white">
                         {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     </Button>
                 </TooltipTrigger>
@@ -251,7 +251,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-9 w-9 text-black">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 text-white">
                                 <Palette className="h-4 w-4" style={{ color: activeColor }} />
                             </Button>
                         </DropdownMenuTrigger>
@@ -305,7 +305,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-9 text-black">
+                            <Button variant="outline" size="sm" className="h-9 text-white">
                                 <Brush className="h-4 w-4 mr-2" />
                                 Canvas Color
                                 <ChevronDown className="h-4 w-4 ml-2" />
