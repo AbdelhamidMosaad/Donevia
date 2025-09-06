@@ -102,6 +102,7 @@ export default function NotebooksDashboardPage() {
     try {
       const batch = writeBatch(db);
 
+      // 1. Create Notebook
       const notebookRef = doc(collection(db, 'users', user.uid, 'notebooks'));
       batch.set(notebookRef, {
         ownerId: user.uid,
@@ -111,30 +112,34 @@ export default function NotebooksDashboardPage() {
         updatedAt: Timestamp.now(),
       });
       
+      // 2. Create Default Section
       const sectionRef = doc(collection(db, 'users', user.uid, 'sections'));
       batch.set(sectionRef, {
          notebookId: notebookRef.id,
-         title: 'First Section',
+         title: 'Default Section',
          order: 0,
       });
       
+      // 3. Create Default Page
       const pageRef = doc(collection(db, 'users', user.uid, 'pages'));
       batch.set(pageRef, {
         sectionId: sectionRef.id,
-        title: 'Untitled Page',
+        title: 'Page 1',
         content: { type: 'doc', content: [] },
-        searchText: 'untitled page',
+        searchText: 'page 1',
         version: 1,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
 
+      // Commit all writes at once
       await batch.commit();
 
       toast({
         title: '✓ Notebook Added',
         description: `"Untitled Notebook" has been created.`,
       });
+      // 4. Navigate to the new page
       router.push(`/notebooks/${pageRef.id}`);
 
     } catch (e) {
