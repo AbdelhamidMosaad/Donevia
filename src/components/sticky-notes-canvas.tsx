@@ -17,7 +17,6 @@ interface StickyNotesCanvasProps {
 }
 
 const NOTE_WIDTH = 250;
-const NOTE_HEIGHT = 250;
 const GRID_GAP = 16;
 
 export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNotesCanvasProps) {
@@ -29,10 +28,9 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
   const sortedNotes = [...notes].sort((a, b) => {
       const posA = a.gridPosition || { row: 0, col: 0 };
       const posB = b.gridPosition || { row: 0, col: 0 };
-      if (posA.row !== posB.row) {
-          return posA.row - posB.row;
-      }
-      return posA.col - posB.col;
+      const indexA = posA.row * 1000 + posA.col; // Assuming max 1000 cols
+      const indexB = posB.row * 1000 + posB.col;
+      return indexA - indexB;
   });
 
   useEffect(() => {
@@ -97,12 +95,9 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="grid gap-4 p-4"
+              className="grid gap-4 p-4 items-start"
               style={{
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                // Use a subtle dot pattern for the background to indicate a grid
-                backgroundImage: 'radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)',
-                backgroundSize: '1.5rem 1.5rem',
               }}
             >
               {sortedNotes.map((note, index) => (
@@ -118,15 +113,13 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
                       )}
                       style={{
                         ...provided.draggableProps.style,
-                        gridColumn: 'auto', // let CSS grid handle placement
-                        gridRow: 'auto',
                       }}
                     >
                       <StickyNoteCard 
                         note={note} 
                         onClick={() => onNoteClick(note)} 
                         onDelete={() => onDeleteNote(note.id)}
-                        className="h-full"
+                        className="h-auto"
                       />
                     </div>
                   )}
