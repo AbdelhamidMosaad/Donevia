@@ -27,10 +27,27 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SettingsDialog } from './settings-dialog';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { UserSettings } from '@/lib/types';
 
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const [sidebarPosition, setSidebarPosition] = React.useState<UserSettings['sidebarPosition']>('left');
+
+   React.useEffect(() => {
+    if (user) {
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      getDoc(settingsRef).then(docSnap => {
+        if (docSnap.exists() && docSnap.data().sidebarPosition) {
+          setSidebarPosition(docSnap.data().sidebarPosition);
+        }
+      });
+    }
+  }, [user]);
 
   const menuItems = [
     { href: '/dashboard/lists', icon: <Kanban />, label: 'Task Management', tooltip: 'Task Management' },
@@ -41,7 +58,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" side={sidebarPosition}>
       <SidebarRail />
       <SidebarHeader className="p-3 justify-center">
          {/* SidebarTrigger has been removed from here and integrated into SidebarRail */}
