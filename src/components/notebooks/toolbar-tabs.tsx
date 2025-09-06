@@ -18,7 +18,7 @@ export function ToolbarTabs({ children }: ToolbarTabsProps) {
                     <TabsTrigger
                         key={tab.props.name}
                         value={tab.props.name}
-                        className="text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-0"
+                        className="text-black data-[state=active]:bg-primary data-[state=active]:text-black data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-0"
                     >
                         {tab.props.name}
                     </TabsTrigger>
@@ -26,7 +26,7 @@ export function ToolbarTabs({ children }: ToolbarTabsProps) {
             </TabsList>
             {tabs.map(tab => (
                 <TabsContent key={tab.props.name} value={tab.props.name} className="mt-0">
-                    <div className="flex items-center gap-1 p-2 border-x border-b rounded-b-md bg-muted/60 flex-wrap">
+                    <div className="flex items-center justify-center gap-1 p-2 border-x border-b rounded-b-md bg-muted/60 flex-wrap">
                      {tab.props.children}
                     </div>
                 </TabsContent>
