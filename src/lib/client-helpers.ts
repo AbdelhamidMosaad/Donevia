@@ -22,44 +22,51 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
     headers.append('Content-Type', 'application/json');
   }
 
-  return fetch(url, {
-    ...options,
-    headers,
+  const response = await fetch(url, { ...options, headers });
+
+  if (!response.ok) {
+    const error: any = new Error(`API request failed with status ${response.status}`);
+    error.response = response;
+    throw error;
+  }
+  
+  return response;
+}
+
+
+/**
+ * Saves a page's content and title, handling versioning.
+ */
+export async function savePageClient(pageId: string, title: string, contentJSON: any, version: number) {
+  const response = await fetchWithAuth('/api/pages/save', {
+    method: 'POST',
+    body: JSON.stringify({ pageId, title, contentJSON, version }),
   });
+  return response.json();
 }
 
 
 /**
  * Saves a new revision from the client.
+ * NOTE: This is now less used, as the /api/pages/save endpoint handles conflict revisions automatically.
  */
 export async function saveRevisionClient(pageId: string, title: string, content: any) {
   const response = await fetchWithAuth('/api/revisions/save', {
     method: 'POST',
     body: JSON.stringify({ pageId, title, content }),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to save revision.');
-  }
-
   return response.json();
 }
 
 /**
  * Updates the search index for a page from the client.
+ * NOTE: This is now handled by the /api/pages/save endpoint.
  */
 export async function updateSearchIndexClient(pageId: string, title: string, contentJSON: any) {
   const response = await fetchWithAuth('/api/pages/update-search', {
     method: 'POST',
     body: JSON.stringify({ pageId, title, contentJSON }),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to update search index.');
-  }
-
   return response.json();
 }
 
