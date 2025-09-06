@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { PageEditor } from '@/components/notebooks/page-editor';
 import { useAtom } from 'jotai';
 import { selectedPageAtom, selectedNotebookAtom, selectedSectionAtom } from '@/lib/notebook-store';
-import { BrainCircuit, Maximize, Minimize } from 'lucide-react';
+import { BrainCircuit, Maximize, Minimize, PanelLeftClose, PanelRightClose } from 'lucide-react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Page } from '@/lib/types';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { NotebookSidebar } from '@/components/notebooks/notebook-sidebar';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { ImperativePanelHandle } from 'react-resizable-panels';
 
 export default function NotebooksPageWithId() {
   const { user } = useAuth();
@@ -26,6 +27,21 @@ export default function NotebooksPageWithId() {
   const [selectedPage, setSelectedPage] = useAtom(selectedPageAtom);
   const [, setSelectedNotebook] = useAtom(selectedNotebookAtom);
   const [, setSelectedSection] = useAtom(selectedSectionAtom);
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
+
+  const toggleSidebar = () => {
+    const panel = sidebarPanelRef.current;
+    if (panel) {
+      if (panel.getCollapsed()) {
+        panel.expand();
+      } else {
+        panel.collapse();
+      }
+    }
+  }
+
 
   useEffect(() => {
     if (user && pageId) {
@@ -79,10 +95,29 @@ export default function NotebooksPageWithId() {
   return (
     <div className="h-full flex">
        <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+            <ResizablePanel 
+                ref={sidebarPanelRef}
+                collapsible={true}
+                collapsedSize={0}
+                defaultSize={20} 
+                minSize={15} 
+                maxSize={30}
+                onCollapse={() => setIsSidebarCollapsed(true)}
+                onExpand={() => setIsSidebarCollapsed(false)}
+            >
                  <NotebookSidebar />
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <div className="relative">
+                <ResizableHandle withHandle />
+                 <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSidebar}
+                    className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 z-10 h-8 w-8 bg-background border rounded-full"
+                >
+                    {isSidebarCollapsed ? <PanelRightClose className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                </Button>
+            </div>
             <ResizablePanel defaultSize={80}>
                 <div className="h-full flex flex-col relative bg-card">
                     {selectedPage ? (
