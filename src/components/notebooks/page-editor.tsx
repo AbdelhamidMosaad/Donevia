@@ -268,7 +268,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
                         setTitle(e.target.value);
                         dispatch({ type: 'EDITING' });
                     }}
-                    className="flex-grow w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
+                    className="flex-grow w-full text-2xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
                     placeholder="Page Title"
                     disabled={state.status === 'conflict'}
                 />
