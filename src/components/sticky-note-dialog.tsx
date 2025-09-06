@@ -55,8 +55,8 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange }: StickyNoteDialo
     if (!noteRef) return;
     try {
       await deleteDoc(noteRef);
+      onOpenChange(false); // Close the dialog
       toast({ title: '✓ Note Deleted' });
-      onOpenChange(false);
     } catch (e) {
       toast({ variant: 'destructive', title: 'Error deleting note' });
     }
