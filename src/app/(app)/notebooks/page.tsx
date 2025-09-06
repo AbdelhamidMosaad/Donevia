@@ -3,12 +3,12 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, BookOpen } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, BookOpen, Book, Timestamp, writeBatch } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import type { Notebook } from '@/lib/types';
-import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, writeBatch, where, getDocs, orderBy, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, where, getDocs, orderBy, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { NotebookListCardView } from '@/components/notebooks/notebook-list-card-view';
@@ -108,49 +108,18 @@ export default function NotebooksDashboardPage() {
   const handleAddNotebook = async () => {
     if (!user) return;
     try {
-        const batch = writeBatch(db);
-
-        // 1. Create Notebook
-        const notebookRef = doc(collection(db, 'users', user.uid, 'notebooks'));
-        batch.set(notebookRef, {
+        const notebookRef = await addDoc(collection(db, 'users', user.uid, 'notebooks'), {
             ownerId: user.uid,
             title: 'Untitled Notebook',
             color: '#4A90E2',
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
         });
-
-        // 2. Create Default Section for it
-        const sectionRef = doc(collection(db, 'users', user.uid, 'sections'));
-        batch.set(sectionRef, {
-            notebookId: notebookRef.id,
-            title: 'Untitled Chapter',
-            order: 0,
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
-        });
-
-        // 3. Create Default Page for that section
-        const pageRef = doc(collection(db, 'users', user.uid, 'pages'));
-        batch.set(pageRef, {
-            sectionId: sectionRef.id,
-            title: 'Untitled Page',
-            content: { type: 'doc', content: [{ type: 'paragraph' }] },
-            searchText: 'untitled page',
-            version: 1,
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
-        });
         
-        await batch.commit();
-
         toast({
             title: '✓ Notebook Added',
             description: `"Untitled Notebook" has been created.`,
         });
-
-        // 4. Navigate to the new page
-        router.push(`/notebooks/${pageRef.id}`);
 
     } catch (e) {
         console.error("Error adding document: ", e);

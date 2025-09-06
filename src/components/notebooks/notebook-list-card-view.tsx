@@ -82,9 +82,28 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
     const sectionsSnap = await getDocs(qSections);
 
     if (sectionsSnap.empty) {
-        toast({title: 'Empty Notebook', description: 'Create a section and page in this notebook to get started.'});
-        // We still navigate to a placeholder pageId to show the notebook context
-        router.push(`/notebooks/new?notebookId=${notebookId}`);
+        // When notebook is empty, create a new page and navigate to it.
+        const batch = writeBatch(db);
+        const sectionRef = doc(collection(db, 'users', user.uid, 'sections'));
+        batch.set(sectionRef, {
+            notebookId: notebookId,
+            title: 'Untitled Chapter',
+            order: 0,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
+        const pageRef = doc(collection(db, 'users', user.uid, 'pages'));
+        batch.set(pageRef, {
+            sectionId: sectionRef.id,
+            title: 'Untitled Page',
+            content: { type: 'doc', content: [{ type: 'paragraph' }] },
+            searchText: 'untitled page',
+            version: 1,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
+        await batch.commit();
+        router.push(`/notebooks/${pageRef.id}`);
         return;
     }
     
@@ -95,8 +114,18 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
     const pagesSnap = await getDocs(qPages);
 
     if(pagesSnap.empty) {
-        toast({title: 'Empty Section', description: 'Create a page in this section to get started.'});
-        router.push(`/notebooks/new?notebookId=${notebookId}&sectionId=${firstSection.id}`);
+        // When section is empty, create a new page and navigate to it.
+        const pageRef = doc(collection(db, 'users', user.uid, 'pages'));
+        await setDoc(pageRef, {
+            sectionId: firstSection.id,
+            title: 'Untitled Page',
+            content: { type: 'doc', content: [{ type: 'paragraph' }] },
+            searchText: 'untitled page',
+            version: 1,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
+        router.push(`/notebooks/${pageRef.id}`);
         return;
     }
     
@@ -114,7 +143,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
       {notebooks.map(list => (
           <a key={list.id} href={`/notebooks/new?notebookId=${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="block cursor-pointer">
             <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
-              <CardHeader className="flex-row items-start justify-between w-full">
+              <CardHeader className="flex-row items-start justify-between w-full relative">
                 <div>
                   {editingListId === list.id ? (
                     <Input 
@@ -136,33 +165,35 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                     Created on {list.createdAt.toDate().toLocaleDateString()}
                   </CardDescription>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-                          <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-                      <DropdownMenuItem onSelect={() => handleStartEdit(list)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete the "{list.title}" notebook and all of its contents. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => onDelete(list.id)}>Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="absolute top-2 right-2">
+                    <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                        <DropdownMenuItem onSelect={() => handleStartEdit(list)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive w-full"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                    This will permanently delete the "{list.title}" notebook and all of its contents. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => onDelete(list.id)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
               </CardHeader>
               <CardContent className="flex-1">
               </CardContent>
