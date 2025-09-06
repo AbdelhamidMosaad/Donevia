@@ -44,9 +44,12 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
  * Saves a page's content and title, handling versioning.
  */
 export async function savePageClient(pageId: string, title: string, contentJSON: any, version: number, canvasColor: string | null) {
+  // Ensure contentJSON is at least an empty valid document structure if it's null or undefined
+  const validContentJSON = contentJSON || { type: 'doc', content: [{ type: 'paragraph' }] };
+
   const response = await fetchWithAuth('/api/pages/save', {
     method: 'POST',
-    body: JSON.stringify({ pageId, title, contentJSON, version, canvasColor: canvasColor || null }),
+    body: JSON.stringify({ pageId, title, contentJSON: validContentJSON, version, canvasColor: canvasColor || null }),
   });
   return response.json();
 }

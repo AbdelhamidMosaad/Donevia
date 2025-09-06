@@ -83,6 +83,7 @@ export async function POST(request: Request) {
       const newVersion = serverVersion + 1;
       let searchText = title.trim().toLowerCase();
       try {
+        // Ensure contentJSON is a valid object with content before trying to extract text
         if (contentJSON && typeof contentJSON === 'object' && Array.isArray(contentJSON.content)) {
             searchText += ' ' + extractTextFromNode(contentJSON).trim().toLowerCase();
         }
