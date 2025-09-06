@@ -129,7 +129,7 @@ const ToolbarButton = ({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Toggle size="sm" pressed={isActive} onPressedChange={action} className="text-white">
+        <Toggle size="sm" pressed={isActive} onPressedChange={action} className="text-black">
           <Icon className="h-4 w-4" />
         </Toggle>
       </TooltipTrigger>
@@ -197,7 +197,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
         <Tab name="File">
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'} className="text-white">
+                    <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'} className="text-black">
                         {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     </Button>
                 </TooltipTrigger>
@@ -210,7 +210,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <Select value={activeFont} onValueChange={handleFontChange}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <SelectTrigger className="w-[140px] h-9 text-white">
+                        <SelectTrigger className="w-[140px] h-9 text-black">
                             <SelectValue placeholder="Font" />
                         </SelectTrigger>
                     </TooltipTrigger>
@@ -231,7 +231,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <Select value={activeFontSize} onValueChange={handleFontSizeChange}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                    <SelectTrigger className="w-[80px] h-9 text-white">
+                    <SelectTrigger className="w-[80px] h-9 text-black">
                         <SelectValue placeholder="Size" />
                     </SelectTrigger>
                     </TooltipTrigger>
@@ -253,7 +253,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-white">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 text-black">
                                 <Palette className="h-4 w-4" style={{ color: activeColor }} />
                             </Button>
                         </DropdownMenuTrigger>
@@ -307,7 +307,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-9 text-white">
+                            <Button variant="ghost" size="sm" className="h-9 text-black">
                                 <Brush className="h-4 w-4 mr-2" />
                                 Canvas Color
                                 <ChevronDown className="h-4 w-4 ml-2" />

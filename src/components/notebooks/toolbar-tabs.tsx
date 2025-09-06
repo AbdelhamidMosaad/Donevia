@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -17,7 +18,7 @@ export function ToolbarTabs({ children }: ToolbarTabsProps) {
                     <TabsTrigger 
                         key={tab.props.name} 
                         value={tab.props.name}
-                        className="text-white data-[state=active]:text-white data-[state=active]:bg-primary data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-0"
+                        className="text-black data-[state=active]:text-white data-[state=active]:bg-primary data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-0"
                     >
                         {tab.props.name}
                     </TabsTrigger>
