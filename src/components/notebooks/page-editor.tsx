@@ -77,7 +77,6 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
         heading: { levels: [1, 2, 3] },
         textStyle: false, 
         underline: false,
-        history: false, // Use our own version history
       }),
       Placeholder.configure({ placeholder: "Start writing your notes here..." }),
       Underline.configure({ HTMLAttributes: { class: 'underline' } }),
