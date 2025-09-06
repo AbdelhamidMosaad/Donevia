@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AttachmentUploader } from './attachment-uploader';
 
 
 interface PageEditorProps {
@@ -240,6 +241,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
       <div className="relative flex-1 overflow-y-auto p-4 md:p-8" onClick={() => editor.commands.focus()}>
         <EditorToolbar editor={editor} />
         <EditorContent editor={editor} />
+        <AttachmentUploader pageId={initialPage.id}/>
       </div>
     </div>
     </>

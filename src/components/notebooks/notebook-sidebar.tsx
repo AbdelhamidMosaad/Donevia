@@ -51,7 +51,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { NotebookSearchBar } from './search-bar';
-import { ExportDialog } from './export-dialog';
 import { useRouter } from 'next/navigation';
 
 export function NotebookSidebar() {
@@ -67,7 +66,6 @@ export function NotebookSidebar() {
   
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemName, setEditingItemName] = useState('');
-  const [exportingNotebook, setExportingNotebook] = useState<Notebook | null>(null);
 
   // Fetch notebooks
   useEffect(() => {
@@ -242,14 +240,6 @@ export function NotebookSidebar() {
                 <DropdownMenuSeparator />
                 {isNotebook && <DropdownMenuItem onSelect={() => handleCreateSection(item.id)}><FolderPlus className="mr-2 h-4 w-4"/>New Section</DropdownMenuItem>}
                 {isSection && <DropdownMenuItem onSelect={() => handleCreatePage(item.id)}><Plus className="mr-2 h-4 w-4"/>New Page</DropdownMenuItem>}
-                {isNotebook && (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => setExportingNotebook(item as Notebook)}>
-                            <Download className="mr-2 h-4 w-4" /> Export
-                        </DropdownMenuItem>
-                    </>
-                )}
             </DropdownMenuContent>
         </DropdownMenu>
     )
@@ -328,9 +318,6 @@ export function NotebookSidebar() {
       <div className="flex items-center justify-between p-2">
         <h2 className="text-lg font-bold font-headline">Notebooks</h2>
         <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => {}} title="Import Notebook">
-              <Upload className="h-4 w-4" />
-            </Button>
             <Button variant="ghost" size="icon" onClick={handleCreateNotebook} title="New Notebook">
               <Plus className="h-4 w-4" />
             </Button>
@@ -345,13 +332,6 @@ export function NotebookSidebar() {
         </div>
       </ScrollArea>
     </div>
-     {exportingNotebook && (
-        <ExportDialog
-          notebook={exportingNotebook}
-          isOpen={!!exportingNotebook}
-          onClose={() => setExportingNotebook(null)}
-        />
-      )}
     </>
   );
 }

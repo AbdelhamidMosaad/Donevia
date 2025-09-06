@@ -63,10 +63,12 @@ export function NotebookSearchBar({ onSelectPage }: NotebookSearchBarProps) {
         if (query.trim()) {
             setIsLoading(true);
             debouncedSearch(query);
+            setIsPopoverOpen(true);
         } else {
             setResults([]);
             setIsLoading(false);
             debouncedSearch.cancel();
+            setIsPopoverOpen(false);
         }
     }, [query, debouncedSearch]);
 
