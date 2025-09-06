@@ -21,9 +21,11 @@ import {
 } from '@/components/ui/dialog';
 import { NotificationSettings } from './notification-settings';
 import { Switch } from './ui/switch';
+import type { UserSettings } from '@/lib/types';
 
-type Theme = 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
-type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
+type Theme = UserSettings['theme'];
+type Font = UserSettings['font'];
+
 
 const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg: string; text: string; primary: string; secondary: string } }[] = [
   { name: 'light', label: 'Light', icon: <Sun className="h-5 w-5" />, colors: { bg: 'hsl(210 100% 95%)', text: 'hsl(215 40% 15%)', primary: 'hsl(175 42% 64%)', secondary: 'hsl(210 40% 90%)' } },
@@ -51,11 +53,6 @@ const fontVariables: Record<Font, string> = fonts.reduce((acc, font) => {
     return acc;
 }, {} as Record<Font, string>);
 
-interface UserSettings {
-    theme: Theme;
-    font: Font;
-    sidebarOpen: boolean;
-}
 
 export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -64,7 +61,8 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<UserSettings>({
       theme: 'light',
       font: 'inter',
-      sidebarOpen: true
+      sidebarOpen: true,
+      notificationSound: true,
   });
 
   useEffect(() => {
@@ -77,7 +75,8 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
           setSettings({
             theme: data.theme || 'light',
             font: data.font || 'inter',
-            sidebarOpen: data.sidebarOpen !== false // default to true
+            sidebarOpen: data.sidebarOpen !== false,
+            notificationSound: data.notificationSound !== false,
           });
         }
       };
@@ -146,6 +145,11 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     setSettings(s => ({...s, sidebarOpen: isOpen}));
     savePreferences({ sidebarOpen: isOpen });
   }
+
+  const handleNotificationSoundChange = (enabled: boolean) => {
+    setSettings(s => ({...s, notificationSound: enabled}));
+    savePreferences({ notificationSound: enabled });
+  }
   
   if (loading) {
     return null;
@@ -161,7 +165,10 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
         </DialogHeader>
         
         <div className="space-y-6 py-4">
-             <NotificationSettings />
+             <NotificationSettings 
+                soundEnabled={settings.notificationSound}
+                onSoundChange={handleNotificationSoundChange}
+             />
 
              <Card>
                 <CardHeader>

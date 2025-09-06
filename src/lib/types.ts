@@ -140,3 +140,16 @@ export type Share = {
     sharedWithUserId: string; // The user receiving access
     permission: 'viewer' | 'editor';
 };
+
+
+/**
+ * Represents user-specific application settings.
+ *
+ * Firestore Path: /users/{userId}/profile/settings
+ */
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
+    font: 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
+    sidebarOpen: boolean;
+    notificationSound: boolean;
+}

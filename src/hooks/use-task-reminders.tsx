@@ -4,8 +4,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, where, doc, updateDoc } from 'firebase/firestore';
-import type { Task, Stage } from '@/lib/types';
+import { collection, onSnapshot, query, where, doc, updateDoc, getDoc } from 'firebase/firestore';
+import type { Task, Stage, UserSettings } from '@/lib/types';
 import { useToast } from './use-toast';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [stages, setStages] = useState<Stage[]>([]);
     const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
+    const [settings, setSettings] = useState<Partial<UserSettings>>({ notificationSound: true });
     const remindedTasks = useRef(new Set<string>());
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -48,6 +49,19 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
 
     }, []);
     
+    // Fetch settings
+    useEffect(() => {
+        if (user) {
+            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+            const unsubscribe = onSnapshot(settingsRef, (docSnap) => {
+                if(docSnap.exists()) {
+                    setSettings(docSnap.data());
+                }
+            });
+            return () => unsubscribe();
+        }
+    }, [user]);
+
     // Fetch all stages from all lists to determine 'Done' status
     useEffect(() => {
         if(user) {
@@ -134,7 +148,9 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
                     const reminderTime = dueDate.clone().subtract(amount, unit as moment.unitOfTime.DurationConstructor);
 
                     if (now.isAfter(reminderTime) && now.isBefore(dueDate)) {
-                        audioRef.current?.play().catch(e => console.log("Audio play failed:", e));
+                        if (settings.notificationSound) {
+                            audioRef.current?.play().catch(e => console.log("Audio play failed:", e));
+                        }
                         showBrowserNotification(task);
                         toast({
                             title: `Reminder: ${task.title}`,
@@ -163,7 +179,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
 
         return () => clearInterval(intervalId);
 
-    }, [tasks, stages, user, toast, getDoneStageIds]);
+    }, [tasks, stages, user, toast, getDoneStageIds, settings.notificationSound]);
 
     const value = {
         overdueTasks

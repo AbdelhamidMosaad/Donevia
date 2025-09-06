@@ -4,9 +4,16 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Bell, BellOff } from 'lucide-react';
+import { Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 
-export function NotificationSettings() {
+interface NotificationSettingsProps {
+    soundEnabled: boolean;
+    onSoundChange: (enabled: boolean) => void;
+}
+
+export function NotificationSettings({ soundEnabled, onSoundChange }: NotificationSettingsProps) {
     const [permission, setPermission] = useState<NotificationPermission>('default');
 
     useEffect(() => {
@@ -38,7 +45,7 @@ export function NotificationSettings() {
                 <CardTitle className="flex items-center gap-2"><Bell /> Notifications</CardTitle>
                 <CardDescription>Manage how you receive reminders and updates.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
                 {permission === 'granted' && (
                     <div className="flex items-center gap-2 text-green-600">
                         <Bell className="h-5 w-5" />
@@ -57,6 +64,19 @@ export function NotificationSettings() {
                         <Button onClick={requestPermission}>Enable Notifications</Button>
                     </div>
                 )}
+
+                <div className="flex items-center justify-between pt-4 border-t">
+                    <Label htmlFor="sound-switch" className="flex items-center gap-2">
+                        {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                        Notification Sound
+                    </Label>
+                    <Switch
+                        id="sound-switch"
+                        checked={soundEnabled}
+                        onCheckedChange={onSoundChange}
+                        disabled={permission !== 'granted'}
+                    />
+                </div>
             </CardContent>
         </Card>
     );
