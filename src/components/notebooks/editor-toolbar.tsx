@@ -145,7 +145,7 @@ const ToolbarButton = ({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Toggle size="sm" pressed={isActive} onPressedChange={action} className="text-black">
+        <Toggle size="sm" pressed={isActive} onPressedChange={action}>
           <Icon className="h-4 w-4" />
         </Toggle>
       </TooltipTrigger>
@@ -223,7 +223,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
         <Tab name="File">
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="text-black">
+                    <Button variant="ghost" size="icon" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
                         <Undo className="h-4 w-4" />
                     </Button>
                 </TooltipTrigger>
@@ -233,7 +233,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             </Tooltip>
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="text-black">
+                    <Button variant="ghost" size="icon" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
                         <Redo className="h-4 w-4" />
                     </Button>
                 </TooltipTrigger>
@@ -244,7 +244,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <Separator orientation="vertical" className="h-6 mx-1" />
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'} className="text-black">
+                    <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
                         {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     </Button>
                 </TooltipTrigger>
@@ -257,7 +257,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <Select value={activeFont} onValueChange={handleFontChange}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <SelectTrigger className="w-[140px] h-9 text-black bg-transparent border-none focus:ring-0">
+                        <SelectTrigger className="w-[140px] h-9 bg-transparent border-none focus:ring-0">
                             <SelectValue placeholder="Font" />
                         </SelectTrigger>
                     </TooltipTrigger>
@@ -278,7 +278,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <Select value={activeFontSize} onValueChange={handleFontSizeChange}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                    <SelectTrigger className="w-[80px] h-9 text-black bg-transparent border-none focus:ring-0">
+                    <SelectTrigger className="w-[80px] h-9 bg-transparent border-none focus:ring-0">
                         <SelectValue placeholder="Size" />
                     </SelectTrigger>
                     </TooltipTrigger>
@@ -300,7 +300,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-black">
+                            <Button variant="ghost" size="icon" className="h-9 w-9">
                                 <Palette className="h-4 w-4" style={{ color: activeColor }} />
                             </Button>
                         </DropdownMenuTrigger>
@@ -330,7 +330,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-black">
+                            <Button variant="ghost" size="icon" className="h-9 w-9">
                                 <Highlighter className="h-4 w-4" style={{ color: activeHighlight === 'transparent' ? 'currentColor' : activeHighlight }} />
                             </Button>
                         </DropdownMenuTrigger>
@@ -382,7 +382,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Toggle size="sm" onPressedChange={() => editor.chain().focus().sinkListItem('listItem').run()} disabled={!editor.can().sinkListItem('listItem')} className="text-black">
+                    <Toggle size="sm" onPressedChange={() => editor.chain().focus().sinkListItem('listItem').run()} disabled={!editor.can().sinkListItem('listItem')}>
                         <Indent className="h-4 w-4" />
                     </Toggle>
                 </TooltipTrigger>
@@ -392,7 +392,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Toggle size="sm" onPressedChange={() => editor.chain().focus().liftListItem('listItem').run()} disabled={!editor.can().liftListItem('listItem')} className="text-black">
+                    <Toggle size="sm" onPressedChange={() => editor.chain().focus().liftListItem('listItem').run()} disabled={!editor.can().liftListItem('listItem')}>
                         <Outdent className="h-4 w-4" />
                     </Toggle>
                 </TooltipTrigger>
@@ -411,7 +411,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-9 text-black">
+                            <Button variant="ghost" size="sm" className="h-9">
                                 <Brush className="h-4 w-4 mr-2" />
                                 Canvas Color
                                 <ChevronDown className="h-4 w-4 ml-2" />
