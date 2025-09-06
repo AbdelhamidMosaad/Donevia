@@ -208,7 +208,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <Select value={activeFont} onValueChange={handleFontChange}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <SelectTrigger className="w-[140px] h-9 text-black">
+                        <SelectTrigger className="w-[140px] h-9 text-white">
                             <SelectValue placeholder="Font" />
                         </SelectTrigger>
                     </TooltipTrigger>
@@ -229,7 +229,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <Select value={activeFontSize} onValueChange={handleFontSizeChange}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                    <SelectTrigger className="w-[80px] h-9 text-black">
+                    <SelectTrigger className="w-[80px] h-9 text-white">
                         <SelectValue placeholder="Size" />
                     </SelectTrigger>
                     </TooltipTrigger>
@@ -251,7 +251,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-9 w-9">
+                            <Button variant="outline" size="icon" className="h-9 w-9 text-black">
                                 <Palette className="h-4 w-4" style={{ color: activeColor }} />
                             </Button>
                         </DropdownMenuTrigger>
