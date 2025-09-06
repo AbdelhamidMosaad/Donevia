@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useReducer, useCallback, RefObject } from 'react';
@@ -258,7 +259,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
                 </AlertDescription>
             </Alert>
         )}
-        <div className="p-4 border-b">
+        <div className="p-4 border-b pr-16">
             <div className="flex items-center gap-4">
                 <input
                     type="text"
