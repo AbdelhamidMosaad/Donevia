@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { NotebookSidebar } from '@/components/notebooks/notebook-sidebar';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ImperativePanelHandle } from 'react-resizable-panels';
+import { cn } from '@/lib/utils';
 
 export default function NotebooksPageWithId() {
   const { user } = useAuth();
@@ -30,7 +31,8 @@ export default function NotebooksPageWithId() {
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
-   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const editorPanelRef = useRef<HTMLDivElement>(null);
 
 
   const toggleSidebar = () => {
@@ -95,15 +97,15 @@ export default function NotebooksPageWithId() {
   }, [user, setSelectedNotebook, setSelectedSection, setSelectedPage]);
   
     const toggleFullscreen = () => {
-        const elem = document.documentElement;
+        const elem = editorPanelRef.current; // Target the editor panel for fullscreen
+        if (!elem) return;
+
         if (!document.fullscreenElement) {
             elem.requestFullscreen().catch(err => {
                 alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
             });
-            setIsFullscreen(true);
         } else {
             document.exitFullscreen();
-            setIsFullscreen(false);
         }
     };
     
@@ -128,11 +130,11 @@ export default function NotebooksPageWithId() {
                 maxSize={30}
                 onCollapse={() => setIsSidebarCollapsed(true)}
                 onExpand={() => setIsSidebarCollapsed(false)}
-                className={isFullscreen ? 'hidden' : ''}
+                className={cn(isFullscreen && "hidden")}
             >
                  <NotebookSidebar />
             </ResizablePanel>
-            <div className={`relative ${isFullscreen ? 'hidden' : ''}`}>
+             <div className={cn("relative", isFullscreen && "hidden")}>
                 <ResizableHandle withHandle />
                  <Button
                     variant="ghost"
@@ -144,7 +146,7 @@ export default function NotebooksPageWithId() {
                 </Button>
             </div>
             <ResizablePanel defaultSize={80}>
-                <div className="h-full flex flex-col relative bg-card">
+                <div ref={editorPanelRef} className="h-full flex flex-col relative bg-card">
                     <div className="absolute top-4 right-4 z-10">
                         <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
                             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
