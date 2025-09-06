@@ -100,50 +100,21 @@ export default function NotebooksDashboardPage() {
   const handleAddNotebook = async () => {
     if (!user) return;
     try {
-      const batch = writeBatch(db);
-
-      // 1. Create Notebook
-      const notebookRef = doc(collection(db, 'users', user.uid, 'notebooks'));
-      batch.set(notebookRef, {
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'notebooks'), {
         ownerId: user.uid,
         title: 'Untitled Notebook',
         color: '#4A90E2', // A default color
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
-      
-      // 2. Create Default Section for the new notebook
-      const sectionRef = doc(collection(db, 'users', user.uid, 'sections'));
-      batch.set(sectionRef, {
-         notebookId: notebookRef.id,
-         title: 'Default Section',
-         order: 0,
-         createdAt: Timestamp.now(),
-         updatedAt: Timestamp.now(),
-      });
-      
-      // 3. Create a Default Page for the new section
-      const pageRef = doc(collection(db, 'users', user.uid, 'pages'));
-      batch.set(pageRef, {
-        sectionId: sectionRef.id,
-        title: 'Page 1',
-        content: { type: 'doc', content: [] }, // Start with empty content
-        searchText: 'page 1',
-        version: 1,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
-
-      // Commit all writes at once atomically
-      await batch.commit();
 
       toast({
         title: '✓ Notebook Added',
         description: `"Untitled Notebook" has been created.`,
       });
 
-      // 4. Navigate to the new page to start editing
-      router.push(`/notebooks/${pageRef.id}`);
+      // After creating, navigate to the notebook page, which will show the empty state.
+      router.push(`/notebooks/${docRef.id}`);
 
     } catch (e) {
       console.error("Error adding document: ", e);
