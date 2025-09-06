@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       const newVersion = serverVersion + 1;
       let searchText = title.trim().toLowerCase();
       try {
-        if (contentJSON && typeof contentJSON === 'object') {
+        if (contentJSON && typeof contentJSON === 'object' && Array.isArray(contentJSON.content)) {
             searchText += ' ' + extractTextFromNode(contentJSON).trim().toLowerCase();
         }
       } catch (e) {
