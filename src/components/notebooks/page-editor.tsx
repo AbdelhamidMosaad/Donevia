@@ -133,6 +133,10 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
             </div>
              <EditorToolbar editor={editor} />
              <div className="absolute top-4 right-16 flex items-center gap-2">
+                 <Button onClick={() => setIsVersionHistoryOpen(true)} variant="outline" size="sm">
+                     <History className="h-4 w-4 mr-2" />
+                     History
+                 </Button>
                  <Button onClick={saveManually} disabled={!isDirty || saveStatus === 'saving'} size="sm">
                     {saveStatus === 'saving' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                     {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save Now'}
