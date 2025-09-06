@@ -64,7 +64,6 @@ const defaultSettings: UserSettings = {
     font: 'inter',
     sidebarOpen: true,
     notificationSound: true,
-    sidebarPosition: 'left',
 };
 
 
@@ -86,7 +85,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             font: data.font || defaultSettings.font,
             sidebarOpen: data.sidebarOpen !== false,
             notificationSound: data.notificationSound !== false,
-            sidebarPosition: data.sidebarPosition || defaultSettings.sidebarPosition,
           });
         } else {
             setSettings(defaultSettings);
@@ -157,14 +155,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     setSettings(s => ({...s, sidebarOpen: isOpen}));
     savePreferences({ sidebarOpen: isOpen });
   }
-
-  const handleSidebarPositionChange = (position: 'left' | 'right') => {
-    setSettings(s => ({...s, sidebarPosition: position}));
-    savePreferences({ sidebarPosition: position });
-     // You might need a more robust way to trigger a re-render if the component doesn't automatically update.
-     // For now, a page reload is a simple way to ensure the change is visible.
-    window.location.reload();
-  };
 
   const handleNotificationSoundChange = (enabled: boolean) => {
     setSettings(s => ({...s, notificationSound: enabled}));
@@ -286,19 +276,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                                     checked={settings.sidebarOpen}
                                     onCheckedChange={handleSidebarChange}
                                 />
-                            </div>
-                             <div className="flex items-center justify-between pt-4 border-t">
-                                <Label>Position</Label>
-                                <RadioGroup value={settings.sidebarPosition} onValueChange={handleSidebarPositionChange} className="flex gap-4">
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="left" id="sidebar-left" />
-                                        <Label htmlFor="sidebar-left">Left</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="right" id="sidebar-right" />
-                                        <Label htmlFor="sidebar-right">Right</Label>
-                                    </div>
-                                </RadioGroup>
                             </div>
                         </CardContent>
                     </Card>

@@ -16,7 +16,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>('left');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -32,9 +31,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             const data = docSnap.data();
             if (data.sidebarOpen !== undefined) {
               setSidebarOpen(data.sidebarOpen);
-            }
-            if(data.sidebarPosition) {
-              setSidebarPosition(data.sidebarPosition);
             }
         }
       });

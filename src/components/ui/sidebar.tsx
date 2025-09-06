@@ -228,7 +228,7 @@ const Sidebar = React.forwardRef<
           className={cn(
             "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
             "group-data-[collapsible=offcanvas]:w-0",
-            "group-data-[side=right]:rotate-180",
+            "group-data-[side=right]:hidden",
             variant === "floating" || variant === "inset"
               ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
@@ -237,9 +237,7 @@ const Sidebar = React.forwardRef<
         <div
           className={cn(
             "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
-            side === "left"
-              ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-              : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+            "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]",
             // Adjust the padding for floating and inset variants.
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
@@ -302,7 +300,7 @@ const SidebarRail = React.forwardRef<
       onClick={toggleSidebar}
       title="Toggle Sidebar"
       className={cn(
-        "absolute top-1/2 z-20 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-foreground shadow-sm transition-all ease-linear hover:bg-muted group-data-[side=left]:-right-3 group-data-[side=right]:-left-3 md:flex",
+        "absolute top-1/2 z-20 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-foreground shadow-sm transition-all ease-linear hover:bg-muted group-data-[side=left]:-right-3 md:flex",
         "group-data-[collapsible=offcanvas]:hidden",
         className
       )}
