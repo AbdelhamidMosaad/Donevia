@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { SettingsDialog } from './settings-dialog';
 import { DoneviaLogo } from './logo';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSidebar } from './ui/sidebar';
 import { Badge } from './ui/badge';
 import type { Task } from '@/lib/types';
@@ -31,7 +32,8 @@ export function AppHeader() {
   const [isClient, setIsClient] = React.useState(false);
   const { user } = useAuth();
   const { toggleSidebar } = useSidebar();
-  const { overdueTasks } = useTaskReminders();
+  const { overdueTasks, dismissOverdueTask } = useTaskReminders();
+  const router = useRouter();
 
 
   React.useEffect(() => {
@@ -40,6 +42,11 @@ export function AppHeader() {
   
   const handleLogout = async () => {
     await signOut(auth);
+  };
+  
+  const handleNotificationClick = (task: Task) => {
+    dismissOverdueTask(task.id);
+    router.push(`/dashboard/lists/${task.listId}`);
   };
 
 
@@ -87,8 +94,7 @@ export function AppHeader() {
             <DropdownMenuGroup>
             {overdueTasks.length > 0 ? (
               overdueTasks.map(task => (
-                <Link key={task.id} href={`/dashboard/lists/${task.listId}`} passHref>
-                  <DropdownMenuItem className="cursor-pointer">
+                  <DropdownMenuItem key={task.id} className="cursor-pointer" onSelect={() => handleNotificationClick(task)}>
                     <div className="flex flex-col">
                         <span className="font-semibold">{task.title}</span>
                         <span className="text-xs text-muted-foreground">
@@ -96,7 +102,6 @@ export function AppHeader() {
                         </span>
                     </div>
                   </DropdownMenuItem>
-                </Link>
               ))
             ) : (
               <div className="px-2 py-4 text-center text-sm text-muted-foreground">

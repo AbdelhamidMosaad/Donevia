@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 
 interface TaskReminderContextType {
     overdueTasks: Task[];
+    dismissOverdueTask: (taskId: string) => void;
 }
 
 const TaskReminderContext = createContext<TaskReminderContextType | undefined>(undefined);
@@ -122,6 +123,10 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
         });
     }
 
+    const dismissOverdueTask = (taskId: string) => {
+        setOverdueTasks(prev => prev.filter(task => task.id !== taskId));
+    };
+
     // Check for overdue tasks and reminders
     useEffect(() => {
         const doneStageIds = getDoneStageIds();
@@ -182,7 +187,8 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     }, [tasks, stages, user, toast, getDoneStageIds, settings.notificationSound]);
 
     const value = {
-        overdueTasks
+        overdueTasks,
+        dismissOverdueTask
     };
 
     return (
