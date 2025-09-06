@@ -13,12 +13,12 @@ export function ToolbarTabs({ children }: ToolbarTabsProps) {
     const tabs = React.Children.toArray(children) as React.ReactElement[];
     return (
         <Tabs defaultValue={tabs[1].props.name} className="mt-2">
-            <TabsList className="bg-transparent p-0 justify-start h-auto rounded-none border-b" style={{ backgroundColor: '#C4E1E6' }}>
+            <TabsList className="bg-muted/60 p-0 justify-start h-auto rounded-none border-b">
                 {tabs.map(tab => (
-                    <TabsTrigger 
-                        key={tab.props.name} 
+                    <TabsTrigger
+                        key={tab.props.name}
                         value={tab.props.name}
-                        className="text-black data-[state=active]:bg-primary data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-0"
+                        className="text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-0"
                     >
                         {tab.props.name}
                     </TabsTrigger>
@@ -26,7 +26,7 @@ export function ToolbarTabs({ children }: ToolbarTabsProps) {
             </TabsList>
             {tabs.map(tab => (
                 <TabsContent key={tab.props.name} value={tab.props.name} className="mt-0">
-                    <div className="flex items-center gap-1 p-2 border-x border-b rounded-b-md bg-transparent flex-wrap" style={{ backgroundColor: '#C4E1E6' }}>
+                    <div className="flex items-center gap-1 p-2 border-x border-b rounded-b-md bg-muted/60 flex-wrap">
                      {tab.props.children}
                     </div>
                 </TabsContent>
