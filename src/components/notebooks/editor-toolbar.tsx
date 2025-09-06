@@ -5,7 +5,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify, Indent, Outdent, Undo, Redo, Superscript, Subscript, Eraser
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify, Indent, Outdent, Undo, Redo, Superscript, Subscript, Eraser, Table, Grip, Trash2, Columns, Rows
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { ToolbarTabs, Tab } from './toolbar-tabs';
 
 const fonts = [
@@ -417,6 +417,51 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
             <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
             <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
+            <Separator orientation="vertical" className="h-6 mx-1" />
+            <DropdownMenu>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-9 w-9">
+                                <Table className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Table</p>
+                    </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
+                        Insert table
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator/>
+                    <DropdownMenuItem onSelect={() => editor.chain().focus().addColumnBefore().run()}>
+                        Add column before
+                    </DropdownMenuItem>
+                     <DropdownMenuItem onSelect={() => editor.chain().focus().addColumnAfter().run()}>
+                        Add column after
+                    </DropdownMenuItem>
+                     <DropdownMenuItem onSelect={() => editor.chain().focus().deleteColumn().run()}>
+                        Delete column
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator/>
+                     <DropdownMenuItem onSelect={() => editor.chain().focus().addRowBefore().run()}>
+                        Add row before
+                    </DropdownMenuItem>
+                     <DropdownMenuItem onSelect={() => editor.chain().focus().addRowAfter().run()}>
+                        Add row after
+                    </DropdownMenuItem>
+                     <DropdownMenuItem onSelect={() => editor.chain().focus().deleteRow().run()}>
+                        Delete row
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator/>
+                    <DropdownMenuItem onSelect={() => editor.chain().focus().deleteTable().run()}>
+                        Delete table
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
         </Tab>
         <Tab name="View">
             <DropdownMenu>

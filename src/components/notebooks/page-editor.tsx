@@ -12,6 +12,10 @@ import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
+import Table from '@tiptap/extension-table';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import TableRow from '@tiptap/extension-table-row';
 import type { Page } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
@@ -110,11 +114,20 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
       Superscript,
       FontFamily,
       FontSize,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
         },
         textStyle: false, // Disable StarterKit's textStyle to use the standalone one
+        // The Underline keyboard shortcut is handled here.
+        history: false, // Use the default history extension
+        underline: false, // Use the standalone Underline extension to add the shortcut
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
