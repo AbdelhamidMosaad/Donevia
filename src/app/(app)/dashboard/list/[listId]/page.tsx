@@ -109,7 +109,7 @@ export default function TaskListPage() {
         </div>
       </div>
       
-      <div className="flex-1 overflow-x-auto">
+      <div className="flex-1 overflow-y-auto">
         {renderView()}
       </div>
     </div>
