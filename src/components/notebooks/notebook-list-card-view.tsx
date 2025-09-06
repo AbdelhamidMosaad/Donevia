@@ -112,64 +112,62 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {notebooks.map(list => (
-          <Card key={list.id} className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
-            <CardHeader className="flex-row items-start justify-between">
-              <div>
-                {editingListId === list.id ? (
-                  <Input 
-                    ref={inputRef}
-                    value={editingListName}
-                    onChange={(e) => setEditingListName(e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, list.id)}
-                    onBlur={() => handleFinishEdit(list.id)}
-                    className="text-lg font-headline"
-                  />
-                ) : (
-                  <a href={`/notebooks/new?notebookId=${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="cursor-pointer">
+          <a key={list.id} href={`/notebooks/new?notebookId=${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="block cursor-pointer">
+            <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
+              <CardHeader className="flex-row items-start justify-between w-full">
+                <div>
+                  {editingListId === list.id ? (
+                    <Input 
+                      ref={inputRef}
+                      value={editingListName}
+                      onChange={(e) => setEditingListName(e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, list.id)}
+                      onBlur={() => handleFinishEdit(list.id)}
+                      className="text-lg font-headline"
+                      onClick={(e) => e.preventDefault()}
+                    />
+                  ) : (
                     <CardTitle className="flex items-center gap-2 font-headline hover:underline">
                       <Book className="h-5 w-5 text-primary" />
                       {list.title}
                     </CardTitle>
-                  </a>
-                )}
-                <CardDescription className="mt-1">
-                  Created on {list.createdAt.toDate().toLocaleDateString()}
-                </CardDescription>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem onSelect={() => handleStartEdit(list)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the "{list.title}" notebook and all of its contents. This action cannot be undone.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => onDelete(list.id)}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardHeader>
-             <a href={`/notebooks/new?notebookId=${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="flex-1 cursor-pointer">
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Click to open this notebook.</p>
-                </CardContent>
-            </a>
-          </Card>
+                  )}
+                  <CardDescription className="mt-1">
+                    Created on {list.createdAt.toDate().toLocaleDateString()}
+                  </CardDescription>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                          <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                      <DropdownMenuItem onSelect={() => handleStartEdit(list)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete the "{list.title}" notebook and all of its contents. This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => onDelete(list.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </CardHeader>
+              <CardContent className="flex-1">
+              </CardContent>
+            </Card>
+          </a>
       ))}
     </div>
   );
