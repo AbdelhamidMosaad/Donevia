@@ -41,7 +41,7 @@ export function StickyNoteCard({ note, onClick, onDelete, style, className }: St
   return (
     <div
       className={cn(
-        "relative flex flex-col rounded-lg shadow-md p-4 transition-all duration-200 cursor-pointer hover:shadow-xl w-[250px] h-[250px] group",
+        "relative flex flex-col rounded-lg shadow-md p-4 transition-all duration-200 cursor-pointer hover:shadow-xl w-full h-auto group",
         className
         )}
       style={{ 

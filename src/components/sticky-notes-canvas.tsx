@@ -99,8 +99,7 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
               {...provided.droppableProps}
               className="grid gap-4 p-4"
               style={{
-                gridTemplateColumns: `repeat(${cols}, ${NOTE_WIDTH}px)`,
-                gridAutoRows: `${NOTE_HEIGHT}px`,
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
                 // Use a subtle dot pattern for the background to indicate a grid
                 backgroundImage: 'radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)',
                 backgroundSize: '1.5rem 1.5rem',
@@ -127,6 +126,7 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
                         note={note} 
                         onClick={() => onNoteClick(note)} 
                         onDelete={() => onDeleteNote(note.id)}
+                        className="h-full"
                       />
                     </div>
                   )}
