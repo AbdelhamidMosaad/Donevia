@@ -14,7 +14,6 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { savePageClient } from '@/lib/client-helpers';
 import { EditorToolbar } from './editor-toolbar';
-import { AttachmentUploader } from './attachment-uploader';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, History } from 'lucide-react';
@@ -258,7 +257,6 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
       <div className="relative flex-1 overflow-y-auto p-8" onClick={() => editor.commands.focus()}>
         <EditorToolbar editor={editor} />
         <EditorContent editor={editor} />
-        <AttachmentUploader pageId={initialPage.id} />
       </div>
       <VersionHistoryDrawer 
         page={initialPage}
