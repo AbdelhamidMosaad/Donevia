@@ -2,7 +2,6 @@
 'use client';
 import type { Notebook } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import Link from 'next/link';
 import { Book, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
@@ -132,7 +131,7 @@ export function NotebookListListView({ notebooks, onDelete }: NotebookListListVi
                     />
                   </div>
                 ) : (
-                  <a href={`/notebooks`} onClick={(e) => handleNavigate(e, list.id)} className="flex items-center gap-2 font-medium text-primary hover:underline cursor-pointer">
+                  <a href={`/notebooks/${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="flex items-center gap-2 font-medium text-primary hover:underline cursor-pointer">
                       <Book className="h-4 w-4" />
                       {list.title}
                   </a>

@@ -52,10 +52,12 @@ import {
 import { ScrollArea } from '../ui/scroll-area';
 import { NotebookSearchBar } from './search-bar';
 import { ExportDialog } from './export-dialog';
+import { useRouter } from 'next/navigation';
 
 export function NotebookSidebar() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
   const [sections, setSections] = useState<Record<string, Section[]>>({});
   const [pages, setPages] = useState<Record<string, Page[]>>({});
@@ -210,6 +212,7 @@ export function NotebookSidebar() {
           const parentNotebook = notebooks.find(n => n.id === parentSection.notebookId);
           setSelectedNotebook(parentNotebook || null);
       }
+      router.push(`/notebooks/${page.id}`);
   }
 
   const renderItem = (item: Notebook | Section | Page, type: 'notebook' | 'section' | 'page') => {
@@ -218,13 +221,7 @@ export function NotebookSidebar() {
                          (type === 'page' && selectedPage?.id === item.id);
       
       const onSelect = () => {
-          if(type === 'notebook') setSelectedNotebook(item as Notebook);
-          if(type === 'section') {
-            setSelectedSection(item as Section);
-            const parentNotebook = notebooks.find(n => n.id === (item as Section).notebookId);
-            setSelectedNotebook(parentNotebook || null);
-          }
-          if(type === 'page') {
+          if (type === 'page') {
             handleSelectPage(item as Page);
           }
       };
@@ -320,15 +317,22 @@ export function NotebookSidebar() {
       <ScrollArea className="flex-1">
         <div className="space-y-1">
           {notebooks.map(notebook => (
-              <Collapsible key={notebook.id} defaultOpen={true} className="w-full">
+              <Collapsible key={notebook.id} defaultOpen={selectedNotebook?.id === notebook.id} className="w-full">
                 {renderItem(notebook, 'notebook')}
                 <CollapsibleContent>
                     {(sections[notebook.id] || []).map(section => (
-                        <Collapsible key={section.id} defaultOpen={true} className="w-full">
-                            <CollapsibleTrigger className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm group hover:bg-accent">
-                                 <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90"/>
-                                 <span className="truncate flex-1 text-left">{section.title}</span>
-                                 {/* Dropdown for section actions can be added here if needed */}
+                        <Collapsible key={section.id} defaultOpen={selectedSection?.id === section.id} className="w-full">
+                            <CollapsibleTrigger asChild>
+                                <div
+                                    className={cn(
+                                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm group hover:bg-accent w-full",
+                                    selectedSection?.id === section.id && "bg-accent text-accent-foreground"
+                                    )}
+                                >
+                                    <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90"/>
+                                    <span className="truncate flex-1 text-left">{section.title}</span>
+                                    {renderItem(section, 'section')}
+                                </div>
                             </CollapsibleTrigger>
                              <CollapsibleContent>
                                 {(pages[section.id] || []).map(page => renderItem(page, 'page'))}
