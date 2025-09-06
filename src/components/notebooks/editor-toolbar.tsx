@@ -4,15 +4,57 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+
+const fonts = [
+    { name: 'Inter', value: 'Inter, sans-serif' },
+    { name: 'Roboto', value: 'Roboto, sans-serif' },
+    { name: 'Lato', value: 'Lato, sans-serif' },
+    { name: 'Montserrat', value: 'Montserrat, sans-serif' },
+    { name: 'Oswald', value: 'Oswald, sans-serif' },
+    { name: 'Source Code Pro', value: 'Source Code Pro, monospace' },
+    { name: 'Merriweather', value: 'Merriweather, serif' },
+    { name: 'Playfair Display', value: 'Playfair Display, serif' },
+    // Handwriting
+    { name: 'Caveat', value: 'Caveat, cursive' },
+    { name: 'Dancing Script', value: 'Dancing Script, cursive' },
+    { name: 'Kalam', value: 'Kalam, cursive' },
+    { name: 'Patrick Hand', value: 'Patrick Hand, cursive' },
+    { name: 'Homemade Apple', value: 'Homemade Apple, cursive' },
+    // More fonts
+    { name: 'Alegreya', value: 'Alegreya, serif' },
+    { name: 'EB Garamond', value: 'EB Garamond, serif' },
+    { name: 'Fira Sans', value: 'Fira Sans, sans-serif' },
+    { name: 'Nunito', value: 'Nunito, sans-serif' },
+    { name: 'Poppins', value: 'Poppins, sans-serif' },
+    { name: 'Raleway', value: 'Raleway, sans-serif' },
+    { name: 'Rubik', value: 'Rubik, sans-serif' },
+    { name: 'Ubuntu', value: 'Ubuntu, sans-serif' },
+];
+
+const canvasColors = ['#FFFFFF', '#F3F4F6', '#FEFCE8', '#F0F9FF', '#FDF2F8', '#F5F3FF', '#ECFDF5'];
+
 
 interface EditorToolbarProps {
   editor: Editor;
+  onColorChange: (color: string) => void;
+  initialColor?: string;
 }
 
 const ToolbarButton = ({
@@ -58,8 +100,9 @@ const ToolbarButton = ({
 };
 
 
-export function EditorToolbar({ editor }: EditorToolbarProps) {
-
+export function EditorToolbar({ editor, onColorChange, initialColor }: EditorToolbarProps) {
+  const [currentColor, setCurrentColor] = useState(initialColor || '#FFFFFF');
+  
   const setLink = useCallback(() => {
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URL', previousUrl);
@@ -71,14 +114,52 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
+  
+  const handleFontChange = (fontFamily: string) => {
+    if (fontFamily === 'default') {
+        editor.chain().focus().unsetFontFamily().run();
+    } else {
+        editor.chain().focus().setFontFamily(fontFamily).run();
+    }
+  };
+
+  const handleColorChange = (color: string) => {
+    setCurrentColor(color);
+    onColorChange(color);
+  }
 
   if (!editor) {
     return null;
   }
+  
+  const activeFont = editor.getAttributes('textStyle').fontFamily?.replace(/['"]/g, '') || 'default';
 
   return (
     <TooltipProvider>
       <div className="flex items-center gap-1 p-2 border rounded-md bg-background sticky top-0 z-10 mb-4 flex-wrap">
+        <Select value={activeFont} onValueChange={handleFontChange}>
+            <Tooltip>
+                 <TooltipTrigger asChild>
+                    <SelectTrigger className="w-[140px] h-9">
+                        <SelectValue placeholder="Font" />
+                    </SelectTrigger>
+                 </TooltipTrigger>
+                 <TooltipContent>
+                    <p>Font Family</p>
+                </TooltipContent>
+            </Tooltip>
+            <SelectContent>
+                <SelectItem value="default">Default</SelectItem>
+                {fonts.map(font => (
+                    <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>
+                        {font.name}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        
         {/* Mark Group */}
         <ToolbarButton editor={editor} name="bold" label="Bold" icon={Bold} />
         <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
@@ -104,6 +185,41 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
         <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
         <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
+        
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        
+        {/* Canvas Color */}
+         <Popover>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-9">
+                        <Brush className="h-4 w-4 mr-2" />
+                        Canvas Color
+                        </Button>
+                    </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Change canvas background</p>
+                </TooltipContent>
+            </Tooltip>
+            <PopoverContent className="w-auto p-2">
+                <div className="flex gap-1">
+                {canvasColors.map((c) => (
+                    <button
+                    key={c}
+                    onClick={() => handleColorChange(c)}
+                    className={cn(
+                        'h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center'
+                    )}
+                    style={{ backgroundColor: c }}
+                    >
+                    {currentColor === c && <Check className="h-4 w-4 text-black" />}
+                    </button>
+                ))}
+                </div>
+            </PopoverContent>
+         </Popover>
       </div>
     </TooltipProvider>
   );

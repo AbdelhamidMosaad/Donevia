@@ -10,7 +10,7 @@ import Link from '@tiptap/extension-link';
 import type { Page } from '@/lib/types';
 import { useDebouncedCallback } from 'use-debounce';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { savePageClient } from '@/lib/client-helpers';
 import { EditorToolbar } from './editor-toolbar';
@@ -23,6 +23,7 @@ import TextStyle from '@tiptap/extension-text-style';
 
 interface PageEditorProps {
   page: Page;
+  onCanvasColorChange: (color: string) => void;
 }
 
 type EditorStatus = 'saved' | 'saving' | 'conflict' | 'error';
@@ -69,7 +70,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
     }
 }
 
-export function PageEditor({ page: initialPage }: PageEditorProps) {
+export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(initialPage.title);
@@ -85,13 +86,17 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
 
   const editor = useEditor({
     extensions: [
-      TextStyle,
+      TextStyle.configure({
+        // Add listItem to the types that should not have text styles (like font family)
+        types: ['heading', 'paragraph', 'listItem'],
+      }),
       FontFamily,
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
         },
-        textStyle: false, // Use the top-level `TextStyle` extension instead
+        // The textStyle extension is now configured above, so we disable it here in starterkit
+        textStyle: false,
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
@@ -123,7 +128,9 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
     const contentJSON = editor.getJSON();
 
     try {
-      const result = await savePageClient(initialPage.id, title, contentJSON, state.clientVersion);
+      // We pass the canvasColor here, though it's saved separately
+      // In a more complex app, this might be combined into one update.
+      const result = await savePageClient(initialPage.id, title, contentJSON, state.clientVersion, initialPage.canvasColor || null);
       if (result.status === 'ok') {
         dispatch({ type: 'SAVE_SUCCESS', newVersion: result.newVersion, timestamp: new Date().toLocaleTimeString() });
       }
@@ -179,7 +186,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
     const newVersion = state.serverVersion;
     dispatch({ type: 'EDITING' });
     try {
-       const result = await savePageClient(initialPage.id, title, editor.getJSON(), newVersion);
+       const result = await savePageClient(initialPage.id, title, editor.getJSON(), newVersion, initialPage.canvasColor || null);
        if(result.status === 'ok') {
            dispatch({ type: 'SAVE_SUCCESS', newVersion: result.newVersion, timestamp: new Date().toLocaleTimeString() });
            toast({ title: "Your changes have been saved." });
@@ -198,6 +205,17 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
       toast({ title: 'Your changes were discarded.' });
     }
   };
+  
+   const handleColorSelect = async (color: string) => {
+        if (!user) return;
+        onCanvasColorChange(color);
+        const pageRef = doc(db, 'users', user.uid, 'pages', initialPage.id);
+        try {
+            await updateDoc(pageRef, { canvasColor: color });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not save color choice.' });
+        }
+    };
 
   const getStatusMessage = () => {
       switch(state.status) {
@@ -244,7 +262,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
             </div>
         </div>
       <div className="relative flex-1 overflow-y-auto p-4 md:p-8" onClick={() => editor.commands.focus()}>
-        <EditorToolbar editor={editor} />
+        <EditorToolbar editor={editor} onColorChange={handleColorSelect} initialColor={initialPage.canvasColor} />
         <EditorContent editor={editor} />
       </div>
     </div>

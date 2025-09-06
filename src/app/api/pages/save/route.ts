@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import type { Page, Revision } from '@/lib/types';
+import TextStyle from '@tiptap/extension-text-style';
 
 // Helper to extract text from TipTap JSON for search indexing
 function extractTextFromNode(node: any): string {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid authentication token.' }, { status: 401 });
   }
 
-  const { pageId, title, contentJSON, version: clientVersion } = await request.json();
+  const { pageId, title, contentJSON, version: clientVersion, canvasColor } = await request.json();
 
   if (!pageId || !title || !contentJSON || clientVersion === undefined) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -78,14 +79,20 @@ export async function POST(request: Request) {
       const newVersion = serverVersion + 1;
       const searchText = (title + ' ' + (contentJSON ? extractTextFromNode(contentJSON) : '')).trim().toLowerCase();
 
-      transaction.update(pageRef, {
+      const updateData: Partial<Page> = {
         title,
         content: contentJSON,
         version: newVersion,
         searchText,
         updatedAt: Timestamp.now(),
         lastEditedBy: userId,
-      });
+      };
+
+      if(canvasColor) {
+        updateData.canvasColor = canvasColor;
+      }
+
+      transaction.update(pageRef, updateData);
 
       return { status: 'ok', newVersion };
     });

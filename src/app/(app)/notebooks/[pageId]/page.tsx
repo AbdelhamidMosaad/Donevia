@@ -33,6 +33,7 @@ export default function NotebooksPageWithId() {
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const editorPanelRef = useRef<HTMLDivElement>(null);
+  const [canvasColor, setCanvasColor] = useState<string>('hsl(var(--card))');
 
 
   const toggleSidebar = () => {
@@ -59,6 +60,7 @@ export default function NotebooksPageWithId() {
         if (docSnap.exists()) {
           const pageData = { id: docSnap.id, ...docSnap.data() } as Page;
           setSelectedPage(pageData);
+          setCanvasColor(pageData.canvasColor || 'hsl(var(--card))');
           
           // Also update the notebook and section context
           if (pageData.sectionId) {
@@ -146,14 +148,14 @@ export default function NotebooksPageWithId() {
                 </Button>
             </div>
             <ResizablePanel defaultSize={80}>
-                <div ref={editorPanelRef} className="h-full flex flex-col relative bg-card">
+                <div ref={editorPanelRef} className="h-full flex flex-col relative" style={{ backgroundColor: canvasColor }}>
                     <div className="absolute top-4 right-4 z-10">
                         <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
                             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
                         </Button>
                     </div>
                     {selectedPage ? (
-                    <PageEditor key={selectedPage.id} page={selectedPage} />
+                    <PageEditor key={selectedPage.id} page={selectedPage} onCanvasColorChange={setCanvasColor} />
                     ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                         <BrainCircuit className="h-16 w-16 mb-4" />

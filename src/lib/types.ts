@@ -69,7 +69,7 @@ export type Notebook = {
  * Firestore Path: /users/{userId}/sections/{sectionId}
  */
 export type Section = {
-    id: string;
+    id:string;
     notebookId: string;
     title: string;
     order: number; // For ordering sections within a notebook
@@ -93,6 +93,7 @@ export type Page = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
     lastEditedBy?: string; // UID of the last user who edited
+    canvasColor?: string;
 };
 
 /**
