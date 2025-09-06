@@ -126,7 +126,6 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
         },
         textStyle: false, // Disable StarterKit's textStyle to use the standalone one
         // The Underline keyboard shortcut is handled here.
-        history: false, // Use the default history extension
         underline: false, // Use the standalone Underline extension to add the shortcut
       }),
       Placeholder.configure({
