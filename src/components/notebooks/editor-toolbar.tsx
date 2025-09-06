@@ -5,7 +5,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify, Indent, Outdent
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -359,6 +359,26 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
 
             <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
             <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Toggle size="sm" onPressedChange={() => editor.chain().focus().sinkListItem('listItem').run()} disabled={!editor.can().sinkListItem('listItem')} className="text-black">
+                        <Indent className="h-4 w-4" />
+                    </Toggle>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Indent</p>
+                </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Toggle size="sm" onPressedChange={() => editor.chain().focus().liftListItem('listItem').run()} disabled={!editor.can().liftListItem('listItem')} className="text-black">
+                        <Outdent className="h-4 w-4" />
+                    </Toggle>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Outdent</p>
+                </TooltipContent>
+            </Tooltip>
         </Tab>
         <Tab name="Insert">
             <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
