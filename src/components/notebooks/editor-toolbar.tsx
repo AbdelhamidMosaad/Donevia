@@ -71,11 +71,13 @@ const textColors = [
     { name: 'Dark Gray', value: '#333333' },
     { name: 'Gray', value: '#6B7280' },
     { name: 'Light Gray', value: '#D1D5DB' },
+    { name: 'Bright Red', value: '#FF0000' },
     { name: 'Red', value: '#EF4444' },
     { name: 'Pink', value: '#EC4899' },
     { name: 'Grape', value: '#D946EF' },
     { name: 'Violet', value: '#8B5CF6' },
     { name: 'Indigo', value: '#6366F1' },
+    { name: 'Bright Blue', value: '#0000FF' },
     { name: 'Blue', value: '#3B82F6' },
     { name: 'Cyan', value: '#22D3EE' },
     { name: 'Teal', value: '#2DD4BF' },
@@ -84,8 +86,6 @@ const textColors = [
     { name: 'Yellow', value: '#FACC15' },
     { name: 'Orange', value: '#F97316' },
     { name: 'Brown', value: '#854D0E' },
-    { name: 'Blue', value: '#0000FF' },
-    { name: 'Red', value: '#FF0000' },
 ];
 
 const highlightColors = [
