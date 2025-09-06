@@ -119,7 +119,11 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
       }),
-      Underline,
+      Underline.configure({
+        HTMLAttributes: {
+          class: 'underline',
+        },
+      }),
       Link.configure({
         openOnClick: true,
         autolink: true,
