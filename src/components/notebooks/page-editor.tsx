@@ -147,13 +147,14 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
   // Auto-save timer
   useEffect(() => {
     if (!editor) return;
-    let intervalId: NodeJS.Timeout;
+    const saveInterval = 5 * 60 * 1000; // 5 minutes
+    
     if (state.status === 'unsaved') {
-      intervalId = setInterval(() => {
+      const timer = setTimeout(() => {
         handleSave();
-      }, 5 * 60 * 1000); // 5 minutes
+      }, saveInterval);
+      return () => clearTimeout(timer);
     }
-    return () => clearInterval(intervalId);
   }, [state.status, handleSave, editor]);
 
 
@@ -259,7 +260,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
                         setTitle(e.target.value);
                         dispatch({ type: 'EDITING' });
                     }}
-                    className="w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0"
+                    className="w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
                     placeholder="Page Title"
                     disabled={state.status === 'conflict'}
                 />
