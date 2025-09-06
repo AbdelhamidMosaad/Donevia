@@ -2,39 +2,73 @@
 'use client';
 
 import type { StickyNote } from '@/lib/types';
-import { Paperclip } from 'lucide-react';
+import { Flag } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface StickyNoteCardProps {
   note: StickyNote;
   onClick: () => void;
+  style?: React.CSSProperties;
+  className?: string;
 }
 
-export function StickyNoteCard({ note, onClick }: StickyNoteCardProps) {
-  
+const priorityConfig = {
+  High: {
+    color: 'bg-red-500',
+    label: 'High Priority'
+  },
+  Medium: {
+    color: 'bg-yellow-400',
+    label: 'Medium Priority'
+  },
+  Low: {
+    color: 'bg-green-500',
+    label: 'Low Priority'
+  }
+}
+
+export function StickyNoteCard({ note, onClick, style, className }: StickyNoteCardProps) {
+  const priorityInfo = priorityConfig[note.priority];
+
   return (
     <div
-      className="flex flex-col rounded-lg shadow-md p-4 h-64 transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-xl"
+      className={cn(
+        "relative flex flex-col rounded-lg shadow-md p-4 transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-xl w-[250px] h-[250px]",
+        className
+        )}
       style={{ 
         backgroundColor: note.color,
         color: note.textColor,
+        ...style
        }}
       onClick={onClick}
     >
+      {priorityInfo && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+                <div className="absolute top-2 right-2">
+                    <Flag className={cn("h-4 w-4", priorityInfo.color)} />
+                </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{priorityInfo.label}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+
       <h3
-        className="font-bold text-lg mb-2 truncate"
+        className="font-bold text-lg mb-2 truncate pr-6"
       >
         {note.title || "Untitled Note"}
       </h3>
-      <p
+      <div
         className="flex-1 text-sm w-full overflow-hidden whitespace-pre-wrap break-words"
       >
         {note.text}
-      </p>
-      {note.text && (
-         <div className="flex justify-end items-center mt-2 opacity-60">
-            <Paperclip className="h-4 w-4" />
-         </div>
-      )}
+      </div>
     </div>
   );
 }
