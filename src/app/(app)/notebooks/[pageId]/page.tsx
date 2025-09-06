@@ -150,7 +150,7 @@ export default function NotebooksPageWithId() {
             <ResizablePanel defaultSize={80}>
                 <div ref={editorPanelRef} className="h-full flex flex-col relative" style={{ backgroundColor: canvasColor }}>
                     <div className="absolute top-4 right-4 z-10">
-                        <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                        <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="text-black">
                             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
                         </Button>
                     </div>
