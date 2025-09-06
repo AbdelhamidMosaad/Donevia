@@ -149,7 +149,8 @@ export const slashCommands = Extension.create({
                 popup[0].hide();
                 return true;
               }
-              return component.ref?.onKeyDown(props);
+              const commandListRef = component.ref as any;
+              return commandListRef?.onKeyDown(props);
             },
             onExit() {
               popup[0].destroy();
