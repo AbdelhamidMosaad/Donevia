@@ -55,7 +55,12 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
+        heading: { 
+          levels: [1, 2, 3],
+        },
+        // Re-enable bullet and ordered lists which were disabled by the heading config
+        bulletList: {},
+        orderedList: {},
       }),
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
