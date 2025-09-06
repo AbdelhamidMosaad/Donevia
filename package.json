@@ -44,6 +44,7 @@
     "@tiptap/extension-link": "^2.5.7",
     "@tiptap/extension-placeholder": "^2.5.7",
     "@tiptap/extension-underline": "^2.5.7",
+    "@tiptap/html": "^2.5.7",
     "@tiptap/react": "^2.5.7",
     "@tiptap/starter-kit": "^2.5.7",
     "busboy": "^1.6.0",
