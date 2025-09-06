@@ -19,6 +19,7 @@ import { Terminal, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FontFamily } from '@/lib/tiptap/font-family';
 import TextStyle from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
 
 interface PageEditorProps {
   page: Page;
@@ -88,6 +89,9 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
 
   const editor = useEditor({
     extensions: [
+      Color.configure({
+        types: ['textStyle'],
+      }),
       TextStyle.configure({
         types: ['heading', 'paragraph'],
       }),
@@ -96,6 +100,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
         heading: {
           levels: [1, 2, 3],
         },
+        textStyle: false, // Disable StarterKit's textStyle to use the standalone one
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
@@ -146,10 +151,9 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
 
   // Auto-save timer
   useEffect(() => {
-    if (!editor) return;
     const saveInterval = 5 * 60 * 1000; // 5 minutes
     
-    if (state.status === 'unsaved') {
+    if (state.status === 'unsaved' && editor) {
       const timer = setTimeout(() => {
         handleSave();
       }, saveInterval);

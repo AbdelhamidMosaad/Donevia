@@ -4,7 +4,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -60,6 +60,17 @@ const canvasColors = [
     '#F3F2EC', '#FFF5F2',
     '#FAF7F3', '#91C8E4',
     '#80D8C3'
+];
+
+const textColors = [
+    { name: 'Black', value: '#000000' },
+    { name: 'Red', value: '#ef4444' },
+    { name: 'Blue', value: '#3b82f6' },
+    { name: 'Green', value: '#16a34a' },
+    { name: 'Purple', value: '#7c3aed' },
+    { name: 'Gray', value: '#6b7280' },
+    { name: 'Orange', value: '#f97316' },
+    { name: 'Pink', value: '#ec4899' },
 ];
 
 
@@ -136,6 +147,11 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
         editor.chain().focus().setFontFamily(fontFamily).run();
     }
   };
+  
+  const handleTextColorChange = (color: string) => {
+    editor.chain().focus().setColor(color).run();
+  };
+
 
   const handleColorChange = (color: string) => {
     setCurrentColor(color);
@@ -147,6 +163,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
   }
   
   const activeFont = editor.getAttributes('textStyle').fontFamily?.replace(/['"]/g, '') || 'default';
+  const activeColor = editor.getAttributes('textStyle').color || '#000000';
 
   return (
     <TooltipProvider>
@@ -171,6 +188,33 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 ))}
             </SelectContent>
         </Select>
+        
+        <Popover>
+          <Tooltip>
+              <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-9 w-9">
+                          <Palette className="h-4 w-4" style={{ color: activeColor }}/>
+                      </Button>
+                  </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                  <p>Text Color</p>
+              </TooltipContent>
+          </Tooltip>
+          <PopoverContent className="w-auto p-2">
+            <div className="grid grid-cols-4 gap-1">
+              {textColors.map(color => (
+                <button
+                  key={color.name}
+                  onClick={() => handleTextColorChange(color.value)}
+                  className="h-6 w-6 rounded-full border"
+                  style={{ backgroundColor: color.value }}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <Separator orientation="vertical" className="h-6 mx-1" />
         
