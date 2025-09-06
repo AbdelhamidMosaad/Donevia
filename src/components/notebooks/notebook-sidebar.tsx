@@ -21,7 +21,7 @@ import {
 import type { Notebook, Section, Page } from '@/lib/types';
 import { useAtom } from 'jotai';
 import { selectedNotebookAtom, selectedSectionAtom, selectedPageAtom } from '@/lib/notebook-store';
-import { Plus, MoreVertical, Edit, Trash2, Book, ChevronRight, ChevronDown, FileText, Upload, Download, FolderPlus } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, Book, ChevronRight, ChevronDown, FileText, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -108,20 +108,7 @@ export function NotebookSidebar() {
 
   const handleCreateNotebook = async () => {
     if (!user) return;
-
-    try {
-        const docRef = await addDoc(collection(db, 'users', user.uid, 'notebooks'), {
-            ownerId: user.uid,
-            title: 'Untitled Notebook',
-            color: '#4A90E2',
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
-        });
-        toast({ title: 'Notebook created'});
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Error creating notebook' });
-        console.error(e);
-    }
+    router.push('/notebooks');
   }
 
   const handleCreateSection = async (notebookId: string) => {
