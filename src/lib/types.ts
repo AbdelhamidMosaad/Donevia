@@ -153,3 +153,17 @@ export interface UserSettings {
     sidebarOpen: boolean;
     notificationSound: boolean;
 }
+
+/**
+ * Represents a document in the "Docs" module.
+ *
+ * Firestore Path: /users/{userId}/docs/{docId}
+ */
+export type Doc = {
+    id: string;
+    ownerId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};

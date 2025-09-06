@@ -43,6 +43,7 @@
     "@radix-ui/react-tooltip": "^1.1.2",
     "@tiptap/extension-color": "^2.5.7",
     "@tiptap/extension-highlight": "^2.5.7",
+    "@tiptap/extension-image": "^2.5.7",
     "@tiptap/extension-link": "^2.5.7",
     "@tiptap/extension-placeholder": "^2.5.7",
     "@tiptap/extension-subscript": "^2.5.7",
@@ -56,6 +57,7 @@
     "@tiptap/html": "^2.5.7",
     "@tiptap/react": "^2.5.7",
     "@tiptap/starter-kit": "^2.5.7",
+    "@tiptap/suggestion": "^2.5.7",
     "busboy": "^1.6.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -87,6 +89,7 @@
     "sharp": "^0.33.4",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "tippy.js": "^6.3.7",
     "use-debounce": "^10.0.1",
     "zod": "^3.24.2"
   },
