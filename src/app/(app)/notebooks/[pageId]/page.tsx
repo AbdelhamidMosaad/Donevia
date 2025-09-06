@@ -30,11 +30,13 @@ export default function NotebooksPageWithId() {
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
+   const [isFullscreen, setIsFullscreen] = useState(false);
+
 
   const toggleSidebar = () => {
     const panel = sidebarPanelRef.current;
     if (panel) {
-      if (panel.getCollapsed()) {
+      if (panel.isCollapsed()) {
         panel.expand();
       } else {
         panel.collapse();
@@ -91,6 +93,28 @@ export default function NotebooksPageWithId() {
       setSelectedPage(null);
     };
   }, [user, setSelectedNotebook, setSelectedSection, setSelectedPage]);
+  
+    const toggleFullscreen = () => {
+        const elem = document.documentElement;
+        if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+            setIsFullscreen(true);
+        } else {
+            document.exitFullscreen();
+            setIsFullscreen(false);
+        }
+    };
+    
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
 
   return (
     <div className="h-full flex">
@@ -104,10 +128,11 @@ export default function NotebooksPageWithId() {
                 maxSize={30}
                 onCollapse={() => setIsSidebarCollapsed(true)}
                 onExpand={() => setIsSidebarCollapsed(false)}
+                className={isFullscreen ? 'hidden' : ''}
             >
                  <NotebookSidebar />
             </ResizablePanel>
-            <div className="relative">
+            <div className={`relative ${isFullscreen ? 'hidden' : ''}`}>
                 <ResizableHandle withHandle />
                  <Button
                     variant="ghost"
@@ -120,6 +145,11 @@ export default function NotebooksPageWithId() {
             </div>
             <ResizablePanel defaultSize={80}>
                 <div className="h-full flex flex-col relative bg-card">
+                    <div className="absolute top-4 right-4 z-10">
+                        <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                        </Button>
+                    </div>
                     {selectedPage ? (
                     <PageEditor key={selectedPage.id} page={selectedPage} />
                     ) : (
