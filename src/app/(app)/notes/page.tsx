@@ -45,34 +45,20 @@ export default function StickyNotesPage() {
     );
     let row = 0;
     let col = 0;
-    while(true) {
-        // This is a naive implementation and might be slow with many notes.
-        // It's just an example. A better approach might involve knowing the number of columns.
-        for (col = 0; col < 100; col++) { // Assume max 100 columns for finding a spot
-            if (!occupiedPositions.has(`${row},${col}`)) {
-                return { row, col };
-            }
-        }
-        row++;
+    let i = 0;
+    // A better implementation would know the number of columns available.
+    while(occupiedPositions.has(`${row},${col}`)) {
+        i++;
+        col = i % 100; // Assume 100 columns max for finding a spot
+        row = Math.floor(i / 100);
     }
+    return { row, col };
   };
 
   const handleAddNote = async () => {
     if (!user) return;
     try {
-      // Find the next available grid position. This is a simplified approach.
-      // A more robust solution would consider the current number of columns.
-      const occupiedPositions = new Set(notes.map(n => `${n.gridPosition?.row},${n.gridPosition?.col}`));
-      let position = { row: 0, col: 0 };
-      let i = 0;
-      while (occupiedPositions.has(`${position.row},${position.col}`)) {
-        i++;
-        // Simple linear search for next open spot.
-        // A better approach would be to know the number of columns.
-        // For now, let's assume a large number of possible columns.
-        position = { row: Math.floor(i/100), col: i % 100};
-      }
-
+      const position = findNextAvailablePosition(notes);
 
       await addDoc(collection(db, 'users', user.uid, 'stickyNotes'), {
         title: 'New Note',
@@ -104,6 +90,10 @@ export default function StickyNotesPage() {
   
   const handleDialogClose = () => {
     setEditingNote(null);
+  }
+
+  const handleNoteDeleted = () => {
+      setEditingNote(null);
   }
 
   if (loading || !user) {
@@ -146,6 +136,7 @@ export default function StickyNotesPage() {
                     handleDialogClose();
                 }
             }} 
+            onNoteDeleted={handleNoteDeleted}
         />
       )}
     </div>
