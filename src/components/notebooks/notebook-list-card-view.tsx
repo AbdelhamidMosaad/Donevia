@@ -122,7 +122,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                     className="text-lg font-headline"
                   />
                 ) : (
-                  <a href={`/notebooks/${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="cursor-pointer">
+                  <a href="#" onClick={(e) => handleNavigate(e, list.id)} className="cursor-pointer">
                     <CardTitle className="flex items-center gap-2 font-headline hover:underline">
                       <Book className="h-5 w-5 text-primary" />
                       {list.title}
@@ -161,7 +161,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>
-             <a href={`/notebooks/${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="flex-1 cursor-pointer">
+             <a href="#" onClick={(e) => handleNavigate(e, list.id)} className="flex-1 cursor-pointer">
                 <CardContent>
                   <p className="text-sm text-muted-foreground">Click to open this notebook.</p>
                 </CardContent>

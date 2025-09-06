@@ -116,7 +116,7 @@ export function NotebookListListView({ notebooks, onDelete }: NotebookListListVi
         </TableHeader>
         <TableBody>
           {notebooks.map(list => (
-            <TableRow key={list.id}>
+            <TableRow key={list.id} onDoubleClick={(e) => handleNavigate(e, list.id)} className="cursor-pointer">
               <TableCell>
                 {editingListId === list.id ? (
                   <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export function NotebookListListView({ notebooks, onDelete }: NotebookListListVi
                     />
                   </div>
                 ) : (
-                  <a href={`/notebooks/${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="flex items-center gap-2 font-medium text-primary hover:underline cursor-pointer">
+                  <a href="#" onClick={(e) => handleNavigate(e, list.id)} className="flex items-center gap-2 font-medium text-primary hover:underline">
                       <Book className="h-4 w-4" />
                       {list.title}
                   </a>
