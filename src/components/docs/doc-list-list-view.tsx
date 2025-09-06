@@ -109,8 +109,8 @@ export function DocListListView({ docs, onDelete }: DocListListViewProps) {
                   </a>
                 )}
               </TableCell>
-              <TableCell>{document.createdAt.toDate().toLocaleDateString()}</TableCell>
-              <TableCell>{document.updatedAt.toDate().toLocaleDateString()}</TableCell>
+              <TableCell>{document.createdAt?.toDate().toLocaleDateString()}</TableCell>
+              <TableCell>{document.updatedAt?.toDate().toLocaleDateString()}</TableCell>
               <TableCell>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
