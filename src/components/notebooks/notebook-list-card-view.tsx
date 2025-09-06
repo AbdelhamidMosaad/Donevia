@@ -9,7 +9,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Input } from '../ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { doc, updateDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, getDocs, orderBy, limit, writeBatch, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useRouter } from 'next/navigation';
@@ -156,8 +156,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                       onClick={(e) => e.preventDefault()}
                     />
                   ) : (
-                    <CardTitle className="flex items-center gap-2 font-headline hover:underline">
-                      <Book className="h-5 w-5 text-primary" />
+                    <CardTitle className="font-headline hover:underline">
                       {list.title}
                     </CardTitle>
                   )}
