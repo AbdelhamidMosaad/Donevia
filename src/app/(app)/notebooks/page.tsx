@@ -124,7 +124,7 @@ export default function NotebooksDashboardPage() {
         const sectionRef = doc(collection(db, 'users', user.uid, 'sections'));
         batch.set(sectionRef, {
             notebookId: notebookRef.id,
-            title: 'First Section',
+            title: 'Untitled Chapter',
             order: 0,
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
