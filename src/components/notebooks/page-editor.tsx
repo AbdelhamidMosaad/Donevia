@@ -8,7 +8,6 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import type { Page } from '@/lib/types';
-import { useDebouncedCallback } from 'use-debounce';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -87,34 +86,10 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
       serverTitle: null,
   });
 
-  const handleSave = useCallback(async () => {
-    if (!editor || !user || state.status === 'conflict' || state.status === 'saving') return;
-    
-    dispatch({ type: 'SAVING' });
-    const contentJSON = editor.getJSON();
-
-    try {
-      const result = await savePageClient(initialPage.id, title, contentJSON, state.clientVersion, initialPage.canvasColor || null);
-      if (result.status === 'ok') {
-        dispatch({ type: 'SAVE_SUCCESS', newVersion: result.newVersion, timestamp: new Date().toLocaleTimeString() });
-        toast({ title: '✓ Progress Saved' });
-      }
-    } catch (error: any) {
-        if (error.response?.status === 409) { // Conflict
-            const conflictData = await error.response.json();
-            dispatch({ type: 'CONFLICT', serverVersion: conflictData.serverVersion, serverContent: conflictData.serverContent, serverTitle: conflictData.serverTitle });
-        } else {
-            console.error('Error saving page:', error);
-            dispatch({ type: 'SAVE_ERROR' });
-            toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save changes.' });
-        }
-    }
-  }, [editor, user, state.status, state.clientVersion, initialPage.id, initialPage.canvasColor, title, toast]);
-
   const editor = useEditor({
     extensions: [
       TextStyle.configure({
-        types: ['heading', 'paragraph', 'listItem'],
+        types: ['heading', 'paragraph'],
       }),
       FontFamily,
       StarterKit.configure({
@@ -122,6 +97,14 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
           levels: [1, 2, 3],
         },
         textStyle: false,
+        bulletList: {
+            keepMarks: true,
+            keepAttributes: false, 
+        },
+        orderedList: {
+            keepMarks: true,
+            keepAttributes: false,
+        },
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
@@ -145,6 +128,30 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
       }
     },
   });
+
+  const handleSave = useCallback(async () => {
+    if (!editor || !user || state.status === 'conflict' || state.status === 'saving') return;
+    
+    dispatch({ type: 'SAVING' });
+    const contentJSON = editor.getJSON();
+
+    try {
+      const result = await savePageClient(initialPage.id, title, contentJSON, state.clientVersion, initialPage.canvasColor || null);
+      if (result.status === 'ok') {
+        dispatch({ type: 'SAVE_SUCCESS', newVersion: result.newVersion, timestamp: new Date().toLocaleTimeString() });
+        toast({ title: '✓ Progress Saved' });
+      }
+    } catch (error: any) {
+        if (error.response?.status === 409) { // Conflict
+            const conflictData = await error.response.json();
+            dispatch({ type: 'CONFLICT', serverVersion: conflictData.serverVersion, serverContent: conflictData.serverContent, serverTitle: conflictData.serverTitle });
+        } else {
+            console.error('Error saving page:', error);
+            dispatch({ type: 'SAVE_ERROR' });
+            toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save changes.' });
+        }
+    }
+  }, [editor, user, state.status, state.clientVersion, initialPage.id, initialPage.canvasColor, title, toast]);
 
   // Auto-save timer
   useEffect(() => {
@@ -275,3 +282,5 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
     </>
   );
 }
+
+    
