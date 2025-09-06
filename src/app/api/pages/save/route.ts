@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       // --- Success ---
       // No conflict, proceed with the update.
       const newVersion = serverVersion + 1;
-      const searchText = (title + ' ' + extractTextFromNode(contentJSON)).trim().toLowerCase();
+      const searchText = (title + ' ' + (contentJSON ? extractTextFromNode(contentJSON) : '')).trim().toLowerCase();
 
       transaction.update(pageRef, {
         title,
