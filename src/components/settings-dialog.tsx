@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Moon, Palette, Type, Check, Bell, PanelLeft, User, Database } from 'lucide-react';
+import { Sun, Moon, Palette, Type, Check, Bell, PanelLeft, User, Database, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,9 @@ import { NotificationSettings } from './notification-settings';
 import { Switch } from './ui/switch';
 import type { UserSettings } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Button } from './ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+
 
 type Theme = UserSettings['theme'];
 type Font = UserSettings['font'];
@@ -54,17 +57,19 @@ const fontVariables: Record<Font, string> = fonts.reduce((acc, font) => {
     return acc;
 }, {} as Record<Font, string>);
 
+const defaultSettings: UserSettings = {
+    theme: 'light',
+    font: 'inter',
+    sidebarOpen: true,
+    notificationSound: true,
+};
+
 
 export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [settings, setSettings] = useState<UserSettings>({
-      theme: 'light',
-      font: 'inter',
-      sidebarOpen: true,
-      notificationSound: true,
-  });
+  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
 
   useEffect(() => {
     if (user && open) {
@@ -74,11 +79,13 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
         if (settingsSnap.exists() && settingsSnap.data()) {
           const data = settingsSnap.data();
           setSettings({
-            theme: data.theme || 'light',
-            font: data.font || 'inter',
+            theme: data.theme || defaultSettings.theme,
+            font: data.font || defaultSettings.font,
             sidebarOpen: data.sidebarOpen !== false,
             notificationSound: data.notificationSound !== false,
           });
+        } else {
+            setSettings(defaultSettings);
         }
       };
       fetchSettings();
@@ -151,6 +158,29 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     setSettings(s => ({...s, notificationSound: enabled}));
     savePreferences({ notificationSound: enabled });
   }
+
+  const handleResetSettings = async () => {
+    if (!user) return;
+    try {
+        // We delete the doc so it regenerates on next fetch
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await deleteDoc(settingsRef);
+        setSettings(defaultSettings);
+        applyTheme(defaultSettings.theme);
+        applyFont(defaultSettings.font);
+        toast({
+            title: 'Settings Reset',
+            description: 'Your application settings have been restored to their defaults.',
+        });
+    } catch (error) {
+         console.error("Error resetting settings: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to reset settings. Please try again.',
+        });
+    }
+  };
   
   if (loading) {
     return null;
@@ -267,8 +297,41 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                     <Card>
                         <CardHeader>
                             <CardTitle>Data Management</CardTitle>
-                            <CardDescription>Export your data. (Coming Soon)</CardDescription>
+                            <CardDescription>Export your data or reset settings to default.</CardDescription>
                         </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-medium">Reset All Settings</h3>
+                                    <p className="text-sm text-muted-foreground">This will restore all application settings to their original defaults. This action cannot be undone.</p>
+                                </div>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive">
+                                            <RefreshCcw className="mr-2 h-4 w-4" />
+                                            Reset Settings
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will reset all application settings to their default values. Any customizations you've made will be lost.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleResetSettings}
+                                            className={buttonVariants({ variant: "destructive" })}
+                                        >
+                                            Yes, reset everything
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </CardContent>
                     </Card>
                  </TabsContent>
 
@@ -279,3 +342,32 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
