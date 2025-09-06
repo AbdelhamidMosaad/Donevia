@@ -5,7 +5,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify, Indent, Outdent, Undo, Redo, Superscript, Subscript
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify, Indent, Outdent, Undo, Redo, Superscript, Subscript, Eraser
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -364,6 +364,16 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
             <ToolbarButton editor={editor} name="superscript" label="Superscript" icon={Superscript} />
             <ToolbarButton editor={editor} name="subscript" label="Subscript" icon={Subscript} />
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => editor.chain().focus().unsetAllMarks().run()}>
+                        <Eraser className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Clear Formatting</p>
+                </TooltipContent>
+            </Tooltip>
 
             <Separator orientation="vertical" className="h-6 mx-1" />
 
