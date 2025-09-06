@@ -2,8 +2,8 @@
 'use client';
 import type { Notebook } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Book, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { MoreHorizontal, Edit, Trash2, Palette } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '../ui/input';
@@ -13,12 +13,29 @@ import { doc, updateDoc, collection, query, where, getDocs, orderBy, limit, writ
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 
 interface NotebookListCardViewProps {
   notebooks: Notebook[];
   onDelete: (listId: string) => void;
 }
+
+const colors = ['#FFFFFF', '#FFDDC1', '#FFD3B5', '#FFFACD', '#D4EDDA', '#D1E7DD', '#C8E6C9', '#E1F5FE', '#D0E8F2', '#D6EAF8', '#E8DAEF', '#F4ECF7', '#FADBD8', '#FDEDEC'];
+
+
+// Function to determine if a color is light or dark
+const isColorLight = (color: string) => {
+    if (!color.startsWith('#')) return true; // Default to light for invalid colors
+    const hex = color.replace('#', '');
+    const c_r = parseInt(hex.substring(0, 2), 16);
+    const c_g = parseInt(hex.substring(2, 4), 16);
+    const c_b = parseInt(hex.substring(4, 6), 16);
+    const brightness = ((c_r * 299) + (c_g * 587) + (c_b * 114)) / 1000;
+    return brightness > 155;
+};
+
 
 export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardViewProps) {
   const [editingListId, setEditingListId] = useState<string | null>(null);
@@ -34,6 +51,17 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
         inputRef.current.select();
     }
   }, [editingListId]);
+  
+  const handleColorChange = async (notebookId: string, color: string) => {
+    if (!user) return;
+    const listRef = doc(db, 'users', user.uid, 'notebooks', notebookId);
+    try {
+        await updateDoc(listRef, { color });
+    } catch (e) {
+        console.error("Error updating document: ", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update color.' });
+    }
+  };
 
   const handleStartEdit = (list: Notebook) => {
     setEditingListId(list.id);
@@ -140,9 +168,14 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {notebooks.map(list => (
+      {notebooks.map(list => {
+          const textColor = isColorLight(list.color) ? 'text-gray-800' : 'text-white';
+          return (
           <a key={list.id} href={`/notebooks/new?notebookId=${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="block cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
+            <Card 
+                className={cn("hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group", textColor)}
+                style={{ backgroundColor: list.color || '#FFFFFF' }}
+            >
               <CardHeader className="flex-row items-start justify-between w-full relative">
                 <div>
                   {editingListId === list.id ? (
@@ -160,22 +193,34 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                       {list.title}
                     </CardTitle>
                   )}
-                  <CardDescription className="mt-1">
+                  <CardDescription className={cn("mt-1", isColorLight(list.color) ? 'text-gray-600' : 'text-gray-300')}>
                     Created on {list.createdAt.toDate().toLocaleDateString()}
                   </CardDescription>
                 </div>
                 <div className="absolute top-2 right-2">
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                        <Button variant="ghost" size="icon" className={cn("h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0", textColor, "hover:bg-black/10")} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                         <DropdownMenuItem onSelect={() => handleStartEdit(list)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger><Palette className="mr-2 h-4 w-4" />Change Color</DropdownMenuSubTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuSubContent className="grid grid-cols-4 gap-1 p-2">
+                               {colors.map(color => (
+                                 <DropdownMenuItem key={color} onSelect={() => handleColorChange(list.id, color)} className="p-0 m-0 w-8 h-8 flex items-center justify-center rounded-md" style={{backgroundColor: color}}>
+                                     {list.color === color && <Check className={cn(isColorLight(color) ? 'text-black' : 'text-white')} />}
+                                 </DropdownMenuItem>
+                               ))}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuPortal>
+                        </DropdownMenuSub>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive w-full"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive w-full"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
                             </AlertDialogTrigger>
                             <AlertDialogContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                                 <AlertDialogHeader>
@@ -186,7 +231,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => onDelete(list.id)}>Delete</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => onDelete(list.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -198,7 +243,9 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
               </CardContent>
             </Card>
           </a>
-      ))}
+          )
+        })}
     </div>
   );
 }
+
