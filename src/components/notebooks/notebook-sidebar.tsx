@@ -103,7 +103,7 @@ export function NotebookSidebar() {
       const newOrder = sections.length || 0;
       await addDoc(collection(db, 'users', user.uid, 'sections'), {
         notebookId: selectedNotebook.id,
-        title: 'Untitled Section',
+        title: 'Untitled Chapter',
         order: newOrder,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
@@ -274,7 +274,7 @@ export function NotebookSidebar() {
              <Button variant="ghost" size="icon" onClick={() => router.push('/notebooks')} title="Back to Notebooks">
               <Book className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleCreateSection} title="New Section">
+            <Button variant="ghost" size="icon" onClick={handleCreateSection} title="New Chapter">
               <FolderPlus className="h-4 w-4" />
             </Button>
         </div>
