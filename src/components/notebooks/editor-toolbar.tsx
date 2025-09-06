@@ -55,6 +55,10 @@ const canvasColors = [
     '#F0F8FF', '#E6E6FA', // Light Blues & Lavenders
     '#FFF0F5', '#FFE4E1', // Pinks
     '#FAFAD2', '#FFEFD5', // Light Goldenrod & PapayaWhip
+    '#F8FAB4', '#F7F4EA',
+    '#F3F2EC', '#FFF5F2',
+    '#FAF7F3', '#91C8E4',
+    '#80D8C3'
 ];
 
 
