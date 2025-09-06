@@ -8,13 +8,13 @@ import TextStyle from '@tiptap/extension-text-style';
 
 // Helper to extract text from TipTap JSON for search indexing
 function extractTextFromNode(node: any): string {
-    if (!node) {
+    if (!node || !node.content) {
         return '';
     }
     if (node.type === 'text' && node.text) {
         return node.text + ' ';
     }
-    if (node.content && Array.isArray(node.content)) {
+    if (Array.isArray(node.content)) {
         return node.content.map(extractTextFromNode).join('');
     }
     return '';
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
   const { pageId, title, contentJSON, version: clientVersion, canvasColor } = await request.json();
 
-  if (!pageId || !title || !contentJSON || clientVersion === undefined) {
+  if (!pageId || !title || clientVersion === undefined) { // contentJSON can be null/empty
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -81,7 +81,16 @@ export async function POST(request: Request) {
       // --- Success ---
       // No conflict, proceed with the update.
       const newVersion = serverVersion + 1;
-      const searchText = (title + ' ' + (contentJSON ? extractTextFromNode(contentJSON) : '')).trim().toLowerCase();
+      let searchText = title.trim().toLowerCase();
+      try {
+        if (contentJSON) {
+            searchText += ' ' + extractTextFromNode(contentJSON).trim().toLowerCase();
+        }
+      } catch (e) {
+          console.error("Error extracting text from contentJSON: ", e);
+          // Don't fail the whole save if text extraction fails, just log it.
+      }
+
 
       const updateData: Partial<Page> = {
         title,

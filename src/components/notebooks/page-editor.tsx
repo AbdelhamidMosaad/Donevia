@@ -63,7 +63,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         case 'SAVING':
             return { ...state, status: 'saving' };
         case 'SAVE_SUCCESS':
-            return { ...state, status: 'saved', clientVersion: action.newVersion, serverVersion: action.newVersion, lastSaved: action.timestamp };
+            return { ...state, status: 'saved', clientVersion: action.newVersion, serverVersion: action.newVersion, lastSaved: action.timestamp, serverContent: null, serverTitle: null };
         case 'CONFLICT':
             return { ...state, status: 'conflict', serverVersion: action.serverVersion, serverContent: action.serverContent, serverTitle: action.serverTitle };
         case 'RESOLVED':
@@ -174,7 +174,8 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
         } else {
             console.error('Error saving page:', error);
             dispatch({ type: 'SAVE_ERROR' });
-            toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save changes.' });
+            const errorMessage = error.response?.error || 'Could not save changes.';
+            toast({ variant: 'destructive', title: 'Save Error', description: errorMessage });
         }
     }
   }, [editor, user, state.status, state.clientVersion, initialPage.id, initialPage.canvasColor, title, toast]);
