@@ -39,4 +39,7 @@ export type StickyNote = {
   textColor: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  priority: 'High' | 'Medium' | 'Low';
+  position?: { x: number; y: number };
+  gridPosition?: { col: number; row: number };
 };

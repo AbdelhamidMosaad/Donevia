@@ -9,7 +9,7 @@ import { doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
-import { Palette, Trash2, Check, CaseSensitive } from 'lucide-react';
+import { Palette, Trash2, Check, CaseSensitive, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface StickyNoteDialogProps {
   note: StickyNote;
@@ -35,6 +36,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange }: StickyNoteDialo
   const [text, setText] = useState(note.text);
   const [bgColor, setBgColor] = useState(note.color);
   const [textColor, setTextColor] = useState(note.textColor);
+  const [priority, setPriority] = useState<StickyNote['priority']>(note.priority || 'Medium');
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const noteRef = user ? doc(db, 'users', user.uid, 'stickyNotes', note.id) : null;
@@ -45,6 +47,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange }: StickyNoteDialo
     setText(note.text);
     setBgColor(note.color);
     setTextColor(note.textColor);
+    setPriority(note.priority || 'Medium');
   }, [note]);
 
 
@@ -72,8 +75,18 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange }: StickyNoteDialo
       toast({ variant: 'destructive', title: `Error updating ${type} color` });
     }
   };
+  
+  const handlePriorityChange = async (newPriority: StickyNote['priority']) => {
+    if (!noteRef) return;
+    setPriority(newPriority);
+     try {
+      await updateDoc(noteRef, { priority: newPriority, updatedAt: serverTimestamp() });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Error updating priority' });
+    }
+  };
 
-  // Debounce updates to Firestore
+  // Debounce updates to Firestore for text and title
   useEffect(() => {
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
@@ -143,6 +156,17 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange }: StickyNoteDialo
             />
         </div>
         <DialogFooter className="p-2 border-t flex justify-end items-center gap-1" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+            <Select onValueChange={handlePriorityChange} value={priority}>
+              <SelectTrigger className="w-[120px] h-8 text-xs bg-transparent border-black/10 hover:bg-black/10">
+                  <Flag className="h-3 w-3 mr-1"/>
+                  <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+              </SelectContent>
+            </Select>
             <Popover>
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-black/10">

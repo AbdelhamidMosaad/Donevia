@@ -15,15 +15,15 @@ interface StickyNoteCardProps {
 
 const priorityConfig = {
   High: {
-    color: 'bg-red-500',
+    color: 'text-red-500',
     label: 'High Priority'
   },
   Medium: {
-    color: 'bg-yellow-400',
+    color: 'text-yellow-400',
     label: 'Medium Priority'
   },
   Low: {
-    color: 'bg-green-500',
+    color: 'text-green-500',
     label: 'Low Priority'
   }
 }
@@ -34,7 +34,7 @@ export function StickyNoteCard({ note, onClick, style, className }: StickyNoteCa
   return (
     <div
       className={cn(
-        "relative flex flex-col rounded-lg shadow-md p-4 transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-xl w-[250px] h-[250px]",
+        "relative flex flex-col rounded-lg shadow-md p-4 transition-all duration-200 cursor-pointer hover:shadow-xl w-[250px] h-[250px] group",
         className
         )}
       style={{ 
