@@ -26,7 +26,7 @@ export function ToolbarTabs({ children }: ToolbarTabsProps) {
             </TabsList>
             {tabs.map(tab => (
                 <TabsContent key={tab.props.name} value={tab.props.name} className="mt-0">
-                    <div className="flex items-center justify-center gap-1 p-2 border-x border-b rounded-b-md bg-muted/60 flex-wrap">
+                    <div className="flex items-center justify-start gap-1 p-2 border-x border-b rounded-b-md bg-muted/60 flex-wrap">
                      {tab.props.children}
                     </div>
                 </TabsContent>
