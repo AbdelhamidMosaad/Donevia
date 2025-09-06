@@ -13,13 +13,14 @@ import { cn } from '@/lib/utils';
 interface StickyNotesCanvasProps {
   notes: StickyNote[];
   onNoteClick: (note: StickyNote) => void;
+  onDeleteNote: (noteId: string) => void;
 }
 
 const NOTE_WIDTH = 250;
 const NOTE_HEIGHT = 250;
 const GRID_GAP = 16;
 
-export function StickyNotesCanvas({ notes, onNoteClick }: StickyNotesCanvasProps) {
+export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNotesCanvasProps) {
   const { user } = useAuth();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(1);
@@ -96,7 +97,7 @@ export function StickyNotesCanvas({ notes, onNoteClick }: StickyNotesCanvasProps
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="grid gap-4"
+              className="grid gap-4 p-4"
               style={{
                 gridTemplateColumns: `repeat(${cols}, ${NOTE_WIDTH}px)`,
                 gridAutoRows: `${NOTE_HEIGHT}px`,
@@ -122,7 +123,11 @@ export function StickyNotesCanvas({ notes, onNoteClick }: StickyNotesCanvasProps
                         gridRow: 'auto',
                       }}
                     >
-                      <StickyNoteCard note={note} onClick={() => onNoteClick(note)} />
+                      <StickyNoteCard 
+                        note={note} 
+                        onClick={() => onNoteClick(note)} 
+                        onDelete={() => onDeleteNote(note.id)}
+                      />
                     </div>
                   )}
                 </Draggable>

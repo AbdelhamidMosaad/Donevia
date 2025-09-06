@@ -2,13 +2,16 @@
 'use client';
 
 import type { StickyNote } from '@/lib/types';
-import { Flag } from 'lucide-react';
+import { Flag, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Button } from './ui/button';
 
 interface StickyNoteCardProps {
   note: StickyNote;
   onClick: () => void;
+  onDelete: () => void;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -28,8 +31,12 @@ const priorityConfig = {
   }
 }
 
-export function StickyNoteCard({ note, onClick, style, className }: StickyNoteCardProps) {
+export function StickyNoteCard({ note, onClick, onDelete, style, className }: StickyNoteCardProps) {
   const priorityInfo = priorityConfig[note.priority];
+  
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the card's onClick from firing
+  };
 
   return (
     <div
@@ -69,6 +76,31 @@ export function StickyNoteCard({ note, onClick, style, className }: StickyNoteCa
       >
         {note.text}
       </div>
+
+       <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute bottom-2 right-2 h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleDeleteClick}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this note?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the note titled "{note.title || 'Untitled Note'}".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }

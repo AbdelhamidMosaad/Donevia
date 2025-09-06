@@ -3,16 +3,19 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, LayoutGrid } from 'lucide-react';
+import { PlusCircle, FileText, LayoutGrid, Board } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, query, addDoc, Timestamp, orderBy, setDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, addDoc, Timestamp, orderBy, setDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { StickyNote } from '@/lib/types';
 import { StickyNoteDialog } from '@/components/sticky-note-dialog';
 import { StickyNotesCanvas } from '@/components/sticky-notes-canvas';
+import { StickyNotesBoard } from '@/components/sticky-notes-board';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type View = 'board' | 'canvas';
 
 export default function StickyNotesPage() {
   const { user, loading } = useAuth();
@@ -20,12 +23,24 @@ export default function StickyNotesPage() {
   const { toast } = useToast();
   const [notes, setNotes] = useState<StickyNote[]>([]);
   const [editingNote, setEditingNote] = useState<StickyNote | null>(null);
+  const [view, setView] = useState<View>('board');
   
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
     }
   }, [user, loading, router]);
+  
+  useEffect(() => {
+    if (user) {
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      getDoc(settingsRef).then(docSnap => {
+        if (docSnap.exists() && docSnap.data().notesView) {
+          setView(docSnap.data().notesView);
+        }
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -92,12 +107,47 @@ export default function StickyNotesPage() {
     setEditingNote(null);
   }
 
-  const handleNoteDeleted = () => {
-      setEditingNote(null);
-  }
+  const handleDeleteNote = async (noteId: string) => {
+    if (!user) return;
+    
+    // If the note being deleted is the one being edited, close the dialog.
+    if (editingNote?.id === noteId) {
+        setEditingNote(null);
+    }
+
+    const noteRef = doc(db, 'users', user.uid, 'stickyNotes', noteId);
+    try {
+      await deleteDoc(noteRef);
+      toast({ title: '✓ Note Deleted' });
+    } catch (e) {
+        console.error('Error deleting note:', e);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete note.' });
+    }
+  };
+
+  const handleViewChange = (newView: View) => {
+    if (newView) {
+        setView(newView);
+        if (user) {
+            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+            setDoc(settingsRef, { notesView: newView }, { merge: true });
+        }
+    }
+  };
 
   if (loading || !user) {
     return <div>Loading...</div>;
+  }
+
+  const renderView = () => {
+    switch(view) {
+        case 'board':
+            return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
+        case 'canvas':
+            return <StickyNotesCanvas notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
+        default:
+            return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
+    }
   }
 
   return (
@@ -108,6 +158,14 @@ export default function StickyNotesPage() {
           <p className="text-muted-foreground">Your personal space for quick thoughts and reminders.</p>
         </div>
         <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
+              <ToggleGroupItem value="board" aria-label="Board view">
+                <Board className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="canvas" aria-label="Canvas view">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
             <Button onClick={handleAddNote}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Note
@@ -122,8 +180,8 @@ export default function StickyNotesPage() {
             <p className="text-muted-foreground">Click "Add Note" to create your first one.</p>
         </div>
       ) : (
-        <div className="flex-1">
-            <StickyNotesCanvas notes={notes} onNoteClick={handleNoteClick} />
+        <div className="flex-1 overflow-auto">
+            {renderView()}
         </div>
       )}
 
@@ -136,7 +194,6 @@ export default function StickyNotesPage() {
                     handleDialogClose();
                 }
             }} 
-            onNoteDeleted={handleNoteDeleted}
         />
       )}
     </div>

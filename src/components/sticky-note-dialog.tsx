@@ -5,11 +5,11 @@ import { useState, useEffect, useRef } from 'react';
 import type { StickyNote } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
-import { Palette, Trash2, Check, CaseSensitive, Flag } from 'lucide-react';
+import { Palette, Check, CaseSensitive, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -24,13 +24,12 @@ interface StickyNoteDialogProps {
   note: StickyNote;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onNoteDeleted?: () => void;
 }
 
 const backgroundColors = ['#fff176', '#ff8a65', '#81d4fa', '#aed581', '#ce93d8', '#fdcbf1', '#fdfd96'];
 const textColors = ['#000000', '#FFFFFF', '#ef4444', '#3b82f6', '#16a34a', '#7c3aed'];
 
-export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: StickyNoteDialogProps) {
+export function StickyNoteDialog({ note, isOpen, onOpenChange }: StickyNoteDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(note.title);
@@ -51,18 +50,6 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     setPriority(note.priority || 'Medium');
   }, [note]);
 
-
-  const handleDelete = async () => {
-    if (!noteRef) return;
-    try {
-      await deleteDoc(noteRef);
-      toast({ title: '✓ Note Deleted' });
-      onOpenChange(false);
-      onNoteDeleted?.();
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Error deleting note' });
-    }
-  };
 
   const handleColorChange = async (newColor: string, type: 'background' | 'text') => {
     if (!noteRef) return;
@@ -134,7 +121,6 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
       <DialogContent 
         className="p-0 border-none shadow-2xl max-w-2xl w-full h-[60vh] flex flex-col" 
         style={{ backgroundColor: bgColor, color: textColor }}
-        onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className="p-4 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
           <DialogTitle>
@@ -215,9 +201,6 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
                 </div>
             </PopoverContent>
             </Popover>
-            <Button variant="ghost" size="icon" onClick={handleDelete} className="h-8 w-8 hover:bg-destructive/20 text-destructive/70 hover:text-destructive">
-            <Trash2 className="h-4 w-4" />
-            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
