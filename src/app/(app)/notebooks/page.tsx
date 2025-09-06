@@ -76,53 +76,89 @@ export default function NotebooksDashboardPage() {
 
   const handleDeleteNotebook = async (notebookId: string) => {
       if(!user) return;
-      const batch = writeBatch(db);
       
-      const notebookRef = doc(db, 'users', user.uid, 'notebooks', notebookId);
-      batch.delete(notebookRef);
-      
-      const sectionsRef = collection(db, 'users', user.uid, 'sections');
-      const qSections = query(sectionsRef, where('notebookId', '==', notebookId));
-      const sectionsSnap = await getDocs(qSections);
-      
-      for (const sectionDoc of sectionsSnap.docs) {
-        batch.delete(sectionDoc.ref);
-        const pagesRef = collection(db, 'users', user.uid, 'pages');
-        const qPages = query(pagesRef, where('sectionId', '==', sectionDoc.id));
-        const pagesSnap = await getDocs(qPages);
-        pagesSnap.forEach(pageDoc => batch.delete(pageDoc.ref));
+      try {
+        const batch = writeBatch(db);
+        
+        const notebookRef = doc(db, 'users', user.uid, 'notebooks', notebookId);
+        
+        const sectionsRef = collection(db, 'users', user.uid, 'sections');
+        const qSections = query(sectionsRef, where('notebookId', '==', notebookId));
+        const sectionsSnap = await getDocs(qSections);
+        
+        for (const sectionDoc of sectionsSnap.docs) {
+          batch.delete(sectionDoc.ref);
+          const pagesRef = collection(db, 'users', user.uid, 'pages');
+          const qPages = query(pagesRef, where('sectionId', '==', sectionDoc.id));
+          const pagesSnap = await getDocs(qPages);
+          pagesSnap.forEach(pageDoc => batch.delete(pageDoc.ref));
+        }
+        
+        batch.delete(notebookRef);
+        await batch.commit();
+
+        toast({title: 'Notebook and all its contents deleted'});
+
+      } catch (error) {
+        console.error("Error deleting notebook: ", error);
+        toast({variant: 'destructive', title: 'Error', description: 'Failed to delete notebook.'});
       }
-      
-      await batch.commit();
-      toast({title: 'Notebook deleted'});
   }
 
   const handleAddNotebook = async () => {
     if (!user) return;
     try {
-      const docRef = await addDoc(collection(db, 'users', user.uid, 'notebooks'), {
-        ownerId: user.uid,
-        title: 'Untitled Notebook',
-        color: '#4A90E2', // A default color
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
+        const batch = writeBatch(db);
 
-      toast({
-        title: '✓ Notebook Added',
-        description: `"Untitled Notebook" has been created.`,
-      });
+        // 1. Create Notebook
+        const notebookRef = doc(collection(db, 'users', user.uid, 'notebooks'));
+        batch.set(notebookRef, {
+            ownerId: user.uid,
+            title: 'Untitled Notebook',
+            color: '#4A90E2',
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
 
-      // After creating, navigate to the notebook page, which will show the empty state.
-      router.push(`/notebooks/${docRef.id}`);
+        // 2. Create Default Section for it
+        const sectionRef = doc(collection(db, 'users', user.uid, 'sections'));
+        batch.set(sectionRef, {
+            notebookId: notebookRef.id,
+            title: 'First Section',
+            order: 0,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
+
+        // 3. Create Default Page for that section
+        const pageRef = doc(collection(db, 'users', user.uid, 'pages'));
+        batch.set(pageRef, {
+            sectionId: sectionRef.id,
+            title: 'Untitled Page',
+            content: { type: 'doc', content: [{ type: 'paragraph' }] },
+            searchText: 'untitled page',
+            version: 1,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
+        
+        await batch.commit();
+
+        toast({
+            title: '✓ Notebook Added',
+            description: `"Untitled Notebook" has been created.`,
+        });
+
+        // 4. Navigate to the new page
+        router.push(`/notebooks/${pageRef.id}`);
 
     } catch (e) {
-      console.error("Error adding document: ", e);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to add notebook. Please try again.',
-      });
+        console.error("Error adding document: ", e);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to add notebook. Please try again.',
+        });
     }
   };
 

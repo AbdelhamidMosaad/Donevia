@@ -83,7 +83,8 @@ export function NotebookListListView({ notebooks, onDelete }: NotebookListListVi
     const sectionsSnap = await getDocs(qSections);
 
     if (sectionsSnap.empty) {
-        toast({variant: 'destructive', title: 'Empty Notebook', description: 'This notebook has no sections or pages yet.'});
+        toast({title: 'Empty Notebook', description: 'Create a section and page in this notebook to get started.'});
+        router.push(`/notebooks/new?notebookId=${notebookId}`);
         return;
     }
     
@@ -94,7 +95,8 @@ export function NotebookListListView({ notebooks, onDelete }: NotebookListListVi
     const pagesSnap = await getDocs(qPages);
 
     if(pagesSnap.empty) {
-         toast({variant: 'destructive', title: 'Empty Section', description: 'This section has no pages yet.'});
+         toast({title: 'Empty Section', description: 'Create a page in this section to get started.'});
+         router.push(`/notebooks/new?notebookId=${notebookId}&sectionId=${firstSection.id}`);
         return;
     }
     
@@ -131,7 +133,7 @@ export function NotebookListListView({ notebooks, onDelete }: NotebookListListVi
                     />
                   </div>
                 ) : (
-                  <a href="#" onClick={(e) => handleNavigate(e, list.id)} className="flex items-center gap-2 font-medium text-primary hover:underline">
+                  <a href={`/notebooks/new?notebookId=${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="flex items-center gap-2 font-medium text-primary hover:underline">
                       <Book className="h-4 w-4" />
                       {list.title}
                   </a>

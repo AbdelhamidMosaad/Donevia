@@ -82,7 +82,9 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
     const sectionsSnap = await getDocs(qSections);
 
     if (sectionsSnap.empty) {
-        toast({variant: 'destructive', title: 'Empty Notebook', description: 'This notebook has no sections or pages yet.'});
+        toast({title: 'Empty Notebook', description: 'Create a section and page in this notebook to get started.'});
+        // We still navigate to a placeholder pageId to show the notebook context
+        router.push(`/notebooks/new?notebookId=${notebookId}`);
         return;
     }
     
@@ -93,7 +95,8 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
     const pagesSnap = await getDocs(qPages);
 
     if(pagesSnap.empty) {
-         toast({variant: 'destructive', title: 'Empty Section', description: 'This section has no pages yet.'});
+        toast({title: 'Empty Section', description: 'Create a page in this section to get started.'});
+        router.push(`/notebooks/new?notebookId=${notebookId}&sectionId=${firstSection.id}`);
         return;
     }
     
@@ -122,7 +125,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                     className="text-lg font-headline"
                   />
                 ) : (
-                  <a href="#" onClick={(e) => handleNavigate(e, list.id)} className="cursor-pointer">
+                  <a href={`/notebooks/new?notebookId=${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="cursor-pointer">
                     <CardTitle className="flex items-center gap-2 font-headline hover:underline">
                       <Book className="h-5 w-5 text-primary" />
                       {list.title}
@@ -161,7 +164,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>
-             <a href="#" onClick={(e) => handleNavigate(e, list.id)} className="flex-1 cursor-pointer">
+             <a href={`/notebooks/new?notebookId=${list.id}`} onClick={(e) => handleNavigate(e, list.id)} className="flex-1 cursor-pointer">
                 <CardContent>
                   <p className="text-sm text-muted-foreground">Click to open this notebook.</p>
                 </CardContent>

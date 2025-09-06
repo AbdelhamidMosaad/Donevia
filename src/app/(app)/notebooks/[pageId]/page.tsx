@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { NotebookSidebar } from '@/components/notebooks/notebook-sidebar';
 import { PageEditor } from '@/components/notebooks/page-editor';
@@ -9,14 +9,15 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { useAtom } from 'jotai';
 import { selectedPageAtom, selectedNotebookAtom, selectedSectionAtom } from '@/lib/notebook-store';
 import { BrainCircuit } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Page } from '@/lib/types';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 
 export default function NotebooksPageWithId() {
   const { user } = useAuth();
   const params = useParams();
+  const router = useRouter();
   const pageId = params.pageId as string;
 
   const [selectedPage, setSelectedPage] = useAtom(selectedPageAtom);
@@ -26,16 +27,32 @@ export default function NotebooksPageWithId() {
   useEffect(() => {
     if (user && pageId) {
       const pageRef = doc(db, 'users', user.uid, 'pages', pageId);
-      getDoc(pageRef).then((docSnap) => {
+      const unsubscribe = onSnapshot(pageRef, (docSnap) => {
         if (docSnap.exists()) {
           const pageData = { id: docSnap.id, ...docSnap.data() } as Page;
           setSelectedPage(pageData);
+          
+          // Also update the notebook and section context
+          getDoc(doc(db, 'users', user.uid, 'sections', pageData.sectionId)).then(sectionSnap => {
+              if(sectionSnap.exists()) {
+                  const sectionData = {id: sectionSnap.id, ...sectionSnap.data()};
+                  setSelectedSection(sectionData as any);
+                  getDoc(doc(db, 'users', user.uid, 'notebooks', sectionData.notebookId)).then(notebookSnap => {
+                      if(notebookSnap.exists()) {
+                          setSelectedNotebook({id: notebookSnap.id, ...notebookSnap.data()} as any);
+                      }
+                  })
+              }
+          })
+
         } else {
-            // handle page not found
+           toast({variant: 'destructive', title: 'Page not found'});
+           router.push('/notebooks');
         }
       });
+       return () => unsubscribe();
     }
-  }, [user, pageId, setSelectedPage]);
+  }, [user, pageId, setSelectedPage, router, setSelectedNotebook, setSelectedSection]);
 
 
   // Reset selections on unmount/user change
@@ -43,8 +60,9 @@ export default function NotebooksPageWithId() {
     return () => {
       setSelectedNotebook(null);
       setSelectedSection(null);
+      setSelectedPage(null);
     };
-  }, [user, setSelectedNotebook, setSelectedSection]);
+  }, [user, setSelectedNotebook, setSelectedSection, setSelectedPage]);
 
   return (
     <div className="h-[calc(100vh-theme(height.14)-2rem)] flex">
