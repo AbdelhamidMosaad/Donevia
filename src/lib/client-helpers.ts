@@ -30,6 +30,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     const error: any = new Error(`API request failed with status ${response.status}`);
     try {
         error.response = await response.json();
+        Object.assign(error, error.response);
     } catch(e) {
         error.response = { error: response.statusText };
     }
@@ -39,6 +40,17 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
   return response;
 }
 
+/**
+ * Saves a page's content from the client.
+ */
+export async function savePageClient(pageId: string, title: string, contentJSON: any, canvasColor: string | null | undefined, baseVersion: number) {
+    const validContentJSON = contentJSON || { type: 'doc', content: [{ type: 'paragraph' }] };
+    const response = await fetchWithAuth('/api/pages/save', {
+      method: 'POST',
+      body: JSON.stringify({ pageId, title, contentJSON: validContentJSON, canvasColor, baseVersion }),
+    });
+    return response.json();
+}
 
 
 /**

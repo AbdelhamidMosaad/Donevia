@@ -101,7 +101,7 @@ const highlightColors = [
 interface EditorToolbarProps {
   editor: Editor;
   onColorChange: (color: string) => void;
-  initialColor?: string;
+  initialColor?: string | null;
   container?: HTMLElement | null;
 }
 
