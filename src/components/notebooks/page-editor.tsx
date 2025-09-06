@@ -84,18 +84,9 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disabling these to use the Link extension's more advanced options
-        link: false,
         heading: {
           levels: [1, 2, 3],
         },
-        bold: {},
-        italic: {},
-        strike: {},
-        bulletList: {},
-        orderedList: {},
-        blockquote: {},
-        codeBlock: {},
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
