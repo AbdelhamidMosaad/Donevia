@@ -278,7 +278,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             <Select value={activeFontSize} onValueChange={handleFontSizeChange}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                    <SelectTrigger className="w-[80px] h-9 bg-transparent border-none focus:ring-0">
+                    <SelectTrigger className="w-[90px] h-9 bg-transparent border-none focus:ring-0">
                         <SelectValue placeholder="Size" />
                     </SelectTrigger>
                     </TooltipTrigger>
