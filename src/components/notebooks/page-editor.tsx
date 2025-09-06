@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FontFamily } from '@/lib/tiptap/font-family';
+import { FontSize } from '@/lib/tiptap/font-size';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 
@@ -96,6 +97,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
         types: ['heading', 'paragraph'],
       }),
       FontFamily,
+      FontSize,
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
@@ -124,7 +126,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
       }
     },
   });
-
+  
   const handleSave = useCallback(async () => {
     if (!editor || !user || state.status === 'conflict' || state.status === 'saving') return;
     

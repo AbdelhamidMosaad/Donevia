@@ -4,7 +4,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -47,6 +47,9 @@ const fonts = [
     { name: 'Rubik', value: 'Rubik, sans-serif' },
     { name: 'Ubuntu', value: 'Ubuntu, sans-serif' },
 ];
+
+const fontSizes = ['12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px', '48px'];
+
 
 const canvasColors = [
     '#FFFFFF', '#F8F8F8', // Whites
@@ -156,6 +159,15 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
         editor.chain().focus().setFontFamily(fontFamily).run();
     }
   };
+
+  const handleFontSizeChange = (fontSize: string) => {
+    if (fontSize === 'default') {
+      editor.chain().focus().unsetFontSize().run();
+    } else {
+      editor.chain().focus().setFontSize(fontSize).run();
+    }
+  };
+
   
   const handleTextColorChange = (color: string) => {
     editor.chain().focus().setColor(color).run();
@@ -172,6 +184,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
   }
   
   const activeFont = editor.getAttributes('textStyle').fontFamily?.replace(/['"]/g, '') || 'default';
+  const activeFontSize = editor.getAttributes('textStyle').fontSize || 'default';
   const activeColor = editor.getAttributes('textStyle').color || '#000000';
 
   return (
@@ -194,6 +207,27 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                     <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>
                         {font.name}
                     </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+
+        <Select value={activeFontSize} onValueChange={handleFontSizeChange}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                <SelectTrigger className="w-[80px] h-9">
+                    <SelectValue placeholder="Size" />
+                </SelectTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                <p>Font Size</p>
+                </TooltipContent>
+            </Tooltip>
+            <SelectContent>
+                <SelectItem value="default">Default</SelectItem>
+                {fontSizes.map((size) => (
+                <SelectItem key={size} value={size}>
+                    {size}
+                </SelectItem>
                 ))}
             </SelectContent>
         </Select>
