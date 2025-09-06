@@ -1,5 +1,6 @@
 
 import { getAuth } from 'firebase/auth';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 /**
  * A client-side helper to make authenticated requests to our Vercel API routes.
@@ -59,21 +60,10 @@ export async function saveRevisionClient(pageId: string, title: string, content:
 }
 
 /**
- * Updates the search index for a page from the client.
- * NOTE: This is now handled by the /api/pages/save endpoint.
- */
-export async function updateSearchIndexClient(pageId: string, title: string, contentJSON: any) {
-  const response = await fetchWithAuth('/api/pages/update-search', {
-    method: 'POST',
-    body: JSON.stringify({ pageId, title, contentJSON }),
-  });
-  return response.json();
-}
-
-/**
  * Uploads a file attachment from the client.
+ * This version uses the Vercel serverless function to handle the upload and thumbnailing.
  */
-export async function uploadAttachmentClient(pageId: string, file: File) {
+export async function uploadAttachmentClient(pageId: string, file: File, onProgress: (progress: number) => void) {
   const auth = getAuth();
   const user = auth.currentUser;
    if (!user) {
@@ -83,19 +73,37 @@ export async function uploadAttachmentClient(pageId: string, file: File) {
 
   const formData = new FormData();
   formData.append('pageId', pageId);
-  formData.append('idToken', token); // Pass token in body for multipart
+  formData.append('idToken', token);
   formData.append('file', file, file.name);
 
-  const response = await fetch('/api/attachments/upload', {
-    method: 'POST',
-    body: formData,
-    // Do NOT set Content-Type header for FormData, browser does it automatically with boundary
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/attachments/upload', true);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = (event.loaded / event.total) * 100;
+        onProgress(percentComplete);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.response));
+      } else {
+        try {
+            const errorData = JSON.parse(xhr.response);
+            reject(new Error(errorData.error || 'Failed to upload file.'));
+        } catch (e) {
+            reject(new Error(`Server error: ${xhr.statusText}`));
+        }
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Network error during upload.'));
+    };
+
+    xhr.send(formData);
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to upload file.');
-  }
-
-  return response.json();
 }
