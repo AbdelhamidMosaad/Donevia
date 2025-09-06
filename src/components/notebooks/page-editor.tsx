@@ -20,7 +20,6 @@ import { Terminal, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FontFamily } from '@/lib/tiptap/font-family';
 import TextStyle from '@tiptap/extension-text-style';
-import ListItem from '@tiptap/extension-list-item';
 
 interface PageEditorProps {
   page: Page;
