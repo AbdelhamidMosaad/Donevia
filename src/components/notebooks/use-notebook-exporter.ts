@@ -8,11 +8,10 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Notebook, Section, Page } from '@/lib/types';
 import { saveAs } from 'file-saver';
 import { useToast } from '@/hooks/use-toast';
-import { generateHtml } from '@tiptap/html';
+import { generateHTML } from '@tiptap/html';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
-import { JSDOM } from 'jsdom';
 import { htmlToMd } from 'html-to-md';
 
 
@@ -46,19 +45,11 @@ export function useNotebookExporter() {
 
   const convertTiptapToMarkdown = (content: any): string => {
     try {
-        const html = generateHtml(content, [
+        const html = generateHTML(content, [
             StarterKit,
             Underline,
             Link.configure({ openOnClick: false, autolink: false }),
         ]);
-
-        // Polyfill for DOM environment if running in a context where it's not available
-        if (typeof window === 'undefined') {
-            const { window } = new JSDOM('');
-            global.window = window as any;
-            global.document = window.document;
-            global.navigator = window.navigator;
-        }
 
         return htmlToMd(html);
     } catch (e) {
