@@ -8,6 +8,9 @@ import TextStyle from '@tiptap/extension-text-style';
 
 // Helper to extract text from TipTap JSON for search indexing
 function extractTextFromNode(node: any): string {
+    if (!node) {
+        return '';
+    }
     if (node.type === 'text' && node.text) {
         return node.text + ' ';
     }
