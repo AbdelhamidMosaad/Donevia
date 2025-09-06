@@ -24,12 +24,13 @@ interface StickyNoteDialogProps {
   note: StickyNote;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onNoteDeleted: () => void;
 }
 
 const backgroundColors = ['#fff176', '#ff8a65', '#81d4fa', '#aed581', '#ce93d8', '#fdcbf1', '#fdfd96'];
 const textColors = ['#000000', '#FFFFFF', '#ef4444', '#3b82f6', '#16a34a', '#7c3aed'];
 
-export function StickyNoteDialog({ note, isOpen, onOpenChange }: StickyNoteDialogProps) {
+export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: StickyNoteDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(note.title);

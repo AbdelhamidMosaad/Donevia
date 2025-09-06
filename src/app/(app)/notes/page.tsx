@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, LayoutGrid, Board } from 'lucide-react';
+import { PlusCircle, FileText, LayoutGrid, Kanban } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, addDoc, Timestamp, orderBy, setDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -160,7 +160,7 @@ export default function StickyNotesPage() {
         <div className="flex items-center gap-2">
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
               <ToggleGroupItem value="board" aria-label="Board view">
-                <Board className="h-4 w-4" />
+                <Kanban className="h-4 w-4" />
               </ToggleGroupItem>
               <ToggleGroupItem value="canvas" aria-label="Canvas view">
                 <LayoutGrid className="h-4 w-4" />
@@ -194,6 +194,9 @@ export default function StickyNotesPage() {
                     handleDialogClose();
                 }
             }} 
+            onNoteDeleted={() => {
+                handleDeleteNote(editingNote.id)
+            }}
         />
       )}
     </div>
