@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Moon, Palette, Type, Check, Bell, PanelLeft } from 'lucide-react';
+import { Sun, Moon, Palette, Type, Check, Bell, PanelLeft, User, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import {
 import { NotificationSettings } from './notification-settings';
 import { Switch } from './ui/switch';
 import type { UserSettings } from '@/lib/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 type Theme = UserSettings['theme'];
 type Font = UserSettings['font'];
@@ -158,92 +159,122 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>Manage your application preferences.</DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
-             <NotificationSettings 
-                soundEnabled={settings.notificationSound}
-                onSoundChange={handleNotificationSoundChange}
-             />
+        <Tabs defaultValue="general" className="flex-1 min-h-0 flex flex-col">
+            <TabsList className="shrink-0">
+                <TabsTrigger value="general"><Palette className="mr-2 h-4 w-4"/>General</TabsTrigger>
+                <TabsTrigger value="notifications"><Bell className="mr-2 h-4 w-4"/>Notifications</TabsTrigger>
+                <TabsTrigger value="account"><User className="mr-2 h-4 w-4"/>Account</TabsTrigger>
+                <TabsTrigger value="data"><Database className="mr-2 h-4 w-4"/>Data</TabsTrigger>
+            </TabsList>
 
-             <Card>
-                <CardHeader>
-                <CardTitle className="flex items-center gap-2"><PanelLeft /> Sidebar</CardTitle>
-                <CardDescription>Customize the behavior of the main sidebar.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="sidebar-switch">Open by Default</Label>
-                        <Switch
-                            id="sidebar-switch"
-                            checked={settings.sidebarOpen}
-                            onCheckedChange={handleSidebarChange}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
-             <Card>
-                <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Type /> Typography System</CardTitle>
-                <CardDescription>Choose the font that best suits your reading preference.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                <div className="w-full max-w-sm">
-                    <Label htmlFor="font-select">Font Family</Label>
-                    <Select value={settings.font} onValueChange={(v: Font) => handleFontChange(v)}>
-                        <SelectTrigger id="font-select">
-                            <SelectValue placeholder="Select a font" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {fonts.map(font => (
-                                <SelectItem key={font.name} value={font.name}>
-                                    <span style={{ fontFamily: font.variable }}>{font.label}</span>
-                                </SelectItem>
+            <div className="flex-1 overflow-y-auto mt-4 pr-4">
+                <TabsContent value="general" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Palette/> Theme Engine</CardTitle>
+                        <CardDescription>Select a theme to personalize your experience.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+                            {themes.map((theme) => (
+                            <div key={theme.name} onClick={() => handleThemeChange(theme.name)} className="cursor-pointer group">
+                                <div className={cn(
+                                'rounded-lg border-2 p-2 transition-all',
+                                settings.theme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
+                                )}>
+                                <div className="space-y-1.5 rounded-md p-2 flex flex-col items-center justify-center aspect-square" style={{ backgroundColor: theme.colors.bg }}>
+                                    <div className="flex items-center justify-center h-10 w-10 rounded-full mb-2" style={{backgroundColor: theme.colors.secondary}}>
+                                        {theme.icon}
+                                    </div>
+                                    <div className="space-y-1">
+                                    <div className="h-1.5 w-12 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
+                                    <div className="h-1.5 w-16 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
+                                    </div>
+                                </div>
+                                </div>
+                                <div className="mt-2 flex items-center justify-center gap-2">
+                                {settings.theme === theme.name && <Check className="h-4 w-4 text-primary" />}
+                                <span className="text-sm font-medium">{theme.label}</span>
+                                </div>
+                            </div>
                             ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                </CardContent>
-            </Card>
-            
-            <Card>
-                <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Palette/> Theme Engine</CardTitle>
-                <CardDescription>Select a theme to personalize your experience.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
-                    {themes.map((theme) => (
-                    <div key={theme.name} onClick={() => handleThemeChange(theme.name)} className="cursor-pointer group">
-                        <div className={cn(
-                        'rounded-lg border-2 p-2 transition-all',
-                        settings.theme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
-                        )}>
-                        <div className="space-y-1.5 rounded-md p-2 flex flex-col items-center justify-center aspect-square" style={{ backgroundColor: theme.colors.bg }}>
-                            <div className="flex items-center justify-center h-10 w-10 rounded-full mb-2" style={{backgroundColor: theme.colors.secondary}}>
-                                {theme.icon}
+                        </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Type /> Typography System</CardTitle>
+                        <CardDescription>Choose the font that best suits your reading preference.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                        <div className="w-full max-w-sm">
+                            <Label htmlFor="font-select">Font Family</Label>
+                            <Select value={settings.font} onValueChange={(v: Font) => handleFontChange(v)}>
+                                <SelectTrigger id="font-select">
+                                    <SelectValue placeholder="Select a font" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {fonts.map(font => (
+                                        <SelectItem key={font.name} value={font.name}>
+                                            <span style={{ fontFamily: font.variable }}>{font.label}</span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><PanelLeft /> Sidebar</CardTitle>
+                        <CardDescription>Customize the behavior of the main sidebar.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="sidebar-switch">Open by Default</Label>
+                                <Switch
+                                    id="sidebar-switch"
+                                    checked={settings.sidebarOpen}
+                                    onCheckedChange={handleSidebarChange}
+                                />
                             </div>
-                            <div className="space-y-1">
-                            <div className="h-1.5 w-12 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
-                            <div className="h-1.5 w-16 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
-                            </div>
-                        </div>
-                        </div>
-                        <div className="mt-2 flex items-center justify-center gap-2">
-                        {settings.theme === theme.name && <Check className="h-4 w-4 text-primary" />}
-                        <span className="text-sm font-medium">{theme.label}</span>
-                        </div>
-                    </div>
-                    ))}
-                </div>
-                </CardContent>
-            </Card>
-        </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="notifications">
+                    <NotificationSettings 
+                        soundEnabled={settings.notificationSound}
+                        onSoundChange={handleNotificationSoundChange}
+                    />
+                </TabsContent>
+
+                 <TabsContent value="account">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Account Information</CardTitle>
+                            <CardDescription>Manage your account details. (Coming Soon)</CardDescription>
+                        </CardHeader>
+                    </Card>
+                 </TabsContent>
+                 <TabsContent value="data">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Data Management</CardTitle>
+                            <CardDescription>Export your data. (Coming Soon)</CardDescription>
+                        </CardHeader>
+                    </Card>
+                 </TabsContent>
+
+            </div>
+
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
