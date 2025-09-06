@@ -49,6 +49,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
+import { NotebookSearchBar } from './search-bar';
 
 export function NotebookSidebar() {
   const { user } = useAuth();
@@ -198,6 +199,16 @@ export function NotebookSidebar() {
       toast({title: 'Page deleted'});
   }
 
+  const handleSelectPage = (page: Page) => {
+      setSelectedPage(page);
+      const parentSection = Object.values(sections).flat().find(s => s.id === (page as Page).sectionId);
+      if(parentSection) {
+          setSelectedSection(parentSection);
+          const parentNotebook = notebooks.find(n => n.id === parentSection.notebookId);
+          setSelectedNotebook(parentNotebook || null);
+      }
+  }
+
   const renderItem = (item: Notebook | Section | Page, type: 'notebook' | 'section' | 'page') => {
       const isSelected = (type === 'notebook' && selectedNotebook?.id === item.id) ||
                          (type === 'section' && selectedSection?.id === item.id) ||
@@ -211,13 +222,7 @@ export function NotebookSidebar() {
             setSelectedNotebook(parentNotebook || null);
           }
           if(type === 'page') {
-            setSelectedPage(item as Page);
-             const parentSection = Object.values(sections).flat().find(s => s.id === (item as Page).sectionId);
-            if(parentSection) {
-                setSelectedSection(parentSection);
-                const parentNotebook = notebooks.find(n => n.id === parentSection.notebookId);
-                setSelectedNotebook(parentNotebook || null);
-            }
+            handleSelectPage(item as Page);
           }
       };
       
@@ -290,6 +295,9 @@ export function NotebookSidebar() {
         <Button variant="ghost" size="icon" onClick={() => handleCreate('notebook')}>
           <Plus className="h-4 w-4" />
         </Button>
+      </div>
+      <div className="px-2 pb-2">
+        <NotebookSearchBar onSelectPage={handleSelectPage} />
       </div>
       <ScrollArea className="flex-1">
         <div className="space-y-1">

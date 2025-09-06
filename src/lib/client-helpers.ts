@@ -1,4 +1,5 @@
 
+
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
@@ -6,7 +7,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/
  * A client-side helper to make authenticated requests to our Vercel API routes.
  * It automatically includes the Firebase auth token in the headers.
  */
-async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const auth = getAuth();
   const user = auth.currentUser;
 
@@ -27,7 +28,11 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
 
   if (!response.ok) {
     const error: any = new Error(`API request failed with status ${response.status}`);
-    error.response = response;
+    try {
+        error.response = await response.json();
+    } catch(e) {
+        error.response = { error: response.statusText };
+    }
     throw error;
   }
   
