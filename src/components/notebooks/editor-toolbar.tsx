@@ -84,6 +84,8 @@ const textColors = [
     { name: 'Yellow', value: '#FACC15' },
     { name: 'Orange', value: '#F97316' },
     { name: 'Brown', value: '#854D0E' },
+    { name: 'Blue', value: '#0000FF' },
+    { name: 'Red', value: '#FF0000' },
 ];
 
 
@@ -305,7 +307,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-9 text-white">
+                            <Button variant="ghost" size="sm" className="h-9 text-white">
                                 <Brush className="h-4 w-4 mr-2" />
                                 Canvas Color
                                 <ChevronDown className="h-4 w-4 ml-2" />
