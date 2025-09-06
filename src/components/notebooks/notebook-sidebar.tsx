@@ -57,8 +57,7 @@ export function NotebookSidebar() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const [notebooks, setNotebooks] = useState<Notebook[]>([]);
-  const [sections, setSections] = useState<Record<string, Section[]>>({});
+  const [sections, setSections] = useState<Section[]>([]);
   const [pages, setPages] = useState<Record<string, Page[]>>({});
   const [selectedNotebook, setSelectedNotebook] = useAtom(selectedNotebookAtom);
   const [selectedSection, setSelectedSection] = useAtom(selectedSectionAtom);
@@ -67,36 +66,29 @@ export function NotebookSidebar() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemName, setEditingItemName] = useState('');
 
-  // Fetch notebooks
+  // Fetch sections for the selected notebook
   useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'users', user.uid, 'notebooks'), orderBy('createdAt', 'asc'));
+    if (!user || !selectedNotebook) {
+        setSections([]);
+        return;
+    };
+    
+    const q = query(collection(db, 'users', user.uid, 'sections'), where('notebookId', '==', selectedNotebook.id), orderBy('order', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setNotebooks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notebook)));
-    });
-    return () => unsubscribe();
-  }, [user]);
-
-  // Fetch sections for notebooks
-  useEffect(() => {
-    if (!user || notebooks.length === 0) return;
-    const unsubscribes = notebooks.map(notebook => {
-      const q = query(collection(db, 'users', user.uid, 'sections'), where('notebookId', '==', notebook.id), orderBy('order', 'asc'));
-      return onSnapshot(q, (snapshot) => {
         const sectionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
-        setSections(prev => ({...prev, [notebook.id]: sectionsData }));
+        setSections(sectionsData);
       });
-    });
-    return () => unsubscribes.forEach(unsub => unsub());
-  }, [user, notebooks]);
+    return () => unsubscribe();
+  }, [user, selectedNotebook]);
   
   // Fetch pages for sections
   useEffect(() => {
-    if (!user) return;
-    const allSections = Object.values(sections).flat();
-    if(allSections.length === 0) return;
+    if (!user || sections.length === 0) {
+        setPages({});
+        return
+    };
 
-    const unsubscribes = allSections.map(section => {
+    const unsubscribes = sections.map(section => {
         const q = query(collection(db, 'users', user.uid, 'pages'), where('sectionId', '==', section.id), orderBy('createdAt', 'asc'));
         return onSnapshot(q, (snapshot) => {
             const pagesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Page));
@@ -106,16 +98,11 @@ export function NotebookSidebar() {
      return () => unsubscribes.forEach(unsub => unsub());
   }, [user, sections]);
 
-  const handleCreateNotebook = async () => {
-    if (!user) return;
-    router.push('/notebooks');
-  }
-
-  const handleCreateSection = async (notebookId: string) => {
-      if(!user) return;
-      const newOrder = sections[notebookId]?.length || 0;
+  const handleCreateSection = async () => {
+      if(!user || !selectedNotebook) return;
+      const newOrder = sections.length || 0;
       await addDoc(collection(db, 'users', user.uid, 'sections'), {
-        notebookId: notebookId,
+        notebookId: selectedNotebook.id,
         title: 'Untitled Section',
         order: newOrder,
         createdAt: Timestamp.now(),
@@ -142,14 +129,14 @@ export function NotebookSidebar() {
     setEditingItemName(name);
   }
 
-  const handleRename = async (type: 'notebook' | 'section' | 'page', id: string) => {
+  const handleRename = async (type: 'section' | 'page', id: string) => {
     if(!user || !editingItemName.trim()) {
         setEditingItemId(null);
         setEditingItemName('');
         return;
     };
     
-    const collectionName = type === 'notebook' ? 'notebooks' : type === 'section' ? 'sections' : 'pages';
+    const collectionName = type === 'section' ? 'sections' : 'pages';
     const docRef = doc(db, 'users', user.uid, collectionName, id);
     await updateDoc(docRef, { title: editingItemName.trim() });
     toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} renamed` });
@@ -157,7 +144,7 @@ export function NotebookSidebar() {
     setEditingItemName('');
   }
   
-  const handleDelete = async (type: 'notebook'|'section'|'page', id: string) => {
+  const handleDelete = async (type: 'section'|'page', id: string) => {
     if(!user) return;
     try {
         if(type === 'page') {
@@ -169,19 +156,6 @@ export function NotebookSidebar() {
             const pagesSnap = await getDocs(qPages);
             pagesSnap.forEach(pageDoc => batch.delete(pageDoc.ref));
             batch.delete(sectionRef);
-            await batch.commit();
-        } else if (type === 'notebook') {
-            const batch = writeBatch(db);
-            const notebookRef = doc(db, 'users', user.uid, 'notebooks', id);
-            const qSections = query(collection(db, 'users', user.uid, 'sections'), where('notebookId', '==', id));
-            const sectionsSnap = await getDocs(qSections);
-            for (const sectionDoc of sectionsSnap.docs) {
-                 const qPages = query(collection(db, 'users', user.uid, 'pages'), where('sectionId', '==', sectionDoc.id));
-                 const pagesSnap = await getDocs(qPages);
-                 pagesSnap.forEach(pageDoc => batch.delete(pageDoc.ref));
-                 batch.delete(sectionDoc.ref);
-            }
-            batch.delete(notebookRef);
             await batch.commit();
         }
         toast({title: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted`});
@@ -196,8 +170,7 @@ export function NotebookSidebar() {
       router.push(`/notebooks/${page.id}`);
   }
 
-  const renderItemActions = (item: Notebook | Section | Page, type: 'notebook' | 'section' | 'page') => {
-    const isNotebook = type === 'notebook';
+  const renderItemActions = (item: Section | Page, type: 'section' | 'page') => {
     const isSection = type === 'section';
 
     return (
@@ -224,20 +197,18 @@ export function NotebookSidebar() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-                <DropdownMenuSeparator />
-                {isNotebook && <DropdownMenuItem onSelect={() => handleCreateSection(item.id)}><FolderPlus className="mr-2 h-4 w-4"/>New Section</DropdownMenuItem>}
+                {isSection && <DropdownMenuSeparator />}
                 {isSection && <DropdownMenuItem onSelect={() => handleCreatePage(item.id)}><Plus className="mr-2 h-4 w-4"/>New Page</DropdownMenuItem>}
             </DropdownMenuContent>
         </DropdownMenu>
     )
   }
 
-  const renderItem = (item: Notebook | Section | Page, type: 'notebook' | 'section' | 'page', level: number = 0) => {
-    const isSelected = (type === 'notebook' && selectedNotebook?.id === item.id) ||
-                       (type === 'section' && selectedSection?.id === item.id) ||
+  const renderItem = (item: Section | Page, type: 'section' | 'page', level: number = 0) => {
+    const isSelected = (type === 'section' && selectedSection?.id === item.id) ||
                        (type === 'page' && selectedPage?.id === item.id);
 
-    const isCollapsible = type === 'notebook' || type === 'section';
+    const isCollapsible = type === 'section';
     
     const content = (
         <div className={cn(
@@ -257,7 +228,6 @@ export function NotebookSidebar() {
             ) : (
                 <>
                     <div className="flex items-center gap-2 flex-1 truncate">
-                        {type === 'notebook' && <Book className="h-4 w-4"/>}
                         {type === 'page' && <FileText className="h-4 w-4"/>}
                         <span className="truncate">{item.title}</span>
                     </div>
@@ -268,10 +238,7 @@ export function NotebookSidebar() {
     );
 
     if (isCollapsible) {
-        const defaultOpen = (type === 'notebook' && selectedNotebook?.id === item.id) || 
-                            (type === 'section' && selectedSection?.id === item.id);
-        const children = type === 'notebook' ? sections[item.id] : pages[(item as Section).id];
-
+        const defaultOpen = selectedSection?.id === item.id;
         return (
             <Collapsible key={item.id} defaultOpen={defaultOpen} className="w-full">
                  <div className="flex items-center gap-1">
@@ -284,8 +251,7 @@ export function NotebookSidebar() {
                 </div>
                 <CollapsibleContent>
                     <div className="pl-6 space-y-1 py-1">
-                        {type === 'notebook' && (sections[item.id] || []).map(section => renderItem(section, 'section', level + 1))}
-                        {type === 'section' && (pages[item.id] || []).map(page => renderItem(page, 'page', level + 1))}
+                        {(pages[item.id] || []).map(page => renderItem(page, 'page', level + 1))}
                     </div>
                 </CollapsibleContent>
             </Collapsible>
@@ -305,8 +271,11 @@ export function NotebookSidebar() {
       <div className="flex items-center justify-between p-2">
         <h2 className="text-lg font-bold font-headline truncate">{selectedNotebook?.title || 'Notebooks'}</h2>
         <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={handleCreateNotebook} title="New Notebook">
-              <Plus className="h-4 w-4" />
+             <Button variant="ghost" size="icon" onClick={() => router.push('/notebooks')} title="Back to Notebooks">
+              <Book className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleCreateSection} title="New Section">
+              <FolderPlus className="h-4 w-4" />
             </Button>
         </div>
       </div>
@@ -315,7 +284,7 @@ export function NotebookSidebar() {
       </div>
       <ScrollArea className="flex-1">
         <div className="space-y-1">
-          {notebooks.map(notebook => renderItem(notebook, 'notebook'))}
+          {sections.map(section => renderItem(section, 'section'))}
         </div>
       </ScrollArea>
     </div>
