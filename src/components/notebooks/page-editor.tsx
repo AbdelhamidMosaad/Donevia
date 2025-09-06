@@ -110,7 +110,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
     content: initialPage.content,
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl focus:outline-none w-full max-w-full',
+        class: 'prose dark:prose-invert max-w-full focus:outline-none',
       },
     },
     onUpdate: () => {

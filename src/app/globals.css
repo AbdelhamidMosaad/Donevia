@@ -178,6 +178,18 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  .prose h1 {
+    @apply text-4xl font-bold;
+  }
+  .prose h2 {
+    @apply text-3xl font-semibold;
+  }
+  .prose h3 {
+    @apply text-2xl font-semibold;
+  }
+  .prose p {
+    @apply text-base;
+  }
 }
 
 .rbc-calendar {
