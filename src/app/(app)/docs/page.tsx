@@ -1,44 +1,145 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import type { Doc } from '@/lib/types';
+import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { WelcomeScreen } from '@/components/welcome-screen';
+import { useToast } from '@/hooks/use-toast';
+import { DocListCardView } from '@/components/docs/doc-list-card-view';
+import { DocListListView } from '@/components/docs/doc-list-list-view';
 import { BrainCircuit } from 'lucide-react';
 
-export default function DocsRedirectPage() {
+type View = 'card' | 'list';
+
+export default function DocsDashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+  const [view, setView] = useState<View>('card');
+  const [docs, setDocs] = useState<Doc[]>([]);
 
   useEffect(() => {
-    if (!loading && user) {
-      const findFirstDoc = async () => {
-        const docsRef = collection(db, 'users', user.uid, 'docs');
-        const q = query(docsRef, orderBy('createdAt', 'desc'), limit(1));
-        const docSnap = await getDocs(q);
-        if (!docSnap.empty) {
-          const firstDocId = docSnap.docs[0].id;
-          router.replace(`/docs/${firstDocId}`);
-        } else {
-          // If no docs, stay on this page which will show a welcome message.
-        }
-      };
-      findFirstDoc();
+    if (!loading && !user) {
+      router.push('/');
     }
   }, [user, loading, router]);
   
+  useEffect(() => {
+    if (user) {
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      getDoc(settingsRef).then(docSnap => {
+        if (docSnap.exists() && docSnap.data().docsView) {
+          setView(docSnap.data().docsView);
+        }
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      const q = query(collection(db, 'users', user.uid, 'docs'), orderBy('createdAt', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const listsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Doc));
+        setDocs(listsData);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  const handleViewChange = (newView: View) => {
+    if (newView) {
+        setView(newView);
+        if (user) {
+            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+            setDoc(settingsRef, { docsView: newView }, { merge: true });
+        }
+    }
+  }
+
+  const handleDeleteDoc = async (docId: string) => {
+    if (!user) return;
+    try {
+        await doc(db, 'users', user.uid, 'docs', docId).delete();
+        toast({ title: 'Document deleted' });
+    } catch (e) {
+        console.error("Error deleting document: ", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete document.' });
+    }
+  };
+
+  const handleAddDoc = async () => {
+    if (!user) return;
+    try {
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'docs'), {
+        title: 'Untitled Document',
+        content: { type: 'doc', content: [{ type: 'paragraph' }] },
+        ownerId: user.uid,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      toast({
+        title: '✓ Document Created',
+        description: `"Untitled Document" has been created.`,
+      });
+      router.push(`/docs/${docRef.id}`);
+    } catch (e) {
+      console.error("Error adding document: ", e);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to create document. Please try again.',
+      });
+    }
+  };
+
   if (loading || !user) {
-    return <WelcomeScreen />;
+    return <div>Loading...</div>;
   }
 
   return (
-     <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground p-8">
-        <BrainCircuit className="h-16 w-16 mb-4" />
-        <h2 className="text-xl font-semibold">Welcome to Docs</h2>
-        <p>Create a new document from the sidebar to get started.</p>
+    <div className="flex flex-col h-full">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 className="text-3xl font-bold font-headline">Docs</h1>
+            <p className="text-muted-foreground">All your documents in one place.</p>
+        </div>
+        <div className="flex items-center gap-2">
+           <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Document view">
+              <ToggleGroupItem value="card" aria-label="Card view">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button onClick={handleAddDoc}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Doc
+            </Button>
+        </div>
+      </div>
+      
+       {docs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
+            <BrainCircuit className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold font-headline">No Documents Yet</h3>
+            <p className="text-muted-foreground">Click "New Doc" to create your first one.</p>
+        </div>
+      ) : (
+         <div className="flex-1">
+            {view === 'card' ? (
+              <DocListCardView docs={docs} onDelete={handleDeleteDoc} />
+            ) : (
+              <DocListListView docs={docs} onDelete={handleDeleteDoc} />
+            )}
+        </div>
+      )}
     </div>
   );
 }

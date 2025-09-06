@@ -64,6 +64,7 @@ const defaultSettings: UserSettings = {
     font: 'inter',
     sidebarOpen: true,
     notificationSound: true,
+    docsView: 'card',
 };
 
 
@@ -85,6 +86,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             font: data.font || defaultSettings.font,
             sidebarOpen: data.sidebarOpen !== false,
             notificationSound: data.notificationSound !== false,
+            docsView: data.docsView || defaultSettings.docsView,
           });
         } else {
             setSettings(defaultSettings);

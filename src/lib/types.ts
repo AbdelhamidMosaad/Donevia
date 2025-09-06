@@ -152,6 +152,7 @@ export interface UserSettings {
     font: 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
     sidebarOpen: boolean;
     notificationSound: boolean;
+    docsView?: 'card' | 'list';
 }
 
 /**
