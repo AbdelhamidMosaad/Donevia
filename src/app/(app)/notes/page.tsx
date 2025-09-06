@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, LayoutGrid, KanbanSquare } from 'lucide-react';
+import { PlusCircle, FileText, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, addDoc, Timestamp, orderBy, setDoc, doc, getDoc } from 'firebase/firestore';
@@ -11,11 +11,8 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { StickyNote } from '@/lib/types';
 import { StickyNoteDialog } from '@/components/sticky-note-dialog';
-import { StickyNotesBoard } from '@/components/sticky-notes-board';
 import { StickyNotesCanvas } from '@/components/sticky-notes-canvas';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-
-type View = 'board' | 'canvas';
 
 export default function StickyNotesPage() {
   const { user, loading } = useAuth();
@@ -23,29 +20,7 @@ export default function StickyNotesPage() {
   const { toast } = useToast();
   const [notes, setNotes] = useState<StickyNote[]>([]);
   const [editingNote, setEditingNote] = useState<StickyNote | null>(null);
-  const [view, setView] = useState<View>('board');
   
-  useEffect(() => {
-    if (user) {
-        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-        getDoc(settingsRef).then(docSnap => {
-            if (docSnap.exists() && docSnap.data().stickyNoteView) {
-                setView(docSnap.data().stickyNoteView);
-            }
-        });
-    }
-  }, [user]);
-
-  const handleViewChange = (newView: View) => {
-    if (newView) {
-        setView(newView);
-        if (user) {
-            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            setDoc(settingsRef, { stickyNoteView: newView }, { merge: true });
-        }
-    }
-  };
-
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
@@ -75,7 +50,6 @@ export default function StickyNotesPage() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         priority: 'Medium',
-        position: { x: Math.random() * 200, y: Math.random() * 200 },
         gridPosition: { col: 0, row: 0 } // Default grid position
       });
       toast({
@@ -112,14 +86,6 @@ export default function StickyNotesPage() {
           <p className="text-muted-foreground">Your personal space for quick thoughts and reminders.</p>
         </div>
         <div className="flex items-center gap-2">
-            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Note view">
-                <ToggleGroupItem value="board" aria-label="Board view">
-                    <KanbanSquare className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="canvas" aria-label="Canvas view">
-                    <LayoutGrid className="h-4 w-4" />
-                </ToggleGroupItem>
-            </ToggleGroup>
             <Button onClick={handleAddNote}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Note
@@ -135,11 +101,7 @@ export default function StickyNotesPage() {
         </div>
       ) : (
         <div className="flex-1">
-            {view === 'board' ? (
-                <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} />
-            ) : (
-                <StickyNotesCanvas notes={notes} onNoteClick={handleNoteClick} />
-            )}
+            <StickyNotesCanvas notes={notes} onNoteClick={handleNoteClick} />
         </div>
       )}
 
