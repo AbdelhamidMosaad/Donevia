@@ -60,12 +60,14 @@ export function AddTaskDialog({
   const [dueDate, setDueDate] = useState<Date>(defaultDueDate || new Date());
   const [priority, setPriority] = useState<Task['priority']>('Medium');
   const [status, setStatus] = useState<Task['status'] | undefined>();
+  const [reminder, setReminder] = useState<Task['reminder']>('none');
 
   const resetForm = () => {
     setTitle('');
     setDescription('');
     setDueDate(defaultDueDate || new Date());
     setPriority('Medium');
+    setReminder('none');
     if (stages.length > 0) {
       setStatus(stages[0].id);
     } else {
@@ -99,6 +101,7 @@ export function AddTaskDialog({
         setDueDate(task.dueDate.toDate());
         setPriority(task.priority);
         setStatus(task.status);
+        setReminder(task.reminder || 'none');
       } else {
         resetForm();
       }
@@ -128,6 +131,7 @@ export function AddTaskDialog({
         dueDate: Timestamp.fromDate(dueDate),
         priority,
         status,
+        reminder,
         tags: task?.tags || [],
         listId,
         ...(isEditMode ? {} : { createdAt: serverTimestamp() }),
@@ -209,6 +213,19 @@ export function AddTaskDialog({
               </SelectContent>
             </Select>
           </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="reminder" className="text-right">Reminder</Label>
+            <Select onValueChange={(v: Task['reminder']) => setReminder(v)} value={reminder}>
+              <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="5m">5 minutes before</SelectItem>
+                <SelectItem value="10m">10 minutes before</SelectItem>
+                <SelectItem value="30m">30 minutes before</SelectItem>
+                <SelectItem value="1h">1 hour before</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
@@ -227,4 +244,3 @@ export function AddTaskDialog({
     </Dialog>
   );
 }
-

@@ -16,6 +16,7 @@ export type Task = {
   tags: string[];
   createdAt: Timestamp;
   listId: string;
+  reminder?: 'none' | '5m' | '10m' | '30m' | '1h';
 };
 
 export type TaskList = {
