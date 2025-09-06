@@ -5,10 +5,12 @@ import { useEffect, useState, useCallback, useReducer } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
 import type { Page } from '@/lib/types';
 import { useDebouncedCallback } from 'use-debounce';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { savePageClient } from '@/lib/client-helpers';
 import { EditorToolbar } from './editor-toolbar';
@@ -82,10 +84,18 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disabling these to use the Link extension's more advanced options
+        link: false,
+      }),
       Placeholder.configure({
         placeholder: "Start writing your notes here... Type '/' for commands.",
       }),
+      Underline,
+      Link.configure({
+        openOnClick: true,
+        autolink: true,
+      })
     ],
     content: initialPage.content,
     editorProps: {
@@ -135,13 +145,13 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
       if (!user) return;
       const unsub = onSnapshot(doc(db, "users", user.uid, "pages", initialPage.id), (doc) => {
           const serverPage = doc.data() as Page;
-          if (serverPage && serverPage.version > state.serverVersion) {
+          if (serverPage && serverPage.version > state.clientVersion) {
               console.log("Conflict detected from snapshot listener.");
               dispatch({ type: 'CONFLICT', serverVersion: serverPage.version, serverContent: serverPage.content, serverTitle: serverPage.title });
           }
       });
       return () => unsub();
-  }, [initialPage.id, user, state.serverVersion]);
+  }, [initialPage.id, user, state.clientVersion]);
 
 
   // Effect to reset state when the page prop changes

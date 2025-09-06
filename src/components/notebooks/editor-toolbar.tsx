@@ -40,7 +40,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   }
 
   return (
-    <div className="flex items-center gap-1 p-2 border rounded-md bg-background sticky top-0 z-10 mb-4">
+    <div className="flex items-center gap-1 p-2 border rounded-md bg-background sticky top-0 z-10 mb-4 flex-wrap">
       <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}>
         <Bold className="h-4 w-4" />
       </Toggle>
