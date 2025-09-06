@@ -8,6 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+import Highlight from '@tiptap/extension-highlight';
 import type { Page } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
@@ -98,6 +99,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
       TextStyle.configure({
         types: ['heading', 'paragraph'],
       }),
+      Highlight.configure({ multicolor: true }),
       FontFamily,
       FontSize,
       StarterKit.configure({

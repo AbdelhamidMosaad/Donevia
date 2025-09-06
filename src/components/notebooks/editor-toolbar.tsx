@@ -5,7 +5,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -86,6 +86,15 @@ const textColors = [
     { name: 'Brown', value: '#854D0E' },
     { name: 'Blue', value: '#0000FF' },
     { name: 'Red', value: '#FF0000' },
+];
+
+const highlightColors = [
+    { name: 'Yellow', value: '#fde047' },
+    { name: 'Green', value: '#86efac' },
+    { name: 'Blue', value: '#93c5fd' },
+    { name: 'Pink', value: '#f9a8d4' },
+    { name: 'Purple', value: '#d8b4fe' },
+    { name: 'None', value: 'transparent' }
 ];
 
 
@@ -176,6 +185,14 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
   const handleTextColorChange = (color: string) => {
     editor.chain().focus().setColor(color).run();
   };
+  
+  const handleHighlightColorChange = (color: string) => {
+    if (color === 'transparent') {
+        editor.chain().focus().unsetHighlight().run();
+    } else {
+        editor.chain().focus().toggleHighlight({ color }).run();
+    }
+  };
 
 
   const handleColorChange = (color: string) => {
@@ -190,6 +207,8 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
   const activeFont = editor.getAttributes('textStyle').fontFamily?.replace(/['"]/g, '') || 'default';
   const activeFontSize = editor.getAttributes('textStyle').fontSize || 'default';
   const activeColor = editor.getAttributes('textStyle').color || '#000000';
+  const activeHighlight = editor.getAttributes('highlight').color || 'transparent';
+
 
   return (
     <TooltipProvider>
@@ -274,6 +293,36 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                                 style={{ backgroundColor: color.value }}
                             />
                             {activeColor === color.value && <Check className="h-4 w-4 absolute" style={{color: color.value === '#FFFFFF' ? '#000000' : '#FFFFFF'}}/>}
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 text-black">
+                                <Highlighter className="h-4 w-4" style={{ color: activeHighlight === 'transparent' ? 'currentColor' : activeHighlight }} />
+                            </Button>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Highlight Color</p>
+                    </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent className="grid grid-cols-3 gap-1 p-2" align="start" container={container}>
+                    {highlightColors.map((color) => (
+                        <DropdownMenuItem
+                            key={color.name}
+                            onSelect={() => handleHighlightColorChange(color.value)}
+                            className="flex justify-center items-center p-1"
+                        >
+                            <div
+                                className="h-6 w-6 rounded-full border"
+                                style={{ backgroundColor: color.value }}
+                            />
+                            {activeHighlight === color.value && <Check className="h-4 w-4 absolute" />}
                         </DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>
