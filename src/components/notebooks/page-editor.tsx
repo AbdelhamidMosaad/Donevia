@@ -258,21 +258,24 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
                 </AlertDescription>
             </Alert>
         )}
-        <div className="flex items-center p-4 border-b">
-            <input
-                type="text"
-                value={title}
-                onChange={(e) => {
-                    setTitle(e.target.value);
-                    dispatch({ type: 'EDITING' });
-                }}
-                className="flex-grow w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
-                placeholder="Page Title"
-                disabled={state.status === 'conflict'}
-            />
-            <div className="text-xs text-muted-foreground whitespace-nowrap">{getStatusMessage()}</div>
+        <div className="p-4 border-b">
+            <div className="flex items-center gap-4">
+                <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => {
+                        setTitle(e.target.value);
+                        dispatch({ type: 'EDITING' });
+                    }}
+                    className="flex-grow w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
+                    placeholder="Page Title"
+                    disabled={state.status === 'conflict'}
+                />
+                <div className="text-xs text-muted-foreground whitespace-nowrap">{getStatusMessage()}</div>
+            </div>
+             <EditorToolbar editor={editor} onColorChange={handleColorSelect} initialColor={initialPage.canvasColor} onManualSave={handleSave} saveStatus={state.status} container={editorPanelRef.current} />
         </div>
-        <EditorToolbar editor={editor} onColorChange={handleColorSelect} initialColor={initialPage.canvasColor} onManualSave={handleSave} saveStatus={state.status} container={editorPanelRef.current} />
+       
         <div className="relative flex-1 overflow-y-auto" onClick={() => editor.commands.focus()}>
             <EditorContent editor={editor} />
         </div>

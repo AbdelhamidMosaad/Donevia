@@ -20,7 +20,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
-
+import { ToolbarTabs, Tab } from './toolbar-tabs';
 
 const fonts = [
     { name: 'Inter', value: 'Inter, sans-serif' },
@@ -190,151 +190,145 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
 
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-1 p-2 border rounded-md bg-background sticky top-0 z-10 mb-4 flex-wrap">
-        <Select value={activeFont} onValueChange={handleFontChange}>
-            <Tooltip>
-                 <TooltipTrigger asChild>
-                    <SelectTrigger className="w-[140px] h-9">
-                        <SelectValue placeholder="Font" />
+      <ToolbarTabs>
+        <Tab name="File">
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
+                        {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Save Progress</p>
+                </TooltipContent>
+            </Tooltip>
+        </Tab>
+        <Tab name="Home">
+            <Select value={activeFont} onValueChange={handleFontChange}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <SelectTrigger className="w-[140px] h-9">
+                            <SelectValue placeholder="Font" />
+                        </SelectTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Font Family</p>
+                    </TooltipContent>
+                </Tooltip>
+                <SelectContent container={container}>
+                    <SelectItem value="default">Default</SelectItem>
+                    {fonts.map(font => (
+                        <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>
+                            {font.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            <Select value={activeFontSize} onValueChange={handleFontSizeChange}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                    <SelectTrigger className="w-[80px] h-9">
+                        <SelectValue placeholder="Size" />
                     </SelectTrigger>
-                 </TooltipTrigger>
-                 <TooltipContent>
-                    <p>Font Family</p>
-                </TooltipContent>
-            </Tooltip>
-            <SelectContent container={container}>
-                <SelectItem value="default">Default</SelectItem>
-                {fonts.map(font => (
-                    <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>
-                        {font.name}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                    <p>Font Size</p>
+                    </TooltipContent>
+                </Tooltip>
+                <SelectContent container={container}>
+                    <SelectItem value="default">Default</SelectItem>
+                    {fontSizes.map((size) => (
+                    <SelectItem key={size} value={size}>
+                        {size}
                     </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+                    ))}
+                </SelectContent>
+            </Select>
+            
+            <DropdownMenu>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-9 w-9">
+                                <Palette className="h-4 w-4" style={{ color: activeColor }} />
+                            </Button>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Text Color</p>
+                    </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent className="grid grid-cols-4 gap-1 p-2" align="start" container={container}>
+                    {textColors.map((color) => (
+                        <DropdownMenuItem
+                            key={color.name}
+                            onSelect={() => handleTextColorChange(color.value)}
+                            className="flex justify-center items-center p-1"
+                        >
+                            <div
+                                className="h-6 w-6 rounded-full border"
+                                style={{ backgroundColor: color.value }}
+                            />
+                            {activeColor === color.value && <Check className="h-4 w-4 absolute" style={{color: color.value === '#FFFFFF' ? '#000000' : '#FFFFFF'}}/>}
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
 
-        <Select value={activeFontSize} onValueChange={handleFontSizeChange}>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                <SelectTrigger className="w-[80px] h-9">
-                    <SelectValue placeholder="Size" />
-                </SelectTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                <p>Font Size</p>
-                </TooltipContent>
-            </Tooltip>
-            <SelectContent container={container}>
-                <SelectItem value="default">Default</SelectItem>
-                {fontSizes.map((size) => (
-                <SelectItem key={size} value={size}>
-                    {size}
-                </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-        
-        <DropdownMenu>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-9 w-9">
-                            <Palette className="h-4 w-4" style={{ color: activeColor }} />
-                        </Button>
-                    </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Text Color</p>
-                </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent className="grid grid-cols-4 gap-1 p-2" align="start" container={container}>
-                {textColors.map((color) => (
-                    <DropdownMenuItem
-                        key={color.name}
-                        onSelect={() => handleTextColorChange(color.value)}
-                        className="flex justify-center items-center p-1"
-                    >
-                        <div
-                            className="h-6 w-6 rounded-full border"
-                            style={{ backgroundColor: color.value }}
-                        />
-                         {activeColor === color.value && <Check className="h-4 w-4 absolute" style={{color: color.value === '#FFFFFF' ? '#000000' : '#FFFFFF'}}/>}
-                    </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
+            <Separator orientation="vertical" className="h-6 mx-1" />
+            
+            <ToolbarButton editor={editor} name="bold" label="Bold" icon={Bold} />
+            <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
+            <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
+            <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        {/* Mark Group */}
-        <ToolbarButton editor={editor} name="bold" label="Bold" icon={Bold} />
-        <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
-        <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
-        <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
+            <Separator orientation="vertical" className="h-6 mx-1" />
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+            <ToolbarButton editor={editor} name="heading" label="Heading 1" icon={Heading1} level={1} />
+            <ToolbarButton editor={editor} name="heading" label="Heading 2" icon={Heading2} level={2} />
+            <ToolbarButton editor={editor} name="heading" label="Heading 3" icon={Heading3} level={3} />
+            
+            <Separator orientation="vertical" className="h-6 mx-1" />
 
-        {/* Heading Group */}
-        <ToolbarButton editor={editor} name="heading" label="Heading 1" icon={Heading1} level={1} />
-        <ToolbarButton editor={editor} name="heading" label="Heading 2" icon={Heading2} level={2} />
-        <ToolbarButton editor={editor} name="heading" label="Heading 3" icon={Heading3} level={3} />
-        
-        <Separator orientation="vertical" className="h-6 mx-1" />
-
-        {/* List Group */}
-        <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
-        <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
-        
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        {/* Block Group */}
-        <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
-        <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
-        <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
-        
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        {/* Canvas Color */}
-        <DropdownMenu>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-9">
-                            <Brush className="h-4 w-4 mr-2" />
-                            Canvas Color
-                            <ChevronDown className="h-4 w-4 ml-2" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Change canvas background</p>
-                </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent container={container}>
-                {canvasColors.map((c) => (
-                    <DropdownMenuItem key={c} onSelect={() => handleColorChange(c)}>
-                        <div className="flex items-center gap-2">
-                           <div className="h-4 w-4 rounded-full border" style={{ backgroundColor: c }} />
-                           <span>{c}</span>
-                        </div>
-                         {currentColor === c && <Check className="h-4 w-4 ml-auto" />}
-                    </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
-
-         <div className="flex-grow" />
-
-         <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
-                    {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>Save Progress</p>
-            </TooltipContent>
-        </Tooltip>
-      </div>
+            <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
+            <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
+        </Tab>
+        <Tab name="Insert">
+            <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
+            <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
+            <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
+        </Tab>
+        <Tab name="View">
+            <DropdownMenu>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-9">
+                                <Brush className="h-4 w-4 mr-2" />
+                                Canvas Color
+                                <ChevronDown className="h-4 w-4 ml-2" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Change canvas background</p>
+                    </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent container={container}>
+                    {canvasColors.map((c) => (
+                        <DropdownMenuItem key={c} onSelect={() => handleColorChange(c)}>
+                            <div className="flex items-center gap-2">
+                            <div className="h-4 w-4 rounded-full border" style={{ backgroundColor: c }} />
+                            <span>{c}</span>
+                            </div>
+                            {currentColor === c && <Check className="h-4 w-4 ml-auto" />}
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </Tab>
+      </ToolbarTabs>
     </TooltipProvider>
   );
 }
