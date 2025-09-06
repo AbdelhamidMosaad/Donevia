@@ -10,6 +10,8 @@ import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import type { Page } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
@@ -104,6 +106,8 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
+      Subscript,
+      Superscript,
       FontFamily,
       FontSize,
       StarterKit.configure({
