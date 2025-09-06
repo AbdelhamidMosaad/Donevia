@@ -55,9 +55,8 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        history: false, // Use the dedicated History extension
+        history: true,
       }),
-      HistoryExtension,
       Placeholder.configure({ placeholder: "Type '/' for commands or start writing..." }),
       Underline,
       Link.configure({ openOnClick: true, autolink: true, linkOnPaste: true }),
