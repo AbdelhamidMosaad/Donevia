@@ -82,14 +82,17 @@ export async function POST(request: Request) {
       // No conflict, proceed with the update.
       const newVersion = serverVersion + 1;
       let searchText = title.trim().toLowerCase();
+      
       try {
         // Ensure contentJSON is a valid object with content before trying to extract text
         if (contentJSON && typeof contentJSON === 'object' && Array.isArray(contentJSON.content)) {
             searchText += ' ' + extractTextFromNode(contentJSON).trim().toLowerCase();
         }
       } catch (e) {
-          console.error("Error extracting text from contentJSON: ", e);
+          console.error("Error extracting text from contentJSON. Save will continue without updating searchText.", e);
           // Don't fail the whole save if text extraction fails, just log it.
+          // Use existing searchText if available, otherwise just use title.
+          searchText = serverPage.searchText || title.trim().toLowerCase();
       }
 
 
