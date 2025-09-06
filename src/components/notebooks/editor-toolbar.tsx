@@ -10,7 +10,6 @@ import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { useCallback, useState } from 'react';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -20,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
 
 
 const fonts = [
@@ -64,13 +63,23 @@ const canvasColors = [
 
 const textColors = [
     { name: 'Black', value: '#000000' },
-    { name: 'Red', value: '#ef4444' },
-    { name: 'Blue', value: '#3b82f6' },
-    { name: 'Green', value: '#16a34a' },
-    { name: 'Purple', value: '#7c3aed' },
-    { name: 'Gray', value: '#6b7280' },
-    { name: 'Orange', value: '#f97316' },
-    { name: 'Pink', value: '#ec4899' },
+    { name: 'White', value: '#FFFFFF' },
+    { name: 'Dark Gray', value: '#333333' },
+    { name: 'Gray', value: '#6B7280' },
+    { name: 'Light Gray', value: '#D1D5DB' },
+    { name: 'Red', value: '#EF4444' },
+    { name: 'Pink', value: '#EC4899' },
+    { name: 'Grape', value: '#D946EF' },
+    { name: 'Violet', value: '#8B5CF6' },
+    { name: 'Indigo', value: '#6366F1' },
+    { name: 'Blue', value: '#3B82F6' },
+    { name: 'Cyan', value: '#22D3EE' },
+    { name: 'Teal', value: '#2DD4BF' },
+    { name: 'Green', value: '#22C55E' },
+    { name: 'Lime', value: '#84CC16' },
+    { name: 'Yellow', value: '#FACC15' },
+    { name: 'Orange', value: '#F97316' },
+    { name: 'Brown', value: '#854D0E' },
 ];
 
 
@@ -189,32 +198,35 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
             </SelectContent>
         </Select>
         
-        <Popover>
-          <Tooltip>
-              <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-9 w-9">
-                          <Palette className="h-4 w-4" style={{ color: activeColor }}/>
-                      </Button>
-                  </PopoverTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                  <p>Text Color</p>
-              </TooltipContent>
-          </Tooltip>
-          <PopoverContent className="w-auto p-2">
-            <div className="grid grid-cols-4 gap-1">
-              {textColors.map(color => (
-                <button
-                  key={color.name}
-                  onClick={() => handleTextColorChange(color.value)}
-                  className="h-6 w-6 rounded-full border"
-                  style={{ backgroundColor: color.value }}
-                />
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <DropdownMenu>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-9 w-9">
+                            <Palette className="h-4 w-4" style={{ color: activeColor }} />
+                        </Button>
+                    </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Text Color</p>
+                </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent className="grid grid-cols-4 gap-1 p-2" align="start">
+                {textColors.map((color) => (
+                    <DropdownMenuItem
+                        key={color.name}
+                        onSelect={() => handleTextColorChange(color.value)}
+                        className="flex justify-center items-center p-1"
+                    >
+                        <div
+                            className="h-6 w-6 rounded-full border"
+                            style={{ backgroundColor: color.value }}
+                        />
+                         {activeColor === color.value && <Check className="h-4 w-4 absolute" style={{color: color.value === '#FFFFFF' ? '#000000' : '#FFFFFF'}}/>}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
 
         <Separator orientation="vertical" className="h-6 mx-1" />
         
