@@ -102,8 +102,6 @@ interface EditorToolbarProps {
   editor: Editor;
   onColorChange: (color: string) => void;
   initialColor?: string;
-  onManualSave: () => void;
-  saveStatus: 'saved' | 'saving' | 'conflict' | 'error' | 'unsaved';
   container?: HTMLElement | null;
 }
 
@@ -157,7 +155,7 @@ const ToolbarButton = ({
 };
 
 
-export function EditorToolbar({ editor, onColorChange, initialColor, onManualSave, saveStatus, container }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onColorChange, initialColor, container }: EditorToolbarProps) {
   const [currentColor, setCurrentColor] = useState(initialColor || '#FFFFFF');
   
   const setLink = useCallback(() => {
@@ -241,17 +239,6 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                     <p>Redo</p>
                 </TooltipContent>
             </Tooltip>
-            <Separator orientation="vertical" className="h-6 mx-1" />
-             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
-                        {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Save Progress</p>
-                </TooltipContent>
-            </Tooltip>
         </Tab>
         <Tab name="Home">
             <Select value={activeFont} onValueChange={handleFontChange}>
@@ -312,7 +299,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <DropdownMenuContent className="grid grid-cols-4 gap-1 p-2" align="start" container={container}>
                     {textColors.map((color) => (
                         <DropdownMenuItem
-                            key={color.name}
+                            key={`${color.name}-${color.value}`}
                             onSelect={() => handleTextColorChange(color.value)}
                             className="flex justify-center items-center p-1"
                         >
