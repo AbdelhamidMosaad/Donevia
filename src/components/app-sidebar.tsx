@@ -22,6 +22,7 @@ import {
   Folder,
   LayoutDashboard,
   Kanban,
+  BookOpen,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -36,7 +37,7 @@ export function AppSidebar() {
     { href: '/notes', icon: <FileText />, label: 'Sticky Notes', tooltip: 'Sticky Notes' },
     { href: '/whiteboard', icon: <PenSquare />, label: 'Whiteboard', tooltip: 'Whiteboard' },
     { href: '/mind-map', icon: <GitBranch />, label: 'Mind Map', tooltip: 'Mind Map' },
-    { href: '/notebooks', icon: <BrainCircuit />, label: 'Notebooks', tooltip: 'Notebooks' },
+    { href: '/notebooks', icon: <BookOpen />, label: 'Notebooks', tooltip: 'Notebooks' },
   ];
 
   return (
