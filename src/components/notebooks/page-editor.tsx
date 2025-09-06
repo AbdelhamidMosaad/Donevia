@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useReducer, useCallback } from 'react';
+import { useEffect, useState, useReducer } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -18,6 +18,9 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { FontFamily } from '@/lib/tiptap/font-family';
+import TextStyle from '@tiptap/extension-text-style';
+import ListItem from '@tiptap/extension-list-item';
 
 interface PageEditorProps {
   page: Page;
@@ -83,10 +86,13 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
 
   const editor = useEditor({
     extensions: [
+      TextStyle,
+      FontFamily,
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
         },
+        textStyle: false, // Use the top-level `TextStyle` extension instead
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
