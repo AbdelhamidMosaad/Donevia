@@ -1,0 +1,118 @@
+
+'use client';
+
+import { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import type { Notebook, Section, Page } from '@/lib/types';
+import { saveAs } from 'file-saver';
+import { useToast } from '@/hooks/use-toast';
+import { generateHtml } from '@tiptap/html';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
+import { JSDOM } from 'jsdom';
+import { htmlToMd } from 'html-to-md';
+
+
+export function useNotebookExporter() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const fetchNotebookData = async (notebookId: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    const sectionsQuery = query(
+      collection(db, 'users', user.uid, 'sections'),
+      where('notebookId', '==', notebookId)
+    );
+    const sectionsSnap = await getDocs(sectionsQuery);
+    const sections = sectionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
+
+    const pagesBySection: Record<string, Page[]> = {};
+    for (const section of sections) {
+      const pagesQuery = query(
+        collection(db, 'users', user.uid, 'pages'),
+        where('sectionId', '==', section.id)
+      );
+      const pagesSnap = await getDocs(pagesQuery);
+      pagesBySection[section.id] = pagesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Page));
+    }
+
+    return { sections, pagesBySection };
+  };
+
+  const convertTiptapToMarkdown = (content: any): string => {
+    try {
+        const html = generateHtml(content, [
+            StarterKit,
+            Underline,
+            Link.configure({ openOnClick: false, autolink: false }),
+        ]);
+
+        // Polyfill for DOM environment if running in a context where it's not available
+        if (typeof window === 'undefined') {
+            const { window } = new JSDOM('');
+            global.window = window as any;
+            global.document = window.document;
+            global.navigator = window.navigator;
+        }
+
+        return htmlToMd(html);
+    } catch (e) {
+        console.error("Error converting to markdown", e);
+        return "Error converting content.";
+    }
+  };
+
+  const exportNotebook = async (notebook: Notebook, format: 'json' | 'markdown') => {
+    setIsExporting(true);
+    toast({ title: 'Exporting...', description: `Preparing "${notebook.title}" for export.` });
+
+    try {
+      const { sections, pagesBySection } = await fetchNotebookData(notebook.id);
+
+      let fileContent = '';
+      let fileExtension = '';
+
+      if (format === 'json') {
+        const exportData = {
+          notebook,
+          sections: sections.map(section => ({
+            ...section,
+            pages: pagesBySection[section.id] || [],
+          })),
+        };
+        fileContent = JSON.stringify(exportData, null, 2);
+        fileExtension = 'json';
+      } else if (format === 'markdown') {
+        let mdContent = `# ${notebook.title}\n\n`;
+        sections.forEach(section => {
+          mdContent += `## ${section.title}\n\n`;
+          const pages = pagesBySection[section.id] || [];
+          pages.forEach(page => {
+            mdContent += `### ${page.title}\n\n`;
+            mdContent += convertTiptapToMarkdown(page.content);
+            mdContent += '\n\n---\n\n';
+          });
+        });
+        fileContent = mdContent;
+        fileExtension = 'md';
+      }
+
+      const blob = new Blob([fileContent], { type: `text/${fileExtension};charset=utf-8` });
+      saveAs(blob, `${notebook.title}.${fileExtension}`);
+      toast({ title: 'Export complete!', description: `"${notebook.title}" has been downloaded.` });
+
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast({ variant: 'destructive', title: 'Export Failed', description: (error as Error).message });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return { exportNotebook, isExporting };
+}

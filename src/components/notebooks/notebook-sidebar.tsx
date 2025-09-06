@@ -21,7 +21,7 @@ import {
 import type { Notebook, Section, Page } from '@/lib/types';
 import { useAtom } from 'jotai';
 import { selectedNotebookAtom, selectedSectionAtom, selectedPageAtom } from '@/lib/notebook-store';
-import { Plus, MoreVertical, Edit, Trash2, Book, ChevronRight, ChevronDown, FileText } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, Book, ChevronRight, ChevronDown, FileText, Upload, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +36,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import {
     AlertDialog,
@@ -50,6 +51,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { NotebookSearchBar } from './search-bar';
+import { ExportDialog } from './export-dialog';
 
 export function NotebookSidebar() {
   const { user } = useAuth();
@@ -63,6 +65,7 @@ export function NotebookSidebar() {
   
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemName, setEditingItemName] = useState('');
+  const [exportingNotebook, setExportingNotebook] = useState<Notebook | null>(null);
 
   // Fetch notebooks
   useEffect(() => {
@@ -280,8 +283,17 @@ export function NotebookSidebar() {
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
+                        <DropdownMenuSeparator />
                         {type === 'notebook' && <DropdownMenuItem onSelect={() => handleCreate('section', item.id)}><Plus className="mr-2 h-4 w-4"/>New Section</DropdownMenuItem>}
                         {type === 'section' && <DropdownMenuItem onSelect={() => handleCreate('page', item.id)}><Plus className="mr-2 h-4 w-4"/>New Page</DropdownMenuItem>}
+                         {type === 'notebook' && (
+                             <>
+                             <DropdownMenuSeparator />
+                             <DropdownMenuItem onSelect={() => setExportingNotebook(item as Notebook)}>
+                                <Download className="mr-2 h-4 w-4" /> Export
+                             </DropdownMenuItem>
+                            </>
+                         )}
                     </DropdownMenuContent>
                  </DropdownMenu>
            </div>
@@ -289,12 +301,18 @@ export function NotebookSidebar() {
   }
 
   return (
+    <>
     <div className="h-full flex flex-col p-2 bg-muted/50">
       <div className="flex items-center justify-between p-2">
         <h2 className="text-lg font-bold font-headline">Notebooks</h2>
-        <Button variant="ghost" size="icon" onClick={() => handleCreate('notebook')}>
-          <Plus className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center">
+            <Button variant="ghost" size="icon" onClick={() => {}} title="Import Notebook">
+              <Upload className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => handleCreate('notebook')} title="New Notebook">
+              <Plus className="h-4 w-4" />
+            </Button>
+        </div>
       </div>
       <div className="px-2 pb-2">
         <NotebookSearchBar onSelectPage={handleSelectPage} />
@@ -323,5 +341,13 @@ export function NotebookSidebar() {
         </div>
       </ScrollArea>
     </div>
+     {exportingNotebook && (
+        <ExportDialog
+          notebook={exportingNotebook}
+          isOpen={!!exportingNotebook}
+          onClose={() => setExportingNotebook(null)}
+        />
+      )}
+    </>
   );
 }
