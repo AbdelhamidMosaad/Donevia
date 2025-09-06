@@ -58,9 +58,6 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
         heading: { 
           levels: [1, 2, 3],
         },
-        // Re-enable bullet and ordered lists which were disabled by the heading config
-        bulletList: {},
-        orderedList: {},
       }),
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,

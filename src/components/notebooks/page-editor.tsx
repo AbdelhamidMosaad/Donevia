@@ -57,10 +57,6 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
         heading: { 
           levels: [1, 2, 3],
         },
-        // Re-enable bullet and ordered lists which were disabled by the heading config
-        bulletList: {},
-        orderedList: {},
-        history: true,
       }),
       Placeholder.configure({ placeholder: "Type '/' for commands or start writing..." }),
       Underline,
