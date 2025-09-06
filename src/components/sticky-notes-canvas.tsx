@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { StickyNoteCard } from './sticky-note-card';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { cn } from '@/lib/utils';
 
 interface StickyNotesCanvasProps {
   notes: StickyNote[];
@@ -23,6 +24,16 @@ export function StickyNotesCanvas({ notes, onNoteClick }: StickyNotesCanvasProps
   const canvasRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(1);
 
+  // Derive a sorted list of notes to ensure stable order for dnd
+  const sortedNotes = [...notes].sort((a, b) => {
+      const posA = a.gridPosition || { row: 0, col: 0 };
+      const posB = b.gridPosition || { row: 0, col: 0 };
+      if (posA.row !== posB.row) {
+          return posA.row - posB.row;
+      }
+      return posA.col - posB.col;
+  });
+
   useEffect(() => {
     const handleResize = () => {
       if (canvasRef.current) {
@@ -31,9 +42,20 @@ export function StickyNotesCanvas({ notes, onNoteClick }: StickyNotesCanvasProps
         setCols(newCols);
       }
     };
+
     handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (canvasRef.current) {
+        resizeObserver.observe(canvasRef.current);
+    }
+    
+    return () => {
+        window.removeEventListener('resize', handleResize);
+        if (canvasRef.current) {
+            resizeObserver.unobserve(canvasRef.current);
+        }
+    }
   }, []);
 
   const onDragEnd = async (result: DropResult) => {
@@ -42,46 +64,30 @@ export function StickyNotesCanvas({ notes, onNoteClick }: StickyNotesCanvasProps
     if (!destination || !user) {
       return;
     }
-
-    const note = notes.find(n => n.id === draggableId);
-    if (!note) return;
-
-    // Convert linear index to grid coordinates
-    const toCol = destination.index % cols;
-    const toRow = Math.floor(destination.index / cols);
-
-    // Check if destination is occupied
-    const targetNote = notes.find(n => n.gridPosition?.col === toCol && n.gridPosition?.row === toRow);
-    if (targetNote && targetNote.id !== draggableId) {
-        // Simple rejection: return to original position. A swap could also be implemented here.
-        return;
+     if (destination.index === source.index) {
+      return;
     }
 
-    const noteRef = doc(db, 'users', user.uid, 'stickyNotes', draggableId);
-    await updateDoc(noteRef, { gridPosition: { col: toCol, row: toRow } });
+    // Create a mutable copy of the notes for manipulation
+    const newNotesOrder = Array.from(sortedNotes);
+    const [movedNote] = newNotesOrder.splice(source.index, 1);
+    newNotesOrder.splice(destination.index, 0, movedNote);
+
+    // Update grid positions based on the new flat array order
+    for (let i = 0; i < newNotesOrder.length; i++) {
+        const note = newNotesOrder[i];
+        const newPos = {
+            row: Math.floor(i / cols),
+            col: i % cols
+        };
+
+        if (note.gridPosition?.row !== newPos.row || note.gridPosition?.col !== newPos.col) {
+            const noteRef = doc(db, 'users', user.uid, 'stickyNotes', note.id);
+            await updateDoc(noteRef, { gridPosition: newPos });
+        }
+    }
   };
   
-  // Create a sparse grid representation for rendering
-  const grid: (StickyNote | null)[][] = [];
-  let maxRow = 0;
-  notes.forEach(note => {
-    const { col = 0, row = 0 } = note.gridPosition || {};
-    if (!grid[row]) grid[row] = [];
-    grid[row][col] = note;
-    if (row > maxRow) maxRow = row;
-  });
-
-  // Flatten the grid into a single array for react-beautiful-dnd, preserving order
-  const flatNotes: (StickyNote | null)[] = [];
-  const numRows = Math.max(maxRow + 1, Math.ceil(notes.length / cols));
-  
-  for (let r = 0; r < numRows; r++) {
-    for (let c = 0; c < cols; c++) {
-      flatNotes.push(grid[r]?.[c] || null);
-    }
-  }
-
-
   return (
     <div ref={canvasRef} className="relative h-full">
       <DragDropContext onDragEnd={onDragEnd}>
@@ -94,31 +100,32 @@ export function StickyNotesCanvas({ notes, onNoteClick }: StickyNotesCanvasProps
               style={{
                 gridTemplateColumns: `repeat(${cols}, ${NOTE_WIDTH}px)`,
                 gridAutoRows: `${NOTE_HEIGHT}px`,
+                // Use a subtle dot pattern for the background to indicate a grid
+                backgroundImage: 'radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)',
+                backgroundSize: '1.5rem 1.5rem',
               }}
             >
-              {flatNotes.map((note, index) => (
-                note ? (
-                  <Draggable key={note.id} draggableId={note.id} index={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        style={{
-                          ...provided.draggableProps.style,
-                          gridColumnStart: (note.gridPosition?.col ?? 0) + 1,
-                          gridRowStart: (note.gridPosition?.row ?? 0) + 1,
-                          transition: snapshot.isDragging ? 'none' : provided.draggableProps.style?.transition,
-                        }}
-                      >
-                        <StickyNoteCard note={note} onClick={() => onNoteClick(note)} />
-                      </div>
-                    )}
-                  </Draggable>
-                ) : (
-                    // Render a placeholder for empty grid cells to maintain layout
-                    <div key={`placeholder-${index}`} className="pointer-events-none" />
-                )
+              {sortedNotes.map((note, index) => (
+                <Draggable key={note.id} draggableId={note.id} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className={cn(
+                        'transition-shadow',
+                        snapshot.isDragging && 'shadow-2xl'
+                      )}
+                      style={{
+                        ...provided.draggableProps.style,
+                        gridColumn: 'auto', // let CSS grid handle placement
+                        gridRow: 'auto',
+                      }}
+                    >
+                      <StickyNoteCard note={note} onClick={() => onNoteClick(note)} />
+                    </div>
+                  )}
+                </Draggable>
               ))}
               {provided.placeholder}
             </div>

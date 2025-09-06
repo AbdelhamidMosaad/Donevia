@@ -39,9 +39,41 @@ export default function StickyNotesPage() {
     }
   }, [user]);
 
+  const findNextAvailablePosition = (currentNotes: StickyNote[]) => {
+    const occupiedPositions = new Set(
+        currentNotes.filter(n => n.gridPosition).map(n => `${n.gridPosition!.row},${n.gridPosition!.col}`)
+    );
+    let row = 0;
+    let col = 0;
+    while(true) {
+        // This is a naive implementation and might be slow with many notes.
+        // It's just an example. A better approach might involve knowing the number of columns.
+        for (col = 0; col < 100; col++) { // Assume max 100 columns for finding a spot
+            if (!occupiedPositions.has(`${row},${col}`)) {
+                return { row, col };
+            }
+        }
+        row++;
+    }
+  };
+
   const handleAddNote = async () => {
     if (!user) return;
     try {
+      // Find the next available grid position. This is a simplified approach.
+      // A more robust solution would consider the current number of columns.
+      const occupiedPositions = new Set(notes.map(n => `${n.gridPosition?.row},${n.gridPosition?.col}`));
+      let position = { row: 0, col: 0 };
+      let i = 0;
+      while (occupiedPositions.has(`${position.row},${position.col}`)) {
+        i++;
+        // Simple linear search for next open spot.
+        // A better approach would be to know the number of columns.
+        // For now, let's assume a large number of possible columns.
+        position = { row: Math.floor(i/100), col: i % 100};
+      }
+
+
       await addDoc(collection(db, 'users', user.uid, 'stickyNotes'), {
         title: 'New Note',
         text: '',
@@ -50,7 +82,7 @@ export default function StickyNotesPage() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         priority: 'Medium',
-        gridPosition: { col: 0, row: 0 } // Default grid position
+        gridPosition: position
       });
       toast({
         title: '✓ Note Added',
