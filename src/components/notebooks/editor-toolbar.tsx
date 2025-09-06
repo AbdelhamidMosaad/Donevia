@@ -4,7 +4,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -55,6 +55,8 @@ interface EditorToolbarProps {
   editor: Editor;
   onColorChange: (color: string) => void;
   initialColor?: string;
+  onManualSave: () => void;
+  saveStatus: 'saved' | 'saving' | 'conflict' | 'error' | 'unsaved';
 }
 
 const ToolbarButton = ({
@@ -100,7 +102,7 @@ const ToolbarButton = ({
 };
 
 
-export function EditorToolbar({ editor, onColorChange, initialColor }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onColorChange, initialColor, onManualSave, saveStatus }: EditorToolbarProps) {
   const [currentColor, setCurrentColor] = useState(initialColor || '#FFFFFF');
   
   const setLink = useCallback(() => {
@@ -220,6 +222,19 @@ export function EditorToolbar({ editor, onColorChange, initialColor }: EditorToo
                 </div>
             </PopoverContent>
          </Popover>
+
+         <div className="flex-grow" />
+
+         <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={onManualSave} disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
+                    {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>Save Progress</p>
+            </TooltipContent>
+        </Tooltip>
       </div>
     </TooltipProvider>
   );
