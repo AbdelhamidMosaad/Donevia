@@ -117,7 +117,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
     content: initialPage.content,
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert max-w-full focus:outline-none',
+        class: 'prose dark:prose-invert max-w-full focus:outline-none p-4 md:p-8',
       },
     },
     onUpdate: () => {
@@ -126,7 +126,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
       }
     },
   });
-  
+
   const handleSave = useCallback(async () => {
     if (!editor || !user || state.status === 'conflict' || state.status === 'saving') return;
     
@@ -150,6 +150,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
         }
     }
   }, [editor, user, state.status, state.clientVersion, initialPage.id, initialPage.canvasColor, title, toast]);
+  
 
   // Auto-save timer
   useEffect(() => {
@@ -242,7 +243,6 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
   if (!editor) return null;
 
   return (
-    <>
     <div className="flex-1 flex flex-col h-full overflow-y-hidden">
         {state.status === 'conflict' && (
             <Alert variant="destructive" className="m-4 rounded-lg">
@@ -257,27 +257,24 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
                 </AlertDescription>
             </Alert>
         )}
-        <div className="p-4 border-b flex justify-between items-center">
-            <div>
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => {
-                        setTitle(e.target.value);
-                        dispatch({ type: 'EDITING' });
-                    }}
-                    className="w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
-                    placeholder="Page Title"
-                    disabled={state.status === 'conflict'}
-                />
-                <p className="text-xs text-muted-foreground mt-1">{getStatusMessage()}</p>
-            </div>
+        <div className="p-4 border-b">
+            <input
+                type="text"
+                value={title}
+                onChange={(e) => {
+                    setTitle(e.target.value);
+                    dispatch({ type: 'EDITING' });
+                }}
+                className="w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
+                placeholder="Page Title"
+                disabled={state.status === 'conflict'}
+            />
+            <p className="text-xs text-muted-foreground mt-1">{getStatusMessage()}</p>
         </div>
-      <div className="relative flex-1 overflow-y-auto p-4 md:p-8" onClick={() => editor.commands.focus()}>
         <EditorToolbar editor={editor} onColorChange={handleColorSelect} initialColor={initialPage.canvasColor} onManualSave={handleSave} saveStatus={state.status} />
-        <EditorContent editor={editor} />
-      </div>
+        <div className="relative flex-1 overflow-y-auto" onClick={() => editor.commands.focus()}>
+            <EditorContent editor={editor} />
+        </div>
     </div>
-    </>
   );
 }
