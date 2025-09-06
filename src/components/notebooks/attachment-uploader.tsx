@@ -6,7 +6,7 @@ import { useDropzone } from 'react-dropzone';
 import { useAuth } from '@/hooks/use-auth';
 import { uploadAttachmentClient } from '@/lib/client-helpers';
 import { useToast } from '@/hooks/use-toast';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Attachment } from '@/lib/types';
 import { UploadCloud, Paperclip, File as FileIcon, Trash2 } from 'lucide-react';
