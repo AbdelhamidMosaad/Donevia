@@ -37,6 +37,15 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
         if (typeof window !== 'undefined') {
             audioRef.current = new Audio('/notification.mp3');
         }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                console.log('Service Worker registered with scope:', registration.scope);
+            }).catch(function(error) {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+
     }, []);
     
     // Fetch all stages from all lists to determine 'Done' status
@@ -74,6 +83,31 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
         return stages.filter(s => s.name.toLowerCase() === 'done').map(s => s.id);
     }, [stages]);
 
+    const showBrowserNotification = (task: Task) => {
+        if (!('Notification' in window) || Notification.permission !== 'granted') {
+            return;
+        }
+
+        const dueDate = moment(task.dueDate.toDate());
+        const options: NotificationOptions = {
+            body: `Due ${dueDate.fromNow()}.`,
+            icon: '/logo.png', // Make sure you have a logo.png in your /public folder
+            badge: '/badge.png', // A smaller icon for notifications
+            vibrate: [200, 100, 200],
+            data: { 
+                taskId: task.id,
+                listId: task.listId
+            },
+            actions: [
+                { action: 'mark-as-done', title: 'Mark as Done' },
+            ]
+        };
+
+        navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification(`Reminder: ${task.title}`, options);
+        });
+    }
+
     // Check for overdue tasks and reminders
     useEffect(() => {
         const doneStageIds = getDoneStageIds();
@@ -101,6 +135,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
 
                     if (now.isAfter(reminderTime) && now.isBefore(dueDate)) {
                         audioRef.current?.play().catch(e => console.log("Audio play failed:", e));
+                        showBrowserNotification(task);
                         toast({
                             title: `Reminder: ${task.title}`,
                             description: `Due in ${dueDate.fromNow(true)}.`,

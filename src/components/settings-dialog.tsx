@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Moon, Palette, Type, Check } from 'lucide-react';
+import { Sun, Moon, Palette, Type, Check, Bell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { NotificationSettings } from './notification-settings';
 
 type Theme = 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
 type Font = 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
@@ -147,6 +148,8 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
         </DialogHeader>
         
         <div className="space-y-6 py-4">
+             <NotificationSettings />
+
              <Card>
                 <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Type /> Typography System</CardTitle>
