@@ -86,6 +86,16 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
       StarterKit.configure({
         // Disabling these to use the Link extension's more advanced options
         link: false,
+        heading: {
+          levels: [1, 2, 3],
+        },
+        bold: {},
+        italic: {},
+        strike: {},
+        bulletList: {},
+        orderedList: {},
+        blockquote: {},
+        codeBlock: {},
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
@@ -94,6 +104,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
       Link.configure({
         openOnClick: true,
         autolink: true,
+        linkOnPaste: true,
       })
     ],
     content: initialPage.content,

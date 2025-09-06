@@ -9,10 +9,54 @@ import {
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { useCallback } from 'react';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EditorToolbarProps {
   editor: Editor;
 }
+
+const ToolbarButton = ({
+  editor,
+  name,
+  label,
+  icon: Icon,
+  onClick,
+  level,
+}: {
+  editor: Editor;
+  name: string;
+  label: string;
+  icon: React.ElementType;
+  onClick?: () => void;
+  level?: number;
+}) => {
+  const isActive = level ? editor.isActive(name, { level }) : editor.isActive(name);
+  const action = onClick || (() => {
+    const chain = editor.chain().focus();
+    const command = `toggle${name.charAt(0).toUpperCase() + name.slice(1)}`;
+    if (typeof (chain as any)[command] === 'function') {
+      if (level) {
+        (chain as any)[command]({ level }).run();
+      } else {
+        (chain as any)[command]().run();
+      }
+    }
+  });
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Toggle size="sm" pressed={isActive} onPressedChange={action}>
+          <Icon className="h-4 w-4" />
+        </Toggle>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{label}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 
 export function EditorToolbar({ editor }: EditorToolbarProps) {
 
@@ -20,18 +64,11 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URL', previousUrl);
 
-    // cancelled
-    if (url === null) {
-      return;
-    }
-
-    // empty
+    if (url === null) return;
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
-
-    // update link
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
 
@@ -40,46 +77,34 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   }
 
   return (
-    <div className="flex items-center gap-1 p-2 border rounded-md bg-background sticky top-0 z-10 mb-4 flex-wrap">
-      <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}>
-        <Bold className="h-4 w-4" />
-      </Toggle>
-      <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}>
-        <Italic className="h-4 w-4" />
-      </Toggle>
-      <Toggle size="sm" pressed={editor.isActive('underline')} onPressedChange={() => editor.chain().focus().toggleUnderline().run()}>
-        <Underline className="h-4 w-4" />
-      </Toggle>
-      <Toggle size="sm" pressed={editor.isActive('strike')} onPressedChange={() => editor.chain().focus().toggleStrike().run()}>
-        <Strikethrough className="h-4 w-4" />
-      </Toggle>
-      <Separator orientation="vertical" className="h-6 mx-1" />
-      <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
-        <Heading1 className="h-4 w-4" />
-      </Toggle>
-      <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
-        <Heading2 className="h-4 w-4" />
-      </Toggle>
-      <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
-        <Heading3 className="h-4 w-4" />
-      </Toggle>
-       <Separator orientation="vertical" className="h-6 mx-1" />
-      <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}>
-        <List className="h-4 w-4" />
-      </Toggle>
-      <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}>
-        <ListOrdered className="h-4 w-4" />
-      </Toggle>
-      <Separator orientation="vertical" className="h-6 mx-1" />
-      <Toggle size="sm" pressed={editor.isActive('link')} onPressedChange={setLink}>
-        <Link className="h-4 w-4" />
-      </Toggle>
-      <Toggle size="sm" pressed={editor.isActive('blockquote')} onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}>
-        <Quote className="h-4 w-4" />
-      </Toggle>
-      <Toggle size="sm" pressed={editor.isActive('codeBlock')} onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}>
-        <Code className="h-4 w-4" />
-      </Toggle>
-    </div>
+    <TooltipProvider>
+      <div className="flex items-center gap-1 p-2 border rounded-md bg-background sticky top-0 z-10 mb-4 flex-wrap">
+        {/* Mark Group */}
+        <ToolbarButton editor={editor} name="bold" label="Bold" icon={Bold} />
+        <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
+        <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
+        <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
+
+        <Separator orientation="vertical" className="h-6 mx-1" />
+
+        {/* Heading Group */}
+        <ToolbarButton editor={editor} name="heading" label="Heading 1" icon={Heading1} level={1} />
+        <ToolbarButton editor={editor} name="heading" label="Heading 2" icon={Heading2} level={2} />
+        <ToolbarButton editor={editor} name="heading" label="Heading 3" icon={Heading3} level={3} />
+        
+        <Separator orientation="vertical" className="h-6 mx-1" />
+
+        {/* List Group */}
+        <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
+        <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
+        
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        
+        {/* Block Group */}
+        <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
+        <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
+        <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
+      </div>
+    </TooltipProvider>
   );
 }
