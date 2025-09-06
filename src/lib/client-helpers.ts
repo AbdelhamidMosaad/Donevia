@@ -1,3 +1,4 @@
+
 import { getAuth } from 'firebase/auth';
 
 /**
@@ -29,7 +30,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
 
 
 /**
- * Example: Saving a new revision from the client
+ * Saves a new revision from the client.
  */
 export async function saveRevisionClient(pageId: string, title: string, content: any) {
   const response = await fetchWithAuth('/api/revisions/save', {
@@ -46,7 +47,7 @@ export async function saveRevisionClient(pageId: string, title: string, content:
 }
 
 /**
- * Example: Updating the search index for a page from the client
+ * Updates the search index for a page from the client.
  */
 export async function updateSearchIndexClient(pageId: string, title: string, contentJSON: any) {
   const response = await fetchWithAuth('/api/pages/update-search', {
@@ -63,7 +64,7 @@ export async function updateSearchIndexClient(pageId: string, title: string, con
 }
 
 /**
- * Example: Uploading a file attachment from the client
+ * Uploads a file attachment from the client.
  */
 export async function uploadAttachmentClient(pageId: string, file: File) {
   const auth = getAuth();
