@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState, useReducer, useCallback, RefObject, useMemo } from 'react';
+import { useEffect, useState, RefObject } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -10,30 +10,23 @@ import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
-import Subscript from '@tiptap/extension-subscript';
-import Superscript from '@tiptap/extension-superscript';
 import Table from '@tiptap/extension-table';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import TableRow from '@tiptap/extension-table-row';
 import type { Page } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { EditorToolbar } from './editor-toolbar';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Loader2, Save } from 'lucide-react';
+import { Loader2, Save, History, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { FontFamily } from '@/lib/tiptap/font-family';
-import { FontSize } from '@/lib/tiptap/font-size';
-import TextStyle from '@tiptap/extension-text-style';
-import { Color } from '@tiptap/extension-color';
 import { usePageSaver } from '@/hooks/use-page-saver';
 import { AttachmentUploader } from './attachment-uploader';
-import { History, Share2 } from 'lucide-react';
 import { VersionHistoryDrawer } from './version-history/version-history-drawer';
 import { saveRevisionClient } from '@/lib/client-helpers';
+import { slashCommands } from '../docs/slash-commands';
+import { Image as TipTapImage } from '@tiptap/extension-image';
+import { History as HistoryExtension } from '@tiptap/extension-history';
 
 interface PageEditorProps {
   page: Page;
@@ -47,7 +40,6 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
   
   const {
     page,
-    editorContent,
     saveStatus,
     isDirty,
     onContentChange,
@@ -61,26 +53,22 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
 
   const editor = useEditor({
     extensions: [
-      Color.configure({ types: ['textStyle'] }),
-      TextStyle.configure({ types: ['heading', 'paragraph'] }),
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        history: false, // Use the dedicated History extension
+      }),
+      HistoryExtension,
+      Placeholder.configure({ placeholder: "Type '/' for commands or start writing..." }),
+      Underline,
+      Link.configure({ openOnClick: true, autolink: true, linkOnPaste: true }),
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Subscript,
-      Superscript,
-      FontFamily,
-      FontSize,
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
       TableCell,
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-        textStyle: false, 
-        underline: false,
-      }),
-      Placeholder.configure({ placeholder: "Start writing your notes here..." }),
-      Underline.configure({ HTMLAttributes: { class: 'underline' } }),
-      Link.configure({ openOnClick: true, autolink: true, linkOnPaste: true }),
+      slashCommands,
+      TipTapImage,
     ],
     content: page.content,
     editorProps: {
@@ -144,16 +132,8 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
                     placeholder="Page Title"
                 />
             </div>
-             <EditorToolbar editor={editor} onColorChange={handleCanvasColorSelect} initialColor={page.canvasColor} container={editorPanelRef.current} />
+             <EditorToolbar editor={editor} />
              <div className="absolute top-4 right-16 flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setIsVersionHistoryOpen(true)}>
-                    <History className="h-4 w-4 mr-2" />
-                    History
-                </Button>
-                <Button variant="ghost" size="sm" disabled>
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                </Button>
                  <Button onClick={saveManually} disabled={!isDirty || saveStatus === 'saving'} size="sm">
                     {saveStatus === 'saving' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                     {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save Now'}

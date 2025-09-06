@@ -5,104 +5,15 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown, Palette, Pilcrow, Type, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify, Indent, Outdent, Undo, Redo, Superscript, Subscript, Eraser, Table, Grip, Trash2, Columns, Rows
+  List, ListOrdered, Link, Quote, Code, Table,
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Button } from '../ui/button';
-import { cn } from '@/lib/utils';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuSeparator } from '../ui/dropdown-menu';
-import { ToolbarTabs, Tab } from './toolbar-tabs';
-
-const fonts = [
-    { name: 'Inter', value: 'Inter, sans-serif' },
-    { name: 'Roboto', value: 'Roboto, sans-serif' },
-    { name: 'Lato', value: 'Lato, sans-serif' },
-    { name: 'Montserrat', value: 'Montserrat, sans-serif' },
-    { name: 'Oswald', value: 'Oswald, sans-serif' },
-    { name: 'Source Code Pro', value: 'Source Code Pro, monospace' },
-    { name: 'Merriweather', value: 'Merriweather, serif' },
-    { name: 'Playfair Display', value: 'Playfair Display, serif' },
-    // Handwriting
-    { name: 'Caveat', value: 'Caveat, cursive' },
-    { name: 'Dancing Script', value: 'Dancing Script, cursive' },
-    { name: 'Kalam', value: 'Kalam, cursive' },
-    { name: 'Patrick Hand', value: 'Patrick Hand, cursive' },
-    { name: 'Homemade Apple', value: 'Homemade Apple, cursive' },
-    // More fonts
-    { name: 'Alegreya', value: 'Alegreya, serif' },
-    { name: 'EB Garamond', value: 'EB Garamond, serif' },
-    { name: 'Fira Sans', value: 'Fira Sans, sans-serif' },
-    { name: 'Nunito', value: 'Nunito, sans-serif' },
-    { name: 'Poppins', value: 'Poppins, sans-serif' },
-    { name: 'Raleway', value: 'Raleway, sans-serif' },
-    { name: 'Rubik', value: 'Rubik, sans-serif' },
-    { name: 'Ubuntu', value: 'Ubuntu, sans-serif' },
-];
-
-const fontSizes = ['12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px', '48px'];
-
-
-const canvasColors = [
-    '#FFFFFF', '#F8F8F8', // Whites
-    '#FFFACD', '#FFFFE0', // Light Yellows
-    '#F0FFF0', '#F5FFFA', // Mint Greens
-    '#F0F8FF', '#E6E6FA', // Light Blues & Lavenders
-    '#FFF0F5', '#FFE4E1', // Pinks
-    '#FAFAD2', '#FFEFD5', // Light Goldenrod & PapayaWhip
-    '#F8FAB4', '#F7F4EA',
-    '#F3F2EC', '#FFF5F2',
-    '#FAF7F3', '#91C8E4',
-    '#80D8C3'
-];
-
-const textColors = [
-    { name: 'Black', value: '#000000' },
-    { name: 'White', value: '#FFFFFF' },
-    { name: 'Dark Gray', value: '#333333' },
-    { name: 'Gray', value: '#6B7280' },
-    { name: 'Light Gray', value: '#D1D5DB' },
-    { name: 'Bright Red', value: '#FF0000' },
-    { name: 'Red', value: '#EF4444' },
-    { name: 'Pink', value: '#EC4899' },
-    { name: 'Grape', value: '#D946EF' },
-    { name: 'Violet', value: '#8B5CF6' },
-    { name: 'Indigo', value: '#6366F1' },
-    { name: 'Bright Blue', value: '#0000FF' },
-    { name: 'Blue', value: '#3B82F6' },
-    { name: 'Cyan', value: '#22D3EE' },
-    { name: 'Teal', value: '#2DD4BF' },
-    { name: 'Green', value: '#22C55E' },
-    { name: 'Lime', value: '#84CC16' },
-    { name: 'Yellow', value: '#FACC15' },
-    { name: 'Orange', value: '#F97316' },
-    { name: 'Brown', value: '#854D0E' },
-];
-
-const highlightColors = [
-    { name: 'Yellow', value: '#fde047' },
-    { name: 'Green', value: '#86efac' },
-    { name: 'Blue', value: '#93c5fd' },
-    { name: 'Pink', value: '#f9a8d4' },
-    { name: 'Purple', value: '#d8b4fe' },
-    { name: 'None', value: 'transparent' }
-];
-
 
 interface EditorToolbarProps {
   editor: Editor;
-  onColorChange: (color: string) => void;
-  initialColor?: string | null;
-  container?: HTMLElement | null;
 }
 
 const ToolbarButton = ({
@@ -112,7 +23,6 @@ const ToolbarButton = ({
   icon: Icon,
   onClick,
   level,
-  align
 }: {
   editor: Editor;
   name: string;
@@ -120,16 +30,10 @@ const ToolbarButton = ({
   icon: React.ElementType;
   onClick?: () => void;
   level?: number;
-  align?: string;
 }) => {
-  const isActive = level ? editor.isActive(name, { level }) : (align ? editor.isActive({ textAlign: align }) : editor.isActive(name));
-  
+  const isActive = level ? editor.isActive(name, { level }) : editor.isActive(name);
   const action = onClick || (() => {
     const chain = editor.chain().focus();
-    if (align) {
-        (chain as any).setTextAlign(align).run();
-        return;
-    }
     const command = `toggle${name.charAt(0).toUpperCase() + name.slice(1)}`;
     if (typeof (chain as any)[command] === 'function') {
       if (level) {
@@ -155,9 +59,7 @@ const ToolbarButton = ({
 };
 
 
-export function EditorToolbar({ editor, onColorChange, initialColor, container }: EditorToolbarProps) {
-  const [currentColor, setCurrentColor] = useState(initialColor || '#FFFFFF');
-  
+export function EditorToolbar({ editor }: EditorToolbarProps) {
   const setLink = useCallback(() => {
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URL', previousUrl);
@@ -169,317 +71,31 @@ export function EditorToolbar({ editor, onColorChange, initialColor, container }
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
-  
-  const handleFontChange = (fontFamily: string) => {
-    if (fontFamily === 'default') {
-        editor.chain().focus().unsetFontFamily().run();
-    } else {
-        editor.chain().focus().setFontFamily(fontFamily).run();
-    }
-  };
-
-  const handleFontSizeChange = (fontSize: string) => {
-    if (fontSize === 'default') {
-      editor.chain().focus().unsetFontSize().run();
-    } else {
-      editor.chain().focus().setFontSize(fontSize).run();
-    }
-  };
-
-  
-  const handleTextColorChange = (color: string) => {
-    editor.chain().focus().setColor(color).run();
-  };
-  
-  const handleHighlightColorChange = (color: string) => {
-    if (color === 'transparent') {
-        editor.chain().focus().unsetHighlight().run();
-    } else {
-        editor.chain().focus().toggleHighlight({ color }).run();
-    }
-  };
-
-
-  const handleColorChange = (color: string) => {
-    setCurrentColor(color);
-    onColorChange(color);
-  }
 
   if (!editor) {
     return null;
   }
-  
-  const activeFont = editor.getAttributes('textStyle').fontFamily?.replace(/['"]/g, '') || 'default';
-  const activeFontSize = editor.getAttributes('textStyle').fontSize || 'default';
-  const activeColor = editor.getAttributes('textStyle').color || '#000000';
-  const activeHighlight = editor.getAttributes('highlight').color || 'transparent';
-
 
   return (
     <TooltipProvider>
-      <ToolbarTabs>
-        <Tab name="File">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
-                        <Undo className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Undo</p>
-                </TooltipContent>
-            </Tooltip>
-             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
-                        <Redo className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Redo</p>
-                </TooltipContent>
-            </Tooltip>
-        </Tab>
-        <Tab name="Home">
-            <Select value={activeFont} onValueChange={handleFontChange}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <SelectTrigger className="w-[140px] h-9 bg-transparent border-none focus:ring-0">
-                            <SelectValue placeholder="Font" />
-                        </SelectTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Font Family</p>
-                    </TooltipContent>
-                </Tooltip>
-                <SelectContent container={container}>
-                    <SelectItem value="default">Default</SelectItem>
-                    {fonts.map(font => (
-                        <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>
-                            {font.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-
-            <Select value={activeFontSize} onValueChange={handleFontSizeChange}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                    <SelectTrigger className="w-[90px] h-9 bg-transparent border-none focus:ring-0">
-                        <SelectValue placeholder="Size" />
-                    </SelectTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                    <p>Font Size</p>
-                    </TooltipContent>
-                </Tooltip>
-                <SelectContent container={container}>
-                    <SelectItem value="default">Default</SelectItem>
-                    {fontSizes.map((size) => (
-                    <SelectItem key={size} value={size}>
-                        {size}
-                    </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            
-            <DropdownMenu>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9">
-                                <Palette className="h-4 w-4" style={{ color: activeColor }} />
-                            </Button>
-                        </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Text Color</p>
-                    </TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent className="grid grid-cols-4 gap-1 p-2" align="start" container={container}>
-                    {textColors.map((color) => (
-                        <DropdownMenuItem
-                            key={`${color.name}-${color.value}`}
-                            onSelect={() => handleTextColorChange(color.value)}
-                            className="flex justify-center items-center p-1"
-                        >
-                            <div
-                                className="h-6 w-6 rounded-full border"
-                                style={{ backgroundColor: color.value }}
-                            />
-                            {activeColor === color.value && <Check className="h-4 w-4 absolute" style={{color: color.value === '#FFFFFF' ? '#000000' : '#FFFFFF'}}/>}
-                        </DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9">
-                                <Highlighter className="h-4 w-4" style={{ color: activeHighlight === 'transparent' ? 'currentColor' : activeHighlight }} />
-                            </Button>
-                        </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Highlight Color</p>
-                    </TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent className="grid grid-cols-3 gap-1 p-2" align="start" container={container}>
-                    {highlightColors.map((color) => (
-                        <DropdownMenuItem
-                            key={color.name}
-                            onSelect={() => handleHighlightColorChange(color.value)}
-                            className="flex justify-center items-center p-1"
-                        >
-                            <div
-                                className="h-6 w-6 rounded-full border"
-                                style={{ backgroundColor: color.value }}
-                            />
-                            {activeHighlight === color.value && <Check className="h-4 w-4 absolute" />}
-                        </DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Separator orientation="vertical" className="h-6 mx-1" />
-            
-            <ToolbarButton editor={editor} name="bold" label="Bold" icon={Bold} />
-            <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
-            <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
-            <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
-            <ToolbarButton editor={editor} name="superscript" label="Superscript" icon={Superscript} />
-            <ToolbarButton editor={editor} name="subscript" label="Subscript" icon={Subscript} />
-             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => editor.chain().focus().unsetAllMarks().run()}>
-                        <Eraser className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Clear Formatting</p>
-                </TooltipContent>
-            </Tooltip>
-
-            <Separator orientation="vertical" className="h-6 mx-1" />
-
-             <ToolbarButton editor={editor} name="align" label="Align Left" icon={AlignLeft} align="left" />
-             <ToolbarButton editor={editor} name="align" label="Align Center" icon={AlignCenter} align="center" />
-             <ToolbarButton editor={editor} name="align" label="Align Right" icon={AlignRight} align="right" />
-             <ToolbarButton editor={editor} name="align" label="Align Justify" icon={AlignJustify} align="justify" />
-
-            <Separator orientation="vertical" className="h-6 mx-1" />
-
-            <ToolbarButton editor={editor} name="heading" label="Heading 1" icon={Heading1} level={1} />
-            <ToolbarButton editor={editor} name="heading" label="Heading 2" icon={Heading2} level={2} />
-            <ToolbarButton editor={editor} name="heading" label="Heading 3" icon={Heading3} level={3} />
-            
-            <Separator orientation="vertical" className="h-6 mx-1" />
-
-            <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
-            <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Toggle size="sm" onPressedChange={() => editor.chain().focus().sinkListItem('listItem').run()} disabled={!editor.can().sinkListItem('listItem')}>
-                        <Indent className="h-4 w-4" />
-                    </Toggle>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Indent</p>
-                </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Toggle size="sm" onPressedChange={() => editor.chain().focus().liftListItem('listItem').run()} disabled={!editor.can().liftListItem('listItem')}>
-                        <Outdent className="h-4 w-4" />
-                    </Toggle>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Outdent</p>
-                </TooltipContent>
-            </Tooltip>
-        </Tab>
-        <Tab name="Insert">
-            <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
-            <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
-            <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
-            <Separator orientation="vertical" className="h-6 mx-1" />
-            <DropdownMenu>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9">
-                                <Table className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Table</p>
-                    </TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent>
-                    <DropdownMenuItem onSelect={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
-                        Insert table
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator/>
-                    <DropdownMenuItem onSelect={() => editor.chain().focus().addColumnBefore().run()}>
-                        Add column before
-                    </DropdownMenuItem>
-                     <DropdownMenuItem onSelect={() => editor.chain().focus().addColumnAfter().run()}>
-                        Add column after
-                    </DropdownMenuItem>
-                     <DropdownMenuItem onSelect={() => editor.chain().focus().deleteColumn().run()}>
-                        Delete column
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator/>
-                     <DropdownMenuItem onSelect={() => editor.chain().focus().addRowBefore().run()}>
-                        Add row before
-                    </DropdownMenuItem>
-                     <DropdownMenuItem onSelect={() => editor.chain().focus().addRowAfter().run()}>
-                        Add row after
-                    </DropdownMenuItem>
-                     <DropdownMenuItem onSelect={() => editor.chain().focus().deleteRow().run()}>
-                        Delete row
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator/>
-                    <DropdownMenuItem onSelect={() => editor.chain().focus().deleteTable().run()}>
-                        Delete table
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-
-        </Tab>
-        <Tab name="View">
-            <DropdownMenu>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-9">
-                                <Brush className="h-4 w-4 mr-2" />
-                                Canvas Color
-                                <ChevronDown className="h-4 w-4 ml-2" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Change canvas background</p>
-                    </TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent container={container}>
-                    {canvasColors.map((c) => (
-                        <DropdownMenuItem key={c} onSelect={() => handleColorChange(c)}>
-                            <div className="flex items-center gap-2">
-                            <div className="h-4 w-4 rounded-full border" style={{ backgroundColor: c }} />
-                            <span>{c}</span>
-                            </div>
-                            {currentColor === c && <Check className="h-4 w-4 ml-auto" />}
-                        </DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </Tab>
-      </ToolbarTabs>
+      <div className="flex items-center gap-1 p-2 border-t mt-2">
+        <ToolbarButton editor={editor} name="bold" label="Bold" icon={Bold} />
+        <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
+        <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
+        <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        <ToolbarButton editor={editor} name="heading" label="Heading 1" icon={Heading1} level={1} />
+        <ToolbarButton editor={editor} name="heading" label="Heading 2" icon={Heading2} level={2} />
+        <ToolbarButton editor={editor} name="heading" label="Heading 3" icon={Heading3} level={3} />
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
+        <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
+        <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
+        <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
+        <ToolbarButton editor={editor} name="table" label="Table" icon={Table} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+      </div>
     </TooltipProvider>
   );
 }
