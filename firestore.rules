@@ -1,0 +1,157 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+
+    // Function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Function to check if a user is the owner of a document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Function to check if a notebook is shared with the current user with at least a specific permission level
+    function isShared(notebookId, requiredPermission) {
+      let permissions = { 'viewer': 1, 'editor': 2 };
+      let requiredLevel = permissions[requiredPermission];
+      
+      // Check for a direct share on the notebook
+      return exists(/databases/$(database)/documents/shares/$(notebookId)_$(request.auth.uid)) &&
+             permissions[get(/databases/$(database)/documents/shares/$(notebookId)_$(request.auth.uid)).data.permission] >= requiredLevel;
+    }
+    
+    // Function to check if a user can access a notebook, either as owner or through a share
+    function canAccessNotebook(notebookId, permission) {
+      let notebook = get(/databases/$(database)/documents/notebooks/$(notebookId));
+      return isOwner(notebook.data.ownerId) || isShared(notebookId, permission);
+    }
+    
+    // --- User Profile Data ---
+    match /users/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // --- Notebooks Feature Rules ---
+
+    // Notebooks Collection
+    match /notebooks/{notebookId} {
+      allow read: if isAuthenticated() && canAccessNotebook(notebookId, 'viewer');
+      allow create: if isAuthenticated() && isOwner(request.resource.data.ownerId);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.ownerId);
+
+      // Validation for notebook documents
+      allow write: if request.resource.data.title is string &&
+                      request.resource.data.title.size() > 0 &&
+                      request.resource.data.title.size() < 100 &&
+                      request.resource.data.color is string &&
+                      request.resource.data.createdAt is timestamp &&
+                      request.resource.data.updatedAt is timestamp &&
+                      request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // Sections Collection
+    match /sections/{sectionId} {
+      allow read: if isAuthenticated() && canAccessNotebook(resource.data.notebookId, 'viewer');
+      allow create, update, delete: if isAuthenticated() && canAccessNotebook(request.resource.data.notebookId, 'editor');
+
+      // Validation for section documents
+      allow write: if request.resource.data.notebookId is string &&
+                      exists(/databases/$(database)/documents/notebooks/$(request.resource.data.notebookId)) &&
+                      request.resource.data.title is string &&
+                      request.resource.data.title.size() > 0 &&
+                      request.resource.data.title.size() < 100 &&
+                      request.resource.data.order is number;
+    }
+
+    // Pages Collection
+    match /pages/{pageId} {
+      function isPageAccessible(permission) {
+        let section = get(/databases/$(database)/documents/sections/$(resource.data.sectionId));
+        return canAccessNotebook(section.data.notebookId, permission);
+      }
+      
+      allow read: if isAuthenticated() && isPageAccessible('viewer');
+      allow create, update, delete: if isAuthenticated() && isPageAccessible('editor');
+
+      // Validation for page documents
+      allow write: if request.resource.data.sectionId is string &&
+                      exists(/databases/$(database)/documents/sections/$(request.resource.data.sectionId)) &&
+                      request.resource.data.title is string &&
+                      request.resource.data.title.size() < 200 &&
+                      request.resource.data.content is map &&
+                      string(request.resource.data.content).size() < 1024 * 1024 && // 1MB limit
+                      request.resource.data.searchText is string &&
+                      request.resource.data.version is number &&
+                      request.resource.data.createdAt is timestamp &&
+                      request.resource.data.updatedAt is timestamp;
+    }
+
+    // Attachments Collection
+    match /attachments/{attachmentId} {
+       function isParentPageAccessible(pageId, permission) {
+          let pages = get(/databases/$(database)/documents/pages/$(pageId));
+          let sectionId = pages.data.sectionId;
+          let section = get(/databases/$(database)/documents/sections/$(sectionId));
+          let notebookId = section.data.notebookId;
+          return canAccessNotebook(notebookId, permission);
+       }
+       
+       allow read: if isAuthenticated() && isParentPageAccessible(resource.data.pageId, 'viewer');
+       allow create, delete: if isAuthenticated() && isParentPageAccessible(request.resource.data.pageId, 'editor');
+       
+       // Validation for attachments
+       allow write: if request.resource.data.pageId is string &&
+                       exists(/databases/$(database)/documents/pages/$(request.resource.data.pageId)) &&
+                       request.resource.data.filename is string &&
+                       request.resource.data.url is string &&
+                       request.resource.data.mimeType is string &&
+                       request.resource.data.size is number &&
+                       request.resource.data.size < 10 * 1024 * 1024 && // 10MB limit
+                       request.resource.data.uploadedAt is timestamp;
+    }
+
+    // Revisions Collection
+    match /revisions/{revisionId} {
+      function isParentPageAccessible(pageId, permission) {
+          let pages = get(/databases/$(database)/documents/pages/$(pageId));
+          let sectionId = pages.data.sectionId;
+          let section = get(/databases/$(database)/documents/sections/$(sectionId));
+          let notebookId = section.data.notebookId;
+          return canAccessNotebook(notebookId, permission);
+      }
+      
+      allow read: if isAuthenticated() && isParentPageAccessible(resource.data.pageId, 'viewer');
+      allow create: if isAuthenticated() && isParentPageAccessible(request.resource.data.pageId, 'editor');
+      // Revisions should be immutable, so no update/delete
+      allow update, delete: if false;
+
+      // Validation for revisions
+      allow write: if request.resource.data.pageId is string &&
+                      exists(/databases/$(database)/documents/pages/$(request.resource.data.pageId)) &&
+                      request.resource.data.snapshot is map &&
+                      request.resource.data.createdAt is timestamp &&
+                      request.resource.data.authorId == request.auth.uid;
+    }
+
+    // Shares Collection
+    match /shares/{shareId} {
+      // The user who is being shared with can read the share document
+      allow read: if isAuthenticated() && (isOwner(resource.data.sharedWithUserId) || canAccessNotebook(resource.data.notebookId, 'viewer'));
+      // Only the notebook owner can create, update, or delete shares
+      allow create, update, delete: if isAuthenticated() && canAccessNotebook(request.resource.data.notebookId, 'editor');
+
+      // Validation for shares
+      allow write: if request.resource.data.notebookId is string &&
+                      exists(/databases/$(database)/documents/notebooks/$(request.resource.data.notebookId)) &&
+                      request.resource.data.sharedWithUserId is string &&
+                      exists(/databases/$(database)/documents/users/$(request.resource.data.sharedWithUserId)) &&
+                      request.resource.data.permission in ['viewer', 'editor'];
+    }
+  }
+}
