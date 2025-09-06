@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState, useReducer, useCallback, RefObject } from 'react';
+import { useEffect, useState, useReducer, useCallback, RefObject, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -20,7 +20,6 @@ import type { Page } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { savePageClient } from '@/lib/client-helpers';
 import { EditorToolbar } from './editor-toolbar';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -30,6 +29,7 @@ import { FontFamily } from '@/lib/tiptap/font-family';
 import { FontSize } from '@/lib/tiptap/font-size';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import { usePageSaver } from '@/hooks/use-page-saver';
 
 interface PageEditorProps {
   page: Page;
@@ -37,66 +37,19 @@ interface PageEditorProps {
   editorPanelRef: RefObject<HTMLDivElement>;
 }
 
-type EditorStatus = 'saved' | 'saving' | 'conflict' | 'error' | 'unsaved';
-type EditorState = {
-  status: EditorStatus;
-  lastSaved: string | null;
-  serverVersion: number;
-  clientVersion: number;
-  serverContent: any | null;
-  serverTitle: string | null;
-};
-type EditorAction = 
-  | { type: 'EDITING' }
-  | { type: 'SAVING' }
-  | { type: 'SAVE_SUCCESS'; newVersion: number; timestamp: string }
-  | { type: 'CONFLICT'; serverVersion: number; serverContent: any; serverTitle: string; }
-  | { type: 'RESOLVED' }
-  | { type: 'SAVE_ERROR' }
-  | { type: 'RESET'; page: Page };
-
-
-function editorReducer(state: EditorState, action: EditorAction): EditorState {
-    switch(action.type) {
-        case 'EDITING':
-            return { ...state, status: 'unsaved' };
-        case 'SAVING':
-            return { ...state, status: 'saving' };
-        case 'SAVE_SUCCESS':
-            return { ...state, status: 'saved', clientVersion: action.newVersion, serverVersion: action.newVersion, lastSaved: action.timestamp, serverContent: null, serverTitle: null };
-        case 'CONFLICT':
-            return { ...state, status: 'conflict', serverVersion: action.serverVersion, serverContent: action.serverContent, serverTitle: action.serverTitle };
-        case 'RESOLVED':
-             return { ...state, status: 'saved' }; // Assume we're good after resolving
-        case 'SAVE_ERROR':
-            return { ...state, status: 'error' };
-        case 'RESET':
-            return {
-                status: 'saved',
-                lastSaved: action.page.updatedAt.toDate().toLocaleTimeString(),
-                serverVersion: action.page.version,
-                clientVersion: action.page.version,
-                serverContent: null,
-                serverTitle: null,
-            };
-        default:
-            return state;
-    }
-}
-
 export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanelRef }: PageEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(initialPage.title);
 
-  const [state, dispatch] = useReducer(editorReducer, {
-      status: 'saved',
-      lastSaved: initialPage.updatedAt.toDate().toLocaleTimeString(),
-      serverVersion: initialPage.version,
-      clientVersion: initialPage.version,
-      serverContent: null,
-      serverTitle: null,
-  });
+  const {
+    state,
+    dispatch,
+    savePage,
+    resolveConflict,
+    isSaving,
+    lastSaved,
+  } = usePageSaver(initialPage);
 
   const editor = useEditor({
     extensions: [
@@ -124,9 +77,8 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
         heading: {
           levels: [1, 2, 3],
         },
-        textStyle: false, // Disable StarterKit's textStyle to use the standalone one
-        // The Underline keyboard shortcut is handled here.
-        underline: false, // Use the standalone Underline extension to add the shortcut
+        textStyle: false, 
+        underline: false, 
       }),
       Placeholder.configure({
         placeholder: "Start writing your notes here...",
@@ -155,43 +107,18 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
     },
   });
 
-  const handleSave = useCallback(async () => {
-    if (!editor || !user || state.status === 'conflict' || state.status === 'saving') return;
-    
-    dispatch({ type: 'SAVING' });
-    const contentJSON = editor.getJSON();
+  const handleManualSave = useCallback(() => {
+    if (!editor) return;
+    savePage(title, editor.getJSON(), true); // true for manual save
+  }, [editor, savePage, title]);
 
-    try {
-      const result = await savePageClient(initialPage.id, title, contentJSON, state.clientVersion, initialPage.canvasColor || null);
-      if (result.status === 'ok') {
-        dispatch({ type: 'SAVE_SUCCESS', newVersion: result.newVersion, timestamp: new Date().toLocaleTimeString() });
-        toast({ title: '✓ Progress Saved' });
-      }
-    } catch (error: any) {
-        if (error.response?.status === 409) { // Conflict
-            const conflictData = await error.response.json();
-            dispatch({ type: 'CONFLICT', serverVersion: conflictData.serverVersion, serverContent: conflictData.serverContent, serverTitle: conflictData.serverTitle });
-        } else {
-            console.error('Error saving page:', error);
-            dispatch({ type: 'SAVE_ERROR' });
-            const errorMessage = error.response?.error || 'Could not save changes.';
-            toast({ variant: 'destructive', title: 'Save Error', description: errorMessage });
-        }
-    }
-  }, [editor, user, state.status, state.clientVersion, initialPage.id, initialPage.canvasColor, title, toast]);
-  
 
-  // Auto-save timer
+  // Auto-save on content or title changes
   useEffect(() => {
-    const saveInterval = 5 * 60 * 1000; // 5 minutes
-    
-    if (state.status === 'unsaved' && editor) {
-      const timer = setTimeout(() => {
-        handleSave();
-      }, saveInterval);
-      return () => clearTimeout(timer);
-    }
-  }, [state.status, handleSave, editor]);
+    if (state.status !== 'unsaved' || !editor) return;
+    const content = editor.getJSON();
+    savePage(title, content);
+  }, [state.status, title, editor, savePage]);
 
 
   // Live updates from Firestore for external changes
@@ -205,7 +132,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
           }
       });
       return () => unsub();
-  }, [initialPage.id, user, state.clientVersion, editor]);
+  }, [initialPage.id, user, state.clientVersion, editor, dispatch]);
 
 
   // Effect to reset state when the page prop changes
@@ -214,36 +141,23 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
         setTitle(initialPage.title);
         dispatch({ type: 'RESET', page: initialPage });
         
-        // Check if content is different before resetting to avoid losing unsaved changes
         const isSameContent = JSON.stringify(editor.getJSON()) === JSON.stringify(initialPage.content);
         if(!isSameContent) {
             editor.commands.setContent(initialPage.content, false);
         }
     }
-  }, [initialPage, editor]);
+  }, [initialPage, editor, dispatch]);
   
   const handleKeepMyChanges = async () => {
-    if (!editor || !user) return;
-    const newVersion = state.serverVersion;
-    dispatch({ type: 'SAVING' });
-    try {
-       const result = await savePageClient(initialPage.id, title, editor.getJSON(), newVersion, initialPage.canvasColor || null);
-       if(result.status === 'ok') {
-           dispatch({ type: 'SAVE_SUCCESS', newVersion: result.newVersion, timestamp: new Date().toLocaleTimeString() });
-           toast({ title: "Your changes have been saved." });
-       }
-    } catch(e) {
-        dispatch({ type: 'SAVE_ERROR' });
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not force save.' });
-    }
+    if (!editor) return;
+    resolveConflict('client', editor.getJSON(), title);
   };
 
   const handleDiscardMyChanges = () => {
     if (editor && state.serverContent && state.serverTitle) {
       editor.commands.setContent(state.serverContent, false);
       setTitle(state.serverTitle);
-      dispatch({ type: 'SAVE_SUCCESS', newVersion: state.serverVersion, timestamp: new Date().toLocaleTimeString() });
-      toast({ title: 'Your changes were discarded.' });
+      resolveConflict('server');
     }
   };
   
@@ -259,9 +173,11 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
     };
 
   const getStatusMessage = () => {
+      if (isSaving) {
+        return <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin"/>Saving...</span>;
+      }
       switch(state.status) {
-          case 'saving': return <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin"/>Saving...</span>;
-          case 'saved': return `Saved at ${state.lastSaved}`;
+          case 'saved': return `Saved at ${lastSaved}`;
           case 'conflict': return 'Conflict detected!';
           case 'error': return 'Error saving';
           case 'unsaved': return 'Unsaved changes';
@@ -301,7 +217,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanel
                 />
                 <div className="text-xs text-muted-foreground whitespace-nowrap">{getStatusMessage()}</div>
             </div>
-             <EditorToolbar editor={editor} onColorChange={handleColorSelect} initialColor={initialPage.canvasColor} onManualSave={handleSave} saveStatus={state.status} container={editorPanelRef.current} />
+             <EditorToolbar editor={editor} onColorChange={handleColorSelect} initialColor={initialPage.canvasColor} onManualSave={handleManualSave} saveStatus={state.status} container={editorPanelRef.current} />
         </div>
        
         <div className="relative flex-1 overflow-y-auto" onClick={() => editor.commands.focus()}>
