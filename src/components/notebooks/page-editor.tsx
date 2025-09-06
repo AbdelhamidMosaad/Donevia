@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useReducer, useCallback } from 'react';
+import { useEffect, useState, useReducer, useCallback, RefObject } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -25,6 +25,7 @@ import { Color } from '@tiptap/extension-color';
 interface PageEditorProps {
   page: Page;
   onCanvasColorChange: (color: string) => void;
+  editorPanelRef: RefObject<HTMLDivElement>;
 }
 
 type EditorStatus = 'saved' | 'saving' | 'conflict' | 'error' | 'unsaved';
@@ -74,7 +75,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
     }
 }
 
-export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEditorProps) {
+export function PageEditor({ page: initialPage, onCanvasColorChange, editorPanelRef }: PageEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(initialPage.title);
@@ -257,7 +258,7 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
                 </AlertDescription>
             </Alert>
         )}
-        <div className="p-4 border-b">
+        <div className="flex items-center p-4 border-b">
             <input
                 type="text"
                 value={title}
@@ -265,13 +266,13 @@ export function PageEditor({ page: initialPage, onCanvasColorChange }: PageEdito
                     setTitle(e.target.value);
                     dispatch({ type: 'EDITING' });
                 }}
-                className="w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
+                className="flex-grow w-full text-3xl font-bold bg-transparent outline-none border-none focus:ring-0 text-black"
                 placeholder="Page Title"
                 disabled={state.status === 'conflict'}
             />
-            <p className="text-xs text-muted-foreground mt-1">{getStatusMessage()}</p>
+            <div className="text-xs text-muted-foreground whitespace-nowrap">{getStatusMessage()}</div>
         </div>
-        <EditorToolbar editor={editor} onColorChange={handleColorSelect} initialColor={initialPage.canvasColor} onManualSave={handleSave} saveStatus={state.status} />
+        <EditorToolbar editor={editor} onColorChange={handleColorSelect} initialColor={initialPage.canvasColor} onManualSave={handleSave} saveStatus={state.status} container={editorPanelRef.current} />
         <div className="relative flex-1 overflow-y-auto" onClick={() => editor.commands.focus()}>
             <EditorContent editor={editor} />
         </div>

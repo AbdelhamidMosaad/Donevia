@@ -155,7 +155,7 @@ export default function NotebooksPageWithId() {
                         </Button>
                     </div>
                     {selectedPage ? (
-                    <PageEditor key={selectedPage.id} page={selectedPage} onCanvasColorChange={setCanvasColor} />
+                    <PageEditor key={selectedPage.id} page={selectedPage} onCanvasColorChange={setCanvasColor} editorPanelRef={editorPanelRef} />
                     ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                         <BrainCircuit className="h-16 w-16 mb-4" />

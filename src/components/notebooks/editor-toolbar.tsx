@@ -92,6 +92,7 @@ interface EditorToolbarProps {
   initialColor?: string;
   onManualSave: () => void;
   saveStatus: 'saved' | 'saving' | 'conflict' | 'error' | 'unsaved';
+  container?: HTMLElement | null;
 }
 
 const ToolbarButton = ({
@@ -137,7 +138,7 @@ const ToolbarButton = ({
 };
 
 
-export function EditorToolbar({ editor, onColorChange, initialColor, onManualSave, saveStatus }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onColorChange, initialColor, onManualSave, saveStatus, container }: EditorToolbarProps) {
   const [currentColor, setCurrentColor] = useState(initialColor || '#FFFFFF');
   
   const setLink = useCallback(() => {
@@ -201,7 +202,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                     <p>Font Family</p>
                 </TooltipContent>
             </Tooltip>
-            <SelectContent>
+            <SelectContent container={container}>
                 <SelectItem value="default">Default</SelectItem>
                 {fonts.map(font => (
                     <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>
@@ -222,7 +223,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                 <p>Font Size</p>
                 </TooltipContent>
             </Tooltip>
-            <SelectContent>
+            <SelectContent container={container}>
                 <SelectItem value="default">Default</SelectItem>
                 {fontSizes.map((size) => (
                 <SelectItem key={size} value={size}>
@@ -245,7 +246,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                     <p>Text Color</p>
                 </TooltipContent>
             </Tooltip>
-            <DropdownMenuContent className="grid grid-cols-4 gap-1 p-2" align="start">
+            <DropdownMenuContent className="grid grid-cols-4 gap-1 p-2" align="start" container={container}>
                 {textColors.map((color) => (
                     <DropdownMenuItem
                         key={color.name}
@@ -308,7 +309,7 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
                     <p>Change canvas background</p>
                 </TooltipContent>
             </Tooltip>
-            <DropdownMenuContent>
+            <DropdownMenuContent container={container}>
                 {canvasColors.map((c) => (
                     <DropdownMenuItem key={c} onSelect={() => handleColorChange(c)}>
                         <div className="flex items-center gap-2">
