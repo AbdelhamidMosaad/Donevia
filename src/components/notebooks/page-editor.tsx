@@ -12,13 +12,13 @@ import { useDebouncedCallback } from 'use-debounce';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { savePageClient, saveRevisionClient } from '@/lib/client-helpers';
+import { savePageClient } from '@/lib/client-helpers';
 import { EditorToolbar } from './editor-toolbar';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, History, Loader2 } from 'lucide-react';
+import { Terminal, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { VersionHistoryDrawer } from './version-history/version-history-drawer';
+
 
 interface PageEditorProps {
   page: Page;
@@ -72,7 +72,6 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(initialPage.title);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const [state, dispatch] = useReducer(editorReducer, {
       status: 'saved',
@@ -90,7 +89,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
         link: false,
       }),
       Placeholder.configure({
-        placeholder: "Start writing your notes here... Type '/' for commands.",
+        placeholder: "Start writing your notes here...",
       }),
       Underline,
       Link.configure({
@@ -132,7 +131,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
             toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save changes.' });
         }
     }
-  }, 1500);
+  }, 2000);
   
   const handleTitleDebounce = useDebouncedCallback(() => {
     if (state.status !== 'conflict') {
@@ -194,28 +193,6 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
     }
   };
 
-  const handleRestoreVersion = useCallback(async (content: any, revisionTitle: string) => {
-    if (!editor || !user) return;
-    // 1. Save the current state as a revision before overwriting
-    await saveRevisionClient(initialPage.id, title, editor.getJSON());
-
-    // 2. Update editor with restored content
-    editor.commands.setContent(content, false);
-    setTitle(revisionTitle);
-
-    // 3. Force-save the restored content
-    const result = await savePageClient(initialPage.id, revisionTitle, content, state.serverVersion);
-    if(result.status === 'ok') {
-         dispatch({ type: 'SAVE_SUCCESS', newVersion: result.newVersion, timestamp: new Date().toLocaleTimeString() });
-        toast({title: "Version restored", description: "The page has been updated."});
-    } else {
-        dispatch({ type: 'SAVE_ERROR' });
-        toast({variant: 'destructive', title: 'Error', description: 'Failed to restore version.'});
-    }
-    setIsHistoryOpen(false);
-
-  }, [editor, user, initialPage.id, title, state.serverVersion, toast]);
-
   const getStatusMessage = () => {
       switch(state.status) {
           case 'saving': return <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin"/>Saving...</span>;
@@ -259,23 +236,12 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
                 />
                 <p className="text-xs text-muted-foreground mt-1">{getStatusMessage()}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)}>
-                <History className="mr-2 h-4 w-4" />
-                History
-            </Button>
         </div>
       <div className="relative flex-1 overflow-y-auto p-4 md:p-8" onClick={() => editor.commands.focus()}>
         <EditorToolbar editor={editor} />
         <EditorContent editor={editor} />
       </div>
     </div>
-     <VersionHistoryDrawer 
-        page={initialPage} 
-        isOpen={isHistoryOpen} 
-        onClose={() => setIsHistoryOpen(false)}
-        onRestore={handleRestoreVersion}
-        currentContent={editor.getJSON()}
-     />
     </>
   );
 }

@@ -13,11 +13,13 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Page } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export default function NotebooksPageWithId() {
   const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
+  const {toast} = useToast();
   const pageId = params.pageId as string;
 
   const [selectedPage, setSelectedPage] = useAtom(selectedPageAtom);
@@ -26,6 +28,11 @@ export default function NotebooksPageWithId() {
 
   useEffect(() => {
     if (user && pageId) {
+      if (pageId.startsWith('new')) {
+         // This is a placeholder for a new page, don't fetch.
+         // The creation flow should handle redirection.
+         return;
+      }
       const pageRef = doc(db, 'users', user.uid, 'pages', pageId);
       const unsubscribe = onSnapshot(pageRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -33,17 +40,21 @@ export default function NotebooksPageWithId() {
           setSelectedPage(pageData);
           
           // Also update the notebook and section context
-          getDoc(doc(db, 'users', user.uid, 'sections', pageData.sectionId)).then(sectionSnap => {
-              if(sectionSnap.exists()) {
-                  const sectionData = {id: sectionSnap.id, ...sectionSnap.data()};
-                  setSelectedSection(sectionData as any);
-                  getDoc(doc(db, 'users', user.uid, 'notebooks', sectionData.notebookId)).then(notebookSnap => {
-                      if(notebookSnap.exists()) {
-                          setSelectedNotebook({id: notebookSnap.id, ...notebookSnap.data()} as any);
-                      }
-                  })
-              }
-          })
+          if (pageData.sectionId) {
+            getDoc(doc(db, 'users', user.uid, 'sections', pageData.sectionId)).then(sectionSnap => {
+                if(sectionSnap.exists()) {
+                    const sectionData = {id: sectionSnap.id, ...sectionSnap.data()};
+                    setSelectedSection(sectionData as any);
+                    if (sectionData.notebookId) {
+                         getDoc(doc(db, 'users', user.uid, 'notebooks', sectionData.notebookId)).then(notebookSnap => {
+                            if(notebookSnap.exists()) {
+                                setSelectedNotebook({id: notebookSnap.id, ...notebookSnap.data()} as any);
+                            }
+                        })
+                    }
+                }
+            })
+          }
 
         } else {
            toast({variant: 'destructive', title: 'Page not found'});
@@ -52,7 +63,7 @@ export default function NotebooksPageWithId() {
       });
        return () => unsubscribe();
     }
-  }, [user, pageId, setSelectedPage, router, setSelectedNotebook, setSelectedSection]);
+  }, [user, pageId, setSelectedPage, router, setSelectedNotebook, setSelectedSection, toast]);
 
 
   // Reset selections on unmount/user change
