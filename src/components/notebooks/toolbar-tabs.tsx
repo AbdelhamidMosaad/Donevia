@@ -12,12 +12,12 @@ export function ToolbarTabs({ children }: ToolbarTabsProps) {
     const tabs = React.Children.toArray(children) as React.ReactElement[];
     return (
         <Tabs defaultValue={tabs[1].props.name} className="mt-2">
-            <TabsList className="bg-transparent p-0 justify-start h-auto rounded-none border-b-0" style={{ backgroundColor: '#C4E1E6' }}>
+            <TabsList className="bg-transparent p-0 justify-start h-auto rounded-none border-b" style={{ backgroundColor: '#C4E1E6' }}>
                 {tabs.map(tab => (
                     <TabsTrigger 
                         key={tab.props.name} 
                         value={tab.props.name}
-                        className="text-black data-[state=active]:text-black data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+                        className="text-black data-[state=active]:text-white data-[state=active]:bg-primary data-[state=active]:shadow-none rounded-t-md rounded-b-none border-b-0"
                     >
                         {tab.props.name}
                     </TabsTrigger>
