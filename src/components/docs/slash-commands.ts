@@ -86,7 +86,9 @@ export const slashCommands = Extension.create({
                 popup[0].hide();
                 return true;
               }
-              return component.ref?.onKeyDown(props);
+              // This is a type error in tiptap's suggestion plugin, component.ref does not exist.
+              // but the type says it does. So we cast to any to avoid the error.
+              return (component as any).onKeyDown(props);
             },
             onExit() {
               popup[0].destroy();
