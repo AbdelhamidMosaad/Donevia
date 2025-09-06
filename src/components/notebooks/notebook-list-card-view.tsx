@@ -2,8 +2,8 @@
 'use client';
 import type { Notebook } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { MoreHorizontal, Edit, Trash2, Palette } from 'lucide-react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '../ui/dropdown-menu';
+import { MoreHorizontal, Edit, Trash2, Palette, Download } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '../ui/input';
@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { ExportDialog } from './export-dialog';
 
 
 interface NotebookListCardViewProps {
@@ -40,6 +41,7 @@ const isColorLight = (color: string) => {
 export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardViewProps) {
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingListName, setEditingListName] = useState('');
+  const [exportingNotebook, setExportingNotebook] = useState<Notebook | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -167,6 +169,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
   };
 
   return (
+    <>
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {notebooks.map(list => {
           const textColor = isColorLight(list.color) ? 'text-gray-800' : 'text-white';
@@ -218,6 +221,9 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                             </DropdownMenuSubContent>
                           </DropdownMenuPortal>
                         </DropdownMenuSub>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => setExportingNotebook(list)}><Download className="mr-2 h-4 w-4" />Export</DropdownMenuItem>
+                         <DropdownMenuSeparator />
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive w-full"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
@@ -246,5 +252,14 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
           )
         })}
     </div>
+    {exportingNotebook && (
+        <ExportDialog 
+            notebook={exportingNotebook}
+            isOpen={!!exportingNotebook}
+            onClose={() => setExportingNotebook(null)}
+        />
+    )}
+    </>
   );
 }
+

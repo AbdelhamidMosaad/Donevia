@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import type { Notebook, Section, Page } from '@/lib/types';
 import { saveAs } from 'file-saver';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import { htmlToMd } from 'html-to-md';
+import Table from '@tiptap/extension-table'
+import TableCell from '@tiptap/extension-table-cell'
+import TableHeader from '@tiptap/extension-table-header'
+import TableRow from '@tiptap/extension-table-row'
 
 
 export function useNotebookExporter() {
@@ -25,7 +29,8 @@ export function useNotebookExporter() {
 
     const sectionsQuery = query(
       collection(db, 'users', user.uid, 'sections'),
-      where('notebookId', '==', notebookId)
+      where('notebookId', '==', notebookId),
+      orderBy('order', 'asc')
     );
     const sectionsSnap = await getDocs(sectionsQuery);
     const sections = sectionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
@@ -34,7 +39,8 @@ export function useNotebookExporter() {
     for (const section of sections) {
       const pagesQuery = query(
         collection(db, 'users', user.uid, 'pages'),
-        where('sectionId', '==', section.id)
+        where('sectionId', '==', section.id),
+        orderBy('createdAt', 'asc')
       );
       const pagesSnap = await getDocs(pagesQuery);
       pagesBySection[section.id] = pagesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Page));
@@ -49,6 +55,12 @@ export function useNotebookExporter() {
             StarterKit,
             Underline,
             Link.configure({ openOnClick: false, autolink: false }),
+            Table.configure({
+                resizable: true,
+            }),
+            TableRow,
+            TableHeader,
+            TableCell,
         ]);
 
         return htmlToMd(html);
