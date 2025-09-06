@@ -16,9 +16,8 @@ import { savePageClient } from '@/lib/client-helpers';
 import { EditorToolbar } from './editor-toolbar';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, History } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { VersionHistoryDrawer } from './version-history/version-history-drawer';
 
 interface PageEditorProps {
   page: Page;
@@ -72,7 +71,6 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(initialPage.title);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const [state, dispatch] = useReducer(editorReducer, {
       status: 'saved',
@@ -206,17 +204,6 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
       }
   }
 
-  const handleRestore = (content: any, title: string) => {
-    if(editor) {
-        editor.commands.setContent(content, false);
-        setTitle(title);
-        dispatch({ type: 'EDITING' });
-        handleDebouncedSave();
-        setIsHistoryOpen(false);
-        toast({ title: 'Version Restored', description: 'The page has been updated to the selected version.'});
-    }
-  }
-
   if (!editor) return null;
 
   return (
@@ -249,22 +236,11 @@ export function PageEditor({ page: initialPage }: PageEditorProps) {
                 />
                 <p className="text-xs text-muted-foreground mt-1">{getStatusMessage()}</p>
             </div>
-            <Button variant="outline" onClick={() => setIsHistoryOpen(true)}>
-                <History className="mr-2 h-4 w-4" />
-                History
-            </Button>
         </div>
       <div className="relative flex-1 overflow-y-auto p-8" onClick={() => editor.commands.focus()}>
         <EditorToolbar editor={editor} />
         <EditorContent editor={editor} />
       </div>
-      <VersionHistoryDrawer 
-        page={initialPage}
-        isOpen={isHistoryOpen} 
-        onClose={() => setIsHistoryOpen(false)}
-        onRestore={handleRestore}
-        currentContent={editor.getJSON()}
-      />
     </div>
   );
 }
