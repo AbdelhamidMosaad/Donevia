@@ -5,6 +5,7 @@ import { createContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { WelcomeScreen } from '@/components/welcome-screen';
 
 interface AuthContextType {
   user: User | null;
@@ -30,15 +31,26 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setLoading(false);
+      setAuthChecked(true);
     });
 
     return () => unsubscribeAuth();
   }, []);
+  
+  useEffect(() => {
+    // Hide welcome screen after a short delay once auth is checked
+    if (authChecked) {
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 1500); // Keep welcome screen for at least 1.5 seconds for branding
+      return () => clearTimeout(timer);
+    }
+  }, [authChecked]);
 
   useEffect(() => {
     let unsubscribeSettings = () => {};
@@ -82,9 +94,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
      return () => unsubscribeSettings();
   }, [user]);
+  
+  if (loading) {
+    return <WelcomeScreen />;
+  }
+
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading: !authChecked }}>
       {children}
     </AuthContext.Provider>
   );

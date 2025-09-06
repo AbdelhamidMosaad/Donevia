@@ -12,6 +12,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect } from 'react';
+import { WelcomeScreen } from '@/components/welcome-screen';
 
 
 export default function Home() {
@@ -19,15 +20,11 @@ export default function Home() {
   const { user, loading } = useAuth();
   
   useEffect(() => {
-    if (user) {
+    if (!loading && user) {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user, loading, router]);
   
-  useEffect(() => {
-    // This is handled globally by AuthProvider now
-  }, []);
-
   const features = [
     {
       icon: <LayoutDashboard className="h-8 w-8 text-primary" />,
@@ -67,7 +64,7 @@ export default function Home() {
   };
   
   if (loading || user) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>
+    return <WelcomeScreen />
   }
 
   return (
