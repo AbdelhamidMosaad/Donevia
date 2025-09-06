@@ -4,7 +4,7 @@
 import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2
+  List, ListOrdered, Link, Quote, Code, CaseSensitive, Check, Brush, Save, Loader2, ChevronDown
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 
 const fonts = [
@@ -202,37 +203,33 @@ export function EditorToolbar({ editor, onColorChange, initialColor, onManualSav
         <Separator orientation="vertical" className="h-6 mx-1" />
         
         {/* Canvas Color */}
-         <Popover>
+        <DropdownMenu>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <PopoverTrigger asChild>
+                    <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="h-9">
-                        <Brush className="h-4 w-4 mr-2" />
-                        Canvas Color
+                            <Brush className="h-4 w-4 mr-2" />
+                            Canvas Color
+                            <ChevronDown className="h-4 w-4 ml-2" />
                         </Button>
-                    </PopoverTrigger>
+                    </DropdownMenuTrigger>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>Change canvas background</p>
                 </TooltipContent>
             </Tooltip>
-            <PopoverContent className="w-auto p-2">
-                <div className="grid grid-cols-6 gap-1">
+            <DropdownMenuContent>
                 {canvasColors.map((c) => (
-                    <button
-                    key={c}
-                    onClick={() => handleColorChange(c)}
-                    className={cn(
-                        'h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center'
-                    )}
-                    style={{ backgroundColor: c }}
-                    >
-                    {currentColor === c && <Check className="h-4 w-4 text-black" />}
-                    </button>
+                    <DropdownMenuItem key={c} onSelect={() => handleColorChange(c)}>
+                        <div className="flex items-center gap-2">
+                           <div className="h-4 w-4 rounded-full border" style={{ backgroundColor: c }} />
+                           <span>{c}</span>
+                        </div>
+                         {currentColor === c && <Check className="h-4 w-4 ml-auto" />}
+                    </DropdownMenuItem>
                 ))}
-                </div>
-            </PopoverContent>
-         </Popover>
+            </DropdownMenuContent>
+        </DropdownMenu>
 
          <div className="flex-grow" />
 
