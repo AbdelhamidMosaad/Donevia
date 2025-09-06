@@ -55,10 +55,15 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { 
-          levels: [1, 2, 3],
-        },
+        // Disable the default heading configuration
+        heading: false,
       }),
+      // Re-add the heading extension with custom levels
+      StarterKit.configure({
+          heading: {
+            levels: [1, 2, 3],
+          },
+      }).heading,
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
       Link.configure({ openOnClick: true, autolink: true }),

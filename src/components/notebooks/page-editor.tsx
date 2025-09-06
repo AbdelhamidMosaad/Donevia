@@ -53,11 +53,16 @@ export function PageEditor({ page: initialPage, onCanvasColorChange: setCanvasCo
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        heading: { 
-          levels: [1, 2, 3],
-        },
+       StarterKit.configure({
+        // Disable the default heading configuration
+        heading: false,
       }),
+      // Re-add the heading extension with custom levels
+      StarterKit.configure({
+          heading: {
+            levels: [1, 2, 3],
+          },
+      }).heading,
       Placeholder.configure({ placeholder: "Type '/' for commands or start writing..." }),
       Underline,
       Link.configure({ openOnClick: true, autolink: true, linkOnPaste: true }),
