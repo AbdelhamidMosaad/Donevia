@@ -189,7 +189,7 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
                       onClick={(e) => e.preventDefault()}
                     />
                   ) : (
-                    <CardTitle className="font-headline hover:underline">
+                    <CardTitle className="font-headline hover:underline text-xl">
                       {list.title}
                     </CardTitle>
                   )}
@@ -248,4 +248,3 @@ export function NotebookListCardView({ notebooks, onDelete }: NotebookListCardVi
     </div>
   );
 }
-

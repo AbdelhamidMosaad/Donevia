@@ -269,7 +269,7 @@ export function NotebookSidebar() {
     <>
     <div className="h-full flex flex-col p-2 bg-muted/50">
       <div className="flex items-center justify-between p-2">
-        <h2 className="text-lg font-bold font-headline truncate">{selectedNotebook?.title || 'Notebooks'}</h2>
+        <h2 className="text-base font-bold font-headline truncate">{selectedNotebook?.title || 'Notebooks'}</h2>
         <div className="flex items-center">
              <Button variant="ghost" size="icon" onClick={() => router.push('/notebooks')} title="Back to Notebooks">
               <Book className="h-4 w-4" />
