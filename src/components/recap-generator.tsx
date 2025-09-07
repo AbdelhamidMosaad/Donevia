@@ -25,6 +25,7 @@ export function RecapGenerator({ allTasks }: RecapGeneratorProps) {
     const tasksForPeriod = useMemo(() => {
         const now = moment();
         return allTasks.filter(task => {
+            if (!task.createdAt) return false; // Add this guard clause
             const taskDate = moment(task.createdAt.toDate());
             if (period === 'daily') {
                 return taskDate.isSame(now, 'day');
