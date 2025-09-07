@@ -160,7 +160,7 @@ export default function Home() {
                         </ul>
                     </div>
                      <Image
-                        src="https://picsum.photos/600/400"
+                        src="https://images.unsplash.com/photo-1483058712412-4245e9b90334?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwcm9kdWN0aXZpdHl8ZW58MHx8fHwxNzU3MjQyMDAyfDA&ixlib=rb-4.1.0&q=80&w=1080"
                         width="600"
                         height="400"
                         alt="AI Learning Tools"
@@ -235,3 +235,4 @@ export default function Home() {
     
 
     
+
