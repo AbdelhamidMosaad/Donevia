@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, FileText, BotMessageSquare, GitBranch, PenSquare, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, FileText, BotMessageSquare, GitBranch, PenSquare, BrainCircuit, Repeat, Briefcase, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DoneviaLogo } from '@/components/logo';
@@ -27,31 +27,40 @@ export default function Home() {
   
   const features = [
     {
-      icon: <LayoutDashboard className="h-8 w-8 text-primary" />,
-      title: 'Dynamic Task Management',
-      description: 'List, Table, Calendar, and Kanban views to organize your work.'
+      icon: <Repeat className="h-8 w-8 text-primary" />,
+      title: 'Build Winning Habits',
+      description: 'Track daily habits with a weekly view, monitor progress with streaks, and build routines that lead to success.'
     },
     {
-      icon: <FileText className="h-8 w-8 text-primary" />,
-      title: 'Rich Documents & Notes',
-      description: 'A powerful rich text editor with slash commands for quick formatting.'
+      icon: <Briefcase className="h-8 w-8 text-primary" />,
+      title: 'Advanced CRM Pipeline',
+      description: 'Manage clients from lead to invoice with a customizable Kanban board, win/loss tracking, and powerful analytics.'
     },
     {
-      icon: <PenSquare className="h-8 w-8 text-primary" />,
-      title: 'Digital Whiteboard',
-      description: 'An infinite canvas for brainstorming with drawing tools and sticky notes.'
-    },
-    {
-      icon: <GitBranch className="h-8 w-8 text-primary" />,
-      title: 'Mind Mapping',
-      description: 'Create intuitive mind maps to visualize your ideas and strategies.'
-    },
-    {
-      icon: <BrainCircuit className="h-8 w-8 text-primary" />,
-      title: 'Notebooks',
-      description: 'Organize your notes into notebooks, sections, and pages, just like OneNote.'
+      icon: <GraduationCap className="h-8 w-8 text-primary" />,
+      title: 'AI-Powered Learning Tools',
+      description: 'Turn any document or text into comprehensive lecture notes, custom quizzes, or interactive flashcards instantly.'
     }
   ];
+
+  const otherFeatures = [
+      {
+        icon: <LayoutDashboard className="h-6 w-6 text-primary" />,
+        title: 'Dynamic Task Management',
+      },
+      {
+        icon: <BrainCircuit className="h-6 w-6 text-primary" />,
+        title: 'OneNote-style Notebooks',
+      },
+      {
+        icon: <PenSquare className="h-6 w-6 text-primary" />,
+        title: 'Digital Whiteboard',
+      },
+      {
+        icon: <GitBranch className="h-6 w-6 text-primary" />,
+        title: 'Mind Mapping',
+      },
+  ]
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
@@ -75,18 +84,6 @@ export default function Home() {
           <span className="ml-2 text-xl font-headline font-semibold">Donevia</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link
-            href="/dashboard"
-            className="text-sm font-medium hover:underline underline-offset-4"
-          >
-            Features
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-sm font-medium hover:underline underline-offset-4"
-          >
-            Pricing
-          </Link>
           <Button onClick={handleGoogleSignIn}>Get Started</Button>
         </nav>
       </header>
@@ -97,10 +94,10 @@ export default function Home() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold font-headline tracking-tighter sm:text-5xl xl:text-6xl/none">
-                    Unify Your Workflow. Achieve Your Goals.
+                    The All-in-One Platform for Productivity and Growth
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Welcome to Donevia. The all-in-one productivity suite with tasks, notes, whiteboards, and mind maps. Powered by AI to keep you on track.
+                    From tracking daily habits and managing complex client pipelines to leveraging AI for learning, Donevia integrates all the tools you need to succeed.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -125,25 +122,38 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Key Features</div>
-                <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-5xl">Everything You Need to Be Productive</h2>
+                <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-5xl">Everything You Need to Succeed</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  From simple to-do lists to complex project planning, Donevia has you covered.
+                  Donevia combines powerful, distinct tools into one seamless workflow to help you achieve your goals.
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:max-w-none lg:grid-cols-3 pt-12">
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-1 md:gap-12 lg:max-w-none lg:grid-cols-3 pt-12">
               {features.map((feature, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow duration-300">
-                  <CardHeader className="flex flex-row items-center gap-4">
+                <Card key={index} className="hover:shadow-lg transition-shadow duration-300 h-full">
+                  <CardHeader className="flex flex-col items-center text-center gap-4">
                     {feature.icon}
                     <CardTitle>{feature.title}</CardTitle>
-
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="text-center">
                     <p className="text-muted-foreground">{feature.description}</p>
                   </CardContent>
                 </Card>
               ))}
+            </div>
+             <div className="flex flex-col items-center justify-center space-y-4 text-center mt-16">
+                <h3 className="text-2xl font-bold font-headline tracking-tighter sm:text-4xl">And So Much More...</h3>
+                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                    Your integrated productivity suite also includes:
+                </p>
+                <div className="mx-auto grid max-w-4xl grid-cols-2 md:grid-cols-4 gap-8 pt-8">
+                     {otherFeatures.map((feature, index) => (
+                        <div key={index} className="flex flex-col items-center gap-2">
+                            {feature.icon}
+                            <span className="font-semibold">{feature.title}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
           </div>
         </section>
