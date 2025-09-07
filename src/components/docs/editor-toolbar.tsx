@@ -5,7 +5,7 @@ import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, Link, Quote, Code, Table,
-  AlignLeft, AlignCenter, AlignRight, AlignJustify, Case, Pilcrow
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -113,7 +113,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-24 text-left justify-start">
-                    <Case className="h-4 w-4 mr-2" />
+                    <Type className="h-4 w-4 mr-2" />
                      {editor.getAttributes('textStyle').fontSize || '16px'}
                 </Button>
             </DropdownMenuTrigger>
@@ -128,6 +128,47 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                  </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
+
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Toggle size="sm" asChild>
+                    <label style={{ color: editor.getAttributes('textStyle').color }} className="relative">
+                        <Palette className="h-4 w-4" />
+                        <input
+                            type="color"
+                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                            onInput={(event) => editor.chain().focus().setColor((event.target as HTMLInputElement).value).run()}
+                            value={editor.getAttributes('textStyle').color || '#000000'}
+                        />
+                    </label>
+                </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>Text Color</p>
+            </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Toggle size="sm" asChild>
+                     <label className="relative">
+                        <Highlighter className="h-4 w-4" />
+                        <input
+                            type="color"
+                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                            onInput={(event) => editor.chain().focus().toggleHighlight({ color: (event.target as HTMLInputElement).value }).run()}
+                            value={editor.getAttributes('highlight').color || '#ffffff'}
+                        />
+                    </label>
+                </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>Highlight Color</p>
+            </TooltipContent>
+        </Tooltip>
+
 
         <Separator orientation="vertical" className="h-6 mx-1" />
 

@@ -25,6 +25,7 @@ import { Loader2 } from 'lucide-react';
 import { Image as TipTapImage } from '@tiptap/extension-image';
 import { FontSize } from '@/lib/tiptap/font-size';
 import TextStyle from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
 
 
 interface DocEditorProps {
@@ -78,6 +79,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       TipTapImage,
       TextStyle,
       FontSize,
+      Color,
     ],
     content: docData.content,
     editorProps: {
