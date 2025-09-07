@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
 };
 
 // Only apply PWA plugin when not in development with Turbopack
-const useTurbopack = process.env.npm_config_user_agent?.includes('turbo');
+const useTurbopack = !!process.env.npm_config_user_agent?.includes('--turbopack');
 const isDev = process.env.NODE_ENV === 'development';
 
 const config = isDev && useTurbopack ? nextConfig : withPWA(nextConfig);
