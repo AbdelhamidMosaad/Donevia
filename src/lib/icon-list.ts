@@ -1,116 +1,217 @@
+import type { Timestamp } from "firebase/firestore";
 
-export const iconList = [
-  "Activity", "Airplay", "AlarmCheck", "AlarmClock", "AlarmPlus", "AlarmX", "Album",
-  "AlertCircle", "AlertTriangle", "AlignCenter", "AlignJustify", "AlignLeft", "AlignRight",
-  "Anchor", "Angry", "Annoyed", "Apple", "Archive", "ArrowDown", "ArrowLeft", "ArrowRight",
-  "ArrowUp", "Award", "Axe", "Baby", "BadgeCheck", "BadgeDollarSign", "BadgeHelp", "BadgeInfo",
-  "BadgePercent", "BadgePlus", "BadgeX", "BaggageClaim", "Banana", "BarChart", "Baseline",
-  "Bath", "BatteryCharging", "BatteryFull", "BatteryLow", "BatteryMedium", "BatteryWarning",
-  "Beaker", "Bean", "Bed", "Beef", "Beer", "Bell", "BellRing", "Bike", "Binary", "Bird",
-  "Bitcoin", "Blinds", "Bluetooth", "Bold", "Bomb", "Bone", "Book", "BookCopy", "BookHeart",
-  "BookKey", "BookLock", "BookMarked", "BookOpen", "BookText", "BookUp", "Bookmark", "Bot",
-  "Box", "Brain", "BrainCircuit", "BrainCog", "Briefcase", "Brush", "Bug", "Building", "Bus",
-  "Cake", "Calculator", "Calendar", "CalendarCheck", "CalendarClock", "CalendarDays", "CalendarHeart",
-  "CalendarMinus", "CalendarOff", "CalendarPlus", "CalendarRange", "CalendarX", "Camera", "Car",
-  "Carrot", "CaseLower", "CaseSensitive", "CaseUpper", "Castle", "Cat", "Check", "CheckCircle",
-  "CheckSquare", "Cherry", "ChevronDown", "ChevronLeft", "ChevronRight", "ChevronUp", "ChevronsDown",
-  "ChevronsLeft", "ChevronsRight", "ChevronsUpDown", "ChevronsUp", "Chrome", "Church", "Cigarette",
-  "CigaretteOff", "Circle", "CircleDollarSign", "CircleDot", "CircleEllipsis", "CircleEqual", "CircleSlashed",
-  "CircuitBoard", "Citrus", "Clapperboard", "Clipboard", "ClipboardCheck", "ClipboardCopy", "ClipboardList",
-  "ClipboardPaste", "ClipboardType", "ClipboardX", "Clock", "Cloud", "CloudCog", "CloudDrizzle",
-  "CloudFog", "CloudHail", "CloudLightning", "CloudMoon", "CloudMoonRain", "CloudOff", "CloudRain",
-  "CloudRainWind", "CloudSnow", "CloudSun", "CloudSunRain", "Cloudy", "Clover", "Code", "Code2",
-  "Codepen", "Codesandbox", "Coffee", "Cog", "Coins", "Columns", "Command", "Compass", "Component",
-  "ConciergeBell", "Construction", "Contact", "Cookie", "Copy", "Copyleft", "Copyright", "CornerDownLeft",
-  "CornerDownRight", "CornerLeftDown", "CornerLeftUp", "CornerRightDown", "CornerRightUp", "CornerUpLeft",
-  "CornerUpRight", "Cpu", "CreativeCommons", "CreditCard", "Croissant", "Crop", "Cross", "Crosshair",
-  "Crown", "CupSoda", "Currency", "Database", "Delete", "Diamond", "Dice1", "Dice2", "Dice3",
-  "Dice4", "Dice5", "Dice6", "Dices", "Disc", "Dog", "DollarSign", "Download", "Dribbble",
-  "Droplet", "Droplets", "Drumstick", "Dumbbell", "Ear", "EarOff", "Egg", "EggFried", "EggOff",
-  "Equal", "EqualNot", "Eraser", "Euro", "Expand", "ExternalLink", "Eye", "EyeOff", "Facebook",
-  "Factory", "Fan", "FastForward", "Feather", "Figma", "File", "FileArchive", "FileAudio", "FileAudio2",
-  "FileAxis3d", "FileBadge", "FileBadge2", "FileBarChart", "FileBarChart2", "FileBox", "FileCheck",
-  "FileCheck2", "FileClock", "FileCode", "FileCode2", "FileCog", "FileDiff", "FileDigit", "FileDown",
-  "FileEdit", "FileHeart", "FileImage", "FileInput", "FileJson", "FileJson2", "FileKey", "FileKey2",
-  "FileLineChart", "FileLock", "FileLock2", "FileMinus", "FileMinus2", "FileOutput", "FilePieChart",
-  "FilePlus", "FilePlus2", "FileQuestion", "FileScan", "FileSearch", "FileSearch2", "FileSignature",
-  "FileSpreadsheet", "FileSymlink", "FileTerminal", "FileText", "FileType", "FileType2", "FileUp",
-  "FileVideo", "FileVideo2", "FileVolume", "FileVolume2", "FileWarning", "FileX", "FileX2", "Files",
-  "Film", "Filter", "FilterX", "Fingerprint", "Fish", "Flag", "FlagOff", "FlagTriangleLeft",
-  "FlagTriangleRight", "Flame", "Flashlight", "FlashlightOff", "FlaskConical", "FlaskRound", "FlipHorizontal",
-  "FlipHorizontal2", "FlipVertical", "FlipVertical2", "Flower", "Flower2", "Focus", "FoldHorizontal",
-  "FoldVertical", "Folder", "FolderArchive", "FolderCheck", "FolderClock", "FolderClosed", "FolderCog",
-  "FolderDot", "FolderDown", "FolderEdit", "FolderGit", "FolderGit2", "FolderHeart", "FolderInput",
-  "FolderKey", "FolderLock", "FolderMinus", "FolderOpen", "FolderOpenDot", "FolderOutput", "FolderPlus",
-  "FolderRoot", "FolderSearch", "FolderSearch2", "FolderSymlink", "FolderSync", "FolderTree", "FolderUp",
-  "FolderX", "Folders", "Footprints", "Forklift", "Forward", "Frame", "Framer", "Frown", "Fuel",
-  "FunctionSquare", "Gamepad", "Gamepad2", "Gauge", "GaugeCircle", "Gavel", "Gem", "Ghost", "Gift",
-  "GitBranch", "GitBranchPlus", "GitCommit", "GitCompare", "GitFork", "GitMerge", "GitPullRequest",
-  "GitPullRequestClosed", "GitPullRequestDraft", "Github", "Gitlab", "GlassWater", "Glasses", "Globe",
-  "Globe2", "Goal", "Grab", "GraduationCap", "Grape", "LayoutGrid", "Grip", "GripHorizontal", "GripVertical",
-  "Group", "Hammer", "Hand", "HandMetal", "HardDrive", "HardHat", "Hash", "Haze", "Heading", "Heading1",
-  "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Headphones", "Heart", "HeartCrack",
-  "HeartHandshake", "HeartOff", "HeartPulse", "HelpCircle", "HelpingHand", "Hexagon", "Highlighter", "History",
-  "Home", "Hop", "HopOff", "Hotel", "Hourglass", "Image", "ImageMinus", "ImageOff", "ImagePlus",
-  "Import", "Inbox", "Indent", "IndianRupee", "Infinity", "Info", "Inspect", "Instagram", "Italic",
-  "IterationCcw", "IterationCw", "JapaneseYen", "Joystick", "Key", "Keyboard", "Lamp", "LampCeiling",
-  "LampDesk", "LampFloor", "LampWallDown", "LampWallUp", "Landmark", "Languages", "Laptop", "Laptop2",
-  "Lasso", "LassoSelect", "Laugh", "Layers", "Layout", "LayoutDashboard", "LayoutList",
-  "LayoutTemplate", "Leaf", "LeafyGreen", "Library", "LifeBuoy", "Lightbulb", "LightbulbOff", "LineChart",
-  "Link", "Link2", "Link2Off", "Linkedin", "List", "ListChecks", "ListEnd", "ListFilter",
-  "ListMinus", "ListMusic", "ListOrdered", "ListPlus", "ListStart", "ListTree", "ListVideo", "ListX",
-  "Loader", "Loader2", "Locate", "LocateFixed", "LocateOff", "Lock", "LogIn", "LogOut", "Luggage",
-  "Magnet", "Mail", "MailCheck", "MailMinus", "MailOpen", "MailPlus", "MailQuestion", "MailSearch",
-  "MailWarning", "MailX", "Mails", "Map", "MapPin", "MapPinOff", "Martini", "Maximize", "Maximize2",
-  "Medal", "Megaphone", "MegaphoneOff", "Meh", "MemoryStick", "Menu", "MessageCircle", "MessageSquare",
-  "MessageSquareDashed", "MessageSquarePlus", "MessagesSquare", "Mic", "Mic2", "MicOff", "Microscope",
-  "Microwave", "Milestone", "Milk", "Minimize", "Minimize2", "Minus", "Monitor", "MonitorOff",
-  "MonitorSmartphone", "MonitorSpeaker", "Moon", "MoreHorizontal", "MoreVertical", "Mountain", "MountainSnow",
-  "Mouse", "MousePointer", "MousePointer2", "MousePointerClick", "Move", "Move3d", "MoveDiagonal",
-  "MoveDiagonal2", "MoveHorizontal", "MoveVertical", "Music", "Music2", "Music3", "Music4",
-  "Navigation", "Navigation2", "Navigation2Off", "NavigationOff", "Network", "Newspaper", "Nfc",
-  "Nut", "NutOff", "Octagon", "Option", "Orbit", "Outdent", "Package", "Package2", "PackageCheck",
-  "PackageOpen", "PackagePlus", "PackageSearch", "PackageX", "PaintBucket", "Paintbrush", "Paintbrush2",
-  "Palette", "Palmtree", "PanelBottom", "PanelBottomClose", "PanelBottomOpen", "PanelLeft", "PanelLeftClose",
-  "PanelLeftOpen", "PanelRight", "PanelRightClose", "PanelRightOpen", "PanelTop", "PanelTopClose",
-  "PanelTopOpen", "Paperclip", "Parentheses", "ParkingCircle", "ParkingCircleOff", "ParkingMeter", "ParkingSquare",
-  "ParkingSquareOff", "PartyPopper", "Pause", "PauseCircle", "PauseOctagon", "PcCase", "Pen", "PenTool",
-  "Pencil", "Percent", "PersonStanding", "Phone", "PhoneCall", "PhoneForwarded", "PhoneIncoming",
-  "PhoneMissed", "PhoneOff", "PhoneOutgoing", "PhonePaused", "PhoneVibrate", "PictureInPicture", "PictureInPicture2",
-  "PieChart", "PiggyBank", "Pin", "PinOff", "Pipette", "Pizza", "Plane", "Play", "PlayCircle",
-  "Plug", "Plug2", "PlugZap", "PlugZap2", "Plus", "PlusCircle", "PlusSquare", "Pocket", "Podcast",
-  "Pointer", "PoundSterling", "Power", "PowerOff", "Printer", "Proportions", "Puzzle", "QrCode",
-  "Quote", "Radio", "RadioReceiver", "RadioTower", "Rat", "Receipt", "RectangleHorizontal", "RectangleVertical",
-  "Recycle", "Redo", "Redo2", "RefreshCcw", "RefreshCw", "Refrigerator", "Regex", "RemoveFormatting",
-  "Repeat", "Repeat1", "Repeat2", "Replace", "ReplaceAll", "Reply", "ReplyAll", "Rewind", "Rocket",
-  "RockingChair", "RotateCcw", "RotateCw", "Rotate3d", "Router", "Rss", "Ruler", "RussianRuble",
-  "Sailboat", "Salad", "Sandwich", "Satellite", "SatelliteDish", "Save", "SaveAll", "Scale", "Scale3d",
-  "Scaling", "Scan", "ScanFace", "ScanLine", "Scissors", "ScreenShare", "ScreenShareOff", "Scroll",
-  "ScrollText", "Search", "Send", "SeparatorHorizontal", "SeparatorVertical", "Server", "ServerCog",
-  "ServerCrash", "ServerOff", "Settings", "Settings2", "Share", "Share2", "Sheet", "Shell", "Shield",
-  "ShieldAlert", "ShieldCheck", "ShieldClose", "ShieldOff", "ShieldQuestion", "Ship", "Shirt", "ShoppingBag",
-  "ShoppingBasket", "ShoppingCart", "Shovel", "ShowerHead", "Shrink", "Shrub", "Shuffle", "Sidebar",
-  "SidebarClose", "SidebarOpen", "Sigma", "Signal", "SignalHigh", "SignalLow", "SignalMedium", "SignalZero",
-  "Siren", "SkipBack", "SkipForward", "Skull", "Slack", "Slice", "Sliders", "SlidersHorizontal",
-  "Smartphone", "SmartphoneCharging", "SmartphoneNfc", "Smile", "SmilePlus", "Snowflake", "Sofa", "Soup",
-  "Speaker", "Spline", "Split", "SplitSquareHorizontal", "SplitSquareVertical", "Sprout", "Square",
-  "SquareAsterisk", "SquareCode", "SquareDot", "SquareEqual", "SquareSlashed", "SquareStack", "Squirrel", "Stamp",
-  "Star", "StarHalf", "StarOff", "StepBack", "StepForward", "Stethoscope", "Sticker", "StickyNote",
-  "StopCircle", "Store", "StretchHorizontal", "StretchVertical", "Strikethrough", "Subscript", "Subtitles",
-  "Sun", "SunDim", "SunMedium", "SunMoon", "SunSnow", "Sunrise", "Sunset", "Superscript", "SwissFranc",
-  "SwitchCamera", "Sword", "Swords", "Syringe", "Table", "Table2", "Tablet", "Tablets", "Tag",
-  "Tags", "Target", "Tent", "Terminal", "TerminalSquare", "TestTube", "TestTube2", "TestTubes",
-  "Text", "TextCursor", "TextCursorInput", "TextQuote", "TextSelect", "Thermometer", "ThermometerSnowflake",
-  "ThermometerSun", "ThumbsDown", "ThumbsUp", "Ticket", "Timer", "TimerOff", "TimerReset", "ToggleLeft",
-  "ToggleRight", "Tornado", "Touchpad", "TouchpadOff", "TowerControl", "ToyBrick", "Train", "Trash",
-  "Trash2", "TreeDeciduous", "TreePine", "Trees", "Trello", "TrendingDown", "TrendingUp", "Triangle",
-  "TriangleRight", "Trophy", "Truck", "Tv", "Tv2", "Twitch", "Twitter", "Type", "Umbrella",
-  "Underline", "Undo", "Undo2", "UnfoldHorizontal", "UnfoldVertical", "Ungroup", "Unlink", "Unlink2",
-  "Unlock", "Unplug", "Upload", "Usb", "User", "User2", "UserCheck", "UserCog", "UserMinus",
-  "UserPlus", "UserX", "Users", "Users2", "Utensils", "UtensilsCrossed", "UtilityPole", "Variable",
-  "Vegan", "VenetianMask", "Verified", "Vibrate", "VibrateOff", "Video", "VideoOff", "View",
-  "Voicemail", "Volume", "Volume1", "Volume2", "VolumeX", "Vote", "Wallet", "Wallpaper", "Wand",
-  "Wand2", "Watch", "Waves", "Webcam", "Webhook", "Wheat", "WheatOff", "Wifi", "WifiOff",
-  "Wind", "Wine", "WineOff", "Workflow", "WrapText", "Wrench", "X", "XCircle", "XOctagon",
-  "XSquare", "Youtube", "Zap", "ZapOff", "ZoomIn", "ZoomOut"
-]
+export type Stage = {
+    id: string;
+    name: string;
+    order: number;
+}
+
+export type Task = {
+  id: string;
+  title: string;
+  description?: string;
+  status: string; // Now a string to accommodate custom stages
+  priority: 'Low' | 'Medium' | 'High';
+  dueDate: Timestamp;
+  tags: string[];
+  createdAt: Timestamp;
+  listId: string;
+  reminder?: 'none' | '5m' | '10m' | '30m' | '1h';
+};
+
+export type TaskList = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    stages?: Stage[];
+}
+
+export type BoardTemplate = {
+    id: string;
+    name:string;
+    stages: { name: string; order: number }[];
+}
+
+export type StickyNote = {
+  id: string;
+  title: string;
+  text: string;
+  color: string;
+  textColor: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  priority: 'High' | 'Medium' | 'Low';
+  position?: { x: number; y: number };
+  gridPosition?: { col: number; row: number };
+};
+
+
+// --- Notebooks Data Model ---
+
+/**
+ * Represents a top-level notebook, which is a collection of sections.
+ *
+ * Firestore Path: /users/{userId}/notebooks/{notebookId}
+ */
+export type Notebook = {
+    id: string;
+    ownerId: string;
+    title: string;
+    color: string; // e.g., a hex color for the notebook tab
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+/**
+ * Represents a section within a notebook, which is a collection of pages.
+ *
+ * Firestore Path: /users/{userId}/sections/{sectionId}
+ */
+export type Section = {
+    id:string;
+    notebookId: string;
+    title: string;
+    order: number; // For ordering sections within a notebook
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+/**
+ * Represents a single page within a section.
+ * Contains the actual content created by the user.
+ *
+ * Firestore Path: /users/{userId}/pages/{pageId}
+ */
+export type Page = {
+    id: string;
+    sectionId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    searchText: string; // A lowercase string of all text for searching
+    version: number; // For optimistic concurrency control
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    lastEditedBy?: string; // UID of the last user who edited
+    canvasColor?: string;
+};
+
+/**
+ * Represents a file attachment associated with a page.
+ *
+ * Firestore Path: /users/{userId}/attachments/{attachmentId}
+ */
+export type Attachment = {
+    id: string;
+    pageId: string;
+    filename: string;
+    url: string; // Cloud Storage URL
+    thumbnailUrl: string | null;
+    mimeType: string;
+    size: number; // in bytes
+    uploadedAt: Timestamp;
+    userId: string;
+};
+
+/**
+ * Represents a snapshot of a page's content at a specific point in time.
+ *
+ * Firestore Path: /users/{userId}/revisions/{revisionId}
+ */
+export type Revision = {
+    id: string;
+    pageId: string;
+    title: string;
+    snapshot: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    authorId: string; // The user who made the change
+    reason?: string; // e.g., "conflict-save-attempt"
+};
+
+/**
+ * Represents sharing permissions for a notebook or a page.
+ *
+ * Firestore Path: /users/{userId}/shares/{shareId}
+ */
+export type Share = {
+    id: string;
+    notebookId: string | null; // ID of the notebook being shared
+    pageId: string | null; // ID of the page being shared (if not the whole notebook)
+    sharedWithUserId: string; // The user receiving access
+    permission: 'viewer' | 'editor';
+};
+
+
+/**
+ * Represents user-specific application settings.
+ *
+ * Firestore Path: /users/{userId}/profile/settings
+ */
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
+    font: 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
+    sidebarOpen: boolean;
+    notificationSound: boolean;
+    docsView?: 'card' | 'list';
+}
+
+/**
+ * Represents a document in the "Docs" module.
+ *
+ * Firestore Path: /users/{userId}/docs/{docId}
+ */
+export type Doc = {
+    id: string;
+    ownerId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
+
+export interface PomodoroSettingsData {
+    workMinutes: number;
+    shortBreakMinutes: number;
+    longBreakMinutes: number;
+    longBreakInterval: number;
+}
+
+export interface PomodoroState extends PomodoroSettingsData {
+    mode: PomodoroMode;
+    isActive: boolean;
+    sessionsCompleted: number;
+    targetEndTime: Timestamp | null;
+}
+
+// --- Goals Data Model ---
+
+export type Goal = {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Timestamp;
+    targetDate: Timestamp;
+    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Milestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    description: string;
+    dueDate: Timestamp;
+    isCompleted: boolean;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ProgressUpdate = {
+    id: string;
+    goalId: string;
+    milestoneId?: string | null; // Optional: can be linked to a milestone
+    text: string;
+    createdAt: Timestamp;
+};
