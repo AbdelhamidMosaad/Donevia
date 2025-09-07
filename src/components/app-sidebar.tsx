@@ -24,6 +24,7 @@ import {
   Kanban,
   BookOpen,
   FileSignature,
+  Timer,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -40,6 +41,7 @@ export function AppSidebar() {
     { href: '/mind-map', icon: <GitBranch />, label: 'Mind Map', tooltip: 'Mind Map' },
     { href: '/notebooks', icon: <BookOpen />, label: 'Notebooks', tooltip: 'Notebooks' },
     { href: '/docs', icon: <FileSignature />, label: 'Docs', tooltip: 'Docs' },
+    { href: '/pomodoro', icon: <Timer />, label: 'Pomodoro', tooltip: 'Pomodoro Timer' },
   ];
 
   return (
@@ -84,7 +86,7 @@ export function AppSidebar() {
              <SettingsDialog>
                 <SidebarMenuButton tooltip={{ children: 'Settings' }}>
                     <Settings />
-                    <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                    <span className="group-data-[collasonic]:hidden">Settings</span>
                 </SidebarMenuButton>
              </SettingsDialog>
           </SidebarMenuItem>
