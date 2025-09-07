@@ -34,11 +34,16 @@ type Font = UserSettings['font'];
 
 
 const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg: string; text: string; primary: string; secondary: string } }[] = [
-  { name: 'light', label: 'Light', icon: <Sun className="h-5 w-5" />, colors: { bg: 'hsl(210 100% 95%)', text: 'hsl(215 40% 15%)', primary: 'hsl(175 42% 64%)', secondary: 'hsl(210 40% 90%)' } },
+  { name: 'light', label: 'Light', icon: <Sun className="h-5 w-5" />, colors: { bg: 'hsl(0 0% 100%)', text: 'hsl(215 40% 15%)', primary: 'hsl(206 65% 45%)', secondary: 'hsl(210 40% 96%)' } },
   { name: 'dark', label: 'Dark', icon: <Moon className="h-5 w-5" />, colors: { bg: 'hsl(215 30% 12%)', text: 'hsl(210 40% 98%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(215 20% 25%)' } },
   { name: 'theme-indigo', label: 'Indigo', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(232 46% 16%)', text: 'hsl(230 80% 98%)', primary: 'hsl(234 65% 26%)', secondary: 'hsl(232 46% 28%)' } },
   { name: 'theme-purple', label: 'Purple', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(279 40% 15%)', text: 'hsl(280 80% 98%)', primary: 'hsl(279 65% 40%)', secondary: 'hsl(279 40% 27%)' } },
   { name: 'theme-green', label: 'Green', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(145 25% 15%)', text: 'hsl(145 60% 98%)', primary: 'hsl(145 38% 25%)', secondary: 'hsl(145 25% 26%)' } },
+  { name: 'theme-lavender', label: 'Lavender', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(244 53% 97%)', text: 'hsl(244 20% 20%)', primary: 'hsl(244 53% 86%)', secondary: 'hsl(244 53% 92%)' } },
+  { name: 'theme-cornflower', label: 'Cornflower', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(227 100% 98%)', text: 'hsl(227 30% 25%)', primary: 'hsl(227 100% 75%)', secondary: 'hsl(227 100% 90%)' } },
+  { name: 'theme-teal', label: 'Teal', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(163 37% 96%)', text: 'hsl(163 30% 20%)', primary: 'hsl(163 37% 41%)', secondary: 'hsl(163 37% 90%)' } },
+  { name: 'theme-orange', label: 'Orange', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(18 99% 97%)', text: 'hsl(18 30% 25%)', primary: 'hsl(18 99% 63%)', secondary: 'hsl(18 99% 90%)' } },
+  { name: 'theme-mint', label: 'Mint', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(150 100% 98%)', text: 'hsl(150 25% 20%)', primary: 'hsl(150 100% 91%)', secondary: 'hsl(150 100% 95%)' } },
 ];
 
 const fonts: { name: Font; label: string; variable: string }[] = [

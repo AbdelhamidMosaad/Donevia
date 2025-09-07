@@ -6,6 +6,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { WelcomeScreen } from '@/components/welcome-screen';
+import type { UserSettings } from '@/lib/types';
 
 interface AuthContextType {
   user: User | null;
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Function to strip all theme and font classes
     const resetStyling = () => {
-        const themeClasses = ['light', 'dark', 'theme-indigo', 'theme-purple', 'theme-green'];
+        const themeClasses: UserSettings['theme'][] = ['light', 'dark', 'theme-indigo', 'theme-purple', 'theme-green', 'theme-lavender', 'theme-cornflower', 'theme-teal', 'theme-orange', 'theme-mint'];
         body.classList.remove(...themeClasses);
         body.style.fontFamily = ''; // Reset inline font style
     }

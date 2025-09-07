@@ -122,7 +122,7 @@ export type Share = {
 
 /** User Settings */
 export interface UserSettings {
-    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-lavender' | 'theme-cornflower' | 'theme-teal' | 'theme-orange' | 'theme-mint';
     font:
         | 'inter'
         | 'roboto'
