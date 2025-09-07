@@ -54,11 +54,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-      }),
+      StarterKit,
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
       Link.configure({ openOnClick: true, autolink: true }),
