@@ -114,7 +114,7 @@ export default function Home() {
                         width="600"
                         height="400"
                         alt="Habit Tracker"
-                        data-ai-hint="habit tracker chart"
+                        data-ai-hint="time management"
                         className="mx-auto aspect-video overflow-hidden rounded-xl object-cover lg:order-last"
                       />
                     <div className="space-y-4">
