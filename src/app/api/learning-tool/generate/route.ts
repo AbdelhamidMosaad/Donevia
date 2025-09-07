@@ -20,7 +20,7 @@ async function parseForm(req: Request): Promise<{ fields: Record<string, string>
     const busboy = Busboy({ headers: req.headers as Record<string, string> });
     const fields: Record<string, string> = {};
     let fileData: { buffer: Buffer, mimeType: string } | undefined;
-    
+
     busboy.on('field', (name, val) => {
       fields[name] = val;
     });
@@ -36,16 +36,18 @@ async function parseForm(req: Request): Promise<{ fields: Record<string, string>
     busboy.on('finish', () => resolve({ fields, file: fileData }));
     busboy.on('error', reject);
 
-    if (req.body) {
-        const reader = (req.body as any).getReader();
-        const read = async () => {
-            const { done, value } = await reader.read();
-            if (done) {
-                busboy.end();
-                return;
-            }
-            busboy.write(value);
-            read();
+    const body = req.body as ReadableStream<Uint8Array>;
+    if (body) {
+        const reader = body.getReader();
+        const read = () => {
+            reader.read().then(({ done, value }) => {
+                if (done) {
+                    busboy.end();
+                    return;
+                }
+                busboy.write(value);
+                read();
+            }).catch(reject);
         };
         read();
     } else {
