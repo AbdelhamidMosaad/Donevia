@@ -49,6 +49,15 @@ Follow these instructions precisely:
 5.  **Explanations**: Provide a brief, clear explanation for why the correct answer is correct for every question.
 ---
 {{/if}}
+
+{{#if (eq generationType 'flashcards')}}
+---
+**FLASHCARDS INSTRUCTIONS**
+1.  **Number of Flashcards**: Generate exactly {{flashcardsOptions.numCards}} flashcards.
+2.  **Card Style**: The flashcards must be in the "{{flashcardsOptions.style}}" style.
+3.  **Content**: All flashcards must be based *only* on the provided source text. Create concise terms/questions for the front and clear, comprehensive definitions/answers for the back.
+---
+{{/if}}
   `,
 });
 

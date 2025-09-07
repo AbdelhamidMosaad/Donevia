@@ -24,6 +24,9 @@ export async function POST(request: Request) {
     if (body.generationType === 'quiz' && !body.quizOptions) {
         return NextResponse.json({ error: 'Missing quizOptions for quiz generation.' }, { status: 400 });
     }
+    if (body.generationType === 'flashcards' && !body.flashcardsOptions) {
+        return NextResponse.json({ error: 'Missing flashcardsOptions for flashcards generation.' }, { status: 400 });
+    }
 
     const studyMaterial = await generateStudyMaterial(body);
 

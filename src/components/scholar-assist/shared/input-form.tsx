@@ -26,9 +26,14 @@ const quizSchema = z.object({
     difficulty: z.enum(['easy', 'medium', 'hard']),
 });
 
+const flashcardsSchema = z.object({
+    numCards: z.coerce.number().min(1).max(30),
+    cardStyle: z.enum(['basic', 'detailed', 'question']),
+});
+
 const formSchema = z.object({
   sourceText: z.string().min(50, 'Source text must be at least 50 characters long.'),
-}).extend(notesSchema.partial().shape).extend(quizSchema.partial().shape);
+}).extend(notesSchema.partial().shape).extend(quizSchema.partial().shape).extend(flashcardsSchema.partial().shape);
 
 
 export type InputFormValues = z.infer<typeof formSchema>;
@@ -36,7 +41,7 @@ export type InputFormValues = z.infer<typeof formSchema>;
 interface InputFormProps {
   onGenerate: (values: InputFormValues) => void;
   isLoading?: boolean;
-  generationType: 'notes' | 'quiz';
+  generationType: 'notes' | 'quiz' | 'flashcards';
 }
 
 const questionTypeItems = [
@@ -57,8 +62,20 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
       numQuestions: 5,
       questionTypes: ['multiple-choice', 'true-false'],
       difficulty: 'medium',
+      // Flashcard defaults
+      numCards: 10,
+      cardStyle: 'basic',
     },
   });
+  
+  const getButtonText = () => {
+    switch (generationType) {
+        case 'notes': return 'Generate Notes';
+        case 'quiz': return 'Generate Quiz';
+        case 'flashcards': return 'Generate Flashcards';
+        default: return 'Generate';
+    }
+  }
 
   return (
     <Form {...form}>
@@ -203,12 +220,45 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                             />
                     </>
                 )}
+                {generationType === 'flashcards' && (
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="numCards"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Number of Flashcards</FormLabel>
+                                    <FormControl><Input type="number" min="1" max="30" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="cardStyle"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Card Style</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="basic">Basic (Term / Definition)</SelectItem>
+                                        <SelectItem value="detailed">Detailed (Concept / Explanation)</SelectItem>
+                                        <SelectItem value="question">Question / Answer</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </>
+                )}
              </div>
           </CardContent>
           <CardFooter>
             <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLoading ? 'Generating...' : `Generate ${generationType === 'notes' ? 'Notes' : 'Quiz'}`}
+              {isLoading ? 'Generating...' : getButtonText()}
             </Button>
           </CardFooter>
         </Card>

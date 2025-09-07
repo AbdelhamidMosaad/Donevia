@@ -14,11 +14,17 @@ export const QuizOptionsSchema = z.object({
     difficulty: z.enum(['easy', 'medium', 'hard']),
 });
 
+export const FlashcardsOptionsSchema = z.object({
+    numCards: z.number().min(1).max(30),
+    style: z.enum(['basic', 'detailed', 'question']),
+});
+
 export const StudyMaterialRequestSchema = z.object({
   sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
-  generationType: z.enum(['notes', 'quiz']),
+  generationType: z.enum(['notes', 'quiz', 'flashcards']),
   notesOptions: NotesOptionsSchema.optional(),
   quizOptions: QuizOptionsSchema.optional(),
+  flashcardsOptions: FlashcardsOptionsSchema.optional(),
 });
 export type StudyMaterialRequest = z.infer<typeof StudyMaterialRequestSchema>;
 
@@ -34,10 +40,18 @@ export const QuizQuestionSchema = z.object({
 });
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 
+export const FlashcardSchema = z.object({
+    front: z.string().describe('The content for the front of the flashcard (e.g., a term or a question).'),
+    back: z.string().describe('The content for the back of the flashcard (e.g., a definition or an answer).'),
+});
+export type Flashcard = z.infer<typeof FlashcardSchema>;
+
+
 export const StudyMaterialResponseSchema = z.object({
   title: z.string().describe('A concise and relevant title for the generated material.'),
-  materialType: z.enum(['notes', 'quiz']),
+  materialType: z.enum(['notes', 'quiz', 'flashcards']),
   notesContent: z.string().optional().describe('The generated notes as a single plain text string.'),
   quizContent: z.array(QuizQuestionSchema).optional().describe('An array of quiz questions.'),
+  flashcardContent: z.array(FlashcardSchema).optional().describe('An array of flashcards.'),
 });
 export type StudyMaterialResponse = z.infer<typeof StudyMaterialResponseSchema>;
