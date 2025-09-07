@@ -90,9 +90,20 @@ export default function LearningToolPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'An unknown error occurred.' }));
-            throw new Error(errorData.details || errorData.error);
+            // Server returned an error. Try to parse it as JSON, but handle if it's not.
+            let errorDetails = 'An unknown error occurred on the server.';
+            try {
+                const errorData = await response.json();
+                errorDetails = errorData.details || errorData.error || errorDetails;
+            } catch (jsonError) {
+                // The response was not JSON. It might be an HTML error page.
+                const rawResponse = await response.text();
+                console.error("Non-JSON error response from server:", rawResponse);
+                errorDetails = `Server returned a non-JSON response. Status: ${response.status}. See console for details.`;
+            }
+            throw new Error(errorDetails);
         }
+
 
         const result = await response.json();
         setGeneratedContent(result.data);
