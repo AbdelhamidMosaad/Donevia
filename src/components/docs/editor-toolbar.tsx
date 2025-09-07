@@ -139,7 +139,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-1 p-2 border-t mt-2 flex-wrap">
+      <div className="flex items-center gap-x-1 gap-y-2 p-2 border-t mt-2 flex-wrap">
         <ToolbarButton editor={editor} onClick={() => editor.chain().focus().undo().run()} label="Undo" icon={Undo} />
         <ToolbarButton editor={editor} onClick={() => editor.chain().focus().redo().run()} label="Redo" icon={Redo} />
 
@@ -147,7 +147,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-28 text-left justify-start">
+                <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
                     <Pilcrow className="h-4 w-4 mr-2" />
                     {
                         (editor.isActive('heading', {level: 1}) && 'Heading 1') ||
@@ -167,7 +167,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-32 text-left justify-start">
+                <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
                     <CaseSensitive className="h-4 w-4 mr-2" />
                      {editor.getAttributes('textStyle').fontFamily?.split(',')[0].replace(/'/g, '') || 'Inter'}
                 </Button>
@@ -186,7 +186,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-24 text-left justify-start">
+                <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
                     <Type className="h-4 w-4 mr-2" />
                      {editor.getAttributes('textStyle').fontSize || '16px'}
                 </Button>
@@ -205,7 +205,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-32 text-left justify-start">
+                <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
                     <PilcrowLeft className="h-4 w-4 mr-2" />
                     Text Transform
                 </Button>
