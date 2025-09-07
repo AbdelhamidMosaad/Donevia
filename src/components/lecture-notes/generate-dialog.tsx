@@ -100,7 +100,7 @@ export function GenerateDialog({ open, onOpenChange }: GenerateDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] flex flex-col">
+      <DialogContent className="w-[95vw] h-[95vh] max-w-[1600px] flex flex-col">
         <DialogHeader>
           <DialogTitle>Generate Lecture Notes</DialogTitle>
           <DialogDescription>
