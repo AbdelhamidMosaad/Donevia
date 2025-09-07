@@ -216,3 +216,19 @@ export type ProgressUpdate = {
     text: string;
     createdAt: Timestamp;
 };
+
+// --- Habit Tracker Data Model ---
+
+export type Habit = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // Stored as 'YYYY-MM-DD'
+    createdAt: Timestamp;
+};
