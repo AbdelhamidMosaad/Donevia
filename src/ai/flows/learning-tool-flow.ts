@@ -1,113 +1,297 @@
+import type { Timestamp } from "firebase/firestore";
 
-'use server';
-
-/**
- * @fileOverview An AI agent for generating learning materials.
- *
- * - generateLearningContent - A function that handles the generation process.
- * - LearningContentRequest - The input type for the generation function.
- * - GeneratedLearningContent - The return type for the generation function.
- */
-
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-import type { QuizQuestion, Flashcard } from '@/lib/types';
-
-// Input Schema
-const LearningContentRequestSchema = z.object({
-  context: z.string().describe('The source text from which to generate the learning materials.'),
-  generateNotes: z.boolean().describe('Whether to generate lecture notes.'),
-  generateQuiz: z.boolean().describe('Whether to generate a quiz.'),
-  generateFlashcards: z.boolean().describe('Whether to generate flashcards.'),
-  quizType: z.enum(['multiple-choice', 'true-false', 'short-answer']).describe('The type of quiz questions to generate.'),
-  numQuestions: z.number().int().min(1).max(20).describe('The number of quiz questions to generate.'),
-});
-export type LearningContentRequestInternal = z.infer<typeof LearningContentRequestSchema>;
-
-// Output Schema
-const QuizQuestionSchema = z.object({
-  question: z.string().describe('The quiz question.'),
-  options: z.array(z.string()).optional().describe('A list of options for multiple-choice questions.'),
-  answer: z.string().describe('The correct answer to the question.'),
-  explanation: z.string().describe('A brief explanation for why the answer is correct.'),
-});
-
-const FlashcardSchema = z.object({
-  front: z.string().describe('The front side of the flashcard (e.g., a term or a question).'),
-  back: z.string().describe('The back side of the flashcard (e.g., the definition or the answer).'),
-});
-
-const GeneratedLearningContentSchema = z.object({
-  lectureNotes: z.string().describe('Well-structured, comprehensive lecture notes in markdown format based on the provided text. Use headings, lists, and bold text to organize the information clearly.'),
-  quiz: z.array(QuizQuestionSchema).describe('An array of quiz questions based on the request.'),
-  flashcards: z.array(FlashcardSchema).describe('An array of flashcards for key terms and concepts.'),
-});
-export type GeneratedLearningContent = z.infer<typeof GeneratedLearningContentSchema>;
-
-
-// The exported function that will be called from the API route
-export async function generateLearningContent(input: LearningContentRequestInternal): Promise<GeneratedLearningContent> {
-  return learningToolFlow(input);
+export type Stage = {
+    id: string;
+    name: string;
+    order: number;
 }
 
-// Genkit Prompt Definition
-const learningToolPrompt = ai.definePrompt({
-  name: 'learningToolPrompt',
-  input: { schema: LearningContentRequestSchema },
-  output: { schema: GeneratedLearningContentSchema },
-  prompt: `You are an expert educational assistant. Your task is to generate a comprehensive set of learning materials based on the provided text and user requirements.
+export type Task = {
+  id: string;
+  title: string;
+  description?: string;
+  status: string; // Now a string to accommodate custom stages
+  priority: 'Low' | 'Medium' | 'High';
+  dueDate: Timestamp;
+  tags: string[];
+  createdAt: Timestamp;
+  listId: string;
+  reminder?: 'none' | '5m' | '10m' | '30m' | '1h';
+};
 
-  **Source Text:**
-  {{{context}}}
-  
-  **Instructions:**
-  
-  1.  **Lecture Notes:**
-      {{#if generateNotes}}
-      Generate a set of well-organized and easy-to-read lecture notes from the source text.
-      - The notes should be in markdown format.
-      - Use headings (#, ##, ###), bullet points (-), numbered lists (1.), and bold text (**) to structure the content logically.
-      - Summarize key concepts, define important terms, and capture the main ideas of the text.
-      {{else}}
-      The user has not requested lecture notes. The lectureNotes field should be an empty string.
-      {{/if}}
-  
-  2.  **Quiz:**
-      {{#if generateQuiz}}
-      Create a quiz with {{numQuestions}} questions of the '{{quizType}}' type.
-      - Each question must be relevant to the source text.
-      - For each question, provide the correct answer and a brief explanation.
-      - For 'multiple-choice' questions, provide 4 distinct options, including the correct answer.
-      {{else}}
-      The user has not requested a quiz. The quiz field should be an empty array.
-      {{/if}}
-  
-  3.  **Flashcards:**
-      {{#if generateFlashcards}}
-      Generate a set of flashcards for the most important terms, concepts, or key questions from the text.
-      - The "front" of the card should be a term or a concise question.
-      - The "back" of the card should be the corresponding definition or answer.
-      - Generate at least 5-10 relevant flashcards.
-      {{else}}
-      The user has not requested flashcards. The flashcards field should be an empty array.
-      {{/if}}
-  
-  Ensure your entire response is a single, valid JSON object that conforms to the specified output schema.
-  `,
-});
+export type TaskList = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    stages?: Stage[];
+}
 
-// Genkit Flow Definition
-const learningToolFlow = ai.defineFlow(
-  {
-    name: 'learningToolFlow',
-    inputSchema: LearningContentRequestSchema,
-    outputSchema: GeneratedLearningContentSchema,
-  },
-  async (input) => {
-    const { output } = await learningToolPrompt(input);
-    if (!output) {
-      throw new Error('AI failed to generate a valid response.');
-    }
-    return output;
-  }
-);
+export type BoardTemplate = {
+    id: string;
+    name:string;
+    stages: { name: string; order: number }[];
+}
+
+export type StickyNote = {
+  id: string;
+  title: string;
+  text: string;
+  color: string;
+  textColor: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  priority: 'High' | 'Medium' | 'Low';
+  position?: { x: number; y: number };
+  gridPosition?: { col: number; row: number };
+};
+
+
+// --- Notebooks Data Model ---
+
+/**
+ * Represents a top-level notebook, which is a collection of sections.
+ *
+ * Firestore Path: /users/{userId}/notebooks/{notebookId}
+ */
+export type Notebook = {
+    id: string;
+    ownerId: string;
+    title: string;
+    color: string; // e.g., a hex color for the notebook tab
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+/**
+ * Represents a section within a notebook, which is a collection of pages.
+ *
+ * Firestore Path: /users/{userId}/sections/{sectionId}
+ */
+export type Section = {
+    id:string;
+    notebookId: string;
+    title: string;
+    order: number; // For ordering sections within a notebook
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+/**
+ * Represents a single page within a section.
+ * Contains the actual content created by the user.
+ *
+ * Firestore Path: /users/{userId}/pages/{pageId}
+ */
+export type Page = {
+    id: string;
+    sectionId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    searchText: string; // A lowercase string of all text for searching
+    version: number; // For optimistic concurrency control
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    lastEditedBy?: string; // UID of the last user who edited
+    canvasColor?: string;
+};
+
+/**
+ * Represents a file attachment associated with a page.
+ *
+ * Firestore Path: /users/{userId}/attachments/{attachmentId}
+ */
+export type Attachment = {
+    id: string;
+    pageId: string;
+    filename: string;
+    url: string; // Cloud Storage URL
+    thumbnailUrl: string | null;
+    mimeType: string;
+    size: number; // in bytes
+    uploadedAt: Timestamp;
+    userId: string;
+};
+
+/**
+ * Represents a snapshot of a page's content at a specific point in time.
+ *
+ * Firestore Path: /users/{userId}/revisions/{revisionId}
+ */
+export type Revision = {
+    id: string;
+    pageId: string;
+    title: string;
+    snapshot: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    authorId: string; // The user who made the change
+    reason?: string; // e.g., "conflict-save-attempt"
+};
+
+/**
+ * Represents sharing permissions for a notebook or a page.
+ *
+ * Firestore Path: /users/{userId}/shares/{shareId}
+ */
+export type Share = {
+    id: string;
+    notebookId: string | null; // ID of the notebook being shared
+    pageId: string | null; // ID of the page being shared (if not the whole notebook)
+    sharedWithUserId: string; // The user receiving access
+    permission: 'viewer' | 'editor';
+};
+
+
+/**
+ * Represents user-specific application settings.
+ *
+ * Firestore Path: /users/{userId}/profile/settings
+ */
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
+    font: 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
+    sidebarOpen: boolean;
+    notificationSound: boolean;
+    docsView?: 'card' | 'list';
+}
+
+/**
+ * Represents a document in the "Docs" module.
+ *
+ * Firestore Path: /users/{userId}/docs/{docId}
+ */
+export type Doc = {
+    id: string;
+    ownerId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
+
+export interface PomodoroSettingsData {
+    workMinutes: number;
+    shortBreakMinutes: number;
+    longBreakMinutes: number;
+    longBreakInterval: number;
+}
+
+export interface PomodoroState extends PomodoroSettingsData {
+    mode: PomodoroMode;
+    isActive: boolean;
+    sessionsCompleted: number;
+    targetEndTime: Timestamp | null;
+}
+
+// --- Goals Data Model ---
+
+export type Goal = {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Timestamp;
+    targetDate: Timestamp;
+    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Milestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    description: string;
+    dueDate: Timestamp;
+    isCompleted: boolean;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ProgressUpdate = {
+    id: string;
+    goalId: string;
+    milestoneId?: string | null; // Optional: can be linked to a milestone
+    text: string;
+    createdAt: Timestamp;
+};
+
+// --- Habit Tracker Data Model ---
+
+export type Habit = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // Stored as 'YYYY-MM-DD'
+    createdAt: Timestamp;
+};
+
+// --- CRM Data Model ---
+export type CustomField = {
+    id: string;
+    key: string;
+    value: string;
+};
+
+export type CrmAttachment = {
+    id: string;
+    filename: string;
+    url: string;
+    mimeType: string;
+    size: number;
+    uploadedAt: Timestamp;
+};
+
+export type Client = {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    company?: string;
+    notes?: string;
+    status: 'lead' | 'active' | 'inactive' | 'archived';
+    customFields: CustomField[];
+    quotations: Quotation[];
+    invoices: Invoice[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Quotation = {
+    id: string;
+    clientId: string;
+    quotationNumber: string;
+    status: 'draft' | 'sent' | 'accepted' | 'rejected';
+    attachments: CrmAttachment[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Invoice = {
+    id: string;
+    clientId: string;
+    invoiceNumber: string;
+    status: 'draft' | 'sent' | 'paid' | 'overdue';
+    attachments: CrmAttachment[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ClientRequest = {
+    id: string;
+    clientId: string;
+    title: string;
+    description?: string;
+    stage: 'new-request' | 'quotation' | 'execution' | 'reporting' | 'invoice' | 'completed' | 'win' | 'lost';
+    invoiceAmount?: number;
+    lossReason?: 'Budget' | 'Competition' | 'Timing' | 'Scope' | 'Other' | null;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+}

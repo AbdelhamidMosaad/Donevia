@@ -296,38 +296,3 @@ export type ClientRequest = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }
-
-// --- Learning Tool Data Model ---
-export type LearningContentRequest = {
-    generateNotes: boolean;
-    generateQuiz: boolean;
-    generateFlashcards: boolean;
-    quizType: 'multiple-choice' | 'true-false' | 'short-answer';
-    numQuestions: number;
-};
-
-export type QuizQuestion = {
-    question: string;
-    options?: string[]; // For multiple-choice
-    answer: string;
-    explanation: string;
-};
-
-export type Flashcard = {
-    front: string;
-    back: string;
-};
-
-export type GeneratedLearningContent = {
-    lectureNotes: string;
-    quiz: QuizQuestion[];
-    flashcards: Flashcard[];
-};
-
-export type LearningToolEntry = {
-    id: string;
-    userId: string;
-    sourceTitle: string; // e.g., filename or first few words of text
-    content: GeneratedLearningContent;
-    createdAt: Timestamp;
-};

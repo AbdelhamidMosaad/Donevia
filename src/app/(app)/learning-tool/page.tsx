@@ -1,209 +1,297 @@
+import type { Timestamp } from "firebase/firestore";
 
-'use client';
+export type Stage = {
+    id: string;
+    name: string;
+    order: number;
+}
 
-import * as React from 'react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, FileText, BrainCircuit, History } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { GeneratedContentDisplay } from '@/components/learning-tool/generated-content-display';
-import { SavedContentView } from '@/components/learning-tool/saved-content-view';
-import type { GeneratedLearningContent, LearningContentRequest } from '@/lib/types';
+export type Task = {
+  id: string;
+  title: string;
+  description?: string;
+  status: string; // Now a string to accommodate custom stages
+  priority: 'Low' | 'Medium' | 'High';
+  dueDate: Timestamp;
+  tags: string[];
+  createdAt: Timestamp;
+  listId: string;
+  reminder?: 'none' | '5m' | '10m' | '30m' | '1h';
+};
 
-export default function LearningToolPage() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [textInput, setTextInput] = useState('');
-  const [fileInput, setFileInput] = useState<File | null>(null);
-  const [generatedContent, setGeneratedContent] = useState<GeneratedLearningContent | null>(null);
+export type TaskList = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    stages?: Stage[];
+}
 
-  const [quizType, setQuizType] = useState<'multiple-choice' | 'true-false' | 'short-answer'>('multiple-choice');
-  const [numQuestions, setNumQuestions] = useState(5);
+export type BoardTemplate = {
+    id: string;
+    name:string;
+    stages: { name: string; order: number }[];
+}
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+export type StickyNote = {
+  id: string;
+  title: string;
+  text: string;
+  color: string;
+  textColor: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  priority: 'High' | 'Medium' | 'Low';
+  position?: { x: number; y: number };
+  gridPosition?: { col: number; row: number };
+};
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        toast({ variant: 'destructive', title: 'File too large', description: 'Please select a file smaller than 10MB.' });
-        return;
-      }
-      setFileInput(file);
-      setTextInput(''); // Clear text input if file is selected
-    }
-  };
 
-  const handleGenerate = async () => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Please log in to use this feature.' });
-      return;
-    }
-    if (!textInput.trim() && !fileInput) {
-      toast({ variant: 'destructive', title: 'Please provide text or upload a file.' });
-      return;
-    }
+// --- Notebooks Data Model ---
 
-    setIsLoading(true);
-    setGeneratedContent(null);
+/**
+ * Represents a top-level notebook, which is a collection of sections.
+ *
+ * Firestore Path: /users/{userId}/notebooks/{notebookId}
+ */
+export type Notebook = {
+    id: string;
+    ownerId: string;
+    title: string;
+    color: string; // e.g., a hex color for the notebook tab
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
 
-    try {
-        const formData = new FormData();
-        const requestPayload: LearningContentRequest = {
-            numQuestions,
-            quizType,
-            generateFlashcards: true,
-            generateNotes: true,
-            generateQuiz: true,
-        };
+/**
+ * Represents a section within a notebook, which is a collection of pages.
+ *
+ * Firestore Path: /users/{userId}/sections/{sectionId}
+ */
+export type Section = {
+    id:string;
+    notebookId: string;
+    title: string;
+    order: number; // For ordering sections within a notebook
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
 
-        formData.append('requestPayload', JSON.stringify(requestPayload));
-        
-        if (fileInput) {
-            formData.append('file', fileInput);
-        } else {
-            formData.append('text', textInput);
-        }
-        
-        const idToken = await user.getIdToken();
+/**
+ * Represents a single page within a section.
+ * Contains the actual content created by the user.
+ *
+ * Firestore Path: /users/{userId}/pages/{pageId}
+ */
+export type Page = {
+    id: string;
+    sectionId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    searchText: string; // A lowercase string of all text for searching
+    version: number; // For optimistic concurrency control
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    lastEditedBy?: string; // UID of the last user who edited
+    canvasColor?: string;
+};
 
-        const response = await fetch('/api/learning-tool/generate', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-            },
-            body: formData,
-        });
+/**
+ * Represents a file attachment associated with a page.
+ *
+ * Firestore Path: /users/{userId}/attachments/{attachmentId}
+ */
+export type Attachment = {
+    id: string;
+    pageId: string;
+    filename: string;
+    url: string; // Cloud Storage URL
+    thumbnailUrl: string | null;
+    mimeType: string;
+    size: number; // in bytes
+    uploadedAt: Timestamp;
+    userId: string;
+};
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to generate content.');
-        }
+/**
+ * Represents a snapshot of a page's content at a specific point in time.
+ *
+ * Firestore Path: /users/{userId}/revisions/{revisionId}
+ */
+export type Revision = {
+    id: string;
+    pageId: string;
+    title: string;
+    snapshot: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    authorId: string; // The user who made the change
+    reason?: string; // e.g., "conflict-save-attempt"
+};
 
-        const result = await response.json();
-        setGeneratedContent(result.data);
-        toast({ title: 'Success!', description: 'Your learning materials have been generated.' });
-    
-    } catch (error) {
-      console.error('Generation error:', error);
-      toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+/**
+ * Represents sharing permissions for a notebook or a page.
+ *
+ * Firestore Path: /users/{userId}/shares/{shareId}
+ */
+export type Share = {
+    id: string;
+    notebookId: string | null; // ID of the notebook being shared
+    pageId: string | null; // ID of the page being shared (if not the whole notebook)
+    sharedWithUserId: string; // The user receiving access
+    permission: 'viewer' | 'editor';
+};
 
-  return (
-    <div className="flex flex-col h-full gap-6">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">AI Learning Tool</h1>
-          <p className="text-muted-foreground">Generate notes, quizzes, and flashcards from any text or document.</p>
-        </div>
-      </div>
-      
-      <Tabs defaultValue="generate" className="flex-1">
-        <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="generate"><BrainCircuit className="mr-2 h-4 w-4"/>Generate New</TabsTrigger>
-            <TabsTrigger value="saved"><History className="mr-2 h-4 w-4"/>Saved Content</TabsTrigger>
-        </TabsList>
-        <TabsContent value="generate" className="mt-4">
-            <div className="grid md:grid-cols-2 gap-8">
-                {/* Input and Options Column */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>1. Provide Your Content</CardTitle>
-                        <CardDescription>Paste text directly or upload a file.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="text-input">Paste Text</Label>
-                            <Textarea
-                                id="text-input"
-                                placeholder="Paste your article, lecture transcript, or notes here..."
-                                className="min-h-[200px]"
-                                value={textInput}
-                                onChange={(e) => {
-                                    setTextInput(e.target.value);
-                                    if (fileInput) setFileInput(null);
-                                }}
-                                disabled={!!fileInput}
-                            />
-                        </div>
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-card px-2 text-muted-foreground">Or</span>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Upload a File</Label>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                accept=".pdf,.docx"
-                                className="hidden"
-                            />
-                            <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
-                                <Upload className="mr-2 h-4 w-4" />
-                                {fileInput ? 'Change File' : 'Select a .pdf or .docx file'}
-                            </Button>
-                            {fileInput && (
-                                <div className="text-sm text-muted-foreground flex items-center justify-between p-2 bg-muted rounded-md">
-                                    <div className="flex items-center gap-2">
-                                        <FileText className="h-4 w-4" />
-                                        <span className="truncate">{fileInput.name}</span>
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFileInput(null)}>
-                                        <Loader2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                         <CardTitle className="pt-4">2. Customize Output</CardTitle>
-                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="quiz-type">Quiz Type</Label>
-                                <Select value={quizType} onValueChange={(v) => setQuizType(v as any)}>
-                                    <SelectTrigger id="quiz-type"><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                                        <SelectItem value="true-false">True/False</SelectItem>
-                                        <SelectItem value="short-answer">Short Answer</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="num-questions">Number of Questions</Label>
-                                <Input id="num-questions" type="number" value={numQuestions} onChange={(e) => setNumQuestions(Math.max(1, parseInt(e.target.value, 10)))} min="1" max="20" />
-                            </div>
-                         </div>
 
-                        <Button onClick={handleGenerate} disabled={isLoading} className="w-full mt-4">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                            {isLoading ? 'Generating...' : 'Generate Learning Materials'}
-                        </Button>
-                    </CardContent>
-                </Card>
+/**
+ * Represents user-specific application settings.
+ *
+ * Firestore Path: /users/{userId}/profile/settings
+ */
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
+    font: 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
+    sidebarOpen: boolean;
+    notificationSound: boolean;
+    docsView?: 'card' | 'list';
+}
 
-                {/* Output Column */}
-                <GeneratedContentDisplay content={generatedContent} isLoading={isLoading} />
-            </div>
-        </TabsContent>
-        <TabsContent value="saved">
-            <SavedContentView />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+/**
+ * Represents a document in the "Docs" module.
+ *
+ * Firestore Path: /users/{userId}/docs/{docId}
+ */
+export type Doc = {
+    id: string;
+    ownerId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
+
+export interface PomodoroSettingsData {
+    workMinutes: number;
+    shortBreakMinutes: number;
+    longBreakMinutes: number;
+    longBreakInterval: number;
+}
+
+export interface PomodoroState extends PomodoroSettingsData {
+    mode: PomodoroMode;
+    isActive: boolean;
+    sessionsCompleted: number;
+    targetEndTime: Timestamp | null;
+}
+
+// --- Goals Data Model ---
+
+export type Goal = {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Timestamp;
+    targetDate: Timestamp;
+    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Milestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    description: string;
+    dueDate: Timestamp;
+    isCompleted: boolean;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ProgressUpdate = {
+    id: string;
+    goalId: string;
+    milestoneId?: string | null; // Optional: can be linked to a milestone
+    text: string;
+    createdAt: Timestamp;
+};
+
+// --- Habit Tracker Data Model ---
+
+export type Habit = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // Stored as 'YYYY-MM-DD'
+    createdAt: Timestamp;
+};
+
+// --- CRM Data Model ---
+export type CustomField = {
+    id: string;
+    key: string;
+    value: string;
+};
+
+export type CrmAttachment = {
+    id: string;
+    filename: string;
+    url: string;
+    mimeType: string;
+    size: number;
+    uploadedAt: Timestamp;
+};
+
+export type Client = {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    company?: string;
+    notes?: string;
+    status: 'lead' | 'active' | 'inactive' | 'archived';
+    customFields: CustomField[];
+    quotations: Quotation[];
+    invoices: Invoice[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Quotation = {
+    id: string;
+    clientId: string;
+    quotationNumber: string;
+    status: 'draft' | 'sent' | 'accepted' | 'rejected';
+    attachments: CrmAttachment[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Invoice = {
+    id: string;
+    clientId: string;
+    invoiceNumber: string;
+    status: 'draft' | 'sent' | 'paid' | 'overdue';
+    attachments: CrmAttachment[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ClientRequest = {
+    id: string;
+    clientId: string;
+    title: string;
+    description?: string;
+    stage: 'new-request' | 'quotation' | 'execution' | 'reporting' | 'invoice' | 'completed' | 'win' | 'lost';
+    invoiceAmount?: number;
+    lossReason?: 'Budget' | 'Competition' | 'Timing' | 'Scope' | 'Other' | null;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
 }

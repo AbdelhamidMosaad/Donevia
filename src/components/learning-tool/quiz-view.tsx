@@ -1,107 +1,297 @@
+import type { Timestamp } from "firebase/firestore";
 
-'use client';
-
-import * as React from 'react';
-import { useState } from 'react';
-import { QuizQuestion } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import { CheckCircle, XCircle } from 'lucide-react';
-
-interface QuizViewProps {
-  questions: QuizQuestion[];
+export type Stage = {
+    id: string;
+    name: string;
+    order: number;
 }
 
-export function QuizView({ questions }: QuizViewProps) {
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [submitted, setSubmitted] = useState(false);
+export type Task = {
+  id: string;
+  title: string;
+  description?: string;
+  status: string; // Now a string to accommodate custom stages
+  priority: 'Low' | 'Medium' | 'High';
+  dueDate: Timestamp;
+  tags: string[];
+  createdAt: Timestamp;
+  listId: string;
+  reminder?: 'none' | '5m' | '10m' | '30m' | '1h';
+};
 
-  const handleAnswerChange = (questionIndex: number, value: string) => {
-    setAnswers(prev => ({ ...prev, [questionIndex]: value }));
-  };
+export type TaskList = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    stages?: Stage[];
+}
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-  };
+export type BoardTemplate = {
+    id: string;
+    name:string;
+    stages: { name: string; order: number }[];
+}
 
-  const score = Object.entries(answers).reduce((correctCount, [index, answer]) => {
-    const question = questions[Number(index)];
-    // Case-insensitive comparison for short answers
-    if (question.options === undefined) { 
-        return question.answer.toLowerCase() === answer.toLowerCase() ? correctCount + 1 : correctCount;
-    }
-    return question.answer === answer ? correctCount + 1 : correctCount;
-  }, 0);
+export type StickyNote = {
+  id: string;
+  title: string;
+  text: string;
+  color: string;
+  textColor: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  priority: 'High' | 'Medium' | 'Low';
+  position?: { x: number; y: number };
+  gridPosition?: { col: number; row: number };
+};
 
-  return (
-    <div className="space-y-6">
-      {submitted && (
-        <Card className="bg-muted">
-            <CardHeader>
-                <CardTitle>Quiz Results</CardTitle>
-                <CardDescription>You scored {score} out of {questions.length}!</CardDescription>
-            </CardHeader>
-        </Card>
-      )}
 
-      {questions.map((q, index) => (
-        <Card key={index}>
-          <CardHeader>
-            <CardTitle className="text-lg flex justify-between items-center">
-              <span>Question {index + 1}</span>
-              {submitted && (
-                 answers[index]?.toLowerCase() === q.answer.toLowerCase() ?
-                 <CheckCircle className="text-green-500" /> :
-                 <XCircle className="text-destructive" />
-              )}
-            </CardTitle>
-            <CardDescription>{q.question}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {q.options ? (
-              <RadioGroup
-                value={answers[index]}
-                onValueChange={(value) => handleAnswerChange(index, value)}
-                disabled={submitted}
-              >
-                {q.options.map((option, optIndex) => (
-                  <div key={optIndex} className={cn(
-                      "flex items-center space-x-2 p-2 rounded-md",
-                      submitted && option === q.answer && "bg-green-100 dark:bg-green-900/50",
-                      submitted && answers[index] === option && option !== q.answer && "bg-red-100 dark:bg-red-900/50"
-                  )}>
-                    <RadioGroupItem value={option} id={`q${index}-opt${optIndex}`} />
-                    <Label htmlFor={`q${index}-opt${optIndex}`}>{option}</Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            ) : (
-              <Input
-                placeholder="Your answer..."
-                value={answers[index] || ''}
-                onChange={(e) => handleAnswerChange(index, e.target.value)}
-                disabled={submitted}
-              />
-            )}
-            {submitted && (
-                <div className="mt-4 p-3 bg-blue-100/50 dark:bg-blue-900/20 rounded-lg text-sm">
-                    <p><strong>Correct Answer:</strong> {q.answer}</p>
-                    <p><strong>Explanation:</strong> {q.explanation}</p>
-                </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+// --- Notebooks Data Model ---
 
-      {!submitted && (
-        <div className="flex justify-end">
-          <Button onClick={handleSubmit}>Submit Quiz</Button>
-        </div>
-      )}
-    </div>
-  );
+/**
+ * Represents a top-level notebook, which is a collection of sections.
+ *
+ * Firestore Path: /users/{userId}/notebooks/{notebookId}
+ */
+export type Notebook = {
+    id: string;
+    ownerId: string;
+    title: string;
+    color: string; // e.g., a hex color for the notebook tab
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+/**
+ * Represents a section within a notebook, which is a collection of pages.
+ *
+ * Firestore Path: /users/{userId}/sections/{sectionId}
+ */
+export type Section = {
+    id:string;
+    notebookId: string;
+    title: string;
+    order: number; // For ordering sections within a notebook
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+/**
+ * Represents a single page within a section.
+ * Contains the actual content created by the user.
+ *
+ * Firestore Path: /users/{userId}/pages/{pageId}
+ */
+export type Page = {
+    id: string;
+    sectionId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    searchText: string; // A lowercase string of all text for searching
+    version: number; // For optimistic concurrency control
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    lastEditedBy?: string; // UID of the last user who edited
+    canvasColor?: string;
+};
+
+/**
+ * Represents a file attachment associated with a page.
+ *
+ * Firestore Path: /users/{userId}/attachments/{attachmentId}
+ */
+export type Attachment = {
+    id: string;
+    pageId: string;
+    filename: string;
+    url: string; // Cloud Storage URL
+    thumbnailUrl: string | null;
+    mimeType: string;
+    size: number; // in bytes
+    uploadedAt: Timestamp;
+    userId: string;
+};
+
+/**
+ * Represents a snapshot of a page's content at a specific point in time.
+ *
+ * Firestore Path: /users/{userId}/revisions/{revisionId}
+ */
+export type Revision = {
+    id: string;
+    pageId: string;
+    title: string;
+    snapshot: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    authorId: string; // The user who made the change
+    reason?: string; // e.g., "conflict-save-attempt"
+};
+
+/**
+ * Represents sharing permissions for a notebook or a page.
+ *
+ * Firestore Path: /users/{userId}/shares/{shareId}
+ */
+export type Share = {
+    id: string;
+    notebookId: string | null; // ID of the notebook being shared
+    pageId: string | null; // ID of the page being shared (if not the whole notebook)
+    sharedWithUserId: string; // The user receiving access
+    permission: 'viewer' | 'editor';
+};
+
+
+/**
+ * Represents user-specific application settings.
+ *
+ * Firestore Path: /users/{userId}/profile/settings
+ */
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
+    font: 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
+    sidebarOpen: boolean;
+    notificationSound: boolean;
+    docsView?: 'card' | 'list';
+}
+
+/**
+ * Represents a document in the "Docs" module.
+ *
+ * Firestore Path: /users/{userId}/docs/{docId}
+ */
+export type Doc = {
+    id: string;
+    ownerId: string;
+    title: string;
+    content: any; // TipTap/ProseMirror JSON content
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
+
+export interface PomodoroSettingsData {
+    workMinutes: number;
+    shortBreakMinutes: number;
+    longBreakMinutes: number;
+    longBreakInterval: number;
+}
+
+export interface PomodoroState extends PomodoroSettingsData {
+    mode: PomodoroMode;
+    isActive: boolean;
+    sessionsCompleted: number;
+    targetEndTime: Timestamp | null;
+}
+
+// --- Goals Data Model ---
+
+export type Goal = {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Timestamp;
+    targetDate: Timestamp;
+    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Milestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    description: string;
+    dueDate: Timestamp;
+    isCompleted: boolean;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ProgressUpdate = {
+    id: string;
+    goalId: string;
+    milestoneId?: string | null; // Optional: can be linked to a milestone
+    text: string;
+    createdAt: Timestamp;
+};
+
+// --- Habit Tracker Data Model ---
+
+export type Habit = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // Stored as 'YYYY-MM-DD'
+    createdAt: Timestamp;
+};
+
+// --- CRM Data Model ---
+export type CustomField = {
+    id: string;
+    key: string;
+    value: string;
+};
+
+export type CrmAttachment = {
+    id: string;
+    filename: string;
+    url: string;
+    mimeType: string;
+    size: number;
+    uploadedAt: Timestamp;
+};
+
+export type Client = {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    company?: string;
+    notes?: string;
+    status: 'lead' | 'active' | 'inactive' | 'archived';
+    customFields: CustomField[];
+    quotations: Quotation[];
+    invoices: Invoice[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Quotation = {
+    id: string;
+    clientId: string;
+    quotationNumber: string;
+    status: 'draft' | 'sent' | 'accepted' | 'rejected';
+    attachments: CrmAttachment[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Invoice = {
+    id: string;
+    clientId: string;
+    invoiceNumber: string;
+    status: 'draft' | 'sent' | 'paid' | 'overdue';
+    attachments: CrmAttachment[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ClientRequest = {
+    id: string;
+    clientId: string;
+    title: string;
+    description?: string;
+    stage: 'new-request' | 'quotation' | 'execution' | 'reporting' | 'invoice' | 'completed' | 'win' | 'lost';
+    invoiceAmount?: number;
+    lossReason?: 'Budget' | 'Competition' | 'Timing' | 'Scope' | 'Other' | null;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
 }
