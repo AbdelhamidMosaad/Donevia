@@ -3,8 +3,9 @@
 
 import {
   generateStudyMaterial,
-  GenerateStudyGuideRequest,
 } from '@/ai/flows/generate-study-material';
+import type { GenerateStudyGuideRequest, GenerateStudyGuideResponse } from '@/lib/types';
+
 
 export async function generateStudyGuide(
   request: GenerateStudyGuideRequest

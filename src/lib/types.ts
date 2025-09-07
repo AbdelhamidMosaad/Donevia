@@ -314,6 +314,30 @@ export type LearningMaterial = {
     createdAt: Timestamp;
 };
 
+export const GenerateStudyGuideRequestSchema = z.object({
+  topic: z.string().describe('The main topic for the study guide.'),
+  subtopics: z
+    .string()
+    .describe(
+      'A comma-separated list of subtopics to focus on within the main topic.'
+    ),
+});
+export type GenerateStudyGuideRequest = z.infer<
+  typeof GenerateStudyGuideRequestSchema
+>;
+
+export const GenerateStudyGuideResponseSchema = z.object({
+  htmlContent: z
+    .string()
+    .describe(
+      'The generated study guide as a single, complete HTML string. It should be well-structured with headings (h2, h3), paragraphs, lists, and tables where appropriate. The entire response must be enclosed in a single root <div> tag.'
+    ),
+});
+export type GenerateStudyGuideResponse = z.infer<
+  typeof GenerateStudyGuideResponseSchema
+>;
+
+
 /** Habits */
 export type Habit = {
     id: string;
