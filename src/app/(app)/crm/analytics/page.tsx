@@ -26,11 +26,12 @@ export default function CrmAnalyticsPage() {
   
   useEffect(() => {
     if (user) {
+      setDataLoading(true);
       const reqQuery = query(collection(db, 'users', user.uid, 'clientRequests'));
       const unsubscribeReqs = onSnapshot(reqQuery, (snapshot) => {
         const requestsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClientRequest));
         setRequests(requestsData);
-        if(!snapshot.metadata.fromCache) setDataLoading(false);
+        setDataLoading(false);
       });
 
       const clientQuery = query(collection(db, 'users', user.uid, 'clients'));

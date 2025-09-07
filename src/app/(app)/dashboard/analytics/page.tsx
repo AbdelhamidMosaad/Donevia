@@ -27,11 +27,12 @@ export default function DashboardAnalyticsPage() {
   
   useEffect(() => {
     if (user) {
+      setDataLoading(true);
       const taskQuery = query(collection(db, 'users', user.uid, 'tasks'));
       const unsubscribeTasks = onSnapshot(taskQuery, (snapshot) => {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(tasksData);
-        if(!snapshot.metadata.fromCache) setDataLoading(false);
+        setDataLoading(false);
       });
 
       const listsQuery = query(collection(db, 'users', user.uid, 'taskLists'));
