@@ -86,7 +86,8 @@ export function GenerateDialog({ open, onOpenChange }: GenerateDialogProps) {
 
   const handleCopy = () => {
     if (!result?.notes) return;
-    navigator.clipboard.writeText(result.notes);
+    const fullText = `${result.title}\n\n${result.notes}`;
+    navigator.clipboard.writeText(fullText);
     toast({ title: '✓ Copied to clipboard!' });
   };
   
@@ -99,7 +100,7 @@ export function GenerateDialog({ open, onOpenChange }: GenerateDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Generate Lecture Notes</DialogTitle>
           <DialogDescription>
@@ -154,8 +155,8 @@ export function GenerateDialog({ open, onOpenChange }: GenerateDialogProps) {
         ) : (
             <div className="py-4 flex-1 min-h-0 flex flex-col gap-4">
                 <ScrollArea className="flex-1 border rounded-md p-4 bg-muted/50">
-                     <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
-                        <h4>{result.title}</h4>
+                     <div className="whitespace-pre-wrap">
+                        <h4 className="font-bold text-lg mb-4">{result.title}</h4>
                         <p>{result.notes}</p>
                     </div>
                 </ScrollArea>
