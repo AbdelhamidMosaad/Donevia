@@ -5,6 +5,7 @@ import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, Link, Quote, Code, Table,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -22,6 +23,7 @@ const ToolbarButton = ({
   icon: Icon,
   onClick,
   level,
+  align
 }: {
   editor: Editor;
   name: string;
@@ -29,10 +31,16 @@ const ToolbarButton = ({
   icon: React.ElementType;
   onClick?: () => void;
   level?: number;
+  align?: string;
 }) => {
-  const isActive = level ? editor.isActive(name, { level }) : editor.isActive(name);
+  const isActive = align ? editor.isActive({ textAlign: align }) : (level ? editor.isActive(name, { level }) : editor.isActive(name));
+
   const action = onClick || (() => {
     const chain = editor.chain().focus();
+    if (align) {
+        (chain as any).setTextAlign(align).run();
+        return;
+    }
     const command = `toggle${name.charAt(0).toUpperCase() + name.slice(1)}`;
     if (typeof (chain as any)[command] === 'function') {
       if (level) {
@@ -86,6 +94,11 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <ToolbarButton editor={editor} name="heading" label="Heading 1" icon={Heading1} level={1} />
         <ToolbarButton editor={editor} name="heading" label="Heading 2" icon={Heading2} level={2} />
         <ToolbarButton editor={editor} name="heading" label="Heading 3" icon={Heading3} level={3} />
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        <ToolbarButton editor={editor} name="alignLeft" label="Align Left" icon={AlignLeft} align="left" />
+        <ToolbarButton editor={editor} name="alignCenter" label="Align Center" icon={AlignCenter} align="center" />
+        <ToolbarButton editor={editor} name="alignRight" label="Align Right" icon={AlignRight} align="right" />
+        <ToolbarButton editor={editor} name="alignJustify" label="Align Justify" icon={AlignJustify} align="justify" />
         <Separator orientation="vertical" className="h-6 mx-1" />
         <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
         <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
