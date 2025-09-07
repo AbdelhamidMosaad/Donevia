@@ -54,9 +54,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        // No need to disable anything here, let StarterKit handle defaults
-      }),
+      StarterKit,
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
       Link.configure({ openOnClick: true, autolink: true }),

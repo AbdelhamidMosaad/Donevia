@@ -236,6 +236,25 @@ body {
       margin: 0.5em 0;
       padding-left: 0.5em;
   }
+
+  #editor a { color: #007bff; text-decoration: underline; }
+  #editor blockquote { 
+      margin: 1em 0; padding: 0.5em 1em; 
+      border-left: 4px solid #007bff; 
+      background-color: #f8f9fa; font-style: italic; 
+  }
+  #editor pre { 
+      background-color: #f1f3f4; padding: 1em; 
+      font-family: monospace; border-radius: 4px; 
+  }
+  #editor table { 
+      border-collapse: collapse; width: 100%; 
+      border: 1px solid #dee2e6; 
+  }
+  #editor th, #editor td { 
+      border: 1px solid #dee2e6; 
+      padding: 8px 12px; 
+  }
 }
 
 .rbc-calendar {
