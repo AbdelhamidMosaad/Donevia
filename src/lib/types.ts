@@ -231,16 +231,40 @@ export const RecapResponseSchema = z.object({
 export type RecapResponse = z.infer<typeof RecapResponseSchema>;
 
 
-/** Lecture Notes Feature */
-export const LectureNotesRequestSchema = z.object({
-  sourceText: z.string().min(1, { message: 'Source text cannot be empty.' }),
-  style: z.enum(['detailed', 'bullet', 'outline', 'summary']),
-  complexity: z.enum(['simple', 'medium', 'advanced']),
-});
-export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
+/** Learning Tool Feature */
+export type QuizQuestionType = 'multiple-choice' | 'true-false' | 'short-answer';
 
-export const LectureNotesResponseSchema = z.object({
-  title: z.string().describe('A concise and relevant title for the generated lecture notes.'),
-  notes: z.string().describe('The formatted lecture notes based on the specified style and complexity.'),
+export const QuizQuestionSchema = z.object({
+  questionText: z.string(),
+  questionType: z.enum(['multiple-choice', 'true-false', 'short-answer']),
+  options: z.array(z.string()).optional(),
+  correctAnswer: z.string().describe('The correct answer. For multiple-choice, this is the exact text of the correct option.'),
+  explanation: z.string(),
 });
-export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
+
+export const FlashcardSchema = z.object({
+  term: z.string(),
+  definition: z.string(),
+});
+
+export const StudyMaterialRequestSchema = z.object({
+  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
+  generationType: z.enum(['quiz', 'flashcards', 'notes']),
+  quizOptions: z.object({
+    numQuestions: z.number().min(1).max(20),
+    questionTypes: z.array(z.enum(['multiple-choice', 'true-false', 'short-answer'])),
+    difficulty: z.enum(['easy', 'medium', 'hard']),
+  }).optional(),
+  notesOptions: z.object({
+    style: z.enum(['detailed', 'bullet', 'outline', 'summary']),
+    complexity: z.enum(['simple', 'medium', 'advanced']),
+  }).optional(),
+});
+
+export const StudyMaterialResponseSchema = z.object({
+  title: z.string().describe('A concise and relevant title for the generated material.'),
+  materialType: z.enum(['quiz', 'flashcards', 'notes']),
+  quizContent: z.array(QuizQuestionSchema).optional(),
+  flashcardContent: z.array(FlashcardSchema).optional(),
+  notesContent: z.string().optional(),
+});
