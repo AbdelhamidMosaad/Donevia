@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Briefcase, Search } from 'lucide-react';
+import { PlusCircle, Briefcase, Search, LayoutDashboard, BarChart3, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Client } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ClientDialog } from '@/components/crm/client-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +15,7 @@ import { deleteClient } from '@/lib/crm';
 import { Input } from '@/components/ui/input';
 import { useDebouncedCallback } from 'use-debounce';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 export default function CrmPage() {
@@ -40,7 +40,6 @@ export default function CrmPage() {
     if (user) {
       let q = query(collection(db, 'users', user.uid, 'clients'), orderBy('createdAt', 'desc'));
       
-      // Basic client-side search. For large datasets, use a search service like Algolia.
       const unsubscribe = onSnapshot(q, (snapshot) => {
         let clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client));
         if (searchQuery) {
@@ -76,9 +75,47 @@ export default function CrmPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
             <h1 className="text-3xl font-bold font-headline">CRM Dashboard</h1>
-            <p className="text-muted-foreground">Manage your clients, quotations, and invoices.</p>
+            <p className="text-muted-foreground">Manage your clients, requests, and analyze your pipeline.</p>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Link href="/crm/requests">
+            <Card className="hover:bg-muted/50 transition-colors">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Client Requests</CardTitle>
+                    <LayoutDashboard className="h-6 w-6 text-primary"/>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">View and manage your sales pipeline using a Kanban board.</p>
+                </CardContent>
+            </Card>
+        </Link>
+         <Link href="/crm/analytics">
+            <Card className="hover:bg-muted/50 transition-colors">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Analytics</CardTitle>
+                    <BarChart3 className="h-6 w-6 text-primary"/>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">Visualize your pipeline performance and track key metrics.</p>
+                </CardContent>
+            </Card>
+        </Link>
+         <Card className="hover:bg-muted/50 transition-colors cursor-default">
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Client Management</CardTitle>
+                <Users className="h-6 w-6 text-primary"/>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground">Manage your contacts, quotations, and invoices below.</p>
+            </CardContent>
+        </Card>
+      </div>
+      
+       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+          <h2 className="text-2xl font-bold font-headline">Your Clients</h2>
+          <div className="flex items-center gap-2 w-full md:w-auto">
              <div className="relative flex-1 md:flex-initial">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -93,8 +130,7 @@ export default function CrmPage() {
               New Client
             </Button>
         </div>
-      </div>
-      
+       </div>
        {clients.length === 0 && !searchQuery ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
             <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />

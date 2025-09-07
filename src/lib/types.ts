@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 
 export type Stage = {
@@ -260,6 +259,8 @@ export type Client = {
     notes?: string;
     status: 'lead' | 'active' | 'inactive' | 'archived';
     customFields: CustomField[];
+    quotations: Quotation[];
+    invoices: Invoice[];
     createdAt: Timestamp;
     updatedAt: Timestamp;
 };
@@ -283,3 +284,15 @@ export type Invoice = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
 };
+
+export type ClientRequest = {
+    id: string;
+    clientId: string;
+    title: string;
+    description?: string;
+    stage: 'new-request' | 'quotation' | 'execution' | 'reporting' | 'invoice' | 'completed' | 'win' | 'lost';
+    invoiceAmount?: number;
+    lossReason?: 'Budget' | 'Competition' | 'Timing' | 'Scope' | 'Other' | null;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+}
