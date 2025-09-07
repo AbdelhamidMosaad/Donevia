@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import type { Client } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Mail, Phone, Building, StickyNote } from 'lucide-react';
+import { ArrowLeft, Edit, Mail, Phone, Building, StickyNote, WifiOff, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ClientDialog } from '@/components/crm/client-dialog';
 import { CustomFieldsManager } from '@/components/crm/custom-fields';
@@ -26,6 +26,7 @@ export default function ClientDetailPage() {
 
   const [client, setClient] = useState<Client | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -33,8 +34,10 @@ export default function ClientDetailPage() {
     }
   }, [user, loading, router]);
   
-  useEffect(() => {
+  const fetchClientData = () => {
     if (user && clientId) {
+        setDataError(null);
+        setClient(null);
       const clientRef = doc(db, 'users', user.uid, 'clients', clientId);
       const unsubscribeClient = onSnapshot(clientRef, (doc) => {
         if (doc.exists()) {
@@ -42,17 +45,41 @@ export default function ClientDetailPage() {
         } else {
           router.push('/crm');
         }
+      }, (error) => {
+        console.error("Error fetching client:", error);
+        if(error.code === 'unavailable') {
+            setDataError("You are offline. This client's data is not available in the cache.");
+        } else {
+            setDataError("An error occurred while fetching client data.");
+        }
       });
       
       return () => {
         unsubscribeClient();
       };
     }
-  }, [user, clientId, router]);
+  };
+  
+  useEffect(fetchClientData, [user, clientId, router]);
 
 
-  if (loading || !user || !client) {
+  if (loading || (!client && !dataError)) {
     return <div className="flex items-center justify-center h-full"><p>Loading client...</p></div>;
+  }
+  
+  if (dataError) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
+            <WifiOff className="h-16 w-16 text-destructive mb-4" />
+            <h3 className="text-xl font-semibold font-headline">Could Not Load Client Data</h3>
+            <p className="text-muted-foreground mb-6">{dataError}</p>
+            <Button onClick={() => window.location.reload()}><RefreshCw className="mr-2 h-4 w-4"/> Retry</Button>
+        </div>
+    );
+  }
+
+  if (!client) {
+      return null; // Should be covered by other states, but as a fallback.
   }
 
   return (
