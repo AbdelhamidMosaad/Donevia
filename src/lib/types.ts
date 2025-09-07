@@ -151,16 +151,6 @@ export type Doc = {
     updatedAt: Timestamp;
 };
 
-/** Lecture Notes */
-export type LectureNote = {
-    id: string;
-    title: string;
-    sourceText: string;
-    content: any; // TipTap JSON
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
 /** Pomodoro */
 export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
 
