@@ -17,13 +17,14 @@ export default function PomodoroPage() {
     };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center">
+    <div className="flex flex-col items-center justify-center h-full text-center gap-8">
+        <PomodoroTimer />
         <Card className="w-full max-w-lg">
             <CardHeader>
                 <div className="mx-auto bg-primary/10 p-4 rounded-full">
                  <Timer className="h-12 w-12 text-primary" />
                 </div>
-                <CardTitle className="mt-4 font-headline text-2xl">Pomodoro Timer</CardTitle>
+                <CardTitle className="mt-4 font-headline text-2xl">Pomodoro Timer Settings</CardTitle>
                 <CardDescription>Configure your Pomodoro sessions. The timer is always accessible from the top-right of your screen.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -35,3 +36,4 @@ export default function PomodoroPage() {
     </div>
   );
 }
+
