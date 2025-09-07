@@ -11,21 +11,18 @@ import { Sparkles } from 'lucide-react';
 import { RecapGenerator } from '@/components/recap-generator';
 
 export default function RecapPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.push('/');
-      setDataLoading(false);
+      return;
     }
-  }, [user, loading, router]);
-  
-  useEffect(() => {
+    
     if (user) {
-      // Only set data loading to true if we have a user to fetch for
       setDataLoading(true);
       const taskQuery = query(collection(db, 'users', user.uid, 'tasks'));
       const unsubscribeTasks = onSnapshot(taskQuery, (snapshot) => {
@@ -34,19 +31,17 @@ export default function RecapPage() {
         setDataLoading(false);
       }, (error) => {
         console.error("Error fetching tasks:", error);
-        setDataLoading(false); // Also stop loading on error
+        setDataLoading(false); // Stop loading on error
       });
 
-      return () => {
-        unsubscribeTasks();
-      };
-    } else if (!loading && !user) {
-      // If there's no user and we're not in a loading state, stop data loading.
-      setDataLoading(false);
+      return () => unsubscribeTasks();
+    } else if (!authLoading && !user) {
+        // Handle case where user is not logged in after auth check
+        setDataLoading(false);
     }
-  }, [user, loading]);
+  }, [user, authLoading, router]);
 
-  if (loading || dataLoading) {
+  if (authLoading || dataLoading) {
     return <div>Loading recap...</div>;
   }
 
