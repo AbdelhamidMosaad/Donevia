@@ -218,23 +218,23 @@ body {
     @apply text-base;
   }
   #editor ul, #editor ol {
-      margin: 1em 0;
-      padding-left: 2em !important;
-      list-style-position: outside !important;
+    margin: 1em 0;
+    padding-left: 2em !important;
+    list-style-position: outside !important;
   }
 
   #editor ul {
-      list-style-type: disc !important;
+    list-style-type: disc !important;
   }
 
   #editor ol {
-      list-style-type: decimal !important;
+    list-style-type: decimal !important;
   }
 
   #editor li {
-      display: list-item !important;
-      margin: 0.5em 0;
-      padding-left: 0.5em;
+    display: list-item !important;
+    margin: 0.5em 0;
+    padding-left: 0.5em;
   }
 
   #editor a { color: #007bff; text-decoration: underline; }
