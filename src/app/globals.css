@@ -255,6 +255,19 @@ body {
       border: 1px solid #dee2e6; 
       padding: 8px 12px; 
   }
+  #editor s, #editor strike {
+    text-decoration: line-through;
+  }
+
+  #editor sup {
+    vertical-align: super;
+    font-size: smaller;
+  }
+
+  #editor sub {
+    vertical-align: sub;
+    font-size: smaller;
+  }
 }
 
 .rbc-calendar {

@@ -5,7 +5,8 @@ import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, Link, Quote, Code, Table,
-  AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
+  Undo, Redo, Superscript, Subscript
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -28,16 +29,17 @@ const ToolbarButton = ({
   align
 }: {
   editor: Editor;
-  name: string;
+  name?: string;
   label: string;
   icon: React.ElementType;
   onClick?: () => void;
   level?: number;
   align?: string;
 }) => {
-  const isActive = align ? editor.isActive({ textAlign: align }) : (level ? editor.isActive(name, { level }) : editor.isActive(name));
+  const isActive = name ? (align ? editor.isActive({ textAlign: align }) : (level ? editor.isActive(name, { level }) : editor.isActive(name))) : false;
 
   const action = onClick || (() => {
+    if (!name) return;
     const chain = editor.chain().focus();
     if (align) {
         (chain as any).setTextAlign(align).run();
@@ -90,9 +92,14 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   return (
     <TooltipProvider>
       <div className="flex items-center gap-1 p-2 border-t mt-2 flex-wrap">
+        <ToolbarButton editor={editor} onClick={() => editor.chain().focus().undo().run()} label="Undo" icon={Undo} />
+        <ToolbarButton editor={editor} onClick={() => editor.chain().focus().redo().run()} label="Redo" icon={Redo} />
+
+        <Separator orientation="vertical" className="h-6 mx-1" />
+
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-24 text-left justify-start">
+                <Button variant="ghost" size="sm" className="w-28 text-left justify-start">
                     <Pilcrow className="h-4 w-4 mr-2" />
                     {
                         (editor.isActive('heading', {level: 1}) && 'Heading 1') ||
@@ -134,7 +141,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <Tooltip>
             <TooltipTrigger asChild>
                 <Toggle size="sm" asChild>
-                    <label style={{ color: editor.getAttributes('textStyle').color }} className="relative">
+                    <label style={{ color: editor.getAttributes('textStyle').color }} className="relative p-2 rounded-md hover:bg-muted cursor-pointer">
                         <Palette className="h-4 w-4" />
                         <input
                             type="color"
@@ -153,13 +160,13 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <Tooltip>
             <TooltipTrigger asChild>
                 <Toggle size="sm" asChild>
-                     <label className="relative">
+                     <label className="relative p-2 rounded-md hover:bg-muted cursor-pointer">
                         <Highlighter className="h-4 w-4" />
                         <input
                             type="color"
                             className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                             onInput={(event) => editor.chain().focus().toggleHighlight({ color: (event.target as HTMLInputElement).value }).run()}
-                            value={editor.getAttributes('highlight').color || '#ffffff'}
+                            value={editor.getAttributes('highlight')?.color || '#ffffff'}
                         />
                     </label>
                 </Toggle>
@@ -176,6 +183,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
         <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
         <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
+        <ToolbarButton editor={editor} name="superscript" label="Superscript" icon={Superscript} />
+        <ToolbarButton editor={editor} name="subscript" label="Subscript" icon={Subscript} />
+
 
         <Separator orientation="vertical" className="h-6 mx-1" />
 

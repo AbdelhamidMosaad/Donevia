@@ -26,6 +26,8 @@ import { Image as TipTapImage } from '@tiptap/extension-image';
 import { FontSize } from '@/lib/tiptap/font-size';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import Superscript from '@tiptap/extension-superscript';
+import Subscript from '@tiptap/extension-subscript';
 
 
 interface DocEditorProps {
@@ -59,12 +61,9 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // The Tiptap starter kit includes many extensions, but we can configure them
-        // to disable certain features if we want to handle them differently.
-        // For lists, we ensure they are not disabled.
-        bulletList: {},
-        orderedList: {},
-        listItem: {},
+        heading: {
+          levels: [1, 2, 3],
+        },
       }),
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
@@ -80,6 +79,8 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       TextStyle,
       FontSize,
       Color,
+      Superscript,
+      Subscript,
     ],
     content: docData.content,
     editorProps: {
