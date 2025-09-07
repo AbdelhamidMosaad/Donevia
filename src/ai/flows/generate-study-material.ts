@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview AI flow for generating various study materials from source text.
- * - generateStudyMaterial - A function that generates quizzes, flashcards, or notes.
+ * - generateStudyMaterial - A function that generates notes.
  * - StudyMaterialRequest - The input type for the generation.
  * - StudyMaterialResponse - The return type.
  */
@@ -18,22 +18,13 @@ const studyMaterialPrompt = ai.definePrompt({
   input: { schema: StudyMaterialRequestSchema },
   output: { schema: StudyMaterialResponseSchema },
   prompt: `
-You are an expert at creating educational materials. Your task is to convert the provided source text into the specified type of study material.
+You are an expert at creating educational materials. Your task is to convert the provided source text into lecture notes.
 
 Follow these instructions precisely:
-1.  **Material Type**: The output must be a "{{generationType}}".
-2.  **Source Text**: The content must be based *only* on the following text. Do not add external information.
-3.  **For Quizzes**:
-    - Generate exactly {{quizOptions.numQuestions}} questions.
-    - Include the following question types: {{quizOptions.questionTypes}}.
-    - The difficulty level should be "{{quizOptions.difficulty}}".
-    - For each question, provide a brief but clear explanation for the correct answer.
-4.  **For Flashcards**:
-    - Generate a set of flashcards covering the key concepts.
-    - Each flashcard should have a 'term' and a 'definition'.
-5.  **For Notes**:
-    - The notes style must be "{{notesOptions.style}}".
-    - The complexity level must be "{{notesOptions.complexity}}".
+1.  **Output Format**: The output must be plain text, not markdown. Use line breaks for structure.
+2.  **Note Style**: The notes must be in the "{{notesOptions.style}}" style.
+3.  **Complexity**: The complexity level must be "{{notesOptions.complexity}}".
+4.  **Content**: The content must be based *only* on the source text provided below. Do not add any external information.
 
 Source Text:
 ---
@@ -54,6 +45,10 @@ const generateStudyMaterialFlow = ai.defineFlow(
     const { output } = await studyMaterialPrompt(input);
     if (!output) {
         throw new Error('The AI failed to generate study material. Please try again.');
+    }
+    // Ensure notesContent is a string, even if the AI messes up.
+    if (typeof output.notesContent !== 'string') {
+        output.notesContent = JSON.stringify(output.notesContent, null, 2);
     }
     return output;
   }

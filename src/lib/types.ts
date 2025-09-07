@@ -256,7 +256,7 @@ export const StudyMaterialRequestSchema = z.object({
     difficulty: z.enum(['easy', 'medium', 'hard']),
   }).optional(),
   notesOptions: z.object({
-    style: z.enum(['detailed', 'bullet', 'outline', 'summary']),
+    style: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
     complexity: z.enum(['simple', 'medium', 'advanced']),
   }).optional(),
 });

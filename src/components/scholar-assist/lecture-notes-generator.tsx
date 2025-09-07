@@ -8,10 +8,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyMaterialRequest, StudyMaterialResponse } from '@/ai/flows/learning-tool-flow';
 import { Button } from '../ui/button';
-import { Loader2, Copy } from 'lucide-react';
+import { Loader2, Copy, Download, FileText } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Label } from '../ui/label';
 
 export function LectureNotesGenerator() {
   const { user } = useAuth();
@@ -70,35 +68,67 @@ export function LectureNotesGenerator() {
     navigator.clipboard.writeText(fullText);
     toast({ title: '✓ Copied to clipboard!' });
   };
+  
+  const handleDownload = () => {
+    if (!result?.notesContent) return;
+    const fullText = `${result.title}\n\n${result.notesContent}`;
+    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${result.title.replace(/ /g, '_')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({ title: '✓ Download started' });
+  };
 
-
-  if (result && result.notesContent) {
-    return (
-        <Card className="flex-1 flex flex-col">
-            <CardHeader>
-                <CardTitle>{result.title}</CardTitle>
-                <CardDescription>Your AI-generated notes are ready.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1">
-                 <ScrollArea className="h-full border rounded-md p-4 bg-muted/50 max-h-[50vh]">
-                     <div className="whitespace-pre-wrap">
-                        {result.notesContent}
-                    </div>
-                </ScrollArea>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" onClick={handleReset}>Generate New Notes</Button>
-                <Button onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy</Button>
-            </CardFooter>
-        </Card>
-    )
+  const renderContent = () => {
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
+                <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
+                <h3 className="text-xl font-semibold font-headline">Generating Your Notes...</h3>
+                <p className="text-muted-foreground">The AI is creating your study material. This may take a moment.</p>
+            </div>
+        );
+    }
+    if (result && result.notesContent) {
+        return (
+            <Card className="flex-1 flex flex-col h-full">
+                <CardHeader>
+                    <CardTitle>{result.title}</CardTitle>
+                    <CardDescription>Your AI-generated notes are ready.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                    <ScrollArea className="h-full border rounded-md p-4 bg-muted/50">
+                        <div className="whitespace-pre-wrap font-sans">
+                            {result.notesContent}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+                <CardFooter className="flex-wrap justify-end gap-2">
+                    <Button variant="outline" onClick={handleReset}>Generate New Notes</Button>
+                    <Button onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
+                    <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
+                </CardFooter>
+            </Card>
+        )
+    }
+     return <InputForm onGenerate={handleGenerate} />;
   }
 
   return (
-    <InputForm
-      onGenerate={handleGenerate}
-      isLoading={isLoading}
-      showNoteOptions
-    />
-  );
+    <div className="flex flex-col h-full gap-6">
+       <div className="flex items-center gap-4">
+        <FileText className="h-8 w-8 text-primary" />
+        <div>
+          <h1 className="text-3xl font-bold font-headline">AI Lecture Notes Generator</h1>
+          <p className="text-muted-foreground">Transform any text into clean, organized lecture notes.</p>
+        </div>
+      </div>
+      {renderContent()}
+    </div>
+  )
 }

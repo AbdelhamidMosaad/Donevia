@@ -18,6 +18,9 @@ export async function POST(request: Request) {
     if (!body.sourceText || !body.generationType) {
         return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
     }
+     if (body.generationType === 'notes' && !body.notesOptions) {
+        return NextResponse.json({ error: 'Missing notesOptions for notes generation.' }, { status: 400 });
+    }
 
     const studyMaterial = await generateStudyMaterial(body);
 
