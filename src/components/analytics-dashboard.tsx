@@ -27,7 +27,10 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
   const averageTasksPerDay = useMemo(() => {
     if (tasks.length === 0) return 0;
     const firstTaskDate = tasks.reduce((oldest, task) => {
-        return task.createdAt.toDate() < oldest ? task.createdAt.toDate() : oldest;
+        if (task.createdAt && task.createdAt.toDate() < oldest) {
+            return task.createdAt.toDate();
+        }
+        return oldest;
     }, new Date());
     const daysSinceFirstTask = moment().diff(moment(firstTaskDate), 'days') + 1;
     return tasksCompleted / daysSinceFirstTask;
