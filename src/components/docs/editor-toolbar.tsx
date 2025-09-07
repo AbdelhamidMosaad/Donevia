@@ -6,14 +6,17 @@ import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
-  Undo, Redo, Superscript, Subscript
+  Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
+import { useAuth } from '@/hooks/use-auth';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useToast } from '@/hooks/use-toast';
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -71,6 +74,10 @@ const ToolbarButton = ({
 
 
 export function EditorToolbar({ editor }: EditorToolbarProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const setLink = useCallback(() => {
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URL', previousUrl);
@@ -82,6 +89,37 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
+
+  const addImage = useCallback(() => {
+    const url = window.prompt('Image URL');
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  }, [editor]);
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || !user) return;
+    const file = event.target.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
+      return;
+    }
+
+    const storage = getStorage();
+    const filePath = `users/${user.uid}/docs/images/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, filePath);
+
+    try {
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      editor.chain().focus().setImage({ src: downloadURL }).run();
+      toast({ title: 'Image uploaded successfully!' });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({ variant: 'destructive', title: 'Image upload failed' });
+    }
+  };
 
   if (!editor) {
     return null;
@@ -205,6 +243,20 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
         <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
         <ToolbarButton editor={editor} name="table" label="Table" icon={Table} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+        <ToolbarButton editor={editor} label="Image from URL" icon={ImageIcon} onClick={addImage} />
+        <ToolbarButton editor={editor} label="Horizontal Line" icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
+        
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Toggle size="sm" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-4 w-4" />
+                </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>Upload Image</p>
+            </TooltipContent>
+        </Tooltip>
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
       </div>
     </TooltipProvider>
   );

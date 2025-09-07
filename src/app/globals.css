@@ -268,6 +268,24 @@ body {
     vertical-align: sub;
     font-size: smaller;
   }
+  #editor img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 10px 0;
+      border: 2px solid transparent;
+      cursor: pointer;
+  }
+
+  #editor img:hover {
+      border-color: hsl(var(--primary));
+  }
+
+  #editor hr {
+      border: none;
+      border-top: 2px solid hsl(var(--border));
+      margin: 20px 0;
+  }
 }
 
 .rbc-calendar {
