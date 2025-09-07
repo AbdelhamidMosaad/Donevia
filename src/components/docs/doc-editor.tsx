@@ -23,6 +23,9 @@ import { EditorToolbar } from './editor-toolbar';
 import { slashCommands } from './slash-commands';
 import { Loader2 } from 'lucide-react';
 import { Image as TipTapImage } from '@tiptap/extension-image';
+import BulletList from '@tiptap/extension-bullet-list';
+import ListItem from '@tiptap/extension-list-item';
+import OrderedList from '@tiptap/extension-ordered-list';
 
 interface DocEditorProps {
   doc: Doc;
@@ -70,6 +73,9 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       TableCell,
       slashCommands,
       TipTapImage,
+      BulletList,
+      ListItem,
+      OrderedList,
     ],
     content: docData.content,
     editorProps: {
