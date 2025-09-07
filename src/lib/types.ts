@@ -318,3 +318,17 @@ export type LearningMaterial = {
     content: GeneratedLearningContent;
     createdAt: Timestamp;
 }
+
+export type Habit = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+}
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // YYYY-MM-DD
+    createdAt: Timestamp;
+}

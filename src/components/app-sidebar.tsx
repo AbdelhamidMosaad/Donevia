@@ -26,6 +26,7 @@ import {
   Target,
   Briefcase,
   GraduationCap,
+  Repeat, // Added habit tracker icon
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -37,6 +38,7 @@ export function AppSidebar() {
 
   const menuItems = [
     { href: '/dashboard/lists', icon: <Kanban />, label: 'Task Management', tooltip: 'Task Management' },
+    { href: '/habits', icon: <Repeat />, label: 'Habit Tracker', tooltip: 'Habit Tracker' },
     { href: '/goals', icon: <Target />, label: 'Goals', tooltip: 'Goals' },
     { href: '/notes', icon: <FileText />, label: 'Sticky Notes', tooltip: 'Sticky Notes' },
     { href: '/whiteboard', icon: <PenSquare />, label: 'Whiteboard', tooltip: 'Whiteboard' },
