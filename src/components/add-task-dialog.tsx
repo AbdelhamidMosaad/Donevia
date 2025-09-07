@@ -57,6 +57,7 @@ export function AddTaskDialog({
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [reflection, setReflection] = useState('');
   const [dueDate, setDueDate] = useState<Date>(defaultDueDate || new Date());
   const [priority, setPriority] = useState<Task['priority']>('Medium');
   const [status, setStatus] = useState<Task['status'] | undefined>();
@@ -65,6 +66,7 @@ export function AddTaskDialog({
   const resetForm = () => {
     setTitle('');
     setDescription('');
+    setReflection('');
     setDueDate(defaultDueDate || new Date());
     setPriority('Medium');
     setReminder('none');
@@ -98,6 +100,7 @@ export function AddTaskDialog({
       if (isEditMode && task) {
         setTitle(task.title);
         setDescription(task.description || '');
+        setReflection(task.reflection || '');
         setDueDate(task.dueDate.toDate());
         setPriority(task.priority);
         setStatus(task.status);
@@ -128,6 +131,7 @@ export function AddTaskDialog({
     const taskData = {
         title,
         description,
+        reflection,
         dueDate: Timestamp.fromDate(dueDate),
         priority,
         status,
@@ -173,7 +177,7 @@ export function AddTaskDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Task' : 'Add New Task'}</DialogTitle>
           <DialogDescription>{isEditMode ? 'Update the details of your task.' : 'Fill in the details for your new task.'}</DialogDescription>
@@ -183,9 +187,13 @@ export function AddTaskDialog({
             <Label htmlFor="title" className="text-right">Title</Label>
             <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">Description</Label>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="description" className="text-right pt-2">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="reflection" className="text-right pt-2">Reflection</Label>
+            <Textarea id="reflection" value={reflection} onChange={(e) => setReflection(e.target.value)} className="col-span-3" placeholder="Jot down your thoughts, lessons learned, or progress notes..."/>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dueDate" className="text-right">Due Date</Label>

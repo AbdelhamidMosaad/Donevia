@@ -19,6 +19,7 @@ export const TaskSchema = z.object({
     id: z.string(),
     title: z.string(),
     description: z.string().optional(),
+    reflection: z.string().optional(),
     status: z.string(), // Customizable stage name
     priority: z.enum(['Low', 'Medium', 'High']),
     dueDate: FirebaseTimestampSchema,
