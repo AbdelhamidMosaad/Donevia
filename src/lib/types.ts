@@ -217,22 +217,6 @@ export type ProgressUpdate = {
     createdAt: Timestamp;
 };
 
-// --- Habit Tracker Data Model ---
-
-export type Habit = {
-    id: string;
-    name: string;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type HabitCompletion = {
-    id: string;
-    habitId: string;
-    date: string; // Stored as 'YYYY-MM-DD'
-    createdAt: Timestamp;
-};
-
 // --- CRM Data Model ---
 export type CustomField = {
     id: string;
@@ -295,4 +279,42 @@ export type ClientRequest = {
     lossReason?: 'Budget' | 'Competition' | 'Timing' | 'Scope' | 'Other' | null;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+}
+
+// --- Learning Tool Data Model ---
+
+export type LearningContentRequest = {
+    type: 'notes' | 'quiz' | 'flashcards';
+    quizOptions?: {
+        numQuestions: number;
+        questionTypes: ('multiple-choice' | 'true-false' | 'short-answer')[];
+    }
+}
+
+export type QuizQuestion = {
+    question: string;
+    type: 'multiple-choice' | 'true-false' | 'short-answer';
+    options?: string[]; // For multiple-choice
+    answer: string;
+    explanation: string;
+}
+
+export type Flashcard = {
+    front: string;
+    back: string;
+}
+
+export type GeneratedLearningContent = {
+    lectureNotes?: string;
+    quiz?: QuizQuestion[];
+    flashcards?: Flashcard[];
+}
+
+export type LearningMaterial = {
+    id: string;
+    userId: string;
+    sourceTitle: string; // from filename or first few words of text
+    type: 'notes' | 'quiz' | 'flashcards';
+    content: GeneratedLearningContent;
+    createdAt: Timestamp;
 }

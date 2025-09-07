@@ -7,7 +7,6 @@ import { generateLearningContent } from '@/ai/flows/learning-tool-flow';
 import type { LearningContentRequest } from '@/lib/types';
 import { Readable } from 'stream';
 
-
 export const config = {
   api: {
     bodyParser: false,
@@ -37,7 +36,6 @@ async function parseForm(req: Request): Promise<{ fields: Record<string, string>
     busboy.on('error', reject);
 
     if (req.body) {
-        // Convert the Web Stream to a Node.js Readable stream
         Readable.fromWeb(req.body as any).pipe(busboy);
     } else {
         busboy.end();
@@ -49,13 +47,13 @@ async function parseForm(req: Request): Promise<{ fields: Record<string, string>
 async function extractText(file: { buffer: Buffer, mimeType: string }): Promise<string> {
     if (file.mimeType === 'application/pdf') {
         const pdf = (await import('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js')).default;
-        const data = await pdf(file.buffer);
+        const data = await pdf.default(file.buffer);
         return data.text;
     } else if (file.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         const { value } = await mammoth.extractRawText({ buffer: file.buffer });
         return value;
     }
-    throw new Error('Unsupported file type');
+    throw new Error('Unsupported file type. Please upload a PDF or DOCX file.');
 }
 
 export async function POST(request: Request) {

@@ -1,297 +1,116 @@
-import type { Timestamp } from "firebase/firestore";
 
-export type Stage = {
-    id: string;
-    name: string;
-    order: number;
-}
+'use client';
 
-export type Task = {
-  id: string;
-  title: string;
-  description?: string;
-  status: string; // Now a string to accommodate custom stages
-  priority: 'Low' | 'Medium' | 'High';
-  dueDate: Timestamp;
-  tags: string[];
-  createdAt: Timestamp;
-  listId: string;
-  reminder?: 'none' | '5m' | '10m' | '30m' | '1h';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, query, onSnapshot, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { LearningMaterial } from '@/lib/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { NotebookText, HelpCircle, Copy, Trash2 } from 'lucide-react';
+import { GeneratedContentDisplay } from './generated-content-display';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import moment from 'moment';
+
+const typeIcons = {
+    notes: <NotebookText className="h-5 w-5 text-blue-500" />,
+    quiz: <HelpCircle className="h-5 w-5 text-green-500" />,
+    flashcards: <Copy className="h-5 w-5 text-purple-500" />,
 };
 
-export type TaskList = {
-    id: string;
-    name: string;
-    createdAt: Timestamp;
-    stages?: Stage[];
-}
+export function SavedContentView() {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [materials, setMaterials] = useState<LearningMaterial[]>([]);
+    const [selectedMaterial, setSelectedMaterial] = useState<LearningMaterial | null>(null);
 
-export type BoardTemplate = {
-    id: string;
-    name:string;
-    stages: { name: string; order: number }[];
-}
+    useEffect(() => {
+        if (!user) return;
+        const q = query(collection(db, 'users', user.uid, 'learningMaterials'), orderBy('createdAt', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LearningMaterial));
+            setMaterials(data);
+        });
+        return () => unsubscribe();
+    }, [user]);
 
-export type StickyNote = {
-  id: string;
-  title: string;
-  text: string;
-  color: string;
-  textColor: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  priority: 'High' | 'Medium' | 'Low';
-  position?: { x: number; y: number };
-  gridPosition?: { col: number; row: number };
-};
+    const handleDelete = async (materialId: string) => {
+        if (!user) return;
+        try {
+            await deleteDoc(doc(db, 'users', user.uid, 'learningMaterials', materialId));
+            toast({ title: 'Material deleted successfully' });
+        } catch (error) {
+            console.error("Error deleting material:", error);
+            toast({ variant: 'destructive', title: 'Failed to delete material' });
+        }
+    };
 
+    return (
+        <div className="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>My Learning Materials</CardTitle>
+                    <CardDescription>Here are all the notes, quizzes, and flashcards you've generated.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {materials.length === 0 ? (
+                        <p className="text-muted-foreground">You haven't generated any materials yet.</p>
+                    ) : (
+                       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                         {materials.map(material => (
+                            <Card key={material.id} className="flex flex-col">
+                                <CardHeader className="flex-row items-start justify-between gap-4">
+                                   <div className="flex items-center gap-3">
+                                     {typeIcons[material.type]}
+                                    <div>
+                                        <CardTitle className="text-base line-clamp-2">{material.sourceTitle}</CardTitle>
+                                        <CardDescription className="text-xs">
+                                            {material.type.charAt(0).toUpperCase() + material.type.slice(1)} | {moment(material.createdAt?.toDate()).format('MMM D, YYYY')}
+                                        </CardDescription>
+                                    </div>
+                                   </div>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete this learning material.
+                                            </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(material.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </CardHeader>
+                                <CardContent className="flex-1 flex items-end">
+                                     <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="w-full">View</Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                            <DialogHeader>
+                                                <DialogTitle>{material.sourceTitle}</DialogTitle>
+                                            </DialogHeader>
+                                            <GeneratedContentDisplay content={material.content} />
+                                        </DialogContent>
+                                     </Dialog>
+                                </CardContent>
+                            </Card>
+                         ))}
+                       </div>
+                    )}
+                </CardContent>
+            </Card>
 
-// --- Notebooks Data Model ---
-
-/**
- * Represents a top-level notebook, which is a collection of sections.
- *
- * Firestore Path: /users/{userId}/notebooks/{notebookId}
- */
-export type Notebook = {
-    id: string;
-    ownerId: string;
-    title: string;
-    color: string; // e.g., a hex color for the notebook tab
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-/**
- * Represents a section within a notebook, which is a collection of pages.
- *
- * Firestore Path: /users/{userId}/sections/{sectionId}
- */
-export type Section = {
-    id:string;
-    notebookId: string;
-    title: string;
-    order: number; // For ordering sections within a notebook
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-/**
- * Represents a single page within a section.
- * Contains the actual content created by the user.
- *
- * Firestore Path: /users/{userId}/pages/{pageId}
- */
-export type Page = {
-    id: string;
-    sectionId: string;
-    title: string;
-    content: any; // TipTap/ProseMirror JSON content
-    searchText: string; // A lowercase string of all text for searching
-    version: number; // For optimistic concurrency control
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    lastEditedBy?: string; // UID of the last user who edited
-    canvasColor?: string;
-};
-
-/**
- * Represents a file attachment associated with a page.
- *
- * Firestore Path: /users/{userId}/attachments/{attachmentId}
- */
-export type Attachment = {
-    id: string;
-    pageId: string;
-    filename: string;
-    url: string; // Cloud Storage URL
-    thumbnailUrl: string | null;
-    mimeType: string;
-    size: number; // in bytes
-    uploadedAt: Timestamp;
-    userId: string;
-};
-
-/**
- * Represents a snapshot of a page's content at a specific point in time.
- *
- * Firestore Path: /users/{userId}/revisions/{revisionId}
- */
-export type Revision = {
-    id: string;
-    pageId: string;
-    title: string;
-    snapshot: any; // TipTap/ProseMirror JSON content
-    createdAt: Timestamp;
-    authorId: string; // The user who made the change
-    reason?: string; // e.g., "conflict-save-attempt"
-};
-
-/**
- * Represents sharing permissions for a notebook or a page.
- *
- * Firestore Path: /users/{userId}/shares/{shareId}
- */
-export type Share = {
-    id: string;
-    notebookId: string | null; // ID of the notebook being shared
-    pageId: string | null; // ID of the page being shared (if not the whole notebook)
-    sharedWithUserId: string; // The user receiving access
-    permission: 'viewer' | 'editor';
-};
-
-
-/**
- * Represents user-specific application settings.
- *
- * Firestore Path: /users/{userId}/profile/settings
- */
-export interface UserSettings {
-    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green';
-    font: 'inter' | 'roboto' | 'open-sans' | 'lato' | 'poppins' | 'source-sans-pro' | 'nunito' | 'montserrat' | 'playfair-display' | 'jetbrains-mono';
-    sidebarOpen: boolean;
-    notificationSound: boolean;
-    docsView?: 'card' | 'list';
-}
-
-/**
- * Represents a document in the "Docs" module.
- *
- * Firestore Path: /users/{userId}/docs/{docId}
- */
-export type Doc = {
-    id: string;
-    ownerId: string;
-    title: string;
-    content: any; // TipTap/ProseMirror JSON content
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
-
-export interface PomodoroSettingsData {
-    workMinutes: number;
-    shortBreakMinutes: number;
-    longBreakMinutes: number;
-    longBreakInterval: number;
-}
-
-export interface PomodoroState extends PomodoroSettingsData {
-    mode: PomodoroMode;
-    isActive: boolean;
-    sessionsCompleted: number;
-    targetEndTime: Timestamp | null;
-}
-
-// --- Goals Data Model ---
-
-export type Goal = {
-    id: string;
-    title: string;
-    description: string;
-    startDate: Timestamp;
-    targetDate: Timestamp;
-    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type Milestone = {
-    id: string;
-    goalId: string;
-    title: string;
-    description: string;
-    dueDate: Timestamp;
-    isCompleted: boolean;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type ProgressUpdate = {
-    id: string;
-    goalId: string;
-    milestoneId?: string | null; // Optional: can be linked to a milestone
-    text: string;
-    createdAt: Timestamp;
-};
-
-// --- Habit Tracker Data Model ---
-
-export type Habit = {
-    id: string;
-    name: string;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type HabitCompletion = {
-    id: string;
-    habitId: string;
-    date: string; // Stored as 'YYYY-MM-DD'
-    createdAt: Timestamp;
-};
-
-// --- CRM Data Model ---
-export type CustomField = {
-    id: string;
-    key: string;
-    value: string;
-};
-
-export type CrmAttachment = {
-    id: string;
-    filename: string;
-    url: string;
-    mimeType: string;
-    size: number;
-    uploadedAt: Timestamp;
-};
-
-export type Client = {
-    id: string;
-    name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    company?: string;
-    notes?: string;
-    status: 'lead' | 'active' | 'inactive' | 'archived';
-    customFields: CustomField[];
-    quotations: Quotation[];
-    invoices: Invoice[];
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type Quotation = {
-    id: string;
-    clientId: string;
-    quotationNumber: string;
-    status: 'draft' | 'sent' | 'accepted' | 'rejected';
-    attachments: CrmAttachment[];
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type Invoice = {
-    id: string;
-    clientId: string;
-    invoiceNumber: string;
-    status: 'draft' | 'sent' | 'paid' | 'overdue';
-    attachments: CrmAttachment[];
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type ClientRequest = {
-    id: string;
-    clientId: string;
-    title: string;
-    description?: string;
-    stage: 'new-request' | 'quotation' | 'execution' | 'reporting' | 'invoice' | 'completed' | 'win' | 'lost';
-    invoiceAmount?: number;
-    lossReason?: 'Budget' | 'Competition' | 'Timing' | 'Scope' | 'Other' | null;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
+           
+        </div>
+    );
 }

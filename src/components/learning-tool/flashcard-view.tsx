@@ -86,6 +86,9 @@ const style = `
   .backface-hidden { backface-visibility: hidden; }
   .rotate-y-180 { transform: rotateY(180deg); }
 `;
-const styleElement = document.createElement('style');
-styleElement.innerHTML = style;
-document.head.appendChild(styleElement);
+
+if (typeof document !== 'undefined') {
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = style;
+    document.head.appendChild(styleElement);
+}
