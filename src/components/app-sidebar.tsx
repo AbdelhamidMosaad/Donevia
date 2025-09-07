@@ -28,6 +28,7 @@ import {
   GraduationCap,
   Repeat,
   BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -40,6 +41,7 @@ export function AppSidebar() {
   const menuItems = [
     { href: '/dashboard/lists', icon: <Kanban />, label: 'Task Management', tooltip: 'Task Management' },
     { href: '/dashboard/analytics', icon: <BarChart3 />, label: 'Analytics', tooltip: 'Analytics' },
+    { href: '/dashboard/recap', icon: <Sparkles />, label: 'Recap', tooltip: 'Recap' },
     { href: '/habits', icon: <Repeat />, label: 'Habit Tracker', tooltip: 'Habit Tracker' },
     { href: '/goals', icon: <Target />, label: 'Goals', tooltip: 'Goals' },
     { href: '/notes', icon: <FileText />, label: 'Sticky Notes', tooltip: 'Sticky Notes' },
@@ -73,7 +75,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive('/dashboard') && !pathname.includes('/dashboard/lists') && !pathname.includes('/dashboard/analytics')}
+              isActive={isActive('/dashboard') && !pathname.includes('/dashboard/lists') && !pathname.includes('/dashboard/analytics') && !pathname.includes('/dashboard/recap')}
               tooltip={{ children: "Dashboard" }}
             >
               <Link href="/dashboard">

@@ -1,24 +1,34 @@
+
 import type { Timestamp } from "firebase/firestore";
+import { z } from 'zod';
 
 /** Task Management Types */
-export type Stage = {
-    id: string;
-    name: string;
-    order: number;
-};
+export const StageSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    order: z.number(),
+});
+export type Stage = z.infer<typeof StageSchema>;
 
-export type Task = {
-    id: string;
-    title: string;
-    description?: string;
-    status: string; // Customizable stage name
-    priority: 'Low' | 'Medium' | 'High';
-    dueDate: Timestamp;
-    tags: string[];
-    createdAt: Timestamp;
-    listId: string;
-    reminder?: 'none' | '5m' | '10m' | '30m' | '1h';
-};
+const FirebaseTimestampSchema = z.custom<Timestamp>(
+  (val) => val instanceof Timestamp,
+  "Invalid Timestamp"
+);
+
+export const TaskSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    status: z.string(), // Customizable stage name
+    priority: z.enum(['Low', 'Medium', 'High']),
+    dueDate: FirebaseTimestampSchema,
+    tags: z.array(z.string()),
+    createdAt: FirebaseTimestampSchema,
+    listId: z.string(),
+    reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
+});
+export type Task = z.infer<typeof TaskSchema>;
+
 
 export type TaskList = {
     id: string;
@@ -301,3 +311,17 @@ export type HabitCompletion = {
     date: string; // YYYY-MM-DD
     createdAt: Timestamp;
 };
+
+/** Recap Feature */
+export const RecapRequestSchema = z.object({
+  tasks: z.array(TaskSchema),
+  period: z.enum(['daily', 'weekly']),
+});
+export type RecapRequest = z.infer<typeof RecapRequestSchema>;
+
+export const RecapResponseSchema = z.object({
+  title: z.string().describe('A short, engaging title for the recap.'),
+  summary: z.string().describe("A 2-3 sentence paragraph summarizing the user's activity."),
+  highlights: z.array(z.string()).describe('A bulleted list of 2-4 key highlights or achievements.'),
+});
+export type RecapResponse = z.infer<typeof RecapResponseSchema>;
