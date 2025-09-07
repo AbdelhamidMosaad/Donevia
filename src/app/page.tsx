@@ -110,7 +110,7 @@ export default function Home() {
                 {/* Feature 2: Habit Tracker */}
                 <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
                      <Image
-                        src="https://picsum.photos/600/400"
+                        src="https://images.unsplash.com/photo-1550534791-2677533605ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNXx8dGltZSUyMG1hbmFnZW1lbnR8ZW58MHx8fHwxNzU3MjQxODkxfDA&ixlib=rb-4.1.0&q=80&w=1080"
                         width="600"
                         height="400"
                         alt="Habit Tracker"
