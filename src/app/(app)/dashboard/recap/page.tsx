@@ -30,15 +30,21 @@ export default function RecapPage() {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(tasksData);
         setDataLoading(false);
+      }, (error) => {
+        console.error("Error fetching tasks:", error);
+        setDataLoading(false); // Also stop loading on error
       });
 
       return () => {
         unsubscribeTasks();
       };
+    } else if (!loading) {
+      // If there's no user and we're not in a loading state, stop loading.
+      setDataLoading(false);
     }
-  }, [user]);
+  }, [user, loading]);
 
-  if (loading || !user || dataLoading) {
+  if (loading || dataLoading) {
     return <div>Loading recap...</div>;
   }
 
