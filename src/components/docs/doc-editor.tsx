@@ -23,9 +23,6 @@ import { EditorToolbar } from './editor-toolbar';
 import { slashCommands } from './slash-commands';
 import { Loader2 } from 'lucide-react';
 import { Image as TipTapImage } from '@tiptap/extension-image';
-import BulletList from '@tiptap/extension-bullet-list'
-import OrderedList from '@tiptap/extension-ordered-list'
-import ListItem from '@tiptap/extension-list-item'
 
 interface DocEditorProps {
   doc: Doc;
@@ -61,9 +58,6 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
         heading: {
           levels: [1, 2, 3],
         },
-        bulletList: false, // Disable the default bullet list
-        orderedList: false, // Disable the default ordered list
-        listItem: false, // Disable the default list item
       }),
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
@@ -76,9 +70,6 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       TableCell,
       slashCommands,
       TipTapImage,
-      BulletList, // Re-add the bullet list extension
-      OrderedList, // Re-add the ordered list extension
-      ListItem, // Re-add the list item extension
     ],
     content: docData.content,
     editorProps: {
