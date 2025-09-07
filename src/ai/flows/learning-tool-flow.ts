@@ -39,48 +39,58 @@ const LearningContentRequestSchema = z.object({
     }).optional(),
 });
 
+const learningContentPrompt = ai.definePrompt(
+  {
+    name: 'learningContentPrompt',
+    input: { schema: LearningContentRequestSchema },
+    output: { schema: GeneratedLearningContentSchema },
+    prompt: `
+      You are an expert instructional designer. Your task is to generate learning materials based on the provided text and user request.
+      
+      Generate the content for the following type: {{{type}}}.
+      
+      {{#if (eq type "quiz")}}
+      Create a quiz with {{quizOptions.numQuestions}} questions.
+      The quiz should include the following types of questions: {{#each quizOptions.questionTypes}}- {{this}} {{/each}}.
+      Ensure questions cover the key concepts in the text and that answers are accurate.
+      {{/if}}
+
+      {{#if (eq type "notes")}}
+      Create a comprehensive set of lecture notes in Markdown format. Organize the content logically with headings, subheadings, bullet points, and bolded keywords.
+      {{/if}}
+
+      {{#if (eq type "flashcards")}}
+      Create a set of flashcards covering the key terms and concepts from the text.
+      {{/if}}
+
+      Source Text:
+      ---
+      {{{context}}}
+      ---
+    `,
+  }
+);
+
+const generateLearningContentFlow = ai.defineFlow(
+    {
+        name: 'generateLearningContentFlow',
+        inputSchema: LearningContentRequestSchema,
+        outputSchema: GeneratedLearningContentSchema,
+    },
+    async (input) => {
+        const { output } = await ai.generate({
+            prompt: learningContentPrompt,
+            model: 'googleai/gemini-pro',
+            input,
+            config: {
+            temperature: 0.5,
+            },
+        });
+
+        return output || {};
+    }
+);
 
 export async function generateLearningContent(input: z.infer<typeof LearningContentRequestSchema>): Promise<GeneratedLearningContent> {
-  const prompt = ai.definePrompt(
-    {
-      name: 'learningContentPrompt',
-      input: { schema: LearningContentRequestSchema },
-      output: { schema: GeneratedLearningContentSchema },
-      prompt: `
-        You are an expert instructional designer. Your task is to generate learning materials based on the provided text and user request.
-        
-        Generate the content for the following type: {{{type}}}.
-        
-        {{#if (eq type "quiz")}}
-        Create a quiz with {{quizOptions.numQuestions}} questions.
-        The quiz should include the following types of questions: {{#each quizOptions.questionTypes}}- {{this}} {{/each}}.
-        Ensure questions cover the key concepts in the text and that answers are accurate.
-        {{/if}}
-
-        {{#if (eq type "notes")}}
-        Create a comprehensive set of lecture notes in Markdown format. Organize the content logically with headings, subheadings, bullet points, and bolded keywords.
-        {{/if}}
-
-        {{#if (eq type "flashcards")}}
-        Create a set of flashcards covering the key terms and concepts from the text.
-        {{/if}}
-
-        Source Text:
-        ---
-        {{{context}}}
-        ---
-      `,
-    }
-  );
-
-  const { output } = await ai.generate({
-    prompt,
-    model: 'googleai/gemini-pro',
-    input,
-    config: {
-      temperature: 0.5,
-    },
-  });
-
-  return output || {};
+    return generateLearningContentFlow(input);
 }
