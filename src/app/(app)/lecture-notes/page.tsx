@@ -1,1 +1,1 @@
-// This file has been removed as part of the learning tool feature removal.
+// This file is obsolete and will be removed.

@@ -21,6 +21,9 @@ export async function POST(request: Request) {
      if (body.generationType === 'notes' && !body.notesOptions) {
         return NextResponse.json({ error: 'Missing notesOptions for notes generation.' }, { status: 400 });
     }
+    if (body.generationType === 'quiz' && !body.quizOptions) {
+        return NextResponse.json({ error: 'Missing quizOptions for quiz generation.' }, { status: 400 });
+    }
 
     const studyMaterial = await generateStudyMaterial(body);
 

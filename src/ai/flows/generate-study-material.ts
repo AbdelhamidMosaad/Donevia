@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview AI flow for generating various study materials from source text.
- * - generateStudyMaterial - A function that generates notes.
+ * - generateStudyMaterial - A function that generates notes, quizzes, etc.
  * - StudyMaterialRequest - The input type for the generation.
  * - StudyMaterialResponse - The return type.
  */
@@ -18,18 +18,37 @@ const studyMaterialPrompt = ai.definePrompt({
   input: { schema: StudyMaterialRequestSchema },
   output: { schema: StudyMaterialResponseSchema },
   prompt: `
-You are an expert at creating educational materials. Your task is to convert the provided source text into lecture notes.
+You are an expert at creating educational materials. Your task is to convert the provided source text into the specified format.
 
 Follow these instructions precisely:
+
+---
+**Source Text:**
+{{sourceText}}
+---
+
+**Generation Type:** {{generationType}}
+
+{{#if (eq generationType 'notes')}}
+---
+**NOTES INSTRUCTIONS**
 1.  **Output Format**: The output must be plain text, not markdown. Use line breaks for structure.
 2.  **Note Style**: The notes must be in the "{{notesOptions.style}}" style.
 3.  **Complexity**: The complexity level must be "{{notesOptions.complexity}}".
-4.  **Content**: The content must be based *only* on the source text provided below. Do not add any external information.
+4.  **Content**: The content must be based *only* on the source text provided. Do not add any external information.
+---
+{{/if}}
 
-Source Text:
+{{#if (eq generationType 'quiz')}}
 ---
-{{sourceText}}
+**QUIZ INSTRUCTIONS**
+1.  **Number of Questions**: Generate exactly {{quizOptions.numQuestions}} questions.
+2.  **Question Types**: The quiz must include the following question types: {{#each quizOptions.questionTypes}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}.
+3.  **Difficulty**: The difficulty level for the questions must be "{{quizOptions.difficulty}}".
+4.  **Content**: All questions must be based *only* on the provided source text.
+5.  **Explanations**: Provide a brief, clear explanation for why the correct answer is correct for every question.
 ---
+{{/if}}
   `,
 });
 
@@ -46,8 +65,8 @@ const generateStudyMaterialFlow = ai.defineFlow(
     if (!output) {
         throw new Error('The AI failed to generate study material. Please try again.');
     }
-    // Ensure notesContent is a string, even if the AI messes up.
-    if (typeof output.notesContent !== 'string') {
+    // Ensure notesContent is a string if it's the output type.
+    if (input.generationType === 'notes' && typeof output.notesContent !== 'string') {
         output.notesContent = JSON.stringify(output.notesContent, null, 2);
     }
     return output;

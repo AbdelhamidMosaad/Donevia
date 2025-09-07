@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyMaterialRequest, StudyMaterialResponse } from '@/ai/flows/learning-tool-flow';
 import { Button } from '../ui/button';
-import { Loader2, Copy, Download, FileText } from 'lucide-react';
+import { Loader2, Copy, Download } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 
 export function LectureNotesGenerator() {
@@ -116,18 +116,11 @@ export function LectureNotesGenerator() {
             </Card>
         )
     }
-     return <InputForm onGenerate={handleGenerate} />;
+     return <InputForm onGenerate={handleGenerate} generationType="notes" />;
   }
 
   return (
     <div className="flex flex-col h-full gap-6">
-       <div className="flex items-center gap-4">
-        <FileText className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold font-headline">AI Lecture Notes Generator</h1>
-          <p className="text-muted-foreground">Transform any text into clean, organized lecture notes.</p>
-        </div>
-      </div>
       {renderContent()}
     </div>
   )
