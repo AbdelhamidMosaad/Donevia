@@ -6,7 +6,8 @@ import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
-  Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive
+  Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive,
+  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -270,7 +271,6 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
         <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
         <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
-        <ToolbarButton editor={editor} name="table" label="Table" icon={Table} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
         <ToolbarButton editor={editor} label="Image from URL" icon={ImageIcon} onClick={addImage} />
         <ToolbarButton editor={editor} label="Horizontal Line" icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
         
@@ -285,6 +285,27 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             </TooltipContent>
         </Tooltip>
         <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+        
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        
+        <ToolbarButton editor={editor} name="table" label="Table" icon={Table} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+
+        {editor.isActive('table') && (
+            <>
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnBefore().run()} label="Add Column Before" icon={Columns} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnAfter().run()} label="Add Column After" icon={Columns} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteColumn().run()} label="Delete Column" icon={Trash2} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addRowBefore().run()} label="Add Row Before" icon={Rows} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addRowAfter().run()} label="Add Row After" icon={Rows} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteRow().run()} label="Delete Row" icon={Trash2} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteTable().run()} label="Delete Table" icon={Trash2} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().mergeCells().run()} label="Merge Cells" icon={Square} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().splitCell().run()} label="Split Cell" icon={ChevronsLeftRight} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderColumn().run()} label="Toggle Header Column" icon={FlipHorizontal} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderRow().run()} label="Toggle Header Row" icon={FlipVertical} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderCell().run()} label="Toggle Header Cell" icon={Square} />
+            </>
+        )}
       </div>
     </TooltipProvider>
   );
