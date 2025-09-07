@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 
 export type Stage = {
@@ -231,4 +232,54 @@ export type HabitCompletion = {
     habitId: string;
     date: string; // Stored as 'YYYY-MM-DD'
     createdAt: Timestamp;
+};
+
+// --- CRM Data Model ---
+export type CustomField = {
+    id: string;
+    key: string;
+    value: string;
+};
+
+export type CrmAttachment = {
+    id: string;
+    filename: string;
+    url: string;
+    mimeType: string;
+    size: number;
+    uploadedAt: Timestamp;
+};
+
+export type Client = {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    company?: string;
+    notes?: string;
+    status: 'lead' | 'active' | 'inactive' | 'archived';
+    customFields: CustomField[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Quotation = {
+    id: string;
+    clientId: string;
+    quotationNumber: string;
+    status: 'draft' | 'sent' | 'accepted' | 'rejected';
+    attachments: CrmAttachment[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Invoice = {
+    id: string;
+    clientId: string;
+    invoiceNumber: string;
+    status: 'draft' | 'sent' | 'paid' | 'overdue';
+    attachments: CrmAttachment[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
 };
