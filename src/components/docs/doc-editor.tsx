@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
@@ -28,6 +28,8 @@ import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
+import { CharacterCount } from '@tiptap/extension-character-count';
+import { FontFamily } from '@/lib/tiptap/font-family';
 
 
 interface DocEditorProps {
@@ -62,6 +64,9 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
     extensions: [
       StarterKit.configure({
         history: true,
+        heading: {
+            levels: [1, 2, 3, 4, 5, 6],
+        },
       }),
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
@@ -75,10 +80,12 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       slashCommands,
       TipTapImage,
       TextStyle,
+      FontFamily,
       FontSize,
       Color,
       Superscript,
       Subscript,
+      CharacterCount,
     ],
     content: docData.content,
     editorProps: {
@@ -137,6 +144,10 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
        
         <div className="relative flex-1 overflow-y-auto" onClick={() => editor.commands.focus()}>
             <EditorContent editor={editor} />
+        </div>
+        <div className="border-t text-xs text-muted-foreground p-2 flex justify-end gap-4">
+            <span>Words: {editor.storage.characterCount.words()}</span>
+            <span>Characters: {editor.storage.characterCount.characters()}</span>
         </div>
     </div>
   );

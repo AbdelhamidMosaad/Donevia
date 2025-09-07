@@ -6,7 +6,7 @@ import {
   Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
-  Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload
+  Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -126,6 +126,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   }
   
   const fontSizes = ['12px', '14px', '16px', '18px', '24px', '30px', '36px'];
+  const fontFamilies = [
+    { name: 'Inter', value: 'Inter, sans-serif' },
+    { name: 'Arial', value: 'Arial, sans-serif' },
+    { name: 'Georgia', value: 'Georgia, serif' },
+    { name: 'Times New Roman', value: '\'Times New Roman\', serif' },
+    { name: 'Courier New', value: '\'Courier New\', monospace' },
+    { name: 'Verdana', value: 'Verdana, sans-serif' },
+    { name: 'Poppins', value: 'Poppins, sans-serif' },
+  ];
 
   return (
     <TooltipProvider>
@@ -152,6 +161,25 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                 <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({level: 1}).run()}>Heading 1</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({level: 2}).run()}>Heading 2</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({level: 3}).run()}>Heading 3</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-32 text-left justify-start">
+                    <CaseSensitive className="h-4 w-4 mr-2" />
+                     {editor.getAttributes('textStyle').fontFamily?.split(',')[0] || 'Inter'}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                {fontFamilies.map(font => (
+                    <DropdownMenuItem key={font.name} onSelect={() => editor.chain().focus().setFontFamily(font.value).run()} style={{fontFamily: font.value}}>
+                        {font.name}
+                    </DropdownMenuItem>
+                ))}
+                 <DropdownMenuItem onSelect={() => editor.chain().focus().unsetFontFamily().run()}>
+                    Reset
+                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
 
