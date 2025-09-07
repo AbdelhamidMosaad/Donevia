@@ -19,11 +19,13 @@ export default function RecapPage() {
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
+      setDataLoading(false);
     }
   }, [user, loading, router]);
   
   useEffect(() => {
     if (user) {
+      // Only set data loading to true if we have a user to fetch for
       setDataLoading(true);
       const taskQuery = query(collection(db, 'users', user.uid, 'tasks'));
       const unsubscribeTasks = onSnapshot(taskQuery, (snapshot) => {
@@ -38,8 +40,8 @@ export default function RecapPage() {
       return () => {
         unsubscribeTasks();
       };
-    } else if (!loading) {
-      // If there's no user and we're not in a loading state, stop loading.
+    } else if (!loading && !user) {
+      // If there's no user and we're not in a loading state, stop data loading.
       setDataLoading(false);
     }
   }, [user, loading]);
