@@ -25,7 +25,6 @@ import {
   Timer,
   Target,
   Briefcase,
-  GraduationCap,
   Repeat,
   BarChart3,
   Sparkles,
@@ -54,7 +53,6 @@ const defaultMenuItems = [
     { href: '/docs', icon: <FileSignature />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
     { href: '/pomodoro', icon: <Timer />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
     { href: '/crm', icon: <Briefcase />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
-    { href: '/learning-tool', icon: <GraduationCap />, label: 'Learning Tool', tooltip: 'Learning Tool', id: 'learning' },
 ];
 
 export function AppSidebar() {

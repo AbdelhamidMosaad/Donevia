@@ -1,2 +1,1 @@
-// This file is obsolete and will be removed.
-// The new AI flow is located at /src/ai/flows/learning-tool-flow.ts
+// This file has been removed as part of the learning tool feature removal.
