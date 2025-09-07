@@ -229,3 +229,18 @@ export const RecapResponseSchema = z.object({
   highlights: z.array(z.string()).describe('A bulleted list of 2-4 key highlights or achievements.'),
 });
 export type RecapResponse = z.infer<typeof RecapResponseSchema>;
+
+
+/** Lecture Notes Feature */
+export const LectureNotesRequestSchema = z.object({
+  sourceText: z.string().min(1, { message: 'Source text cannot be empty.' }),
+  style: z.enum(['detailed', 'bullet', 'outline', 'summary']),
+  complexity: z.enum(['simple', 'medium', 'advanced']),
+});
+export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
+
+export const LectureNotesResponseSchema = z.object({
+  title: z.string().describe('A concise and relevant title for the generated lecture notes.'),
+  notes: z.string().describe('The formatted lecture notes based on the specified style and complexity.'),
+});
+export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;

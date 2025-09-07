@@ -28,6 +28,7 @@ import {
   BarChart3,
   Sparkles,
   GripVertical,
+  GraduationCap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -49,6 +50,7 @@ const defaultMenuItems = [
     { href: '/whiteboard', icon: <PenSquare className="text-indigo-500" />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
     { href: '/mind-map', icon: <GitBranch className="text-pink-500" />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
     { href: '/docs', icon: <FileSignature className="text-cyan-500" />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
+    { href: '/lecture-notes', icon: <GraduationCap className="text-lime-500" />, label: 'Lecture Notes', tooltip: 'Lecture Notes', id: 'lecture-notes' },
     { href: '/pomodoro', icon: <Timer className="text-rose-500" />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
     { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
 ];
