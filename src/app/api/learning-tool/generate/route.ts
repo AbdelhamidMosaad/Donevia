@@ -2,7 +2,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 import Busboy from 'busboy';
-import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 import { generateLearningContent } from '@/ai/flows/learning-tool-flow';
 import type { LearningContentRequest } from '@/lib/types';
@@ -49,6 +48,7 @@ async function parseForm(req: Request): Promise<{ fields: Record<string, string>
 // Text extraction logic
 async function extractText(file: { buffer: Buffer, mimeType: string }): Promise<string> {
     if (file.mimeType === 'application/pdf') {
+        const pdf = (await import('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js')).default;
         const data = await pdf(file.buffer);
         return data.text;
     } else if (file.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
