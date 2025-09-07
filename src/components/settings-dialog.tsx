@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sun, Moon, Palette, Type, Check, Bell, PanelLeft, User, Database, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -65,6 +65,7 @@ const defaultSettings: UserSettings = {
     sidebarOpen: true,
     notificationSound: true,
     docsView: 'card',
+    sidebarOrder: [],
 };
 
 
@@ -87,6 +88,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             sidebarOpen: data.sidebarOpen !== false,
             notificationSound: data.notificationSound !== false,
             docsView: data.docsView || defaultSettings.docsView,
+            sidebarOrder: data.sidebarOrder || [],
           });
         } else {
             setSettings(defaultSettings);
@@ -161,6 +163,17 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const handleNotificationSoundChange = (enabled: boolean) => {
     setSettings(s => ({...s, notificationSound: enabled}));
     savePreferences({ notificationSound: enabled });
+  }
+  
+  const handleResetSidebar = async () => {
+    if (!user) return;
+    try {
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await updateDoc(settingsRef, { sidebarOrder: [] });
+        toast({ title: 'Sidebar layout reset to default.'});
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error resetting sidebar layout.'});
+    }
   }
 
   const handleResetSettings = async () => {
@@ -278,6 +291,35 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                                     checked={settings.sidebarOpen}
                                     onCheckedChange={handleSidebarChange}
                                 />
+                            </div>
+                             <div className="flex items-center justify-between pt-4 border-t">
+                                <div>
+                                    <h3 className="font-medium">Reset Sidebar Layout</h3>
+                                    <p className="text-sm text-muted-foreground">Restore the sidebar item order to the default layout.</p>
+                                </div>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="outline">
+                                            Reset Layout
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will reset the sidebar layout to its default order.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleResetSidebar}
+                                        >
+                                            Yes, reset layout
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         </CardContent>
                     </Card>

@@ -137,6 +137,7 @@ export interface UserSettings {
     sidebarOpen: boolean;
     notificationSound: boolean;
     docsView?: 'card' | 'list';
+    sidebarOrder?: string[];
 }
 
 /** Docs */
@@ -262,13 +263,16 @@ export type ClientRequest = {
 };
 
 /** Learning Tool */
-export type LearningContentRequest = {
-    type: 'notes' | 'quiz' | 'flashcards';
-    quizOptions?: {
-        numQuestions: number;
-        questionTypes: ('multiple-choice' | 'true-false' | 'short-answer')[];
-    };
-};
+export const LearningContentRequestSchema = z.object({
+  type: z.enum(['notes', 'quiz', 'flashcards']),
+  quizOptions: z.object({
+      numQuestions: z.number().int().min(1).max(25),
+      questionTypes: z.array(z.enum(['multiple-choice', 'true-false', 'short-answer'])),
+  }).optional(),
+  context: z.string(),
+});
+
+export type LearningContentRequest = z.infer<typeof LearningContentRequestSchema>;
 
 export type QuizQuestion = {
     question: string;
@@ -283,11 +287,23 @@ export type Flashcard = {
     back: string;
 };
 
-export type GeneratedLearningContent = {
-    lectureNotes?: string;
-    quiz?: QuizQuestion[];
-    flashcards?: Flashcard[];
-};
+export const GeneratedLearningContentSchema = z.object({
+  lectureNotes: z.string().optional().describe('Well-structured, comprehensive lecture notes in Markdown format. Use headings, lists, and bold text for clarity.'),
+  quiz: z.array(z.object({
+    question: z.string().describe('The question being asked.'),
+    type: z.enum(['multiple-choice', 'true-false', 'short-answer']).describe('The type of question.'),
+    options: z.array(z.string()).optional().describe('A list of possible answers for multiple-choice questions.'),
+    answer: z.string().describe('The correct answer to the question.'),
+    explanation: z.string().describe('A brief explanation of why the answer is correct.'),
+  })).optional().describe('An array of quiz questions based on the provided options.'),
+  flashcards: z.array(z.object({
+    front: z.string().describe('The front of the flashcard, typically a term or concept.'),
+    back: z.string().describe('The back of the flashcard, typically the definition or explanation.'),
+  })).optional().describe('An array of flashcards.'),
+});
+
+
+export type GeneratedLearningContent = z.infer<typeof GeneratedLearningContentSchema>;
 
 export type LearningMaterial = {
     id: string;
