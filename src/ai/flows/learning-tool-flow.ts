@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Learning content generation AI flow.
@@ -79,33 +80,13 @@ const generateLearningContentFlow = ai.defineFlow(
     outputSchema: GeneratedLearningContentSchema,
   },
   async (input) => {
-    try {
-      const { output } = await ai.generate({
-        prompt: learningContentPrompt,
-        model: 'googleai/gemini-pro',
-        input,
-        config: {
-          temperature: 0.5,
-        },
-      });
-      if (!output) {
-        throw new Error('AI did not return any content.');
-      }
-      // Optional: Validate the output with schema for extra safety
-      const parsedOutput = GeneratedLearningContentSchema.safeParse(output);
-      if (!parsedOutput.success) {
-        throw new Error(`Invalid AI output format: ${JSON.stringify(parsedOutput.error.issues)}`);
-      }
-      return parsedOutput.data;
-    } catch (err) {
-      // Log the error for debugging and re-throw a user-friendly error
-      console.error('Error in generateLearningContentFlow:', err);
-      throw new Error(
-        err instanceof Error
-          ? `Failed to generate learning content: ${err.message}`
-          : 'Failed to generate learning content due to an unknown error.'
-      );
+    // Note: The prompt is designed to handle different types.
+    // The model will only generate the fields relevant to the requested `type`.
+    const { output } = await learningContentPrompt(input);
+    if (!output) {
+      throw new Error('AI failed to generate a response. The content might be too short or invalid.');
     }
+    return output;
   }
 );
 

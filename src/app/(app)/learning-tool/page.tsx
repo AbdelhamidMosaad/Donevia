@@ -61,7 +61,7 @@ export default function LearningToolPage() {
     }
     formData.append('text', textInput);
 
-    const requestPayload: LearningContentRequest = { type: generationType };
+    const requestPayload: Omit<LearningContentRequest, 'context'> = { type: generationType };
     if (generationType === 'quiz') {
         const selectedTypes = Object.entries(questionTypes)
             .filter(([, isSelected]) => isSelected)
@@ -90,18 +90,8 @@ export default function LearningToolPage() {
         });
 
         if (!response.ok) {
-            let errorDetails = 'An unknown error occurred on the server.';
-            const rawResponseText = await response.text();
-            try {
-                // Attempt to parse the raw text as JSON
-                const errorData = JSON.parse(rawResponseText);
-                errorDetails = errorData.details || errorData.error || errorDetails;
-            } catch (jsonError) {
-                // If parsing fails, the response was likely HTML or plain text
-                console.error("Non-JSON error response from server:", rawResponseText);
-                errorDetails = `Server returned a non-JSON response. Status: ${response.status}. See console for details.`;
-            }
-            throw new Error(errorDetails);
+            const errorData = await response.json();
+            throw new Error(errorData.details || errorData.error || 'An unknown error occurred.');
         }
 
         const result = await response.json();
