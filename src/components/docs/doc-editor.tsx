@@ -23,6 +23,9 @@ import { EditorToolbar } from './editor-toolbar';
 import { slashCommands } from './slash-commands';
 import { Loader2 } from 'lucide-react';
 import { Image as TipTapImage } from '@tiptap/extension-image';
+import { FontSize } from '@/lib/tiptap/font-size';
+import TextStyle from '@tiptap/extension-text-style';
+
 
 interface DocEditorProps {
   doc: Doc;
@@ -54,7 +57,14 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // The Tiptap starter kit includes many extensions, but we can configure them
+        // to disable certain features if we want to handle them differently.
+        // For lists, we ensure they are not disabled.
+        bulletList: {},
+        orderedList: {},
+        listItem: {},
+      }),
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
       Link.configure({ openOnClick: true, autolink: true }),
@@ -66,6 +76,8 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       TableCell,
       slashCommands,
       TipTapImage,
+      TextStyle,
+      FontSize,
     ],
     content: docData.content,
     editorProps: {
