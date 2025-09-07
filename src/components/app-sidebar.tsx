@@ -28,7 +28,6 @@ import {
   Target,
   Repeat,
   Briefcase,
-  GraduationCap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
