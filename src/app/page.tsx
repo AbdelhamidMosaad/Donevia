@@ -98,7 +98,7 @@ export default function Home() {
                         </ul>
                     </div>
                      <Image
-                        src="https://picsum.photos/600/400"
+                        src="https://images.unsplash.com/photo-1542626991-cbc4e32524cc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0YXNrJTIwbWFuYWdlbWVudHxlbnwwfHx8fDE3NTcyNDE3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080"
                         width="600"
                         height="400"
                         alt="CRM Feature"
@@ -231,5 +231,7 @@ export default function Home() {
     </div>
   );
 }
+
+    
 
     
