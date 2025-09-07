@@ -65,6 +65,7 @@ const defaultSettings: UserSettings = {
     sidebarOpen: true,
     notificationSound: true,
     docsView: 'card',
+    lectureNotesView: 'card',
     sidebarOrder: [],
 };
 
@@ -88,6 +89,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             sidebarOpen: data.sidebarOpen !== false,
             notificationSound: data.notificationSound !== false,
             docsView: data.docsView || defaultSettings.docsView,
+            lectureNotesView: data.lectureNotesView || defaultSettings.lectureNotesView,
             sidebarOrder: data.sidebarOrder || [],
           });
         } else {

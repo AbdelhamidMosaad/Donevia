@@ -29,6 +29,7 @@ import {
   BarChart3,
   Sparkles,
   GripVertical,
+  BookText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -46,6 +47,7 @@ const defaultMenuItems = [
     { href: '/dashboard/recap', icon: <Sparkles />, label: 'Recap', tooltip: 'Recap', id: 'recap' },
     { href: '/habits', icon: <Repeat />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <Target />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
+    { href: '/lecture-notes', icon: <BookText />, label: 'Lecture Notes', tooltip: 'Lecture Notes', id: 'lecture-notes' },
     { href: '/notes', icon: <FileText />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
     { href: '/whiteboard', icon: <PenSquare />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
     { href: '/mind-map', icon: <GitBranch />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },

@@ -137,6 +137,7 @@ export interface UserSettings {
     sidebarOpen: boolean;
     notificationSound: boolean;
     docsView?: 'card' | 'list';
+    lectureNotesView?: 'card' | 'list';
     sidebarOrder?: string[];
 }
 
@@ -146,6 +147,16 @@ export type Doc = {
     ownerId: string;
     title: string;
     content: any;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+/** Lecture Notes */
+export type LectureNote = {
+    id: string;
+    title: string;
+    sourceText: string;
+    content: any; // TipTap JSON
     createdAt: Timestamp;
     updatedAt: Timestamp;
 };
