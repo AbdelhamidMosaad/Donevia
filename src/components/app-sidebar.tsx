@@ -40,19 +40,19 @@ import type { UserSettings } from '@/lib/types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 const defaultMenuItems = [
-    { href: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
-    { href: '/dashboard/lists', icon: <Kanban />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
-    { href: '/dashboard/analytics', icon: <BarChart3 />, label: 'Analytics', tooltip: 'Analytics', id: 'analytics' },
-    { href: '/dashboard/recap', icon: <Sparkles />, label: 'Recap', tooltip: 'Recap', id: 'recap' },
-    { href: '/habits', icon: <Repeat />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
-    { href: '/goals', icon: <Target />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
-    { href: '/notes', icon: <FileText />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
-    { href: '/whiteboard', icon: <PenSquare />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
-    { href: '/mind-map', icon: <GitBranch />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
-    { href: '/notebooks', icon: <BookOpen />, label: 'Notebooks', tooltip: 'Notebooks', id: 'notebooks' },
-    { href: '/docs', icon: <FileSignature />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
-    { href: '/pomodoro', icon: <Timer />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
-    { href: '/crm', icon: <Briefcase />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
+    { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
+    { href: '/dashboard/analytics', icon: <BarChart3 className="text-green-500" />, label: 'Analytics', tooltip: 'Analytics', id: 'analytics' },
+    { href: '/dashboard/recap', icon: <Sparkles className="text-yellow-500" />, label: 'Recap', tooltip: 'Recap', id: 'recap' },
+    { href: '/dashboard/lists', icon: <Kanban className="text-purple-500" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
+    { href: '/habits', icon: <Repeat className="text-teal-500" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
+    { href: '/goals', icon: <Target className="text-red-500" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
+    { href: '/notes', icon: <FileText className="text-orange-500" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
+    { href: '/whiteboard', icon: <PenSquare className="text-indigo-500" />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
+    { href: '/mind-map', icon: <GitBranch className="text-pink-500" />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
+    { href: '/notebooks', icon: <BookOpen className="text-lime-500" />, label: 'Notebooks', tooltip: 'Notebooks', id: 'notebooks' },
+    { href: '/docs', icon: <FileSignature className="text-cyan-500" />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
+    { href: '/pomodoro', icon: <Timer className="text-rose-500" />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
+    { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
 ];
 
 export function AppSidebar() {
