@@ -28,6 +28,7 @@ import {
   Target,
   Repeat,
   Briefcase,
+  GraduationCap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -47,6 +48,7 @@ export function AppSidebar() {
     { href: '/docs', icon: <FileSignature />, label: 'Docs', tooltip: 'Docs' },
     { href: '/pomodoro', icon: <Timer />, label: 'Pomodoro', tooltip: 'Pomodoro Timer' },
     { href: '/crm', icon: <Briefcase />, label: 'CRM', tooltip: 'CRM' },
+    { href: '/learning-tool', icon: <GraduationCap />, label: 'Learning Tool', tooltip: 'Learning Tool' },
   ];
 
   return (
