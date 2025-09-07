@@ -3,40 +3,21 @@ import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 import { generateLearningContent } from '@/ai/flows/learning-tool-flow';
 import type { LearningContentRequest } from '@/lib/types';
-import formidable, { File } from 'formidable';
-import fs from 'fs/promises';
 import mammoth from 'mammoth';
 import pdf from 'pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js';
 
 
-// Helper to parse multipart form data
-async function parseForm(req: Request): Promise<{ fields: formidable.Fields; files: formidable.Files }> {
-    return new Promise((resolve, reject) => {
-        const form = formidable({});
-        // formidable can't directly parse a Next.js Request object
-        // so we need to convert it to a Node.js-like stream.
-        const reqAsAny = req as any;
-        form.parse(reqAsAny, (err, fields, files) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve({ fields, files });
-            }
-        });
-    });
-}
-
 // Helper to extract text from a file buffer
-async function extractTextFromFile(file: formidable.File): Promise<string> {
-    const buffer = await fs.readFile(file.filepath);
+async function extractTextFromFile(file: File): Promise<string> {
+    const buffer = Buffer.from(await file.arrayBuffer());
     
-    if (file.mimetype === 'application/pdf') {
+    if (file.type === 'application/pdf') {
         const data = await pdf(buffer);
         return data.text;
-    } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         const { value } = await mammoth.extractRawText({ buffer });
         return value;
-    } else if (file.mimetype === 'text/plain') {
+    } else if (file.type === 'text/plain') {
         return buffer.toString('utf-8');
     }
 
@@ -46,15 +27,15 @@ async function extractTextFromFile(file: formidable.File): Promise<string> {
 
 export async function POST(request: Request) {
   try {
-    const { fields, files } = await parseForm(request);
-
-    const idToken = Array.isArray(fields.idToken) ? fields.idToken[0] : fields.idToken;
+    const formData = await request.formData();
+    
+    const idToken = formData.get('idToken') as string | null;
     if (!idToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     await adminAuth.verifyIdToken(idToken);
     
-    const requestDataStr = Array.isArray(fields.requestData) ? fields.requestData[0] : fields.requestData;
+    const requestDataStr = formData.get('requestData') as string | null;
     if(!requestDataStr) {
         return NextResponse.json({ error: 'Missing request data.' }, { status: 400 });
     }
@@ -63,10 +44,10 @@ export async function POST(request: Request) {
     let context = requestData.context;
 
     // If there's a file, extract its text and append to context
-    const file = Array.isArray(files.file) ? files.file[0] : files.file;
+    const file = formData.get('file') as File | null;
     if (file) {
         try {
-            const fileText = await extractTextFromFile(file as File);
+            const fileText = await extractTextFromFile(file);
             context += `\n\n--- DOCUMENT CONTENT ---\n${fileText}`;
         } catch (e) {
             return NextResponse.json({ error: (e as Error).message }, { status: 400 });
