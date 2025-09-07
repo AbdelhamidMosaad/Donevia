@@ -47,7 +47,7 @@ export function AppHeader() {
   
   const handleNotificationClick = (task: Task) => {
     dismissOverdueTask(task.id);
-    router.push(`/dashboard/lists/${task.listId}`);
+    router.push(`/dashboard/list/${task.listId}`);
   };
 
 

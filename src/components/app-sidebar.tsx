@@ -26,18 +26,20 @@ import {
   Target,
   Briefcase,
   GraduationCap,
-  Repeat, // Added habit tracker icon
+  Repeat,
+  BarChart3,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SettingsDialog } from './settings-dialog';
 
-
 export function AppSidebar() {
   const pathname = usePathname();
 
+  // Define all sidebar menu items with their path, icon, label, and tooltip.
   const menuItems = [
     { href: '/dashboard/lists', icon: <Kanban />, label: 'Task Management', tooltip: 'Task Management' },
+    { href: '/dashboard/analytics', icon: <BarChart3 />, label: 'Analytics', tooltip: 'Analytics' },
     { href: '/habits', icon: <Repeat />, label: 'Habit Tracker', tooltip: 'Habit Tracker' },
     { href: '/goals', icon: <Target />, label: 'Goals', tooltip: 'Goals' },
     { href: '/notes', icon: <FileText />, label: 'Sticky Notes', tooltip: 'Sticky Notes' },
@@ -50,31 +52,41 @@ export function AppSidebar() {
     { href: '/learning-tool', icon: <GraduationCap />, label: 'Learning Tool', tooltip: 'Learning Tool' },
   ];
 
+  // Helper to determine if menu item is active
+  const isActive = (href: string) => {
+    // For root dashboard
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
+    }
+    // For other items, check if path starts with menu item href
+    return pathname.startsWith(href);
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarRail />
       <SidebarHeader className="p-3 justify-center">
-         {/* SidebarTrigger has been removed from here and integrated into SidebarRail */}
+        {/* SidebarTrigger (if needed) can go here */}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-            <SidebarMenuItem>
-                <SidebarMenuButton
-                    asChild
-                    isActive={pathname === '/dashboard'}
-                    tooltip={{ children: "Dashboard" }}
-                >
-                    <Link href="/dashboard">
-                        <LayoutDashboard />
-                        <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive('/dashboard') && !pathname.includes('/dashboard/lists') && !pathname.includes('/dashboard/analytics')}
+              tooltip={{ children: "Dashboard" }}
+            >
+              <Link href="/dashboard">
+                <LayoutDashboard />
+                <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname.startsWith(item.href)}
+                isActive={isActive(item.href)}
                 tooltip={{ children: item.tooltip }}
               >
                 <Link href={item.href}>
@@ -89,12 +101,12 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-             <SettingsDialog>
-                <SidebarMenuButton tooltip={{ children: 'Settings' }}>
-                    <Settings />
-                    <span className="group-data-[collapsible=icon]:hidden">Settings</span>
-                </SidebarMenuButton>
-             </SettingsDialog>
+            <SettingsDialog>
+              <SidebarMenuButton tooltip={{ children: 'Settings' }}>
+                <Settings />
+                <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+              </SidebarMenuButton>
+            </SettingsDialog>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip={{ children: 'Help' }}>
