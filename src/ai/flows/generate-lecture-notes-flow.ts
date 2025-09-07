@@ -5,8 +5,11 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { generateHTML } from '@tiptap/html';
+import { generateJSON } from '@tiptap/html';
 import StarterKit from '@tiptap/starter-kit';
+import { JSDOM } from 'jsdom';
+import { remark } from 'remark';
+import html from 'remark-html';
 
 const LectureNotesInputSchema = z.object({
   sourceText: z.string().describe('The raw text from a book or study material.'),
@@ -55,12 +58,19 @@ export const generateLectureNotesFlow = ai.defineFlow(
       throw new Error('AI failed to generate lecture notes.');
     }
 
-    // Convert the generated Markdown to TipTap's JSON structure
-    const tiptapJSON = await generateHTML(output.content, [StarterKit]);
+    // Convert the generated Markdown to HTML string
+    const processedContent = await remark().use(html).process(output.content);
+    const htmlContent = processedContent.toString();
+
+    // Create a virtual DOM to parse the HTML
+    const dom = new JSDOM(htmlContent);
+    
+    // Convert the HTML string to TipTap's JSON structure using the virtual DOM
+    const tiptapJSON = generateJSON(dom.window.document.body.innerHTML, [StarterKit]);
 
     return {
       title: output.title,
-      content: tiptapJSON, // This is actually JSON, but generateHTML returns it as a string that can be parsed.
+      content: tiptapJSON,
     };
   }
 );
