@@ -23,6 +23,15 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
   const tasksOverdue = useMemo(() => tasks.filter(t => moment(t.dueDate.toDate()).isBefore(moment(), 'day') && !doneStageIds.includes(t.status)).length, [tasks, doneStageIds]);
   const totalTasks = tasks.length;
   const completionRate = totalTasks > 0 ? (tasksCompleted / totalTasks) * 100 : 0;
+  
+  const averageTasksPerDay = useMemo(() => {
+    if (tasks.length === 0) return 0;
+    const firstTaskDate = tasks.reduce((oldest, task) => {
+        return task.createdAt.toDate() < oldest ? task.createdAt.toDate() : oldest;
+    }, new Date());
+    const daysSinceFirstTask = moment().diff(moment(firstTaskDate), 'days') + 1;
+    return tasksCompleted / daysSinceFirstTask;
+  }, [tasks, tasksCompleted]);
 
   const tasksByStatus = useMemo(() => {
     const stageMap = new Map(stages.map(s => [s.id, s.name]));
@@ -73,18 +82,18 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
             </Card>
              <Card>
                 <CardHeader>
-                    <CardTitle>Total Tasks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">{totalTasks}</p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
                     <CardTitle>Completion Rate</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-4xl font-bold">{completionRate.toFixed(1)}%</p>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Avg. Daily Tasks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-4xl font-bold">{averageTasksPerDay.toFixed(1)}</p>
                 </CardContent>
             </Card>
         </div>

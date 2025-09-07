@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { ClientRequest } from '@/lib/types';
+import type { ClientRequest, Client } from '@/lib/types';
 import { AnalyticsDashboard } from '@/components/crm/analytics-dashboard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -15,6 +15,7 @@ export default function CrmAnalyticsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [requests, setRequests] = useState<ClientRequest[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
@@ -25,13 +26,23 @@ export default function CrmAnalyticsPage() {
   
   useEffect(() => {
     if (user) {
-      const q = query(collection(db, 'users', user.uid, 'clientRequests'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const reqQuery = query(collection(db, 'users', user.uid, 'clientRequests'));
+      const unsubscribeReqs = onSnapshot(reqQuery, (snapshot) => {
         const requestsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClientRequest));
         setRequests(requestsData);
-        setDataLoading(false);
+        if(!snapshot.metadata.fromCache) setDataLoading(false);
       });
-      return () => unsubscribe();
+
+      const clientQuery = query(collection(db, 'users', user.uid, 'clients'));
+       const unsubscribeClients = onSnapshot(clientQuery, (snapshot) => {
+        const clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client));
+        setClients(clientsData);
+      });
+      
+      return () => {
+        unsubscribeReqs();
+        unsubscribeClients();
+      };
     }
   }, [user]);
 
@@ -49,7 +60,7 @@ export default function CrmAnalyticsPage() {
         </div>
       </div>
       
-      <AnalyticsDashboard requests={requests} />
+      <AnalyticsDashboard requests={requests} clients={clients} />
 
     </div>
   );
