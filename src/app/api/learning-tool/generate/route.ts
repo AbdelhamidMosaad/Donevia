@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 import { generateLearningContent } from '@/ai/flows/learning-tool-flow';
 import type { LearningContentRequest } from '@/lib/types';
-import formidable from 'formidable';
+import formidable, { File } from 'formidable';
 import fs from 'fs/promises';
 import mammoth from 'mammoth';
 import pdf from 'pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js';
@@ -11,10 +11,12 @@ import pdf from 'pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js';
 
 // Helper to parse multipart form data
 async function parseForm(req: Request): Promise<{ fields: formidable.Fields; files: formidable.Files }> {
-    const formidableReq = req as any;
     return new Promise((resolve, reject) => {
         const form = formidable({});
-        form.parse(formidableReq, (err, fields, files) => {
+        // formidable can't directly parse a Next.js Request object
+        // so we need to convert it to a Node.js-like stream.
+        const reqAsAny = req as any;
+        form.parse(reqAsAny, (err, fields, files) => {
             if (err) {
                 reject(err);
             } else {
@@ -64,7 +66,7 @@ export async function POST(request: Request) {
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
     if (file) {
         try {
-            const fileText = await extractTextFromFile(file);
+            const fileText = await extractTextFromFile(file as File);
             context += `\n\n--- DOCUMENT CONTENT ---\n${fileText}`;
         } catch (e) {
             return NextResponse.json({ error: (e as Error).message }, { status: 400 });
