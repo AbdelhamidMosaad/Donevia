@@ -55,8 +55,8 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // The fix is to remove the specific disabling of list-related extensions here.
-        // StarterKit will handle them correctly by default.
+        // No specific extensions disabled here, so all StarterKit features like
+        // blockquote, codeBlock, and lists will be enabled by default.
       }),
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
