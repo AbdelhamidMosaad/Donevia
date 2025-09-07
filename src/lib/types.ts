@@ -216,3 +216,23 @@ export type ProgressUpdate = {
     text: string;
     createdAt: Timestamp;
 };
+
+// --- Habit Tracker Data Model ---
+
+export type Habit = {
+    id: string;
+    title: string;
+    description?: string;
+    icon: string; // Lucide icon name
+    frequency: 'daily'; // Initially just daily, can be expanded
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    archived: boolean;
+};
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // YYYY-MM-DD format for easy querying
+    completedAt: Timestamp;
+};

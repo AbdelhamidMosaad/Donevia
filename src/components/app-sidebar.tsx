@@ -26,6 +26,7 @@ import {
   FileSignature,
   Timer,
   Target,
+  Repeat,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -38,6 +39,7 @@ export function AppSidebar() {
   const menuItems = [
     { href: '/dashboard/lists', icon: <Kanban />, label: 'Task Management', tooltip: 'Task Management' },
     { href: '/goals', icon: <Target />, label: 'Goals', tooltip: 'Goals' },
+    { href: '/habits', icon: <Repeat />, label: 'Habits', tooltip: 'Habit Tracker' },
     { href: '/notes', icon: <FileText />, label: 'Sticky Notes', tooltip: 'Sticky Notes' },
     { href: '/whiteboard', icon: <PenSquare />, label: 'Whiteboard', tooltip: 'Whiteboard' },
     { href: '/mind-map', icon: <GitBranch />, label: 'Mind Map', tooltip: 'Mind Map' },
@@ -88,7 +90,7 @@ export function AppSidebar() {
              <SettingsDialog>
                 <SidebarMenuButton tooltip={{ children: 'Settings' }}>
                     <Settings />
-                    <span className="group-data-[collasonic]:hidden">Settings</span>
+                    <span className="group-data-[collapsible=icon]:hidden">Settings</span>
                 </SidebarMenuButton>
              </SettingsDialog>
           </SidebarMenuItem>
