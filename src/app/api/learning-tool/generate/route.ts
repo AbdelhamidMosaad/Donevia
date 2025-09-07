@@ -6,6 +6,7 @@ import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 import { generateLearningContent } from '@/ai/flows/learning-tool-flow';
 import type { LearningContentRequest } from '@/lib/types';
+import { Readable } from 'stream';
 
 
 export const config = {
@@ -36,20 +37,9 @@ async function parseForm(req: Request): Promise<{ fields: Record<string, string>
     busboy.on('finish', () => resolve({ fields, file: fileData }));
     busboy.on('error', reject);
 
-    const body = req.body as ReadableStream<Uint8Array>;
-    if (body) {
-        const reader = body.getReader();
-        const read = () => {
-            reader.read().then(({ done, value }) => {
-                if (done) {
-                    busboy.end();
-                    return;
-                }
-                busboy.write(value);
-                read();
-            }).catch(reject);
-        };
-        read();
+    if (req.body) {
+        // Convert the Web Stream to a Node.js Readable stream
+        Readable.fromWeb(req.body as any).pipe(busboy);
     } else {
         busboy.end();
     }
