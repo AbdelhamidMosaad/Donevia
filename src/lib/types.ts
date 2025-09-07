@@ -184,3 +184,35 @@ export interface PomodoroState extends PomodoroSettingsData {
     sessionsCompleted: number;
     targetEndTime: Timestamp | null;
 }
+
+// --- Goals Data Model ---
+
+export type Goal = {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Timestamp;
+    targetDate: Timestamp;
+    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Milestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    description: string;
+    dueDate: Timestamp;
+    isCompleted: boolean;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ProgressUpdate = {
+    id: string;
+    goalId: string;
+    milestoneId?: string | null; // Optional: can be linked to a milestone
+    text: string;
+    createdAt: Timestamp;
+};
