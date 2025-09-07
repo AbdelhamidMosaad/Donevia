@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { DoneviaLogo } from '@/components/logo';
 import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, AuthError } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect } from 'react';
@@ -31,7 +31,11 @@ export default function Home() {
       await signInWithPopup(auth, provider);
       router.push('/dashboard');
     } catch (error) {
-      console.error("Error signing in with Google: ", error);
+      // Don't log an error if the user closes the popup
+      const firebaseError = error as AuthError;
+      if (firebaseError.code !== 'auth/popup-closed-by-user' && firebaseError.code !== 'auth/cancelled-popup-request') {
+        console.error("Error signing in with Google: ", error);
+      }
     }
   };
   
@@ -231,8 +235,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
-
-    
-
