@@ -30,6 +30,7 @@ import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
 import { CharacterCount } from '@tiptap/extension-character-count';
 import { FontFamily } from '@/lib/tiptap/font-family';
+import { TextTransform } from '@/lib/tiptap/text-transform';
 
 
 interface DocEditorProps {
@@ -86,6 +87,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       Superscript,
       Subscript,
       CharacterCount,
+      TextTransform,
     ],
     content: docData.content,
     editorProps: {

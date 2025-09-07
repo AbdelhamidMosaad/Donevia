@@ -7,7 +7,7 @@ import {
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
   Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive,
-  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows
+  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -200,6 +200,20 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                  <DropdownMenuItem onSelect={() => editor.chain().focus().unsetFontSize().run()}>
                     Reset
                  </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-32 text-left justify-start">
+                    <PilcrowLeft className="h-4 w-4 mr-2" />
+                    Text Transform
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => editor.commands.transform('uppercase')}>UPPERCASE</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => editor.commands.transform('lowercase')}>lowercase</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => editor.commands.transform('capitalize')}>Capitalize</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
 
