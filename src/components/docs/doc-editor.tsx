@@ -54,7 +54,10 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // The fix is to remove the specific disabling of list-related extensions here.
+        // StarterKit will handle them correctly by default.
+      }),
       Placeholder.configure({ placeholder: "Type '/' for commands..." }),
       Underline,
       Link.configure({ openOnClick: true, autolink: true }),
