@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, LayoutDashboard, FileText, BotMessageSquare, GitBranch, PenSquare, BrainCircuit, Repeat, Briefcase, GraduationCap, Users, BarChart3, List, Calendar } from 'lucide-react';
+import { CheckCircle, LayoutDashboard, BrainCircuit, GitBranch, Repeat, Briefcase, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DoneviaLogo } from '@/components/logo';
@@ -197,6 +197,21 @@ export default function Home() {
                     <h3 className="font-bold font-headline text-xl">Mind Mapping</h3>
                     <p className="text-muted-foreground">Visualize your ideas, plan projects, and uncover new insights with an infinite canvas.</p>
                 </div>
+                 <div className="flex flex-col items-center text-center gap-2">
+                    <div className="p-3 rounded-full bg-primary/10"><Repeat className="h-8 w-8 text-primary" /></div>
+                    <h3 className="font-bold font-headline text-xl">Habit Tracker</h3>
+                    <p className="text-muted-foreground">Build consistency and achieve your goals by tracking your daily habits.</p>
+                </div>
+                 <div className="flex flex-col items-center text-center gap-2">
+                    <div className="p-3 rounded-full bg-primary/10"><Briefcase className="h-8 w-8 text-primary" /></div>
+                    <h3 className="font-bold font-headline text-xl">Advanced CRM</h3>
+                    <p className="text-muted-foreground">Manage your entire sales pipeline from lead to invoice with our integrated CRM.</p>
+                </div>
+                 <div className="flex flex-col items-center text-center gap-2">
+                    <div className="p-3 rounded-full bg-primary/10"><GraduationCap className="h-8 w-8 text-primary" /></div>
+                    <h3 className="font-bold font-headline text-xl">AI Learning Tools</h3>
+                    <p className="text-muted-foreground">Turn any document into notes, quizzes, and flashcards instantly.</p>
+                </div>
             </div>
           </div>
         </section>
@@ -216,3 +231,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
