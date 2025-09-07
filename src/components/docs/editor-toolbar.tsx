@@ -168,7 +168,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-32 text-left justify-start">
                     <CaseSensitive className="h-4 w-4 mr-2" />
-                     {editor.getAttributes('textStyle').fontFamily?.split(',')[0] || 'Inter'}
+                     {editor.getAttributes('textStyle').fontFamily?.split(',')[0].replace(/'/g, '') || 'Inter'}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
