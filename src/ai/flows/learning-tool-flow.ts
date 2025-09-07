@@ -10,8 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { GeneratedLearningContent, LearningContentRequest, QuizQuestion } from '@/lib/types';
-import { generate, definePrompt } from 'genkit/ai';
+import { GeneratedLearningContent, LearningContentRequest } from '@/lib/types';
 
 
 const QuizQuestionSchema = z.object({
@@ -42,7 +41,7 @@ const LearningContentRequestSchema = z.object({
 
 
 export async function generateLearningContent(input: z.infer<typeof LearningContentRequestSchema>): Promise<GeneratedLearningContent> {
-  const prompt = definePrompt(
+  const prompt = ai.definePrompt(
     {
       name: 'learningContentPrompt',
       input: { schema: LearningContentRequestSchema },
@@ -74,9 +73,9 @@ export async function generateLearningContent(input: z.infer<typeof LearningCont
     }
   );
 
-  const { output } = await generate({
+  const { output } = await ai.generate({
     prompt,
-    model: ai.model('googleai/gemini-pro'),
+    model: 'googleai/gemini-pro',
     input,
     config: {
       temperature: 0.5,
