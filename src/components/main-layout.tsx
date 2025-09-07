@@ -11,6 +11,7 @@ import { WelcomeScreen } from './welcome-screen';
 import { TaskReminderProvider } from '@/hooks/use-task-reminders';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { PomodoroProvider } from '@/hooks/use-pomodoro';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -44,6 +45,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <TaskReminderProvider>
+      <PomodoroProvider>
         <SidebarProvider defaultOpen={sidebarOpen}>
         <AppSidebar />
         <SidebarInset>
@@ -55,6 +57,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </div>
         </SidebarInset>
         </SidebarProvider>
+      </PomodoroProvider>
     </TaskReminderProvider>
   );
 }

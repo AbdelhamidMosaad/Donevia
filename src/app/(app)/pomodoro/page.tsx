@@ -2,13 +2,36 @@
 'use client';
 
 import { PomodoroTimer } from '@/components/pomodoro-timer';
+import { usePomodoro } from '@/hooks/use-pomodoro';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Timer } from 'lucide-react';
+import { PomodoroSettings } from '@/components/pomodoro-settings';
+import { Button } from '@/components/ui/button';
 
 export default function PomodoroPage() {
+    const { settings, setSettings, saveSettings } = usePomodoro();
+
+    const handleSettingsSave = (newSettings: any) => {
+        setSettings(newSettings);
+        saveSettings(newSettings);
+    };
+
   return (
     <div className="flex flex-col items-center justify-center h-full text-center">
-        <h1 className="text-3xl font-bold font-headline mb-2">Pomodoro Timer</h1>
-        <p className="text-muted-foreground mb-8">Focus on your work, one session at a time.</p>
-        <PomodoroTimer />
+        <Card className="w-full max-w-lg">
+            <CardHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full">
+                 <Timer className="h-12 w-12 text-primary" />
+                </div>
+                <CardTitle className="mt-4 font-headline text-2xl">Pomodoro Timer</CardTitle>
+                <CardDescription>Configure your Pomodoro sessions. The timer is always accessible from the top-right of your screen.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <PomodoroSettings onSave={handleSettingsSave} currentSettings={settings}>
+                   <Button>Open Pomodoro Settings</Button>
+                </PomodoroSettings>
+            </CardContent>
+        </Card>
     </div>
   );
 }

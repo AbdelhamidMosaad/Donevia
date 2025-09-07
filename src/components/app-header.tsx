@@ -27,6 +27,7 @@ import { Badge } from './ui/badge';
 import type { Task } from '@/lib/types';
 import moment from 'moment';
 import { useTaskReminders } from '@/hooks/use-task-reminders';
+import { PomodoroHeaderWidget } from './pomodoro-header-widget';
 
 export function AppHeader() {
   const [isClient, setIsClient] = React.useState(false);
@@ -78,6 +79,8 @@ export function AppHeader() {
           </form>
         )}
       </div>
+
+       <PomodoroHeaderWidget />
 
        <DropdownMenu>
           <DropdownMenuTrigger asChild>
