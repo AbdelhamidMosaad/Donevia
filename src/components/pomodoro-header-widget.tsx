@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Timer, Play, Pause, RotateCcw, Settings, Coffee, Brain } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export function PomodoroHeaderWidget() {
     const { mode, secondsLeft, isActive, toggleTimer, resetTimer, setMode } = usePomodoro();
@@ -20,10 +21,18 @@ export function PomodoroHeaderWidget() {
         longBreak: <Coffee className="h-4 w-4" />,
     }
 
+    const modeStyles = {
+        work: 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+        shortBreak: 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-300 border-green-200 dark:border-green-800',
+        longBreak: 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    }
+    
+    const modeStyle = modeStyles[mode] || 'bg-background';
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className={cn("transition-colors", isActive ? `${modeStyle} animate-pulse` : '')}>
                     <Timer className="mr-2 h-4 w-4" />
                     {`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`}
                 </Button>
