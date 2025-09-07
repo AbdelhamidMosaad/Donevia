@@ -58,68 +58,6 @@ export type StickyNote = {
     gridPosition?: { col: number; row: number };
 };
 
-/** Notebooks Data Model */
-export type Notebook = {
-    id: string;
-    ownerId: string;
-    title: string;
-    color: string;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type Section = {
-    id: string;
-    notebookId: string;
-    title: string;
-    order: number;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type Page = {
-    id: string;
-    sectionId: string;
-    title: string;
-    content: any; // TipTap/ProseMirror JSON content
-    searchText: string;
-    version: number;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    lastEditedBy?: string;
-    canvasColor?: string;
-};
-
-export type Attachment = {
-    id: string;
-    pageId: string;
-    filename: string;
-    url: string;
-    thumbnailUrl: string | null;
-    mimeType: string;
-    size: number;
-    uploadedAt: Timestamp;
-    userId: string;
-};
-
-export type Revision = {
-    id: string;
-    pageId: string;
-    title: string;
-    snapshot: any;
-    createdAt: Timestamp;
-    authorId: string;
-    reason?: string;
-};
-
-export type Share = {
-    id: string;
-    notebookId: string | null;
-    pageId: string | null;
-    sharedWithUserId: string;
-    permission: 'viewer' | 'editor';
-};
-
 /** User Settings */
 export interface UserSettings {
     theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-lavender' | 'theme-cornflower' | 'theme-teal' | 'theme-orange' | 'theme-mint';
