@@ -1,9 +1,9 @@
 
 'use client';
-import type { Doc } from '@/lib/types';
+import type { Doc, DocFolder } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MoreHorizontal, Edit, Trash2, FileSignature } from 'lucide-react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { MoreHorizontal, Edit, Trash2, FileSignature, Move, Folder as FolderIcon } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '../ui/input';
@@ -16,10 +16,12 @@ import { useRouter } from 'next/navigation';
 
 interface DocListCardViewProps {
   docs: Doc[];
+  folders: DocFolder[];
   onDelete: (docId: string) => void;
+  onMove: (docId: string, folderId: string | null) => void;
 }
 
-export function DocListCardView({ docs, onDelete }: DocListCardViewProps) {
+export function DocListCardView({ docs, folders, onDelete, onMove }: DocListCardViewProps) {
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editingDocName, setEditingDocName] = useState('');
   const { user } = useAuth();
@@ -116,6 +118,26 @@ export function DocListCardView({ docs, onDelete }: DocListCardViewProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                         <DropdownMenuItem onSelect={() => handleStartEdit(document)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+                         <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Move className="mr-2 h-4 w-4" />
+                            Move to Folder
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {document.folderId && 
+                                <DropdownMenuItem onSelect={() => onMove(document.id, null)}>
+                                    Remove from folder
+                                </DropdownMenuItem>
+                            }
+                            {folders.map(folder => (
+                              <DropdownMenuItem key={folder.id} onSelect={() => onMove(document.id, folder.id)} disabled={document.folderId === folder.id}>
+                                <FolderIcon className="mr-2 h-4 w-4" />
+                                {folder.name}
+                              </DropdownMenuItem>
+                            ))}
+                            {folders.length === 0 && <DropdownMenuItem disabled>No folders created</DropdownMenuItem>}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
                         <DropdownMenuSeparator />
                         <AlertDialog>
                             <AlertDialogTrigger asChild>

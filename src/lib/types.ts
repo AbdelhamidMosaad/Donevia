@@ -87,6 +87,14 @@ export type Doc = {
     content: any;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    folderId?: string | null;
+};
+
+export type DocFolder = {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: Timestamp;
 };
 
 /** Pomodoro */
