@@ -33,9 +33,9 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
     const [filterYear, setFilterYear] = useState<string>(moment().format('YYYY'));
     const [filterStartDate, setFilterStartDate] = useState<string>('');
     const [filterEndDate, setFilterEndDate] = useState<string>('');
-    const [filterAppointment, setFilterAppointment] = useState('');
-    const [filterCategory, setFilterCategory] = useState('');
-    const [filterCustomer, setFilterCustomer] = useState('');
+    const [filterAppointment, setFilterAppointment] = useState('all');
+    const [filterCategory, setFilterCategory] = useState('all');
+    const [filterCustomer, setFilterCustomer] = useState('all');
 
     const filteredActivities = useMemo(() => {
         return activities.filter(activity => {
@@ -55,9 +55,9 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
             }
 
             // Other filters
-            if (filterAppointment && activity.appointment !== filterAppointment) return false;
-            if (filterCategory && activity.category !== filterCategory) return false;
-            if (filterCustomer && activity.customer !== filterCustomer) return false;
+            if (filterAppointment !== 'all' && activity.appointment !== filterAppointment) return false;
+            if (filterCategory !== 'all' && activity.category !== filterCategory) return false;
+            if (filterCustomer !== 'all' && activity.customer !== filterCustomer) return false;
             
             return true;
         });
@@ -69,9 +69,9 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
         setFilterYear(moment().format('YYYY'));
         setFilterStartDate('');
         setFilterEndDate('');
-        setFilterAppointment('');
-        setFilterCategory('');
-        setFilterCustomer('');
+        setFilterAppointment('all');
+        setFilterCategory('all');
+        setFilterCustomer('all');
     };
 
     const handleDelete = async (activityId: string) => {
@@ -175,7 +175,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                         <Select value={filterAppointment} onValueChange={setFilterAppointment}>
                             <SelectTrigger><SelectValue placeholder="All Appointments" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">All Appointments</SelectItem>
+                                <SelectItem value="all">All Appointments</SelectItem>
                                 {settings.appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -185,7 +185,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                         <Select value={filterCategory} onValueChange={setFilterCategory}>
                             <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">All Categories</SelectItem>
+                                <SelectItem value="all">All Categories</SelectItem>
                                 {settings.categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -195,7 +195,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                         <Select value={filterCustomer} onValueChange={setFilterCustomer}>
                             <SelectTrigger><SelectValue placeholder="All Customers" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">All Customers</SelectItem>
+                                <SelectItem value="all">All Customers</SelectItem>
                                 {settings.customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                             </SelectContent>
                         </Select>
