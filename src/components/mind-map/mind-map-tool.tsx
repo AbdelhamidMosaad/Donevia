@@ -6,7 +6,6 @@ import {
   MousePointer,
   PlusCircle,
   Link as LinkIcon,
-  Eye,
   Undo,
   Redo,
   Download,
@@ -147,7 +146,7 @@ export function MindMapTool() {
     });
   }, [selectedNodeId, toast, saveToHistory]);
   
-  const deleteNode = (nodeId: string) => {
+  const deleteNode = useCallback((nodeId: string) => {
     if (nodes.length <= 1) {
         toast({ variant: 'destructive', title: "Cannot delete the last node." });
         return;
@@ -158,7 +157,7 @@ export function MindMapTool() {
     setConnections(newConnections);
     setSelectedNodeId(null);
     saveToHistory(newNodes, newConnections);
-  };
+  }, [nodes, connections, saveToHistory, toast]);
   
   const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
       setNodes(nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n));
@@ -236,18 +235,71 @@ export function MindMapTool() {
     }
   }, 1000);
 
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Tab' && selectedNodeId) {
-            e.preventDefault();
-            addNode(selectedNodeId);
+        // Don't interfere with text input
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+            return;
+        }
+
+        if (selectedNodeId) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                addNode(selectedNodeId);
+            }
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                deleteNode(selectedNodeId);
+            }
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                navigateNodes(e.key);
+            }
         }
     };
+
+    const navigateNodes = (key: string) => {
+        const currentNode = nodes.find(n => n.id === selectedNodeId);
+        if (!currentNode) return;
+    
+        const children = connections.filter(c => c.from === currentNode.id).map(c => nodes.find(n => n.id === c.to));
+        const parentConnection = connections.find(c => c.to === currentNode.id);
+        const parent = parentConnection ? nodes.find(n => n.id === parentConnection.from) : null;
+        const siblings = parent ? connections.filter(c => c.from === parent.id).map(c => nodes.find(n => n.id === c.to)) : [];
+        const currentIndex = siblings.findIndex(s => s?.id === currentNode.id);
+
+        switch (key) {
+            case 'ArrowDown':
+                if (currentIndex < siblings.length - 1) {
+                    setSelectedNodeId(siblings[currentIndex + 1]!.id);
+                } else if (children.length > 0) {
+                     setSelectedNodeId(children[0]!.id);
+                }
+                break;
+            case 'ArrowUp':
+                if (currentIndex > 0) {
+                    setSelectedNodeId(siblings[currentIndex - 1]!.id);
+                }
+                break;
+            case 'ArrowLeft':
+                if(parent) {
+                    setSelectedNodeId(parent.id);
+                }
+                break;
+            case 'ArrowRight':
+                 if (children.length > 0) {
+                    setSelectedNodeId(children[0]!.id);
+                }
+                break;
+        }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => {
         window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeId, addNode]);
+  }, [selectedNodeId, addNode, deleteNode, nodes, connections]);
   
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
@@ -354,7 +406,7 @@ export function MindMapTool() {
                             <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-20">
                                 <Button size="icon" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); addNode(node.id); }}><Plus className="h-4 w-4"/></Button>
                             </div>
-                            <div className="absolute -left-3 top-1/2 -translate-y-1/2 z-20">
+                             <div className="absolute -left-3 top-1/2 -translate-y-1/2 z-20">
                                 <Button size="icon" variant="destructive" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}><Trash2 className="h-4 w-4"/></Button>
                             </div>
                         </div>
