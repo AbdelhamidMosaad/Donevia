@@ -22,6 +22,7 @@ import type { Bookmark, BookmarkCategory } from '@/lib/types';
 import { addBookmark, updateBookmark } from '@/lib/bookmarks';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { useDebouncedCallback } from 'use-debounce';
 
 interface AddBookmarkDialogProps {
   bookmark?: Bookmark | null;
@@ -44,6 +45,7 @@ export function AddBookmarkDialog({
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const colorPickerRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
 
   const isEditMode = !!bookmark;
 
@@ -73,6 +75,7 @@ export function AddBookmarkDialog({
         resetForm();
       }
       setIsSaving(false);
+      isInitialMount.current = true;
       
       if (focusColorPicker && colorPickerRef.current) {
         setTimeout(() => colorPickerRef.current?.focus(), 100);
@@ -81,13 +84,45 @@ export function AddBookmarkDialog({
   }, [open, bookmark, isEditMode, categories, focusColorPicker]);
   
   const formatUrl = (inputUrl: string) => {
+    if (!inputUrl) return '';
     if (!inputUrl.startsWith('http://') && !inputUrl.startsWith('https://')) {
         return 'https://' + inputUrl;
     }
     return inputUrl;
   };
+  
+  const debouncedSave = useDebouncedCallback(async (bookmarkData) => {
+    if (!user || !isEditMode || !bookmark) return;
 
-  const handleSave = async () => {
+    try {
+        await updateBookmark(user.uid, bookmark.id, bookmarkData);
+        toast({ title: '✓ Saved', description: 'Bookmark details have been updated.' });
+    } catch (e) {
+        console.error("Error auto-saving bookmark:", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save bookmark.' });
+    }
+  }, 1500);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
+    }
+    
+    if (isEditMode && open) {
+        const bookmarkData = {
+            title,
+            url: formatUrl(url),
+            description,
+            category,
+            color: color === '#FFFFFF' ? undefined : color,
+        };
+        debouncedSave(bookmarkData);
+    }
+  }, [title, url, description, category, color, isEditMode, open, debouncedSave]);
+
+  // Manual save for new bookmarks
+  const handleSaveNew = async () => {
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in.' });
       return;
@@ -103,17 +138,12 @@ export function AddBookmarkDialog({
       url: formatUrl(url),
       description,
       category,
-      color: color === '#FFFFFF' ? undefined : color, // Store default as undefined
+      color: color === '#FFFFFF' ? undefined : color,
     };
 
     try {
-      if (isEditMode && bookmark) {
-        await updateBookmark(user.uid, bookmark.id, bookmarkData);
-        toast({ title: 'Bookmark Updated', description: `"${title}" has been updated.` });
-      } else {
-        await addBookmark(user.uid, bookmarkData);
-        toast({ title: 'Bookmark Added', description: `"${title}" has been added successfully.` });
-      }
+      await addBookmark(user.uid, bookmarkData);
+      toast({ title: 'Bookmark Added', description: `"${title}" has been added successfully.` });
       onOpenChange?.(false);
     } catch (e) {
       console.error("Error saving bookmark: ", e);
@@ -128,7 +158,7 @@ export function AddBookmarkDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Bookmark' : 'Add New Bookmark'}</DialogTitle>
-          <DialogDescription>{isEditMode ? 'Update the details for this bookmark.' : 'Fill in the information below.'}</DialogDescription>
+          <DialogDescription>{isEditMode ? 'Changes are saved automatically.' : 'Fill in the information below.'}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -171,12 +201,14 @@ export function AddBookmarkDialog({
              </div>
           </div>
         </div>
-        <DialogFooter>
-          <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogFooter>
+        {!isEditMode && (
+            <DialogFooter>
+            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+            <Button onClick={handleSaveNew} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+            </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
