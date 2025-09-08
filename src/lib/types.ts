@@ -242,6 +242,8 @@ export type MindMap = {
   updatedAt: Timestamp;
   nodes: MindMapNode[];
   connections: MindMapConnection[];
+  backgroundColor?: string;
+  backgroundGrid?: 'dotted' | 'lined' | 'plain';
 };
 
 

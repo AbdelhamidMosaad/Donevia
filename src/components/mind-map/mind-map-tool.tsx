@@ -36,7 +36,7 @@ import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { MindMap as MindMapType, MindMapNode, MindMapConnection, Whiteboard } from '@/lib/types';
+import type { MindMap as MindMapType, MindMapNode, MindMapConnection } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
@@ -46,6 +46,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import jsPDF from 'jspdf';
 
 
 const colorPalette = ['#4361ee', '#ef476f', '#06d6a0', '#ffd166', '#9d4edd', '#000000'];
@@ -418,18 +419,17 @@ export function MindMapTool() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
   
-  const handleExport = () => {
+  const createExportCanvas = (padding = 100): HTMLCanvasElement | null => {
     if (!nodes.length) {
-        toast({variant: "destructive", title: "Cannot export an empty mind map."});
-        return;
+      toast({ variant: "destructive", title: "Cannot export an empty mind map." });
+      return null;
     }
 
-    const padding = 100;
     const minX = Math.min(...nodes.map(n => n.x - n.width / 2));
     const minY = Math.min(...nodes.map(n => n.y - n.height / 2));
     const maxX = Math.max(...nodes.map(n => n.x + n.width / 2));
     const maxY = Math.max(...nodes.map(n => n.y + n.height / 2));
-    
+
     const contentWidth = maxX - minX;
     const contentHeight = maxY - minY;
 
@@ -439,47 +439,50 @@ export function MindMapTool() {
     const exportCtx = exportCanvas.getContext('2d');
 
     if (!exportCtx) {
-        toast({variant: "destructive", title: "Failed to create export canvas."});
-        return;
+      toast({ variant: "destructive", title: "Failed to create export canvas." });
+      return null;
     }
 
-    // Fill background
     exportCtx.fillStyle = mindMap?.backgroundColor || '#FFFFFF';
     exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-    
-    // Offset for drawing
+
     const drawOffsetX = -minX + padding;
     const drawOffsetY = -minY + padding;
 
-    // Draw connections
     exportCtx.strokeStyle = '#9ca3af';
     exportCtx.lineWidth = 2;
     connections.forEach(conn => {
-        const from = nodes.find(n => n.id === conn.from);
-        const to = nodes.find(n => n.id === conn.to);
-        if (!from || !to) return;
-        const path = `M ${from.x + drawOffsetX} ${from.y + drawOffsetY} C ${from.x + 100 + drawOffsetX} ${from.y + drawOffsetY}, ${to.x - 100 + drawOffsetX} ${to.y + drawOffsetY}, ${to.x + drawOffsetX} ${to.y + drawOffsetY}`;
-        exportCtx.stroke(new Path2D(path));
+      const from = nodes.find(n => n.id === conn.from);
+      const to = nodes.find(n => n.id === conn.to);
+      if (!from || !to) return;
+      const path = `M ${from.x + drawOffsetX} ${from.y + drawOffsetY} C ${from.x + 100 + drawOffsetX} ${from.y + drawOffsetY}, ${to.x - 100 + drawOffsetX} ${to.y + drawOffsetY}, ${to.x + drawOffsetX} ${to.y + drawOffsetY}`;
+      exportCtx.stroke(new Path2D(path));
     });
 
-    // Draw nodes
     nodes.forEach(node => {
-        const x = node.x + drawOffsetX;
-        const y = node.y + drawOffsetY;
-        exportCtx.fillStyle = node.backgroundColor;
-        exportCtx.fillRect(x - node.width / 2, y - node.height / 2, node.width, node.height);
-        exportCtx.strokeStyle = '#e5e7eb';
-        exportCtx.strokeRect(x - node.width / 2, y - node.height / 2, node.width, node.height);
-        
-        exportCtx.fillStyle = node.color;
-        let fontStyle = '';
-        if (node.isBold) fontStyle += 'bold ';
-        if (node.isItalic) fontStyle += 'italic ';
-        exportCtx.font = `${fontStyle} 14px sans-serif`;
-        exportCtx.textAlign = 'center';
-        exportCtx.textBaseline = 'middle';
-        exportCtx.fillText(node.title, x, y);
+      const x = node.x + drawOffsetX;
+      const y = node.y + drawOffsetY;
+      exportCtx.fillStyle = node.backgroundColor;
+      exportCtx.fillRect(x - node.width / 2, y - node.height / 2, node.width, node.height);
+      exportCtx.strokeStyle = '#e5e7eb';
+      exportCtx.strokeRect(x - node.width / 2, y - node.height / 2, node.width, node.height);
+
+      exportCtx.fillStyle = node.color;
+      let fontStyle = '';
+      if (node.isBold) fontStyle += 'bold ';
+      if (node.isItalic) fontStyle += 'italic ';
+      exportCtx.font = `${fontStyle} 14px sans-serif`;
+      exportCtx.textAlign = 'center';
+      exportCtx.textBaseline = 'middle';
+      exportCtx.fillText(node.title, x, y);
     });
+
+    return exportCanvas;
+  };
+  
+  const handleExportPNG = () => {
+    const exportCanvas = createExportCanvas();
+    if (!exportCanvas) return;
 
     const dataURL = exportCanvas.toDataURL('image/png');
     const link = document.createElement('a');
@@ -488,8 +491,31 @@ export function MindMapTool() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({title: "Export Successful", description: "Your mind map is being downloaded."});
+    toast({ title: "Export Successful", description: "Your mind map is being downloaded as a PNG." });
   };
+  
+  const handleExportPDF = () => {
+    const exportCanvas = createExportCanvas();
+    if (!exportCanvas) return;
+
+    const imgData = exportCanvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+        orientation: exportCanvas.width > exportCanvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [exportCanvas.width, exportCanvas.height]
+    });
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, exportCanvas.width, exportCanvas.height);
+    pdf.save(`${mapName || 'mind-map'}.pdf`);
+    toast({ title: "Export Successful", description: "Your mind map is being downloaded as a PDF." });
+  };
+
+   const handleSettingChange = async (setting: Partial<MindMapType>) => {
+      const mapRef = getMindMapDocRef();
+      if(mapRef && mindMap) {
+          await updateDoc(mapRef, setting);
+      }
+  }
 
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
@@ -510,12 +536,18 @@ export function MindMapTool() {
                 />
             </div>
             <div className="flex gap-2">
-                <Button onClick={handleExport}><Download className="mr-2"/> Export as PNG</Button>
+                <Button variant="outline" onClick={handleExportPNG}><Download className="mr-2"/> Export PNG</Button>
+                <Button variant="outline" onClick={handleExportPDF}><Download className="mr-2"/> Export PDF</Button>
             </div>
         </div>
 
         <Card 
-          className="flex-1 relative overflow-hidden canvas-container"
+          className={cn("flex-1 relative overflow-hidden canvas-container", {
+              'whiteboard-bg-dotted': mindMap.backgroundGrid === 'dotted' || !mindMap.backgroundGrid,
+              'whiteboard-bg-lined': mindMap.backgroundGrid === 'lined',
+              'whiteboard-bg-plain': mindMap.backgroundGrid === 'plain',
+          })}
+          style={{ backgroundColor: mindMap.backgroundColor }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -529,6 +561,32 @@ export function MindMapTool() {
                 <Button variant={connectingNodeId ? 'secondary' : 'ghost'} size="icon" onClick={() => setConnectingNodeId(selectedNodeId)}><LinkIcon/></Button>
                  <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
                 <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1}><Redo/></Button>
+                <Popover>
+                  <PopoverTrigger asChild><Button variant="ghost" size="icon"><Settings /></Button></PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="grid gap-4">
+                        <div className="space-y-2"><h4 className="font-medium leading-none">Settings</h4></div>
+                        <div className="grid gap-2">
+                            <Label>Background Color</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {backgroundColors.map(color => (
+                                    <button key={color} onClick={() => handleSettingChange({ backgroundColor: color })}
+                                        className={cn("w-8 h-8 rounded-full border", mindMap.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
+                                        style={{ backgroundColor: color }} />
+                                ))}
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                             <Label>Grid Style</Label>
+                             <ToggleGroup type="single" value={mindMap.backgroundGrid || 'dotted'} onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}>
+                                <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
+                                <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
+                                <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
+                            </ToggleGroup>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
             </div>
             
             {selectedNode && (
