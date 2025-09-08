@@ -106,41 +106,46 @@ export function MindMapTool() {
     debouncedSave(newNodes, newConnections);
   }, [history, historyIndex, debouncedSave]);
 
-  const addNode = (parentId?: string) => {
-    const parentNode = parentId ? nodes.find(n => n.id === parentId) : nodes.find(n => n.id === selectedNodeId);
-    if (!parentNode && nodes.length > 0) {
-        toast({variant: 'destructive', title: "Select a node first", description: "You must select a parent node to add a new idea."});
-        return;
-    }
+  const addNode = useCallback((parentId?: string) => {
+    setNodes(prevNodes => {
+        const parentNode = parentId ? prevNodes.find(n => n.id === parentId) : prevNodes.find(n => n.id === selectedNodeId);
+        if (!parentNode && prevNodes.length > 0) {
+            toast({variant: 'destructive', title: "Select a node first", description: "You must select a parent node to add a new idea."});
+            return prevNodes;
+        }
 
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 200;
-    const newNode: MindMapNode = {
-      id: uuidv4(),
-      x: parentNode ? parentNode.x + Math.cos(angle) * distance : window.innerWidth / 2,
-      y: parentNode ? parentNode.y + Math.sin(angle) * distance : window.innerHeight / 2,
-      width: 150,
-      height: 50,
-      title: 'New Idea',
-      style: 'default',
-      backgroundColor: '#f8f9fa',
-      color: '#212529',
-      isBold: false,
-      isItalic: false,
-      isUnderline: false,
-    };
-    
-    const newNodes = [...nodes, newNode];
-    let newConnections = [...connections];
-    if (parentNode) {
-      newConnections.push({ from: parentNode.id, to: newNode.id });
-    }
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 200;
+        const newNode: MindMapNode = {
+            id: uuidv4(),
+            x: parentNode ? parentNode.x + Math.cos(angle) * distance : window.innerWidth / 2,
+            y: parentNode ? parentNode.y + Math.sin(angle) * distance : window.innerHeight / 2,
+            width: 150,
+            height: 50,
+            title: 'New Idea',
+            style: 'default',
+            backgroundColor: '#f8f9fa',
+            color: '#212529',
+            isBold: false,
+            isItalic: false,
+            isUnderline: false,
+        };
+        
+        const newNodes = [...prevNodes, newNode];
+        
+        setConnections(prevConnections => {
+            let newConnections = [...prevConnections];
+            if (parentNode) {
+              newConnections.push({ from: parentNode.id, to: newNode.id });
+            }
+            saveToHistory(newNodes, newConnections);
+            return newConnections;
+        });
 
-    setNodes(newNodes);
-    setConnections(newConnections);
-    setSelectedNodeId(newNode.id);
-    saveToHistory(newNodes, newConnections);
-  };
+        setSelectedNodeId(newNode.id);
+        return newNodes;
+    });
+  }, [selectedNodeId, toast, saveToHistory]);
   
   const deleteNode = (nodeId: string) => {
     if (nodes.length <= 1) {
@@ -156,8 +161,7 @@ export function MindMapTool() {
   };
   
   const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
-      const newNodes = nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n);
-      setNodes(newNodes);
+      setNodes(nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n));
   };
   
   const handleNodeBlur = () => {
@@ -231,6 +235,19 @@ export function MindMapTool() {
       toast({ title: "Mind Map renamed!" });
     }
   }, 1000);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Tab' && selectedNodeId) {
+            e.preventDefault();
+            addNode(selectedNodeId);
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedNodeId, addNode]);
   
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
