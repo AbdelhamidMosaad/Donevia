@@ -24,7 +24,7 @@ Follow these instructions precisely:
 
 ---
 **Source Text:**
-{{sourceText}}
+{{{sourceText}}}
 ---
 
 **Generation Type:** {{generationType}}
@@ -47,6 +47,7 @@ Follow these instructions precisely:
 3.  **Difficulty**: The difficulty level for the questions must be "{{quizOptions.difficulty}}".
 4.  **Content**: All questions must be based *only* on the provided source text.
 5.  **Explanations**: Provide a brief, clear explanation for why the correct answer is correct for every question.
+6.  **Options**: For multiple-choice questions, provide exactly four options.
 ---
 {{/if}}
 
