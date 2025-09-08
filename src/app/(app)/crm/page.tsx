@@ -1,163 +1,250 @@
+import type { Timestamp } from "firebase/firestore";
+import { z } from 'zod';
 
-'use client';
+/** Task Management Types */
+export const StageSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    order: z.number(),
+});
+export type Stage = z.infer<typeof StageSchema>;
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, Briefcase, Search, LayoutDashboard, BarChart3, Users } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import type { Client } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { ClientDialog } from '@/components/crm/client-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { deleteClient } from '@/lib/crm';
-import { Input } from '@/components/ui/input';
-import { useDebouncedCallback } from 'use-debounce';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+const FirebaseTimestampSchema = z.custom<Timestamp>(
+  (val) => val instanceof Timestamp,
+  "Invalid Timestamp"
+);
 
-export default function CrmPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-  const { toast } = useToast();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+export const TaskSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    reflection: z.string().optional(),
+    status: z.string(), // Customizable stage name
+    priority: z.enum(['Low', 'Medium', 'High']),
+    dueDate: FirebaseTimestampSchema,
+    tags: z.array(z.string()),
+    createdAt: FirebaseTimestampSchema,
+    listId: z.string(),
+    reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
+});
+export type Task = z.infer<typeof TaskSchema>;
 
-  const debounced = useDebouncedCallback((value) => {
-    setSearchQuery(value);
-  }, 300);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
+export type TaskList = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    stages?: Stage[];
+};
+
+export type BoardTemplate = {
+    id: string;
+    name: string;
+    stages: { name: string; order: number }[];
+};
+
+/** Sticky Notes */
+export type StickyNote = {
+    id: string;
+    title: string;
+    text: string;
+    color: string;
+    textColor: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    priority: 'High' | 'Medium' | 'Low';
+    position?: { x: number; y: number };
+    gridPosition?: { col: number; row: number };
+};
+
+/** Bookmarks */
+export type BookmarkCategory = 'work' | 'personal' | 'education' | 'entertainment' | 'shopping' | 'other' | string;
+export type Bookmark = {
+    id: string;
+    title: string;
+    url: string;
+    description?: string;
+    category: BookmarkCategory;
+    createdAt: Timestamp;
+};
+
+/** User Settings */
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-lavender' | 'theme-cornflower' | 'theme-teal' | 'theme-orange' | 'theme-mint';
+    font:
+        | 'inter'
+        | 'roboto'
+        | 'open-sans'
+        | 'lato'
+        | 'poppins'
+        | 'source-sans-pro'
+        | 'nunito'
+        | 'montserrat'
+        | 'playfair-display'
+        | 'jetbrains-mono';
+    sidebarOpen: boolean;
+    notificationSound: boolean;
+    docsView?: 'card' | 'list';
+    lectureNotesView?: 'card' | 'list';
+    sidebarOrder?: string[];
+    bookmarkSettings?: {
+        categories: string[];
     }
-  }, [user, loading, router]);
-  
-  useEffect(() => {
-    if (user) {
-      let q = query(collection(db, 'users', user.uid, 'clients'), orderBy('createdAt', 'desc'));
-      
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        let clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client));
-        if (searchQuery) {
-            clientsData = clientsData.filter(client => 
-                client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                client.company?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
-        setClients(clientsData);
-      });
-      return () => unsubscribe();
-    }
-  }, [user, searchQuery]);
-
-  const handleDeleteClient = async (clientId: string) => {
-    if (!user) return;
-    try {
-      await deleteClient(user.uid, clientId);
-      toast({ title: 'Client Deleted', description: 'The client has been removed.' });
-    } catch (e) {
-      console.error("Error deleting client: ", e);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete client.' });
-    }
-  };
-
-  if (loading || !user) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-            <h1 className="text-3xl font-bold font-headline">CRM Dashboard</h1>
-            <p className="text-muted-foreground">Manage your clients, requests, and analyze your pipeline.</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Link href="/crm/requests">
-            <Card className="hover:bg-muted/50 transition-colors">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Client Requests</CardTitle>
-                    <LayoutDashboard className="h-6 w-6 text-primary"/>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">View and manage your sales pipeline using a Kanban board.</p>
-                </CardContent>
-            </Card>
-        </Link>
-         <Link href="/crm/analytics">
-            <Card className="hover:bg-muted/50 transition-colors">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Analytics</CardTitle>
-                    <BarChart3 className="h-6 w-6 text-primary"/>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">Visualize your pipeline performance and track key metrics.</p>
-                </CardContent>
-            </Card>
-        </Link>
-         <Card className="hover:bg-muted/50 transition-colors cursor-default">
-            <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Client Management</CardTitle>
-                <Users className="h-6 w-6 text-primary"/>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground">Manage your contacts, quotations, and invoices below.</p>
-            </CardContent>
-        </Card>
-      </div>
-      
-       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-          <h2 className="text-2xl font-bold font-headline">Your Clients</h2>
-          <div className="flex items-center gap-2 w-full md:w-auto">
-             <div className="relative flex-1 md:flex-initial">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Search clients..."
-                    className="pl-8"
-                    onChange={(e) => debounced(e.target.value)}
-                />
-            </div>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Client
-            </Button>
-        </div>
-       </div>
-       {clients.length === 0 && !searchQuery ? (
-        <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-            <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold font-headline">No Clients Yet</h3>
-            <p className="text-muted-foreground">Click "New Client" to add your first one.</p>
-        </div>
-      ) : (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clients.map(client => (
-                <Link key={client.id} href={`/crm/clients/${client.id}`} className="group">
-                    <Card className="hover:shadow-lg transition-shadow duration-300 h-full">
-                       <CardHeader>
-                           <CardTitle className="group-hover:underline">{client.name}</CardTitle>
-                           <CardDescription>{client.company}</CardDescription>
-                       </CardHeader>
-                       <CardContent>
-                           <p className="text-sm text-muted-foreground">{client.email}</p>
-                           <p className="text-sm text-muted-foreground">{client.phone}</p>
-                           <Badge variant="outline" className="mt-4 capitalize">{client.status}</Badge>
-                       </CardContent>
-                    </Card>
-                </Link>
-            ))}
-        </div>
-      )}
-
-      <ClientDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
-    </div>
-  );
 }
+
+/** Docs */
+export type Doc = {
+    id: string;
+    ownerId: string;
+    title: string;
+    content: any;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    folderId?: string | null;
+};
+
+export type DocFolder = {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: Timestamp;
+};
+
+/** Pomodoro */
+export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
+
+export interface PomodoroSettingsData {
+    workMinutes: number;
+    shortBreakMinutes: number;
+    longBreakMinutes: number;
+    longBreakInterval: number;
+}
+
+export interface PomodoroState extends PomodoroSettingsData {
+    mode: PomodoroMode;
+    isActive: boolean;
+    sessionsCompleted: number;
+    targetEndTime: Timestamp | null;
+}
+
+/** Goals */
+export type Goal = {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Timestamp;
+    targetDate: Timestamp;
+    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Milestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    description: string;
+    dueDate: Timestamp;
+    isCompleted: boolean;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ProgressUpdate = {
+    id: string;
+    goalId: string;
+    milestoneId?: string | null;
+    text: string;
+    createdAt: Timestamp;
+};
+
+/** Work Activity Tracker */
+export type WorkActivity = {
+    id: string;
+    date: Timestamp;
+    appointment: string;
+    category: string;
+    description: string;
+    customer: string;
+    invoiceNumber?: string;
+    amount?: number;
+    travelAllowance?: number;
+    overtimeHours?: number;
+    overtimeDays?: number;
+    notes?: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+
+/** Habits */
+export type Habit = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // YYYY-MM-DD
+    createdAt: Timestamp;
+};
+
+/** Recap Feature */
+export const RecapRequestSchema = z.object({
+  tasks: z.array(TaskSchema),
+  period: z.enum(['daily', 'weekly']),
+});
+export type RecapRequest = z.infer<typeof RecapRequestSchema>;
+
+export const RecapResponseSchema = z.object({
+  title: z.string().describe('A short, engaging title for the recap.'),
+  summary: z.string().describe("A 2-3 sentence paragraph summarizing the user's activity."),
+  highlights: z.array(z.string()).describe('A bulleted list of 2-4 key highlights or achievements.'),
+});
+export type RecapResponse = z.infer<typeof RecapResponseSchema>;
+
+
+/** Learning Tool Feature */
+export type QuizQuestionType = 'multiple-choice' | 'true-false' | 'short-answer';
+
+export const QuizQuestionSchema = z.object({
+  questionText: z.string(),
+  questionType: z.enum(['multiple-choice', 'true-false', 'short-answer']),
+  options: z.array(z.string()).optional(),
+  correctAnswer: z.string().describe('The correct answer. For multiple-choice, this is the exact text of the correct option.'),
+  explanation: z.string(),
+});
+
+export const FlashcardSchema = z.object({
+  term: z.string(),
+  definition: z.string(),
+});
+
+export const StudyMaterialRequestSchema = z.object({
+  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
+  generationType: z.enum(['quiz', 'flashcards', 'notes']),
+  quizOptions: z.object({
+    numQuestions: z.number().min(1).max(20),
+    questionTypes: z.array(z.enum(['multiple-choice', 'true-false', 'short-answer'])),
+    difficulty: z.enum(['easy', 'medium', 'hard']),
+  }).optional(),
+  flashcardsOptions: z.object({
+    numCards: z.number().min(1).max(30),
+    style: z.enum(['basic', 'detailed', 'question']),
+  }).optional(),
+  notesOptions: z.object({
+    style: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
+    complexity: z.enum(['simple', 'medium', 'advanced']),
+  }).optional(),
+});
+
+export const StudyMaterialResponseSchema = z.object({
+  title: z.string().describe('A concise and relevant title for the generated material.'),
+  materialType: z.enum(['quiz', 'flashcards', 'notes']),
+  quizContent: z.array(QuizQuestionSchema).optional(),
+  flashcardContent: z.array(FlashcardSchema).optional(),
+  notesContent: z.string().optional(),
+});

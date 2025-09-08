@@ -1,163 +1,250 @@
+import type { Timestamp } from "firebase/firestore";
+import { z } from 'zod';
 
-'use client';
+/** Task Management Types */
+export const StageSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    order: z.number(),
+});
+export type Stage = z.infer<typeof StageSchema>;
 
-import type { ClientRequest, Client } from '@/lib/types';
-import { RequestCard } from './request-card';
-import { useState, useMemo } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { useToast } from '@/hooks/use-toast';
-import { updateRequest } from '@/lib/requests';
-import { useAuth } from '@/hooks/use-auth';
-import { RequestDialog } from './request-dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Label } from '../ui/label';
+const FirebaseTimestampSchema = z.custom<Timestamp>(
+  (val) => val instanceof Timestamp,
+  "Invalid Timestamp"
+);
 
-interface RequestBoardProps {
-  requests: ClientRequest[];
-  clients: Client[];
-}
+export const TaskSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    reflection: z.string().optional(),
+    status: z.string(), // Customizable stage name
+    priority: z.enum(['Low', 'Medium', 'High']),
+    dueDate: FirebaseTimestampSchema,
+    tags: z.array(z.string()),
+    createdAt: FirebaseTimestampSchema,
+    listId: z.string(),
+    reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
+});
+export type Task = z.infer<typeof TaskSchema>;
 
-export const STAGES = [
-    { id: 'new-request', name: 'New Request' },
-    { id: 'quotation', name: 'Quotation' },
-    { id: 'execution', name: 'Execution' },
-    { id: 'reporting', name: 'Reporting' },
-    { id: 'invoice', name: 'Invoice' },
-    { id: 'completed', name: 'Completed' },
-    { id: 'win', name: 'Win' },
-    { id: 'lost', name: 'Lost' },
-];
 
-const LOSS_REASONS = ['Budget', 'Competition', 'Timing', 'Scope', 'Other'];
+export type TaskList = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    stages?: Stage[];
+};
 
-export function RequestBoard({ requests, clients }: RequestBoardProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [editingRequest, setEditingRequest] = useState<ClientRequest | null>(null);
-  const [movingRequest, setMovingRequest] = useState<{request: ClientRequest, newStage: string} | null>(null);
-  const [lossReason, setLossReason] = useState('');
+export type BoardTemplate = {
+    id: string;
+    name: string;
+    stages: { name: string; order: number }[];
+};
 
-  const onDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-    if (!destination || !user) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-    
-    const request = requests.find(r => r.id === draggableId);
-    if (!request) return;
+/** Sticky Notes */
+export type StickyNote = {
+    id: string;
+    title: string;
+    text: string;
+    color: string;
+    textColor: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    priority: 'High' | 'Medium' | 'Low';
+    position?: { x: number; y: number };
+    gridPosition?: { col: number; row: number };
+};
 
-    if (destination.droppableId === 'lost') {
-        // Defer the update until the reason is provided
-        setMovingRequest({ request, newStage: destination.droppableId });
-    } else {
-        await updateRequest(user.uid, draggableId, { stage: destination.droppableId });
-        toast({ title: "Request Updated", description: `Moved "${request.title}" to ${destination.droppableId}.`});
+/** Bookmarks */
+export type BookmarkCategory = 'work' | 'personal' | 'education' | 'entertainment' | 'shopping' | 'other' | string;
+export type Bookmark = {
+    id: string;
+    title: string;
+    url: string;
+    description?: string;
+    category: BookmarkCategory;
+    createdAt: Timestamp;
+};
+
+/** User Settings */
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-lavender' | 'theme-cornflower' | 'theme-teal' | 'theme-orange' | 'theme-mint';
+    font:
+        | 'inter'
+        | 'roboto'
+        | 'open-sans'
+        | 'lato'
+        | 'poppins'
+        | 'source-sans-pro'
+        | 'nunito'
+        | 'montserrat'
+        | 'playfair-display'
+        | 'jetbrains-mono';
+    sidebarOpen: boolean;
+    notificationSound: boolean;
+    docsView?: 'card' | 'list';
+    lectureNotesView?: 'card' | 'list';
+    sidebarOrder?: string[];
+    bookmarkSettings?: {
+        categories: string[];
     }
-  };
-
-  const handleLossReasonSubmit = async () => {
-    if (!movingRequest || !user) return;
-    
-    await updateRequest(user.uid, movingRequest.request.id, { stage: 'lost', lossReason });
-    toast({ title: "Request Updated", description: `Moved "${movingRequest.request.title}" to Lost.` });
-    setMovingRequest(null);
-    setLossReason('');
-  }
-
-  const requestsByStage = useMemo(() => {
-    const grouped: Record<string, ClientRequest[]> = {};
-    STAGES.forEach(stage => grouped[stage.id] = []);
-    requests.forEach(req => {
-        if (grouped[req.stage]) {
-            grouped[req.stage].push(req);
-        }
-    });
-    return grouped;
-  }, [requests]);
-
-  const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
-
-  return (
-    <>
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4 items-start">
-          {STAGES.map(stage => (
-            <div key={stage.id} className="flex flex-col gap-4">
-              <h2 className="font-semibold font-headline text-lg sticky top-0 bg-background/80 backdrop-blur-sm py-2">{stage.name} ({requestsByStage[stage.id]?.length || 0})</h2>
-              <Droppable droppableId={stage.id}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`min-h-[200px] bg-muted/50 rounded-lg p-2 transition-colors ${snapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
-                  >
-                    {requestsByStage[stage.id]?.map((request, index) => (
-                      <Draggable key={request.id} draggableId={request.id} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="mb-4"
-                          >
-                            <RequestCard request={request} client={clientMap.get(request.clientId)} onClick={() => setEditingRequest(request)} />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </div>
-          ))}
-        </div>
-      </DragDropContext>
-      {editingRequest && (
-        <RequestDialog 
-            isOpen={!!editingRequest} 
-            onOpenChange={() => setEditingRequest(null)}
-            clients={clients}
-            request={editingRequest}
-        />
-      )}
-       <AlertDialog open={!!movingRequest} onOpenChange={() => setMovingRequest(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark as Lost</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please provide a reason for losing the request "{movingRequest?.request.title}".
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-            <div className="py-4">
-                <Label htmlFor="lossReason">Reason</Label>
-                <Select onValueChange={setLossReason} defaultValue={lossReason}>
-                    <SelectTrigger id="lossReason">
-                        <SelectValue placeholder="Select a reason" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {LOSS_REASONS.map(reason => (
-                            <SelectItem key={reason} value={reason}>{reason}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLossReasonSubmit} disabled={!lossReason}>Confirm</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
 }
+
+/** Docs */
+export type Doc = {
+    id: string;
+    ownerId: string;
+    title: string;
+    content: any;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    folderId?: string | null;
+};
+
+export type DocFolder = {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: Timestamp;
+};
+
+/** Pomodoro */
+export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
+
+export interface PomodoroSettingsData {
+    workMinutes: number;
+    shortBreakMinutes: number;
+    longBreakMinutes: number;
+    longBreakInterval: number;
+}
+
+export interface PomodoroState extends PomodoroSettingsData {
+    mode: PomodoroMode;
+    isActive: boolean;
+    sessionsCompleted: number;
+    targetEndTime: Timestamp | null;
+}
+
+/** Goals */
+export type Goal = {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Timestamp;
+    targetDate: Timestamp;
+    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Milestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    description: string;
+    dueDate: Timestamp;
+    isCompleted: boolean;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ProgressUpdate = {
+    id: string;
+    goalId: string;
+    milestoneId?: string | null;
+    text: string;
+    createdAt: Timestamp;
+};
+
+/** Work Activity Tracker */
+export type WorkActivity = {
+    id: string;
+    date: Timestamp;
+    appointment: string;
+    category: string;
+    description: string;
+    customer: string;
+    invoiceNumber?: string;
+    amount?: number;
+    travelAllowance?: number;
+    overtimeHours?: number;
+    overtimeDays?: number;
+    notes?: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+
+/** Habits */
+export type Habit = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // YYYY-MM-DD
+    createdAt: Timestamp;
+};
+
+/** Recap Feature */
+export const RecapRequestSchema = z.object({
+  tasks: z.array(TaskSchema),
+  period: z.enum(['daily', 'weekly']),
+});
+export type RecapRequest = z.infer<typeof RecapRequestSchema>;
+
+export const RecapResponseSchema = z.object({
+  title: z.string().describe('A short, engaging title for the recap.'),
+  summary: z.string().describe("A 2-3 sentence paragraph summarizing the user's activity."),
+  highlights: z.array(z.string()).describe('A bulleted list of 2-4 key highlights or achievements.'),
+});
+export type RecapResponse = z.infer<typeof RecapResponseSchema>;
+
+
+/** Learning Tool Feature */
+export type QuizQuestionType = 'multiple-choice' | 'true-false' | 'short-answer';
+
+export const QuizQuestionSchema = z.object({
+  questionText: z.string(),
+  questionType: z.enum(['multiple-choice', 'true-false', 'short-answer']),
+  options: z.array(z.string()).optional(),
+  correctAnswer: z.string().describe('The correct answer. For multiple-choice, this is the exact text of the correct option.'),
+  explanation: z.string(),
+});
+
+export const FlashcardSchema = z.object({
+  term: z.string(),
+  definition: z.string(),
+});
+
+export const StudyMaterialRequestSchema = z.object({
+  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
+  generationType: z.enum(['quiz', 'flashcards', 'notes']),
+  quizOptions: z.object({
+    numQuestions: z.number().min(1).max(20),
+    questionTypes: z.array(z.enum(['multiple-choice', 'true-false', 'short-answer'])),
+    difficulty: z.enum(['easy', 'medium', 'hard']),
+  }).optional(),
+  flashcardsOptions: z.object({
+    numCards: z.number().min(1).max(30),
+    style: z.enum(['basic', 'detailed', 'question']),
+  }).optional(),
+  notesOptions: z.object({
+    style: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
+    complexity: z.enum(['simple', 'medium', 'advanced']),
+  }).optional(),
+});
+
+export const StudyMaterialResponseSchema = z.object({
+  title: z.string().describe('A concise and relevant title for the generated material.'),
+  materialType: z.enum(['quiz', 'flashcards', 'notes']),
+  quizContent: z.array(QuizQuestionSchema).optional(),
+  flashcardContent: z.array(FlashcardSchema).optional(),
+  notesContent: z.string().optional(),
+});

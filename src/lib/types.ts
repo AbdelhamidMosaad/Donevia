@@ -159,69 +159,24 @@ export type ProgressUpdate = {
     createdAt: Timestamp;
 };
 
-/** CRM */
-export type CustomField = {
+/** Work Activity Tracker */
+export type WorkActivity = {
     id: string;
-    key: string;
-    value: string;
-};
-
-export type CrmAttachment = {
-    id: string;
-    filename: string;
-    url: string;
-    mimeType: string;
-    size: number;
-    uploadedAt: Timestamp;
-};
-
-export type Client = {
-    id: string;
-    name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    company?: string;
+    date: Timestamp;
+    appointment: string;
+    category: string;
+    description: string;
+    customer: string;
+    invoiceNumber?: string;
+    amount?: number;
+    travelAllowance?: number;
+    overtimeHours?: number;
+    overtimeDays?: number;
     notes?: string;
-    status: 'lead' | 'active' | 'inactive' | 'archived';
-    customFields: CustomField[];
-    quotations: Quotation[];
-    invoices: Invoice[];
     createdAt: Timestamp;
     updatedAt: Timestamp;
 };
 
-export type Quotation = {
-    id: string;
-    clientId: string;
-    quotationNumber: string;
-    status: 'draft' | 'sent' | 'accepted' | 'rejected';
-    attachments: CrmAttachment[];
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type Invoice = {
-    id: string;
-    clientId: string;
-    invoiceNumber: string;
-    status: 'draft' | 'sent' | 'paid' | 'overdue';
-    attachments: CrmAttachment[];
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
-
-export type ClientRequest = {
-    id: string;
-    clientId: string;
-    title: string;
-    description?: string;
-    stage: 'new-request' | 'quotation' | 'execution' | 'reporting' | 'invoice' | 'completed' | 'win' | 'lost';
-    invoiceAmount?: number;
-    lossReason?: 'Budget' | 'Competition' | 'Timing' | 'Scope' | 'Other' | null;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-};
 
 /** Habits */
 export type Habit = {

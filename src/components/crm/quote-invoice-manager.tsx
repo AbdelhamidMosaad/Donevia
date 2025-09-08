@@ -1,220 +1,250 @@
+import type { Timestamp } from "firebase/firestore";
+import { z } from 'zod';
 
-'use client';
+/** Task Management Types */
+export const StageSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    order: z.number(),
+});
+export type Stage = z.infer<typeof StageSchema>;
 
-import { useState } from 'react';
-import type { Client, Quotation, Invoice, CrmAttachment } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
-import { updateClient } from '@/lib/crm';
-import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Trash2, PlusCircle, FileText, UploadCloud, Loader2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getAuth } from 'firebase/auth';
+const FirebaseTimestampSchema = z.custom<Timestamp>(
+  (val) => val instanceof Timestamp,
+  "Invalid Timestamp"
+);
 
-interface QuoteInvoiceManagerProps {
-  client: Client;
-  type: 'quotations' | 'invoices';
-}
-
-type Item = Quotation | Invoice;
-
-async function uploadCrmAttachmentClient(clientId: string, file: File, onProgress: (progress: number) => void) {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) throw new Error('User is not authenticated.');
-  
-  const token = await user.getIdToken();
-  const formData = new FormData();
-  formData.append('clientId', clientId);
-  formData.append('idToken', token);
-  formData.append('file', file, file.name);
-
-  return new Promise<CrmAttachment>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/crm/upload', true);
-
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percentComplete = (event.loaded / event.total) * 100;
-        onProgress(percentComplete);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const response = JSON.parse(xhr.response);
-        resolve({
-            id: uuidv4(),
-            url: response.url,
-            filename: response.filename,
-            mimeType: response.mimeType,
-            size: response.size,
-            uploadedAt: new Date() as any // will be converted to timestamp on save
-        });
-      } else {
-        try {
-            const errorData = JSON.parse(xhr.response);
-            reject(new Error(errorData.error || 'Failed to upload file.'));
-        } catch (e) {
-            reject(new Error(`Server error: ${xhr.statusText}`));
-        }
-      }
-    };
-    xhr.onerror = () => reject(new Error('Network error during upload.'));
-    xhr.send(formData);
-  });
-}
+export const TaskSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    reflection: z.string().optional(),
+    status: z.string(), // Customizable stage name
+    priority: z.enum(['Low', 'Medium', 'High']),
+    dueDate: FirebaseTimestampSchema,
+    tags: z.array(z.string()),
+    createdAt: FirebaseTimestampSchema,
+    listId: z.string(),
+    reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
+});
+export type Task = z.infer<typeof TaskSchema>;
 
 
-export function QuoteInvoiceManager({ client, type }: QuoteInvoiceManagerProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [items, setItems] = useState<Item[]>(client[type] || []);
-  const [uploadingFileId, setUploadingFileId] = useState<string | null>(null);
+export type TaskList = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    stages?: Stage[];
+};
 
-  const title = type === 'quotations' ? 'Quotations' : 'Invoices';
-  const itemTitle = type === 'quotations' ? 'Quotation' : 'Invoice';
+export type BoardTemplate = {
+    id: string;
+    name: string;
+    stages: { name: string; order: number }[];
+};
 
-  const handleItemChange = (id: string, key: string, value: any) => {
-    const newItems = items.map(item =>
-      item.id === id ? { ...item, [key]: value } : item
-    );
-    setItems(newItems);
-  };
+/** Sticky Notes */
+export type StickyNote = {
+    id: string;
+    title: string;
+    text: string;
+    color: string;
+    textColor: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    priority: 'High' | 'Medium' | 'Low';
+    position?: { x: number; y: number };
+    gridPosition?: { col: number; row: number };
+};
 
-  const addItem = () => {
-    const newItem: Item = {
-      id: uuidv4(),
-      clientId: client.id,
-      quotationNumber: type === 'quotations' ? '' : undefined,
-      invoiceNumber: type === 'invoices' ? '' : undefined,
-      status: 'draft',
-      attachments: [],
-      createdAt: new Date() as any, // Temporary
-      updatedAt: new Date() as any, // Temporary
-    } as Item;
-    setItems([...items, newItem]);
-  };
+/** Bookmarks */
+export type BookmarkCategory = 'work' | 'personal' | 'education' | 'entertainment' | 'shopping' | 'other' | string;
+export type Bookmark = {
+    id: string;
+    title: string;
+    url: string;
+    description?: string;
+    category: BookmarkCategory;
+    createdAt: Timestamp;
+};
 
-  const removeItem = (id: string) => {
-    // Note: This doesn't delete files from storage. A real implementation would need a backend call.
-    setItems(items.filter(item => item.id !== id));
-  };
-  
-  const handleFileUpload = async (itemId: string, file: File) => {
-      if(!user) return;
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-         toast({ variant: 'destructive', title: 'File too large', description: `${file.name} exceeds the 10MB limit.`});
-         return;
-      }
-      setUploadingFileId(itemId);
-      try {
-        const newAttachment = await uploadCrmAttachmentClient(client.id, file, (progress) => {
-          // You can use progress for a progress bar if needed
-        });
-        const newItems = items.map(item =>
-            item.id === itemId ? { ...item, attachments: [...item.attachments, newAttachment] } : item
-        );
-        setItems(newItems);
-        toast({ title: 'File uploaded' });
-      } catch (error) {
-        console.error("Upload failed: ", error);
-        toast({ variant: 'destructive', title: 'Upload failed', description: (error as Error).message });
-      } finally {
-          setUploadingFileId(null);
-      }
-  };
-
-  const saveItems = async () => {
-    if (!user) return;
-    try {
-      await updateClient(user.uid, client.id, { [type]: items });
-      toast({ title: `${title} saved successfully!` });
-    } catch (e) {
-      console.error(`Error saving ${type}: `, e);
-      toast({ variant: 'destructive', title: `Error saving ${title}.` });
+/** User Settings */
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-lavender' | 'theme-cornflower' | 'theme-teal' | 'theme-orange' | 'theme-mint';
+    font:
+        | 'inter'
+        | 'roboto'
+        | 'open-sans'
+        | 'lato'
+        | 'poppins'
+        | 'source-sans-pro'
+        | 'nunito'
+        | 'montserrat'
+        | 'playfair-display'
+        | 'jetbrains-mono';
+    sidebarOpen: boolean;
+    notificationSound: boolean;
+    docsView?: 'card' | 'list';
+    lectureNotesView?: 'card' | 'list';
+    sidebarOrder?: string[];
+    bookmarkSettings?: {
+        categories: string[];
     }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>Manage {type} for this client.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {items.map(item => (
-            <div key={item.id} className="p-4 border rounded-lg space-y-3">
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder={`${itemTitle} Number`}
-                  value={(item as any).quotationNumber || (item as any).invoiceNumber || ''}
-                  onChange={e => handleItemChange(item.id, type === 'quotations' ? 'quotationNumber' : 'invoiceNumber', e.target.value)}
-                  className="font-semibold"
-                />
-                <Select value={item.status} onValueChange={v => handleItemChange(item.id, 'status', v)}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {type === 'quotations' && <>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="sent">Sent</SelectItem>
-                            <SelectItem value="accepted">Accepted</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                        </>}
-                        {type === 'invoices' && <>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="sent">Sent</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="overdue">Overdue</SelectItem>
-                        </>}
-                    </SelectContent>
-                </Select>
-                <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium mb-2">Attachments</h4>
-                <div className="space-y-2">
-                    {item.attachments.map(att => (
-                        <div key={att.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-md">
-                            <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
-                                <FileText className="h-4 w-4 text-primary" />
-                                {att.filename}
-                            </a>
-                             <Button variant="ghost" size="icon" className="h-6 w-6">
-                                <Trash2 className="h-3 w-3 text-destructive" />
-                             </Button>
-                        </div>
-                    ))}
-                </div>
-                <div className="mt-2">
-                    <label htmlFor={`file-upload-${item.id}`} className="cursor-pointer inline-flex items-center gap-2 text-sm text-primary hover:underline">
-                       {uploadingFileId === item.id ? 
-                            <><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</>
-                            : <><UploadCloud className="h-4 w-4" /> Upload File</>
-                       }
-                    </label>
-                    <input id={`file-upload-${item.id}`} type="file" className="hidden" onChange={(e) => e.target.files && handleFileUpload(item.id, e.target.files[0])}/>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 flex justify-between">
-          <Button variant="outline" onClick={addItem}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add {itemTitle}
-          </Button>
-          <Button onClick={saveItems}>Save {title}</Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
+
+/** Docs */
+export type Doc = {
+    id: string;
+    ownerId: string;
+    title: string;
+    content: any;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    folderId?: string | null;
+};
+
+export type DocFolder = {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: Timestamp;
+};
+
+/** Pomodoro */
+export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
+
+export interface PomodoroSettingsData {
+    workMinutes: number;
+    shortBreakMinutes: number;
+    longBreakMinutes: number;
+    longBreakInterval: number;
+}
+
+export interface PomodoroState extends PomodoroSettingsData {
+    mode: PomodoroMode;
+    isActive: boolean;
+    sessionsCompleted: number;
+    targetEndTime: Timestamp | null;
+}
+
+/** Goals */
+export type Goal = {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Timestamp;
+    targetDate: Timestamp;
+    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type Milestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    description: string;
+    dueDate: Timestamp;
+    isCompleted: boolean;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type ProgressUpdate = {
+    id: string;
+    goalId: string;
+    milestoneId?: string | null;
+    text: string;
+    createdAt: Timestamp;
+};
+
+/** Work Activity Tracker */
+export type WorkActivity = {
+    id: string;
+    date: Timestamp;
+    appointment: string;
+    category: string;
+    description: string;
+    customer: string;
+    invoiceNumber?: string;
+    amount?: number;
+    travelAllowance?: number;
+    overtimeHours?: number;
+    overtimeDays?: number;
+    notes?: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+
+/** Habits */
+export type Habit = {
+    id: string;
+    name: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type HabitCompletion = {
+    id: string;
+    habitId: string;
+    date: string; // YYYY-MM-DD
+    createdAt: Timestamp;
+};
+
+/** Recap Feature */
+export const RecapRequestSchema = z.object({
+  tasks: z.array(TaskSchema),
+  period: z.enum(['daily', 'weekly']),
+});
+export type RecapRequest = z.infer<typeof RecapRequestSchema>;
+
+export const RecapResponseSchema = z.object({
+  title: z.string().describe('A short, engaging title for the recap.'),
+  summary: z.string().describe("A 2-3 sentence paragraph summarizing the user's activity."),
+  highlights: z.array(z.string()).describe('A bulleted list of 2-4 key highlights or achievements.'),
+});
+export type RecapResponse = z.infer<typeof RecapResponseSchema>;
+
+
+/** Learning Tool Feature */
+export type QuizQuestionType = 'multiple-choice' | 'true-false' | 'short-answer';
+
+export const QuizQuestionSchema = z.object({
+  questionText: z.string(),
+  questionType: z.enum(['multiple-choice', 'true-false', 'short-answer']),
+  options: z.array(z.string()).optional(),
+  correctAnswer: z.string().describe('The correct answer. For multiple-choice, this is the exact text of the correct option.'),
+  explanation: z.string(),
+});
+
+export const FlashcardSchema = z.object({
+  term: z.string(),
+  definition: z.string(),
+});
+
+export const StudyMaterialRequestSchema = z.object({
+  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
+  generationType: z.enum(['quiz', 'flashcards', 'notes']),
+  quizOptions: z.object({
+    numQuestions: z.number().min(1).max(20),
+    questionTypes: z.array(z.enum(['multiple-choice', 'true-false', 'short-answer'])),
+    difficulty: z.enum(['easy', 'medium', 'hard']),
+  }).optional(),
+  flashcardsOptions: z.object({
+    numCards: z.number().min(1).max(30),
+    style: z.enum(['basic', 'detailed', 'question']),
+  }).optional(),
+  notesOptions: z.object({
+    style: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
+    complexity: z.enum(['simple', 'medium', 'advanced']),
+  }).optional(),
+});
+
+export const StudyMaterialResponseSchema = z.object({
+  title: z.string().describe('A concise and relevant title for the generated material.'),
+  materialType: z.enum(['quiz', 'flashcards', 'notes']),
+  quizContent: z.array(QuizQuestionSchema).optional(),
+  flashcardContent: z.array(FlashcardSchema).optional(),
+  notesContent: z.string().optional(),
+});
