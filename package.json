@@ -95,6 +95,7 @@
     "tippy.js": "^6.3.7",
     "use-debounce": "^10.0.1",
     "uuid": "^9.0.1",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {

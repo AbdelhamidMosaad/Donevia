@@ -15,7 +15,7 @@ import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
-
+import { Label } from '../ui/label';
 
 interface ActivityTableProps {
     activities: WorkActivity[];
@@ -25,23 +25,49 @@ interface ActivityTableProps {
 export function ActivityTable({ activities, settings }: ActivityTableProps) {
     const { user } = useAuth();
     const { toast } = useToast();
-    const [filterDate, setFilterDate] = useState('');
+    
+    // State for filters
+    const [dateFilterType, setDateFilterType] = useState<'all' | 'month' | 'period'>('all');
+    const [filterMonth, setFilterMonth] = useState<string>(moment().format('M'));
+    const [filterYear, setFilterYear] = useState<string>(moment().format('YYYY'));
+    const [filterStartDate, setFilterStartDate] = useState<string>('');
+    const [filterEndDate, setFilterEndDate] = useState<string>('');
     const [filterAppointment, setFilterAppointment] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
     const [filterCustomer, setFilterCustomer] = useState('');
 
     const filteredActivities = useMemo(() => {
         return activities.filter(activity => {
-            if (filterDate && moment(activity.date.toDate()).format('YYYY-MM-DD') !== filterDate) return false;
+            const activityDate = moment(activity.date.toDate());
+            
+            // Date filtering
+            if (dateFilterType === 'month') {
+                if(!filterYear || !filterMonth) return true; // Don't filter if year or month is not set
+                if (activityDate.year() !== parseInt(filterYear) || (activityDate.month() + 1) !== parseInt(filterMonth)) {
+                    return false;
+                }
+            } else if (dateFilterType === 'period') {
+                const start = filterStartDate ? moment(filterStartDate).startOf('day') : null;
+                const end = filterEndDate ? moment(filterEndDate).endOf('day') : null;
+                if (start && activityDate.isBefore(start)) return false;
+                if (end && activityDate.isAfter(end)) return false;
+            }
+
+            // Other filters
             if (filterAppointment && activity.appointment !== filterAppointment) return false;
             if (filterCategory && activity.category !== filterCategory) return false;
             if (filterCustomer && activity.customer !== filterCustomer) return false;
+            
             return true;
         });
-    }, [activities, filterDate, filterAppointment, filterCategory, filterCustomer]);
+    }, [activities, dateFilterType, filterMonth, filterYear, filterStartDate, filterEndDate, filterAppointment, filterCategory, filterCustomer]);
 
     const resetFilters = () => {
-        setFilterDate('');
+        setDateFilterType('all');
+        setFilterMonth(moment().format('M'));
+        setFilterYear(moment().format('YYYY'));
+        setFilterStartDate('');
+        setFilterEndDate('');
         setFilterAppointment('');
         setFilterCategory('');
         setFilterCustomer('');
@@ -80,24 +106,97 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
         toast({ title: 'Exporting data...' });
     }
 
+    const availableYears = useMemo(() => {
+        if (activities.length === 0) return [moment().year().toString()];
+        const years = new Set(activities.map(a => moment(a.date.toDate()).year()));
+        return Array.from(years).sort((a,b) => b-a).map(String);
+    }, [activities]);
+
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 p-4 border rounded-lg">
-                <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} placeholder="Filter by date" />
-                <Select value={filterAppointment} onValueChange={setFilterAppointment}>
-                    <SelectTrigger><SelectValue placeholder="All Appointments" /></SelectTrigger>
-                    <SelectContent>{settings.appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                </Select>
-                 <Select value={filterCategory} onValueChange={setFilterCategory}>
-                    <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
-                    <SelectContent>{settings.categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                </Select>
-                 <Select value={filterCustomer} onValueChange={setFilterCustomer}>
-                    <SelectTrigger><SelectValue placeholder="All Customers" /></SelectTrigger>
-                    <SelectContent>{settings.customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                </Select>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 border rounded-lg items-end">
+                {/* Date Filters */}
+                <div className="flex flex-col space-y-1.5">
+                    <Label>Date Filter Type</Label>
+                    <Select value={dateFilterType} onValueChange={(v: 'all' | 'month' | 'period') => setDateFilterType(v)}>
+                        <SelectTrigger><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Time</SelectItem>
+                            <SelectItem value="month">By Month</SelectItem>
+                            <SelectItem value="period">By Period</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {dateFilterType === 'month' && (
+                    <>
+                        <div className="flex flex-col space-y-1.5">
+                             <Label>Month</Label>
+                            <Select value={filterMonth} onValueChange={setFilterMonth}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {moment.months().map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex flex-col space-y-1.5">
+                            <Label>Year</Label>
+                            <Select value={filterYear} onValueChange={setFilterYear}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </>
+                )}
+
+                {dateFilterType === 'period' && (
+                     <>
+                        <div className="flex flex-col space-y-1.5">
+                             <Label>Start Date</Label>
+                            <Input type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
+                        </div>
+                        <div className="flex flex-col space-y-1.5">
+                            <Label>End Date</Label>
+                            <Input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
+                        </div>
+                    </>
+                )}
+
+                {/* Other Filters */}
+                <div className="flex flex-col space-y-1.5">
+                    <Label>Appointment</Label>
+                    <Select value={filterAppointment} onValueChange={setFilterAppointment}>
+                        <SelectTrigger><SelectValue placeholder="All Appointments" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">All Appointments</SelectItem>
+                            {settings.appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="flex flex-col space-y-1.5">
+                    <Label>Category</Label>
+                    <Select value={filterCategory} onValueChange={setFilterCategory}>
+                        <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">All Categories</SelectItem>
+                            {settings.categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="flex flex-col space-y-1.5">
+                    <Label>Customer</Label>
+                    <Select value={filterCustomer} onValueChange={setFilterCustomer}>
+                        <SelectTrigger><SelectValue placeholder="All Customers" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">All Customers</SelectItem>
+                            {settings.customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                 </div>
                 <Button onClick={resetFilters} variant="outline">Reset Filters</Button>
-                <Button onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export to Excel</Button>
+                <Button onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export</Button>
             </div>
             <div className="border rounded-lg">
                 <Table>
@@ -156,7 +255,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={12} className="h-24 text-center">
-                                    No activities found.
+                                    No activities found for the selected filters.
                                 </TableCell>
                             </TableRow>
                         )}
