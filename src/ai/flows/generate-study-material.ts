@@ -32,12 +32,28 @@ Follow these instructions precisely:
 {{#if notesOptions}}
 ---
 **NOTES INSTRUCTIONS**
-1.  **Output Format**: The output must be plain text, not markdown. Use line breaks for structure.
-2.  **Note Style**: The notes must be in the "{{notesOptions.style}}" style.
-3.  **Complexity**: The complexity level must be "{{notesOptions.complexity}}".
-4.  **Content**: The content must be based *only* on the source text provided. Do not add any external information.
+1. **Output Format**: Plain text only. Use line breaks for structure. No markdown symbols like # or *.
+2. **Note Style**: The notes must follow this structure:
+
+Lecture Notes: [Title]
+
+1. Main Section Heading
+- Bullet points with details
+- Sub-points indented where necessary
+
+2. Next Section Heading
+- Same formatting
+
+...
+At the end:
+Key Takeaways
+- Summarized key points in bullet format
+
+3. **Complexity**: Must match "{{notesOptions.complexity}}".
+4. **Content**: Use only the provided source text. Do not add external content.
 ---
 {{/if}}
+
 
 {{#if quizOptions}}
 ---
