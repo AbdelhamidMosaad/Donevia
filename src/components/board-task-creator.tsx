@@ -17,6 +17,24 @@ interface BoardTaskCreatorProps {
     stageId: string;
 }
 
+const cardColors = [
+    '#FFFFFF',
+    '#FEE2E2', // red-100
+    '#FFEDD5', // orange-100
+    '#FEF3C7', // amber-100
+    '#FEF9C3', // yellow-100
+    '#ECFCCB', // lime-100
+    '#D1FAE5', // emerald-100
+    '#CFFAFE', // cyan-100
+    '#DBEAFE', // blue-100
+    '#E0E7FF', // indigo-100
+    '#E5E0FF', // violet-100
+    '#F3E8FF', // purple-100
+    '#FAE8FF', // fuchsia-100
+];
+
+const getRandomColor = () => cardColors[Math.floor(Math.random() * cardColors.length)];
+
 export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState('');
@@ -49,6 +67,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                 priority: 'Medium',
                 dueDate: Timestamp.now(), // Default due date
                 tags: [],
+                color: getRandomColor(),
             });
             // Immediately reset for the next task
             setTitle('');

@@ -34,6 +34,7 @@ export const TaskSchema = z.object({
     createdAt: FirebaseTimestampSchema,
     listId: z.string(),
     reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
+    color: z.string().optional(),
 });
 export type Task = z.infer<typeof TaskSchema>;
 

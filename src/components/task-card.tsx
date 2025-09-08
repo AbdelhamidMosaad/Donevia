@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import moment from 'moment';
+import { cn } from '@/lib/utils';
 
 
 interface TaskCardProps {
@@ -53,7 +54,8 @@ export function TaskCard({ task }: TaskCardProps) {
   return (
     <>
     <Card 
-        className="hover:shadow-md transition-shadow duration-200 cursor-pointer active:cursor-grabbing"
+        className={cn("hover:shadow-md transition-shadow duration-200 cursor-pointer active:cursor-grabbing")}
+        style={{ backgroundColor: task.color }}
         onClick={() => setIsEditDialogOpen(true)}
     >
       <CardHeader className="p-3">

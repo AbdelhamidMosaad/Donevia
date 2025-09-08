@@ -35,6 +35,25 @@ interface AddTaskDialogProps {
   defaultDueDate?: Date;
 }
 
+const cardColors = [
+    '#FFFFFF',
+    '#FEE2E2', // red-100
+    '#FFEDD5', // orange-100
+    '#FEF3C7', // amber-100
+    '#FEF9C3', // yellow-100
+    '#ECFCCB', // lime-100
+    '#D1FAE5', // emerald-100
+    '#CFFAFE', // cyan-100
+    '#DBEAFE', // blue-100
+    '#E0E7FF', // indigo-100
+    '#E5E0FF', // violet-100
+    '#F3E8FF', // purple-100
+    '#FAE8FF', // fuchsia-100
+];
+
+const getRandomColor = () => cardColors[Math.floor(Math.random() * cardColors.length)];
+
+
 export function AddTaskDialog({
   children,
   listId,
@@ -62,6 +81,7 @@ export function AddTaskDialog({
   const [priority, setPriority] = useState<Task['priority']>('Medium');
   const [status, setStatus] = useState<Task['status'] | undefined>();
   const [reminder, setReminder] = useState<Task['reminder']>('none');
+  const [color, setColor] = useState<string | undefined>(task?.color);
 
   const resetForm = () => {
     setTitle('');
@@ -70,6 +90,7 @@ export function AddTaskDialog({
     setDueDate(defaultDueDate || new Date());
     setPriority('Medium');
     setReminder('none');
+    setColor(getRandomColor());
     if (stages.length > 0) {
       setStatus(stages[0].id);
     } else {
@@ -105,6 +126,7 @@ export function AddTaskDialog({
         setPriority(task.priority);
         setStatus(task.status);
         setReminder(task.reminder || 'none');
+        setColor(task.color);
       } else {
         resetForm();
       }
@@ -136,6 +158,7 @@ export function AddTaskDialog({
         priority,
         status,
         reminder,
+        color,
         tags: task?.tags || [],
         listId,
         ...(isEditMode ? {} : { createdAt: serverTimestamp() }),
