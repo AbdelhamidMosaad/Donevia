@@ -21,6 +21,7 @@ import {
   Save,
   Expand,
   Minus,
+  Move,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -37,6 +38,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Input } from '../ui/input';
 
 const colorPalette = ['#4361ee', '#ef476f', '#06d6a0', '#ffd166', '#9d4edd', '#000000'];
+type Tool = 'select' | 'node' | 'connect' | 'pan';
 
 export function MindMapTool() {
   const { user } = useAuth();
@@ -55,6 +57,8 @@ export function MindMapTool() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+  
+  const [currentTool, setCurrentTool] = useState<Tool>('select');
 
   const [history, setHistory] = useState<{ nodes: MindMapNode[]; connections: MindMapConnection[] }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -172,6 +176,12 @@ export function MindMapTool() {
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     const nodeEl = target.closest('.mindmap-node');
+    
+    if (currentTool === 'pan') {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+      return;
+    }
 
     if (nodeEl) {
       const nodeId = nodeEl.id.replace('node-', '');
@@ -187,10 +197,19 @@ export function MindMapTool() {
       }
       setDraggingNode(nodeId);
       setDragStart({ x: e.clientX - nodes.find(n => n.id === nodeId)!.x, y: e.clientY - nodes.find(n => n.id === nodeId)!.y });
+    } else {
+      setSelectedNodeId(null);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDragging && currentTool === 'pan') {
+        const dx = e.clientX - dragStart.x;
+        const dy = e.clientY - dragStart.y;
+        setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+        setDragStart({ x: e.clientX, y: e.clientY });
+        return;
+    }
     if (draggingNode) {
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
@@ -234,8 +253,31 @@ export function MindMapTool() {
 
   const fitToScreen = () => {
     if (!nodes.length) return;
-    // Fit to screen logic would be implemented here
-    toast({ title: "Fit to screen coming soon!" });
+    const padding = 50;
+    const minX = Math.min(...nodes.map(n => n.x - n.width/2));
+    const minY = Math.min(...nodes.map(n => n.y - n.height/2));
+    const maxX = Math.max(...nodes.map(n => n.x + n.width/2));
+    const maxY = Math.max(...nodes.map(n => n.y + n.height/2));
+
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+
+    if(contentWidth <= 0 || contentHeight <= 0) return;
+
+    const canvasContainer = document.querySelector('.canvas-container');
+    if (!canvasContainer) return;
+    
+    const { clientWidth, clientHeight } = canvasContainer;
+    
+    const scaleX = (clientWidth - padding * 2) / contentWidth;
+    const scaleY = (clientHeight - padding * 2) / contentHeight;
+    const newScale = Math.min(scaleX, scaleY, 1); // Do not zoom in more than 100%
+
+    const newOffsetX = (clientWidth / 2) - (minX + contentWidth / 2) * newScale;
+    const newOffsetY = (clientHeight / 2) - (minY + contentHeight / 2) * newScale;
+
+    setScale(newScale);
+    setOffset({x: newOffsetX, y: newOffsetY});
   };
 
   // Keyboard shortcuts
@@ -288,7 +330,7 @@ export function MindMapTool() {
                 }
                 break;
             case 'ArrowLeft':
-                if(parent) {
+                 if (parent) {
                     setSelectedNodeId(parent.id);
                 }
                 break;
@@ -330,8 +372,10 @@ export function MindMapTool() {
             </div>
         </div>
 
-        <Card className="flex-1 relative overflow-hidden">
+        <Card className="flex-1 relative overflow-hidden canvas-container">
             <div className="absolute top-4 left-4 z-10 bg-card p-2 rounded-lg shadow-md flex gap-1">
+                <Button variant={currentTool === 'select' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('select')}><MousePointer/></Button>
+                <Button variant={currentTool === 'pan' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('pan')}><Move/></Button>
                 <Button variant="ghost" size="icon" onClick={() => addNode()}><PlusCircle/></Button>
                 <Button variant={connectingNodeId ? 'secondary' : 'ghost'} size="icon" onClick={() => setConnectingNodeId(selectedNodeId)}><LinkIcon/></Button>
                  <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
@@ -364,12 +408,15 @@ export function MindMapTool() {
 
 
             <div 
-                className="w-full h-full cursor-grab active:cursor-grabbing bg-muted/50"
+                className={cn("w-full h-full bg-muted/50", {
+                  'cursor-grab': currentTool === 'pan',
+                  'active:cursor-grabbing': currentTool === 'pan' && isDragging,
+                })}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
             >
-                <div className="absolute top-0 left-0">
+                <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
                     <svg className="absolute top-0 left-0 w-full h-full" style={{ width: 5000, height: 5000, pointerEvents: 'none'}}>
                         {connections.map(conn => {
                             const from = nodes.find(n => n.id === conn.from);
@@ -392,7 +439,10 @@ export function MindMapTool() {
                         <div
                             key={node.id}
                             id={`node-${node.id}`}
-                            className={cn('mindmap-node absolute p-3 rounded-lg shadow-lg cursor-pointer flex flex-col items-center justify-center', selectedNodeId === node.id && 'ring-2 ring-primary')}
+                            className={cn('mindmap-node absolute p-3 rounded-lg shadow-lg flex flex-col items-center justify-center', 
+                            {'cursor-pointer': currentTool === 'select'},
+                            {'cursor-grab': currentTool === 'pan'},
+                            selectedNodeId === node.id && 'ring-2 ring-primary')}
                             style={{
                                 left: node.x,
                                 top: node.y,
