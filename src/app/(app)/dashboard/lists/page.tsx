@@ -34,8 +34,8 @@ export default function TaskListsPage() {
     if (user) {
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
       getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists() && docSnap.data().taskListView) {
-          setView(docSnap.data().taskListView);
+        if (docSnap.exists() && docSnap.data().taskListsView) {
+          setView(docSnap.data().taskListsView);
         }
       });
     }
@@ -57,7 +57,7 @@ export default function TaskListsPage() {
         setView(newView);
         if (user) {
             const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            setDoc(settingsRef, { taskListView: newView }, { merge: true });
+            setDoc(settingsRef, { taskListsView: newView }, { merge: true });
         }
     }
   }

@@ -149,8 +149,9 @@ export interface UserSettings {
         | 'jetbrains-mono';
     sidebarOpen: boolean;
     notificationSound: boolean;
+    taskListsView?: 'card' | 'list';
     docsView?: 'card' | 'list';
-    lectureNotesView?: 'card' | 'list';
+    notesView?: 'board' | 'canvas';
     sidebarOrder?: string[];
     bookmarkSettings?: {
         categories: string[];
