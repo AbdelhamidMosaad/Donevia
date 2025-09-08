@@ -17,8 +17,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { ClientRequest, Client } from '@/lib/types';
+import type { ClientRequest, Client, PipelineStage } from '@/lib/types';
 import { updateRequest, deleteRequest } from '@/lib/requests';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface RequestDialogProps {
   request: ClientRequest;
@@ -27,17 +29,31 @@ interface RequestDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const stages = ['New', 'Contacted', 'Proposal', 'Won', 'Lost'];
 const lossReasons = ['Price', 'Timing', 'Competition', 'Features', 'Other'];
 
 export function RequestDialog({ request, clients, isOpen, onOpenChange }: RequestDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState(request);
+  const [stages, setStages] = useState<PipelineStage[]>([]);
 
   useEffect(() => {
     setFormData(request);
   }, [request]);
+
+   useEffect(() => {
+    if (!user) return;
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+    const unsubscribe = onSnapshot(settingsRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const settings = docSnap.data();
+            if (settings.crmSettings?.pipelineStages) {
+                setStages(settings.crmSettings.pipelineStages.sort((a: PipelineStage, b: PipelineStage) => a.order - b.order));
+            }
+        }
+    });
+     return () => unsubscribe();
+  }, [user]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -95,13 +111,13 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="stage" className="text-right">Stage</Label>
             <Select value={formData.stage} onValueChange={(value) => handleChange('stage', value)}>
-              <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="col-span-3 capitalize"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {stages.map(s => <SelectItem key={s} value={s.toLowerCase()}>{s}</SelectItem>)}
+                {stages.map(s => <SelectItem key={s.id} value={s.id} className="capitalize">{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-           {formData.stage === 'lost' && (
+           {stages.find(s => s.id === formData.stage)?.name.toLowerCase() === 'lost' && (
              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lossReason" className="text-right">Loss Reason</Label>
                 <Select value={formData.lossReason || ''} onValueChange={(value) => handleChange('lossReason', value)}>

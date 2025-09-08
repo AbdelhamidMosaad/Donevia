@@ -117,7 +117,17 @@ export type Client = {
   invoices: Invoice[];
 };
 
-export type ClientRequestStage = 'New' | 'Contacted' | 'Proposal' | 'Won' | 'Lost';
+export type PipelineStage = {
+  id: string;
+  name: string;
+  order: number;
+};
+
+export type CrmSettings = {
+  pipelineStages: PipelineStage[];
+}
+
+export type ClientRequestStage = string; // No longer a strict union type
 export type LossReason = 'Price' | 'Timing' | 'Competition' | 'Features' | 'Other';
 
 export type ClientRequest = {
@@ -157,6 +167,7 @@ export interface UserSettings {
         categories: string[];
     };
     workTrackerSettings?: WorkTrackerSettings;
+    crmSettings?: CrmSettings;
 }
 
 /** Brainstorming */
