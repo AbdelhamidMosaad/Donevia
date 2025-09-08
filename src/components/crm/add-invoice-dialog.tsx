@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,21 +38,25 @@ export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDial
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [amount, setAmount] = useState<number>(0);
+  const [createdDate, setCreatedDate] = useState<Date>(new Date());
+  const [paymentTerms, setPaymentTerms] = useState<number>(30);
   const [dueDate, setDueDate] = useState<Date>(() => {
     const date = new Date();
     date.setDate(date.getDate() + 30); // Default due date 30 days from now
     return date;
   });
+  
+  useEffect(() => {
+    const newDueDate = moment(createdDate).add(paymentTerms, 'days').toDate();
+    setDueDate(newDueDate);
+  }, [createdDate, paymentTerms]);
 
   const resetForm = () => {
     setSelectedClientId('');
     setInvoiceNumber('');
     setAmount(0);
-    setDueDate(() => {
-        const date = new Date();
-        date.setDate(date.getDate() + 30);
-        return date;
-    });
+    setCreatedDate(new Date());
+    setPaymentTerms(30);
   };
 
   useEffect(() => {
@@ -84,7 +89,7 @@ export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDial
       amount,
       status: 'Draft',
       dueDate: Timestamp.fromDate(dueDate),
-      createdAt: Timestamp.now(),
+      createdAt: Timestamp.fromDate(createdDate),
       attachments: [],
     };
     
@@ -128,8 +133,16 @@ export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDial
             <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="createdDate" className="text-right">Created Date</Label>
+            <Input id="createdDate" type="date" value={moment(createdDate).format('YYYY-MM-DD')} onChange={(e) => setCreatedDate(new Date(e.target.value))} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="paymentTerms" className="text-right">Payment Terms</Label>
+            <Input id="paymentTerms" type="number" placeholder="e.g. 30" value={paymentTerms} onChange={(e) => setPaymentTerms(parseInt(e.target.value) || 0)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dueDate" className="text-right">Due Date</Label>
-            <Input id="dueDate" type="date" value={moment(dueDate).format('YYYY-MM-DD')} onChange={(e) => setDueDate(new Date(e.target.value))} className="col-span-3" />
+            <Input id="dueDate" type="date" value={moment(dueDate).format('YYYY-MM-DD')} className="col-span-3" readOnly />
           </div>
         </div>
         <DialogFooter>
