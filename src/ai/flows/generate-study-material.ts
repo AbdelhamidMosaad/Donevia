@@ -29,7 +29,7 @@ Follow these instructions precisely:
 
 **Generation Type:** {{generationType}}
 
-{{#if (eq generationType 'notes')}}
+{{#if notesOptions}}
 ---
 **NOTES INSTRUCTIONS**
 1.  **Output Format**: The output must be plain text, not markdown. Use line breaks for structure.
@@ -39,7 +39,7 @@ Follow these instructions precisely:
 ---
 {{/if}}
 
-{{#if (eq generationType 'quiz')}}
+{{#if quizOptions}}
 ---
 **QUIZ INSTRUCTIONS**
 1.  **Number of Questions**: Generate exactly {{quizOptions.numQuestions}} questions.
@@ -51,7 +51,7 @@ Follow these instructions precisely:
 ---
 {{/if}}
 
-{{#if (eq generationType 'flashcards')}}
+{{#if flashcardsOptions}}
 ---
 **FLASHCARDS INSTRUCTIONS**
 1.  **Number of Flashcards**: Generate exactly {{flashcardsOptions.numCards}} flashcards.
