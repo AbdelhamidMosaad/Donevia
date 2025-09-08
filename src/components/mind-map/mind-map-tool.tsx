@@ -22,6 +22,8 @@ import {
   Expand,
   Minus,
   Move,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -65,9 +67,10 @@ export function MindMapTool() {
   
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
+  const isPanning = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
-
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const mindMapContainerRef = useRef<HTMLDivElement>(null);
 
   // Firestore Refs
   const getMindMapDocRef = useCallback(() => {
@@ -184,7 +187,7 @@ export function MindMapTool() {
     const nodeEl = target.closest('.mindmap-node');
     
     if (currentTool === 'pan' || (e.button === 1 && !nodeEl)) { // Middle mouse button pan
-      setIsPanning(true);
+      isPanning.current = true;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
       return;
     }
@@ -211,7 +214,7 @@ export function MindMapTool() {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isPanning) {
+    if (isPanning.current) {
         const dx = e.clientX - lastMousePos.current.x;
         const dy = e.clientY - lastMousePos.current.y;
         setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
@@ -227,7 +230,7 @@ export function MindMapTool() {
 
   const handleMouseUp = () => {
     if (draggingNode) saveToHistory(nodes, connections);
-    setIsPanning(false);
+    isPanning.current = false;
     setDraggingNode(null);
   };
 
@@ -381,13 +384,34 @@ export function MindMapTool() {
         window.removeEventListener('keydown', handleKeyDown);
     };
   }, [selectedNodeId, addNode, deleteNode, nodes, connections]);
+
+  const toggleFullscreen = () => {
+    const elem = mindMapContainerRef.current;
+    if (!elem) return;
+
+    if (!document.fullscreenElement) {
+        elem.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+        setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
   
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
   if (!mindMap) return <div>Loading...</div>;
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div ref={mindMapContainerRef} className={cn("flex flex-col h-full gap-4", isFullscreen && "bg-background")}>
         <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" onClick={() => router.push('/mind-map')}><GitBranch className="h-4 w-4"/></Button>
@@ -445,6 +469,9 @@ export function MindMapTool() {
                 <Button variant="ghost" size="icon" onClick={() => setScale(s => s * 1.2)}><Plus/></Button>
                 <Button variant="ghost" size="icon" onClick={() => setScale(s => s * 0.8)}><Minus/></Button>
                 <Button variant="ghost" size="icon" onClick={fitToScreen}><Expand/></Button>
+                <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                    {isFullscreen ? <Minimize/> : <Maximize/>}
+                </Button>
             </div>
 
 
@@ -452,7 +479,7 @@ export function MindMapTool() {
                 className={cn("w-full h-full bg-muted/50", {
                   'cursor-crosshair': currentTool === 'node',
                   'cursor-grab': currentTool === 'pan',
-                  'active:cursor-grabbing': currentTool === 'pan' && isPanning,
+                  'active:cursor-grabbing': currentTool === 'pan' && isPanning.current,
                 })}
             >
                 <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
