@@ -122,7 +122,7 @@ export function MindMapTool() {
             y: parentNode ? parentNode.y + Math.sin(angle) * distance : window.innerHeight / 2,
             width: 150,
             height: 50,
-            title: 'New Idea',
+            title: '',
             style: 'default',
             backgroundColor: '#f8f9fa',
             color: '#212529',
@@ -340,6 +340,7 @@ export function MindMapTool() {
                         >
                             <input 
                                 value={node.title}
+                                placeholder="Write text here..."
                                 onChange={(e) => handleNodeUpdate(node.id, { title: e.target.value })}
                                 onBlur={handleNodeBlur}
                                 className={cn(
