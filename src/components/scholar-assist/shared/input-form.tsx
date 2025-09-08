@@ -54,7 +54,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
   const form = useForm<InputFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      sourceText: "Artificial intelligence (AI) is intelligence demonstrated by machines, as opposed to the natural intelligence displayed by animals including humans. AI applications include advanced web search engines (e.g., Google), recommendation systems (used by YouTube, Amazon and Netflix), understanding human speech (such as Siri and Alexa), self-driving cars (e.g., Tesla), automated decision-making and competing at the highest level in strategic game systems (such as chess and Go).",
+      sourceText: "",
       // Notes defaults
       noteStyle: 'detailed',
       complexity: 'medium',
