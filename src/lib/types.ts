@@ -234,6 +234,16 @@ export type MindMapConnection = {
     to: string;
 };
 
+export type MindMap = {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  nodes: MindMapNode[];
+  connections: MindMapConnection[];
+};
+
 
 /** Pomodoro */
 export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';

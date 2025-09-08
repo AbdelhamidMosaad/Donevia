@@ -6,7 +6,6 @@ import {
   MousePointer,
   PlusCircle,
   Link as LinkIcon,
-  StickyNote,
   Eye,
   Undo,
   Redo,
@@ -15,84 +14,111 @@ import {
   Plus,
   Trash2,
   Edit,
-  MoreVertical,
   Palette,
   Bold,
   Italic,
   Underline,
   GitBranch,
+  Save,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { MindMapNode, MindMapConnection } from '@/lib/types';
+import type { MindMap as MindMapType, MindMapNode, MindMapConnection } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { useParams, useRouter } from 'next/navigation';
+import { useDebouncedCallback } from 'use-debounce';
+import { Input } from '../ui/input';
 
 const colorPalette = ['#4361ee', '#ef476f', '#06d6a0', '#ffd166', '#9d4edd', '#000000'];
 
-// A simplified simulation of Firebase for demonstration purposes within the component
-const FirebaseSimulator = {
-  log: (message: string) => {
-    console.log(`[FirebaseSim] ${new Date().toLocaleTimeString()}: ${message}`);
-  },
-};
-
 export function MindMapTool() {
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const params = useParams();
+  const router = useRouter();
+  const mindMapId = params.mindMapId as string;
+
+  const [mindMap, setMindMap] = useState<MindMapType | null>(null);
   const [nodes, setNodes] = useState<MindMapNode[]>([]);
   const [connections, setConnections] = useState<MindMapConnection[]>([]);
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [mapName, setMapName] = useState('');
+  
   const [isDragging, setIsDragging] = useState(false);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+
   const [history, setHistory] = useState<{ nodes: MindMapNode[]; connections: MindMapConnection[] }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const { toast } = useToast();
 
-  const saveToHistory = useCallback(() => {
+  // Firestore Refs
+  const getMindMapDocRef = useCallback(() => {
+    if (!user || !mindMapId) return null;
+    return doc(db, 'users', user.uid, 'mindMaps', mindMapId);
+  }, [user, mindMapId]);
+  
+  // Load initial data
+  useEffect(() => {
+    const mapRef = getMindMapDocRef();
+    if (mapRef) {
+      const unsub = onSnapshot(mapRef, (doc) => {
+        if (doc.exists()) {
+          const data = doc.data() as MindMapType;
+          setMindMap(data);
+          setNodes(data.nodes || []);
+          setConnections(data.connections || []);
+          setMapName(data.name);
+
+          // Initialize history only once
+          if (history.length === 0 && (data.nodes || []).length > 0) {
+            const initialHistory = { nodes: data.nodes || [], connections: data.connections || [] };
+            setHistory([initialHistory]);
+            setHistoryIndex(0);
+          }
+        } else {
+          toast({ variant: 'destructive', title: 'Mind Map not found.' });
+          router.push('/mind-map');
+        }
+      });
+      return () => unsub();
+    }
+  }, [user, mindMapId, toast, router, getMindMapDocRef]);
+  
+  const debouncedSave = useDebouncedCallback(async (updatedNodes, updatedConnections) => {
+    const mapRef = getMindMapDocRef();
+    if (mapRef) {
+      await updateDoc(mapRef, { nodes: updatedNodes, connections: updatedConnections, updatedAt: new Date() });
+    }
+  }, 2000);
+
+  const saveToHistory = useCallback((newNodes: MindMapNode[], newConnections: MindMapConnection[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push({ nodes: JSON.parse(JSON.stringify(nodes)), connections: JSON.parse(JSON.stringify(connections)) });
+    newHistory.push({ nodes: JSON.parse(JSON.stringify(newNodes)), connections: JSON.parse(JSON.stringify(newConnections)) });
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-  }, [history, historyIndex, nodes, connections]);
-
-  useEffect(() => {
-    const centralNode: MindMapNode = {
-      id: 'central',
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
-      width: 180,
-      height: 60,
-      title: 'Central Idea',
-      style: 'default',
-      backgroundColor: '#4361ee',
-      color: 'white',
-      isBold: true,
-      isItalic: false,
-      isUnderline: false,
-    };
-    setNodes([centralNode]);
-    setSelectedNodeId(centralNode.id);
-    setHistory([{ nodes: [centralNode], connections: [] }]);
-    setHistoryIndex(0);
-  }, []);
+    debouncedSave(newNodes, newConnections);
+  }, [history, historyIndex, debouncedSave]);
 
   const addNode = (parentId?: string) => {
     const parentNode = parentId ? nodes.find(n => n.id === parentId) : nodes.find(n => n.id === selectedNodeId);
-    if (!parentNode) return;
+    if (!parentNode && nodes.length > 0) {
+        toast({variant: 'destructive', title: "Select a node first", description: "You must select a parent node to add a new idea."});
+        return;
+    }
 
     const angle = Math.random() * Math.PI * 2;
     const distance = 200;
     const newNode: MindMapNode = {
       id: uuidv4(),
-      x: parentNode.x + Math.cos(angle) * distance,
-      y: parentNode.y + Math.sin(angle) * distance,
+      x: parentNode ? parentNode.x + Math.cos(angle) * distance : window.innerWidth / 2,
+      y: parentNode ? parentNode.y + Math.sin(angle) * distance : window.innerHeight / 2,
       width: 150,
       height: 50,
       title: 'New Idea',
@@ -103,33 +129,39 @@ export function MindMapTool() {
       isItalic: false,
       isUnderline: false,
     };
-    const newConnection: MindMapConnection = { from: parentNode.id, to: newNode.id };
     
-    setNodes(prev => [...prev, newNode]);
-    setConnections(prev => [...prev, newConnection]);
+    const newNodes = [...nodes, newNode];
+    let newConnections = [...connections];
+    if (parentNode) {
+      newConnections.push({ from: parentNode.id, to: newNode.id });
+    }
+
+    setNodes(newNodes);
+    setConnections(newConnections);
     setSelectedNodeId(newNode.id);
-    saveToHistory();
-    FirebaseSimulator.log('Node added');
+    saveToHistory(newNodes, newConnections);
   };
   
   const deleteNode = (nodeId: string) => {
-    if (nodeId === 'central') {
-        toast({ variant: 'destructive', title: "Cannot delete the central node." });
+    if (nodes.length <= 1) {
+        toast({ variant: 'destructive', title: "Cannot delete the last node." });
         return;
     }
-    setNodes(prev => prev.filter(n => n.id !== nodeId));
-    setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
+    const newNodes = nodes.filter(n => n.id !== nodeId);
+    const newConnections = connections.filter(c => c.from !== nodeId && c.to !== nodeId);
+    setNodes(newNodes);
+    setConnections(newConnections);
     setSelectedNodeId(null);
-    saveToHistory();
-    FirebaseSimulator.log('Node deleted');
+    saveToHistory(newNodes, newConnections);
   };
   
   const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
-      setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, ...updates } : n));
+      const newNodes = nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n);
+      setNodes(newNodes);
   };
   
   const handleNodeBlur = () => {
-    saveToHistory();
+    saveToHistory(nodes, connections);
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -140,52 +172,45 @@ export function MindMapTool() {
       const nodeId = nodeEl.id.replace('node-', '');
       setSelectedNodeId(nodeId);
       if(connectingNodeId) {
-        // Complete connection
         if (connectingNodeId !== nodeId) {
-            setConnections(prev => [...prev, {from: connectingNodeId, to: nodeId}]);
-            saveToHistory();
+            const newConnections = [...connections, {from: connectingNodeId, to: nodeId}];
+            setConnections(newConnections);
+            saveToHistory(nodes, newConnections);
         }
         setConnectingNodeId(null);
         return;
       }
       setDraggingNode(nodeId);
-      setDragStart({ x: e.clientX / scale - nodes.find(n => n.id === nodeId)!.x, y: e.clientY / scale - nodes.find(n => n.id === nodeId)!.y });
+      setDragStart({ x: e.clientX - nodes.find(n => n.id === nodeId)!.x, y: e.clientY - nodes.find(n => n.id === nodeId)!.y });
     } else {
       setIsDragging(true);
-      setDragStart({ x: e.clientX / scale - offset.x, y: e.clientY / scale - offset.y });
+      setDragStart({ x: e.clientX, y: e.clientY });
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (draggingNode) {
-      const node = nodes.find(n => n.id === draggingNode)!;
-      const newX = e.clientX / scale - dragStart.x;
-      const newY = e.clientY / scale - dragStart.y;
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
       handleNodeUpdate(draggingNode, { x: newX, y: newY });
     } else if (isDragging) {
-      setOffset({ x: e.clientX / scale - dragStart.x, y: e.clientY / scale - dragStart.y });
+      // Panning logic would go here
     }
   };
 
   const handleMouseUp = () => {
-    if (draggingNode) saveToHistory();
+    if (draggingNode) saveToHistory(nodes, connections);
     setIsDragging(false);
     setDraggingNode(null);
   };
   
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const delta = e.deltaY * -0.001;
-      const newScale = Math.max(0.3, Math.min(2, scale + delta));
-      setScale(newScale);
-  };
-
   const undo = () => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
       setNodes(history[newIndex].nodes);
       setConnections(history[newIndex].connections);
+      debouncedSave(history[newIndex].nodes, history[newIndex].connections);
     }
   };
 
@@ -195,35 +220,50 @@ export function MindMapTool() {
       setHistoryIndex(newIndex);
       setNodes(history[newIndex].nodes);
       setConnections(history[newIndex].connections);
+      debouncedSave(history[newIndex].nodes, history[newIndex].connections);
     }
   };
+
+  const handleMapNameChange = useDebouncedCallback(async (newName: string) => {
+    const mapRef = getMindMapDocRef();
+    if (mapRef && mindMap && newName.trim() !== mindMap.name) {
+      await updateDoc(mapRef, { name: newName.trim(), updatedAt: new Date() });
+      toast({ title: "Mind Map renamed!" });
+    }
+  }, 1000);
   
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
+
+  if (!mindMap) return <div>Loading...</div>;
 
   return (
     <div className="flex flex-col h-full gap-4">
         <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-                <GitBranch className="h-8 w-8 text-primary"/>
-                Mind Map
-            </h1>
-             <div className="flex gap-2">
+            <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" onClick={() => router.push('/mind-map')}><GitBranch className="h-4 w-4"/></Button>
+                <Input 
+                    value={mapName}
+                    onChange={(e) => {
+                        setMapName(e.target.value);
+                        handleMapNameChange(e.target.value);
+                    }}
+                    className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+            </div>
+            <div className="flex gap-2">
                 <Button variant="outline"><Users className="mr-2"/> Invite</Button>
                 <Button><Download className="mr-2"/> Export</Button>
             </div>
         </div>
 
-        <Card className="flex-1 relative overflow-hidden" ref={canvasRef}>
-            {/* Toolbar */}
+        <Card className="flex-1 relative overflow-hidden">
             <div className="absolute top-4 left-4 z-10 bg-card p-2 rounded-lg shadow-md flex gap-1">
                 <Button variant="ghost" size="icon" onClick={() => addNode()}><PlusCircle/></Button>
                 <Button variant={connectingNodeId ? 'secondary' : 'ghost'} size="icon" onClick={() => setConnectingNodeId(selectedNodeId)}><LinkIcon/></Button>
-                <Button variant="ghost" size="icon"><StickyNote/></Button>
                  <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
                 <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1}><Redo/></Button>
             </div>
             
-             {/* Node Style Toolbar */}
             {selectedNode && (
                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-card p-2 rounded-lg shadow-md flex gap-1 items-center">
                     <Button variant={selectedNode.isBold ? 'secondary' : 'ghost'} size="icon" onClick={() => handleNodeUpdate(selectedNodeId!, { isBold: !selectedNode.isBold })}><Bold/></Button>
@@ -247,13 +287,8 @@ export function MindMapTool() {
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
-                onWheel={handleWheel}
             >
-                <div 
-                    className="absolute top-0 left-0"
-                    style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}
-                >
-                    {/* Connections */}
+                <div className="absolute top-0 left-0">
                     <svg className="absolute top-0 left-0 w-full h-full" style={{ width: 5000, height: 5000, pointerEvents: 'none'}}>
                         {connections.map(conn => {
                             const from = nodes.find(n => n.id === conn.from);
@@ -271,7 +306,6 @@ export function MindMapTool() {
                         })}
                     </svg>
 
-                    {/* Nodes */}
                     {nodes.map(node => (
                         <div
                             key={node.id}
@@ -299,7 +333,7 @@ export function MindMapTool() {
                                 )}
                                 style={{color: node.color}}
                             />
-                             <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-20">
+                            <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-20">
                                 <Button size="icon" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); addNode(node.id); }}><Plus className="h-4 w-4"/></Button>
                             </div>
                             <div className="absolute -left-3 top-1/2 -translate-y-1/2 z-20">
