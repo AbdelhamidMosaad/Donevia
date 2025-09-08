@@ -60,7 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Function to strip all theme and font classes
     const resetStyling = () => {
         const themeClasses: UserSettings['theme'][] = ['light', 'dark', 'theme-indigo', 'theme-purple', 'theme-green', 'theme-sunset', 'theme-mint'];
-        body.classList.remove(...themeClasses);
+        const sidebarThemeClasses = ['sidebar-theme-default', 'sidebar-theme-slate', 'sidebar-theme-indigo', 'sidebar-theme-rose', 'sidebar-theme-forest'];
+        body.classList.remove(...themeClasses, ...sidebarThemeClasses);
         body.style.fontFamily = ''; // Reset inline font style
     }
 
@@ -69,13 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribeSettings = onSnapshot(settingsRef, (doc) => {
         resetStyling(); // Reset before applying new styles
         if (doc.exists() && doc.data()) {
-            const { theme, font } = doc.data();
+            const { theme, font, sidebarTheme } = doc.data() as Partial<UserSettings>;
             
-            if (theme) {
-              body.classList.add(theme);
-            } else {
-              body.classList.add('light'); // Default to light theme
-            }
+            body.classList.add(theme || 'light');
+            body.classList.add(`sidebar-theme-${sidebarTheme || 'default'}`);
             
             if (font && fonts[font]) {
               body.style.fontFamily = fonts[font];
@@ -85,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
             // No settings doc, apply defaults
             body.classList.add('light');
+            body.classList.add('sidebar-theme-default');
             body.style.fontFamily = fonts['inter'];
         }
       });
