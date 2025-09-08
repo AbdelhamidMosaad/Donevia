@@ -9,10 +9,8 @@ import {
   Undo,
   Redo,
   Download,
-  Users,
   Plus,
   Trash2,
-  Edit,
   Palette,
   Bold,
   Italic,
@@ -24,13 +22,21 @@ import {
   Move,
   Maximize,
   Minimize,
+  PanelLeftOpen,
+  PanelLeftClose,
+  Square,
+  Circle,
+  Settings,
+  Grid3x3,
+  List,
+  Baseline,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { MindMap as MindMapType, MindMapNode, MindMapConnection } from '@/lib/types';
+import type { MindMap as MindMapType, MindMapNode, MindMapConnection, Whiteboard } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
@@ -38,9 +44,19 @@ import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+
 
 const colorPalette = ['#4361ee', '#ef476f', '#06d6a0', '#ffd166', '#9d4edd', '#000000'];
 type Tool = 'select' | 'node' | 'connect' | 'pan';
+const backgroundColors = [
+    '#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'
+];
+type Shape =
+  | 'rectangle'
+  | 'circle';
+
 
 export function MindMapTool() {
   const { user } = useAuth();
@@ -71,6 +87,8 @@ export function MindMapTool() {
   const lastMousePos = useRef({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mindMapContainerRef = useRef<HTMLDivElement>(null);
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
+
 
   // Firestore Refs
   const getMindMapDocRef = useCallback(() => {
@@ -105,10 +123,11 @@ export function MindMapTool() {
     }
   }, [user, mindMapId, toast, router, getMindMapDocRef]);
   
-  const debouncedSave = useDebouncedCallback(async (updatedNodes, updatedConnections) => {
+  const saveMindMap = useDebouncedCallback(async (updatedNodes, updatedConnections) => {
     const mapRef = getMindMapDocRef();
     if (mapRef) {
       await updateDoc(mapRef, { nodes: updatedNodes, connections: updatedConnections, updatedAt: new Date() });
+      toast({ title: "✓ Saved", description: "Your mind map changes are saved."});
     }
   }, 2000);
 
@@ -117,8 +136,8 @@ export function MindMapTool() {
     newHistory.push({ nodes: JSON.parse(JSON.stringify(newNodes)), connections: JSON.parse(JSON.stringify(newConnections)) });
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-    debouncedSave(newNodes, newConnections);
-  }, [history, historyIndex, debouncedSave]);
+    saveMindMap(newNodes, newConnections);
+  }, [history, historyIndex, saveMindMap]);
 
   const addNode = useCallback((parentId?: string) => {
     setNodes(prevNodes => {
@@ -132,8 +151,8 @@ export function MindMapTool() {
         const distance = 200;
         const newNode: MindMapNode = {
             id: uuidv4(),
-            x: parentNode ? parentNode.x + Math.cos(angle) * distance : window.innerWidth / 2,
-            y: parentNode ? parentNode.y + Math.sin(angle) * distance : window.innerHeight / 2,
+            x: parentNode ? parentNode.x + Math.cos(angle) * distance : (mindMapContainerRef.current?.clientWidth || window.innerWidth) / (2*scale) - offset.x/scale,
+            y: parentNode ? parentNode.y + Math.sin(angle) * distance : (mindMapContainerRef.current?.clientHeight || window.innerHeight) / (2*scale) - offset.y/scale,
             width: 150,
             height: 50,
             title: '',
@@ -159,7 +178,7 @@ export function MindMapTool() {
         setSelectedNodeId(newNode.id);
         return newNodes;
     });
-  }, [selectedNodeId, toast, saveToHistory]);
+  }, [selectedNodeId, toast, saveToHistory, scale, offset]);
   
   const deleteNode = useCallback((nodeId: string) => {
     if (nodes.length <= 1) {
@@ -206,7 +225,10 @@ export function MindMapTool() {
       }
       if(currentTool === 'select') {
         setDraggingNode(nodeId);
-        setDragStart({ x: e.clientX - nodes.find(n => n.id === nodeId)!.x * scale, y: e.clientY - nodes.find(n => n.id === nodeId)!.y * scale });
+        const node = nodes.find(n => n.id === nodeId)!
+        const transformedX = node.x * scale + offset.x;
+        const transformedY = node.y * scale + offset.y;
+        setDragStart({ x: e.clientX - transformedX, y: e.clientY - transformedY });
       }
     } else {
       setSelectedNodeId(null);
@@ -222,9 +244,9 @@ export function MindMapTool() {
         return;
     }
     if (draggingNode) {
-      const newX = (e.clientX - dragStart.x) / scale;
-      const newY = (e.clientY - dragStart.y) / scale;
-      handleNodeUpdate(draggingNode, { x: newX, y: newY });
+        const newX = (e.clientX - dragStart.x - offset.x) / scale;
+        const newY = (e.clientY - dragStart.y - offset.y) / scale;
+        handleNodeUpdate(draggingNode, { x: newX, y: newY });
     }
   };
 
@@ -240,19 +262,16 @@ export function MindMapTool() {
     const newScale = e.deltaY > 0 ? scale * (1 - zoomSpeed) : scale * (1 + zoomSpeed);
     const clampedScale = Math.min(Math.max(newScale, 0.1), 5);
     
-    const canvasContainer = document.querySelector('.canvas-container');
+    const canvasContainer = mindMapContainerRef.current;
     if (!canvasContainer) return;
     const rect = canvasContainer.getBoundingClientRect();
 
-    // The mouse position relative to the canvas container
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // The point on the canvas that the mouse is pointing to
     const pointX = (mouseX - offset.x) / scale;
     const pointY = (mouseY - offset.y) / scale;
 
-    // Compute the new offset
     const newOffsetX = mouseX - pointX * clampedScale;
     const newOffsetY = mouseY - pointY * clampedScale;
 
@@ -266,7 +285,7 @@ export function MindMapTool() {
       setHistoryIndex(newIndex);
       setNodes(history[newIndex].nodes);
       setConnections(history[newIndex].connections);
-      debouncedSave(history[newIndex].nodes, history[newIndex].connections);
+      saveMindMap(history[newIndex].nodes, history[newIndex].connections);
     }
   };
 
@@ -276,7 +295,7 @@ export function MindMapTool() {
       setHistoryIndex(newIndex);
       setNodes(history[newIndex].nodes);
       setConnections(history[newIndex].connections);
-      debouncedSave(history[newIndex].nodes, history[newIndex].connections);
+      saveMindMap(history[newIndex].nodes, history[newIndex].connections);
     }
   };
 
@@ -301,14 +320,14 @@ export function MindMapTool() {
 
     if(contentWidth <= 0 || contentHeight <= 0) return;
 
-    const canvasContainer = document.querySelector('.canvas-container');
+    const canvasContainer = mindMapContainerRef.current;
     if (!canvasContainer) return;
     
     const { clientWidth, clientHeight } = canvasContainer;
     
     const scaleX = (clientWidth - padding * 2) / contentWidth;
     const scaleY = (clientHeight - padding * 2) / contentHeight;
-    const newScale = Math.min(scaleX, scaleY, 1); // Do not zoom in more than 100%
+    const newScale = Math.min(scaleX, scaleY, 1);
 
     const newOffsetX = (clientWidth / 2) - (minX + contentWidth / 2) * newScale;
     const newOffsetY = (clientHeight / 2) - (minY + contentHeight / 2) * newScale;
@@ -317,15 +336,12 @@ export function MindMapTool() {
     setOffset({x: newOffsetX, y: newOffsetY});
   };
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         const activeElement = document.activeElement;
         const isEditingText = activeElement instanceof HTMLInputElement && activeElement.type === 'text' || activeElement instanceof HTMLTextAreaElement;
 
-        if (isEditingText) {
-            return;
-        }
+        if (isEditingText) return;
 
         if (selectedNodeId) {
             if (e.key === 'Tab') {
@@ -380,9 +396,7 @@ export function MindMapTool() {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedNodeId, addNode, deleteNode, nodes, connections]);
 
   const toggleFullscreen = () => {
@@ -399,13 +413,84 @@ export function MindMapTool() {
   };
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-        setIsFullscreen(!!document.fullscreenElement);
-    };
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
   
+  const handleExport = () => {
+    if (!nodes.length) {
+        toast({variant: "destructive", title: "Cannot export an empty mind map."});
+        return;
+    }
+
+    const padding = 100;
+    const minX = Math.min(...nodes.map(n => n.x - n.width / 2));
+    const minY = Math.min(...nodes.map(n => n.y - n.height / 2));
+    const maxX = Math.max(...nodes.map(n => n.x + n.width / 2));
+    const maxY = Math.max(...nodes.map(n => n.y + n.height / 2));
+    
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = contentWidth + padding * 2;
+    exportCanvas.height = contentHeight + padding * 2;
+    const exportCtx = exportCanvas.getContext('2d');
+
+    if (!exportCtx) {
+        toast({variant: "destructive", title: "Failed to create export canvas."});
+        return;
+    }
+
+    // Fill background
+    exportCtx.fillStyle = mindMap?.backgroundColor || '#FFFFFF';
+    exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+    
+    // Offset for drawing
+    const drawOffsetX = -minX + padding;
+    const drawOffsetY = -minY + padding;
+
+    // Draw connections
+    exportCtx.strokeStyle = '#9ca3af';
+    exportCtx.lineWidth = 2;
+    connections.forEach(conn => {
+        const from = nodes.find(n => n.id === conn.from);
+        const to = nodes.find(n => n.id === conn.to);
+        if (!from || !to) return;
+        const path = `M ${from.x + drawOffsetX} ${from.y + drawOffsetY} C ${from.x + 100 + drawOffsetX} ${from.y + drawOffsetY}, ${to.x - 100 + drawOffsetX} ${to.y + drawOffsetY}, ${to.x + drawOffsetX} ${to.y + drawOffsetY}`;
+        exportCtx.stroke(new Path2D(path));
+    });
+
+    // Draw nodes
+    nodes.forEach(node => {
+        const x = node.x + drawOffsetX;
+        const y = node.y + drawOffsetY;
+        exportCtx.fillStyle = node.backgroundColor;
+        exportCtx.fillRect(x - node.width / 2, y - node.height / 2, node.width, node.height);
+        exportCtx.strokeStyle = '#e5e7eb';
+        exportCtx.strokeRect(x - node.width / 2, y - node.height / 2, node.width, node.height);
+        
+        exportCtx.fillStyle = node.color;
+        let fontStyle = '';
+        if (node.isBold) fontStyle += 'bold ';
+        if (node.isItalic) fontStyle += 'italic ';
+        exportCtx.font = `${fontStyle} 14px sans-serif`;
+        exportCtx.textAlign = 'center';
+        exportCtx.textBaseline = 'middle';
+        exportCtx.fillText(node.title, x, y);
+    });
+
+    const dataURL = exportCanvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `${mapName || 'mind-map'}.png`;
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({title: "Export Successful", description: "Your mind map is being downloaded."});
+  };
+
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
   if (!mindMap) return <div>Loading...</div>;
@@ -425,7 +510,7 @@ export function MindMapTool() {
                 />
             </div>
             <div className="flex gap-2">
-                <Button><Download className="mr-2"/> Export</Button>
+                <Button onClick={handleExport}><Download className="mr-2"/> Export as PNG</Button>
             </div>
         </div>
 
@@ -465,8 +550,8 @@ export function MindMapTool() {
             )}
             
              <div className="absolute bottom-4 right-4 z-10 bg-card p-2 rounded-lg shadow-md flex flex-col gap-1">
-                <Button variant="ghost" size="icon" onClick={() => setScale(s => s * 1.2)}><Plus/></Button>
-                <Button variant="ghost" size="icon" onClick={() => setScale(s => s * 0.8)}><Minus/></Button>
+                <Button variant="ghost" size="icon" onClick={() => setScale(s => Math.min(s * 1.2, 5))}><Plus/></Button>
+                <Button variant="ghost" size="icon" onClick={() => setScale(s => Math.max(s * 0.8, 0.1))}><Minus/></Button>
                 <Button variant="ghost" size="icon" onClick={fitToScreen}><Expand/></Button>
                 <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
                     {isFullscreen ? <Minimize/> : <Maximize/>}
@@ -475,14 +560,14 @@ export function MindMapTool() {
 
 
             <div 
-                className={cn("w-full h-full bg-muted/50", {
+                className={cn("w-full h-full", {
                   'cursor-crosshair': currentTool === 'node',
                   'cursor-grab': currentTool === 'pan',
                   'active:cursor-grabbing': currentTool === 'pan' && isPanning.current,
                 })}
             >
                 <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
-                    <svg className="absolute top-0 left-0 w-full h-full" style={{ width: 5000, height: 5000, pointerEvents: 'none'}}>
+                    <svg className="absolute top-0 left-0 w-full h-full" style={{ width: '200vw', height: '200vh', pointerEvents: 'none', transform: 'translate(-50%, -50%)', left: '50%', top: '50%'}}>
                         {connections.map(conn => {
                             const from = nodes.find(n => n.id === conn.from);
                             const to = nodes.find(n => n.id === conn.to);
