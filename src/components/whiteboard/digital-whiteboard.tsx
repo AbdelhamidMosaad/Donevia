@@ -23,17 +23,16 @@ import {
   GitBranch,
   StickyNote,
   PenSquare,
+  Save,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { useParams, useRouter } from 'next/navigation';
+import type { Whiteboard } from '@/lib/types';
+import { Input } from '../ui/input';
 
 type Tool = 'pen' | 'eraser' | 'text' | 'select' | 'shape';
 type Shape =
@@ -48,9 +47,14 @@ type Shape =
 export function DigitalWhiteboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const params = useParams();
+  const router = useRouter();
+  const whiteboardId = params.whiteboardId as string;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
+  const [whiteboard, setWhiteboard] = useState<Whiteboard | null>(null);
+  const [boardName, setBoardName] = useState('');
 
   const [currentTool, setCurrentTool] = useState<Tool>('pen');
   const [currentColor, setCurrentColor] = useState('#000000');
@@ -98,9 +102,32 @@ export function DigitalWhiteboard() {
 
   // --- Firestore Integration ---
   const getDocRef = useCallback(() => {
-    if (!user) return null;
-    return doc(db, 'users', user.uid, 'whiteboard', 'main');
-  }, [user]);
+    if (!user || !whiteboardId) return null;
+    return doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'data', 'main');
+  }, [user, whiteboardId]);
+
+  const getWhiteboardDocRef = useCallback(() => {
+    if (!user || !whiteboardId) return null;
+    return doc(db, 'users', user.uid, 'whiteboards', whiteboardId);
+  }, [user, whiteboardId]);
+
+
+  useEffect(() => {
+    const boardRef = getWhiteboardDocRef();
+    if (boardRef) {
+      const unsub = onSnapshot(boardRef, (doc) => {
+        if(doc.exists()) {
+          const boardData = { id: doc.id, ...doc.data() } as Whiteboard;
+          setWhiteboard(boardData);
+          setBoardName(boardData.name);
+        } else {
+          toast({ variant: 'destructive', title: 'Whiteboard not found.' });
+          router.push('/whiteboard');
+        }
+      });
+      return () => unsub();
+    }
+  }, [user, whiteboardId]);
 
   // Save state
   const saveState = useCallback(async () => {
@@ -109,7 +136,7 @@ export function DigitalWhiteboard() {
     if (!docRef || !canvas) return;
     const dataUrl = canvas.toDataURL();
     try {
-      await setDoc(docRef, { data: dataUrl, timestamp: new Date() });
+      await setDoc(docRef, { data: dataUrl, timestamp: new Date() }, { merge: true });
     } catch (e) {
       console.error('Failed to save whiteboard state:', e);
     }
@@ -130,7 +157,7 @@ export function DigitalWhiteboard() {
             img.onload = () => {
               ctx.clearRect(0,0,canvasRef.current!.width,canvasRef.current!.height);
               ctx.drawImage(img, 0, 0);
-              saveToHistory();
+              saveToHistory(true); // save without re-saving to firestore
             };
             img.src = data.data;
           }
@@ -147,7 +174,7 @@ export function DigitalWhiteboard() {
     );
 
     return () => unsubscribe();
-  }, [user, ctx]);
+  }, [user, ctx, whiteboardId]);
 
   // --- Drawing Logic ---
   const getCoords = (e: MouseEvent | React.MouseEvent) => {
@@ -179,13 +206,13 @@ export function DigitalWhiteboard() {
   };
 
   const stopDrawing = () => {
-    if (!ctx) return;
+    if (!isDrawing || !ctx) return;
     ctx.closePath();
     setIsDrawing(false);
     saveToHistory();
   };
 
-  const saveToHistory = useCallback(() => {
+  const saveToHistory = useCallback((fromLoad = false) => {
     if (!ctx || !canvasRef.current) return;
     const imageData = ctx.getImageData(
       0,
@@ -197,13 +224,16 @@ export function DigitalWhiteboard() {
     newHistory.push(imageData);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-    saveState();
+    if (!fromLoad) {
+      saveState();
+    }
   }, [ctx, history, historyIndex, saveState]);
 
   const undo = () => {
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
       ctx?.putImageData(history[historyIndex - 1], 0, 0);
+      saveState();
     }
   };
 
@@ -211,6 +241,7 @@ export function DigitalWhiteboard() {
     if (historyIndex < history.length - 1) {
       setHistoryIndex(historyIndex + 1);
       ctx?.putImageData(history[historyIndex + 1], 0, 0);
+      saveState();
     }
   };
 
@@ -218,11 +249,21 @@ export function DigitalWhiteboard() {
     if (!ctx || !canvasRef.current) return;
     if (window.confirm('Are you sure you want to clear the entire board?')) {
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      setHistory([]);
-      setHistoryIndex(-1);
-      saveToHistory();
+      const blankImageData = ctx.createImageData(canvasRef.current.width, canvasRef.current.height);
+      setHistory([blankImageData]);
+      setHistoryIndex(0);
+      saveState();
     }
   };
+
+  const handleNameChange = async () => {
+    const boardRef = getWhiteboardDocRef();
+    if (boardRef && whiteboard && boardName.trim() !== whiteboard.name) {
+      await updateDoc(boardRef, { name: boardName.trim(), updatedAt: new Date() });
+      toast({ title: "Whiteboard renamed!" });
+    }
+  };
+
 
   // --- Tools ---
   const handleToolClick = (tool: Tool) => {
@@ -286,16 +327,23 @@ export function DigitalWhiteboard() {
     </Button>
   );
 
+  if (!whiteboard) {
+    return <div>Loading whiteboard...</div>;
+  }
+
   return (
     <div className="flex flex-col h-full gap-4">
-      <div className="flex items-center gap-4">
-        <PenSquare className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Digital Whiteboard</h1>
-          <p className="text-muted-foreground">
-            Your infinite canvas for ideas. Draw, write, and collaborate.
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-4">
+         <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><PenSquare className="h-4 w-4" /></Button>
+            <Input 
+                value={boardName}
+                onChange={(e) => setBoardName(e.target.value)}
+                onBlur={handleNameChange}
+                className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+         </div>
+         <Button onClick={saveState}><Save className="mr-2 h-4 w-4" /> Save</Button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">

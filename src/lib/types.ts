@@ -202,6 +202,15 @@ export type DocFolder = {
   createdAt: Timestamp;
 };
 
+/** Whiteboard */
+export type Whiteboard = {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
 /** Pomodoro */
 export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
 
