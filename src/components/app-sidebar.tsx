@@ -11,6 +11,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarRail,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
   FileText,
@@ -31,6 +32,7 @@ import {
   Bookmark,
   Briefcase,
   BrainCircuit,
+  FolderKanban,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -43,20 +45,26 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 
 const defaultMenuItems = [
     { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
-    { href: '/dashboard/analytics', icon: <BarChart3 className="text-green-500" />, label: 'Analytics', tooltip: 'Analytics', id: 'analytics' },
+    { href: '/dashboard/analytics', icon: <BarChart3 className="text-green-500" />, label: 'Task Analytics', tooltip: 'Task Analytics', id: 'analytics' },
     { href: '/dashboard/recap', icon: <Sparkles className="text-yellow-500" />, label: 'Recap', tooltip: 'Recap', id: 'recap' },
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
+    { type: 'separator', id: 'sep1' },
     { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
+    { href: '/crm/pipeline', icon: <FolderKanban className="text-amber-500" />, label: 'Pipeline', tooltip: 'Sales Pipeline', id: 'pipeline' },
+    { href: '/crm/analytics', icon: <BarChart3 className="text-amber-500" />, label: 'Sales Analytics', tooltip: 'Sales Analytics', id: 'sales-analytics' },
+    { type: 'separator', id: 'sep2' },
     { href: '/habits', icon: <Repeat className="text-teal-500" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <Target className="text-red-500" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
     { href: '/notes', icon: <FileText className="text-orange-500" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
     { href: '/bookmarks', icon: <Bookmark className="text-blue-500" />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
     { href: '/work-tracker', icon: <Briefcase className="text-amber-500" />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
+    { type: 'separator', id: 'sep3' },
     { href: '/brainstorming', icon: <BrainCircuit className="text-violet-500" />, label: 'Brainstorming', tooltip: 'Brainstorming', id: 'brainstorming' },
     { href: '/whiteboard', icon: <PenSquare className="text-indigo-500" />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
     { href: '/mind-map', icon: <GitBranch className="text-pink-500" />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
     { href: '/docs', icon: <FileSignature className="text-cyan-500" />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
     { href: '/learning-tool', icon: <GraduationCap className="text-lime-500" />, label: 'Learning Tool', tooltip: 'Learning Tool', id: 'learning-tool' },
+    { type: 'separator', id: 'sep4' },
     { href: '/pomodoro', icon: <Timer className="text-rose-500" />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
 ];
 
@@ -76,7 +84,6 @@ export function AppSidebar() {
                         defaultMenuItems.find(item => item.id === id)
                     ).filter(Boolean) as typeof defaultMenuItems;
                     
-                    // Add any new default items that are not in the saved order
                     const newItems = defaultMenuItems.filter(defaultItem => 
                         !orderedItems.some(orderedItem => orderedItem.id === defaultItem.id)
                     );
@@ -92,9 +99,13 @@ export function AppSidebar() {
     }
   }, [user]);
 
-  const isActive = (href: string) => {
+  const isActive = (href?: string) => {
+    if (!href) return false;
     if (href === '/dashboard') {
       return pathname === '/dashboard';
+    }
+     if (href === '/crm') {
+      return pathname === '/crm';
     }
     return pathname.startsWith(href);
   };
@@ -124,27 +135,32 @@ export function AppSidebar() {
             <Droppable droppableId="sidebar-menu">
                 {(provided) => (
                     <SidebarMenu {...provided.droppableProps} ref={provided.innerRef}>
-                    {menuItems.map((item, index) => (
-                        <Draggable key={item.id} draggableId={item.id} index={index}>
-                           {(provided, snapshot) => (
-                                <SidebarMenuItem ref={provided.innerRef} {...provided.draggableProps}>
-                                    <SidebarMenuButton
-                                        asChild
-                                        isActive={isActive(item.href)}
-                                        tooltip={{ children: item.tooltip }}
-                                    >
-                                        <Link href={item.href} className="flex items-center w-full">
-                                            <div {...provided.dragHandleProps} className="group-data-[collapsible=icon]:hidden mr-2 p-1">
-                                                <GripVertical className="h-4 w-4 text-muted-foreground"/>
-                                            </div>
-                                            {item.icon}
-                                            <span className="group-data-[collapsible=icon]:hidden flex-1">{item.label}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                           )}
-                        </Draggable>
-                    ))}
+                    {menuItems.map((item, index) => {
+                        if (item.type === 'separator') {
+                            return <SidebarSeparator key={item.id} className="my-2" />;
+                        }
+                        return (
+                             <Draggable key={item.id} draggableId={item.id} index={index}>
+                                {(provided) => (
+                                    <SidebarMenuItem ref={provided.innerRef} {...provided.draggableProps}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={isActive(item.href)}
+                                            tooltip={{ children: item.tooltip }}
+                                        >
+                                            <Link href={item.href || '#'} className="flex items-center w-full">
+                                                <div {...provided.dragHandleProps} className="group-data-[collapsible=icon]:hidden mr-2 p-1">
+                                                    <GripVertical className="h-4 w-4 text-muted-foreground"/>
+                                                </div>
+                                                {item.icon}
+                                                <span className="group-data-[collapsible=icon]:hidden flex-1">{item.label}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                )}
+                            </Draggable>
+                        )
+                    })}
                     {provided.placeholder}
                     </SidebarMenu>
                 )}

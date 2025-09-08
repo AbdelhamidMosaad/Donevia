@@ -40,10 +40,14 @@ export const deleteClient = async (userId: string, clientId: string) => {
 
     const clientRef = doc(db, 'users', userId, 'clients', clientId);
     batch.delete(clientRef);
+    
+    const requestsQuery = query(collection(db, 'users', userId, 'clientRequests'), where('clientId', '==', clientId));
+    const requestsSnapshot = await getDocs(requestsQuery);
+    requestsSnapshot.forEach(doc => batch.delete(doc.ref));
 
     // Note: In a full implementation, you would also delete associated
-    // quotations, invoices, and files from storage here.
-    // For now, we just delete the client document.
+    // files from storage here.
+    // For now, we just delete the client and their requests.
 
     return await batch.commit();
 };
