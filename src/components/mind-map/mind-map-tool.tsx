@@ -235,7 +235,26 @@ export function MindMapTool() {
     e.preventDefault();
     const zoomSpeed = 0.1;
     const newScale = e.deltaY > 0 ? scale * (1 - zoomSpeed) : scale * (1 + zoomSpeed);
-    setScale(Math.min(Math.max(newScale, 0.1), 5));
+    const clampedScale = Math.min(Math.max(newScale, 0.1), 5);
+    
+    const canvasContainer = document.querySelector('.canvas-container');
+    if (!canvasContainer) return;
+    const rect = canvasContainer.getBoundingClientRect();
+
+    // The mouse position relative to the canvas container
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // The point on the canvas that the mouse is pointing to
+    const pointX = (mouseX - offset.x) / scale;
+    const pointY = (mouseY - offset.y) / scale;
+
+    // Compute the new offset
+    const newOffsetX = mouseX - pointX * clampedScale;
+    const newOffsetY = mouseY - pointY * clampedScale;
+
+    setScale(clampedScale);
+    setOffset({ x: newOffsetX, y: newOffsetY });
   };
   
   const undo = () => {
