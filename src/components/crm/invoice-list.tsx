@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { Invoice } from '@/lib/types';
+import type { Invoice, Client } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -13,18 +13,21 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FileDown, Receipt } from 'lucide-react';
+import { FileDown, Receipt, PlusCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import moment from 'moment';
 import { Badge } from '../ui/badge';
+import { AddInvoiceDialog } from './add-invoice-dialog';
 
 interface InvoiceListProps {
   allInvoices: (Invoice & { clientName?: string })[];
+  clients: Client[];
 }
 
-export function InvoiceList({ allInvoices }: InvoiceListProps) {
+export function InvoiceList({ allInvoices, clients }: InvoiceListProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const filteredInvoices = useMemo(() => {
     if (!searchQuery) return allInvoices;
@@ -53,64 +56,70 @@ export function InvoiceList({ allInvoices }: InvoiceListProps) {
   };
 
   return (
-    <Card>
-        <CardHeader>
-             <div className="flex items-center justify-between gap-4">
-                <div>
-                    <CardTitle className="flex items-center gap-2"><Receipt className="h-6 w-6"/> All Invoices</CardTitle>
-                    <CardDescription>A list of all invoices across all clients.</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Input
-                        placeholder="Search invoices..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="max-w-sm"
-                    />
-                    <Button variant="outline" onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export</Button>
-                </div>
-            </div>
-        </CardHeader>
-        <CardContent>
-             <div className="border rounded-lg">
-                <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Invoice #</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created Date</TableHead>
-                        <TableHead>Due Date</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filteredInvoices.length > 0 ? (
-                    filteredInvoices.map((invoice) => (
-                        <TableRow key={invoice.id}>
-                            <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                            <TableCell>{invoice.clientName || 'N/A'}</TableCell>
-                            <TableCell>${invoice.amount.toFixed(2)}</TableCell>
-                            <TableCell>
-                                <Badge variant={invoice.status === 'Paid' ? 'default' : 'secondary'} className={invoice.status === 'Paid' ? 'bg-green-600' : invoice.status === 'Overdue' ? 'bg-destructive' : ''}>
-                                    {invoice.status}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>{moment(invoice.createdAt.toDate()).format('YYYY-MM-DD')}</TableCell>
-                            <TableCell>{moment(invoice.dueDate.toDate()).format('YYYY-MM-DD')}</TableCell>
-                        </TableRow>
-                    ))
-                    ) : (
-                    <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                        No invoices found.
-                        </TableCell>
-                    </TableRow>
-                    )}
-                </TableBody>
-                </Table>
-            </div>
-        </CardContent>
-    </Card>
+    <>
+      <Card>
+          <CardHeader>
+               <div className="flex items-center justify-between gap-4">
+                  <div>
+                      <CardTitle className="flex items-center gap-2"><Receipt className="h-6 w-6"/> All Invoices</CardTitle>
+                      <CardDescription>A list of all invoices across all clients.</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <Input
+                          placeholder="Search invoices..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="max-w-sm"
+                      />
+                      <Button variant="outline" onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export</Button>
+                      <Button onClick={() => setIsAddDialogOpen(true)}>
+                          <PlusCircle className="mr-2 h-4 w-4" /> New Invoice
+                      </Button>
+                  </div>
+              </div>
+          </CardHeader>
+          <CardContent>
+               <div className="border rounded-lg">
+                  <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Invoice #</TableHead>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Created Date</TableHead>
+                          <TableHead>Due Date</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {filteredInvoices.length > 0 ? (
+                      filteredInvoices.map((invoice) => (
+                          <TableRow key={invoice.id}>
+                              <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                              <TableCell>{invoice.clientName || 'N/A'}</TableCell>
+                              <TableCell>${invoice.amount.toFixed(2)}</TableCell>
+                              <TableCell>
+                                  <Badge variant={invoice.status === 'Paid' ? 'default' : 'secondary'} className={invoice.status === 'Paid' ? 'bg-green-600' : invoice.status === 'Overdue' ? 'bg-destructive' : ''}>
+                                      {invoice.status}
+                                  </Badge>
+                              </TableCell>
+                              <TableCell>{moment(invoice.createdAt.toDate()).format('YYYY-MM-DD')}</TableCell>
+                              <TableCell>{moment(invoice.dueDate.toDate()).format('YYYY-MM-DD')}</TableCell>
+                          </TableRow>
+                      ))
+                      ) : (
+                      <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                          No invoices found.
+                          </TableCell>
+                      </TableRow>
+                      )}
+                  </TableBody>
+                  </Table>
+              </div>
+          </CardContent>
+      </Card>
+      <AddInvoiceDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} clients={clients} />
+    </>
   );
 }

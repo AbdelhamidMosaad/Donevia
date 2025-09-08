@@ -96,7 +96,7 @@ export default function CrmPage() {
                  <RequestBoard />
             </TabsContent>
             <TabsContent value="invoices" className="flex-1 mt-4">
-                <InvoiceList allInvoices={invoices} />
+                <InvoiceList allInvoices={invoices} clients={clients} />
             </TabsContent>
             <TabsContent value="analytics" className="flex-1 mt-4">
                 <AnalyticsDashboard requests={requests} />
