@@ -245,13 +245,13 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                                 'rounded-lg border-2 p-2 transition-all',
                                 settings.theme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
                                 )}>
-                                <div className="space-y-1.5 rounded-md p-2 flex flex-col items-center justify-center aspect-square" style={{ backgroundColor: theme.colors.bg }}>
+                                <div className="space-y-1.5 rounded-md p-2 flex flex-col items-center justify-center aspect-square" style={{ backgroundColor: theme.colors.bg, color: theme.colors.text }}>
                                     <div className="flex items-center justify-center h-10 w-10 rounded-full mb-2" style={{backgroundColor: theme.colors.secondary}}>
                                         {theme.icon}
                                     </div>
                                     <div className="space-y-1">
-                                    <div className="h-1.5 w-12 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
-                                    <div className="h-1.5 w-16 rounded-sm" style={{ backgroundColor: theme.colors.text }} />
+                                    <div className="h-1.5 w-12 rounded-sm" style={{ backgroundColor: theme.colors.primary }} />
+                                    <div className="h-1.5 w-16 rounded-sm" style={{ backgroundColor: theme.colors.primary }} />
                                     </div>
                                 </div>
                                 </div>
