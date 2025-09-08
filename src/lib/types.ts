@@ -117,7 +117,7 @@ export type Client = {
   invoices: Invoice[];
 };
 
-export type ClientRequestStage = 'new' | 'contacted' | 'proposal' | 'win' | 'lost';
+export type ClientRequestStage = 'New' | 'Contacted' | 'Proposal' | 'Won' | 'Lost';
 export type LossReason = 'Price' | 'Timing' | 'Competition' | 'Features' | 'Other';
 
 export type ClientRequest = {

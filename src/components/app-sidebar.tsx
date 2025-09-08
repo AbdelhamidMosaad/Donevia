@@ -32,7 +32,6 @@ import {
   Bookmark,
   Briefcase,
   BrainCircuit,
-  FolderKanban,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -50,8 +49,6 @@ const defaultMenuItems = [
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
     { type: 'separator', id: 'sep1' },
     { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
-    { href: '/crm/pipeline', icon: <FolderKanban className="text-amber-500" />, label: 'Pipeline', tooltip: 'Sales Pipeline', id: 'pipeline' },
-    { href: '/crm/analytics', icon: <BarChart3 className="text-amber-500" />, label: 'Sales Analytics', tooltip: 'Sales Analytics', id: 'sales-analytics' },
     { type: 'separator', id: 'sep2' },
     { href: '/habits', icon: <Repeat className="text-teal-500" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <Target className="text-red-500" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
@@ -105,7 +102,7 @@ export function AppSidebar() {
       return pathname === '/dashboard';
     }
      if (href === '/crm') {
-      return pathname === '/crm';
+      return pathname === '/crm' || pathname.startsWith('/crm/');
     }
     return pathname.startsWith(href);
   };
