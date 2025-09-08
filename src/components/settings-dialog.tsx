@@ -36,14 +36,11 @@ type Font = UserSettings['font'];
 const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg: string; text: string; primary: string; secondary: string } }[] = [
   { name: 'light', label: 'Light', icon: <Sun className="h-5 w-5" />, colors: { bg: 'hsl(0 0% 100%)', text: 'hsl(215 40% 15%)', primary: 'hsl(206 65% 45%)', secondary: 'hsl(210 40% 96%)' } },
   { name: 'dark', label: 'Dark', icon: <Moon className="h-5 w-5" />, colors: { bg: 'hsl(215 30% 12%)', text: 'hsl(210 40% 98%)', primary: 'hsl(210 70% 50%)', secondary: 'hsl(215 20% 25%)' } },
-  { name: 'theme-indigo', label: 'Indigo', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(230 80% 98%)', text: '#6D28D9', primary: 'hsl(234 65% 26%)', secondary: 'hsl(232 46% 28%)' } },
-  { name: 'theme-purple', label: 'Purple', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(280 80% 98%)', text: '#6D28D9', primary: 'hsl(279 65% 40%)', secondary: 'hsl(279 40% 27%)' } },
-  { name: 'theme-green', label: 'Green', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(145 60% 98%)', text: 'hsl(145 25% 15%)', primary: 'hsl(145 38% 25%)', secondary: 'hsl(145 25% 26%)' } },
-  { name: 'theme-lavender', label: 'Lavender', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(244 20% 20%)', text: 'hsl(244 53% 97%)', primary: 'hsl(244 53% 86%)', secondary: 'hsl(244 53% 92%)' } },
-  { name: 'theme-cornflower', label: 'Cornflower', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(227 30% 25%)', text: 'hsl(227 100% 98%)', primary: 'hsl(227 100% 75%)', secondary: 'hsl(227 100% 90%)' } },
-  { name: 'theme-teal', label: 'Teal', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(163 30% 20%)', text: 'hsl(163 37% 96%)', primary: 'hsl(163 37% 41%)', secondary: 'hsl(163 37% 90%)' } },
-  { name: 'theme-orange', label: 'Orange', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(18 30% 25%)', text: 'hsl(18 99% 97%)', primary: 'hsl(18 99% 63%)', secondary: 'hsl(18 99% 90%)' } },
-  { name: 'theme-mint', label: 'Mint', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(150 25% 20%)', text: 'hsl(150 100% 98%)', primary: 'hsl(150 100% 91%)', secondary: 'hsl(150 100% 95%)' } },
+  { name: 'theme-indigo', label: 'Indigo', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(242 30% 18%)', text: 'hsl(242 70% 95%)', primary: 'hsl(242 70% 65%)', secondary: 'hsl(242 30% 28%)' } },
+  { name: 'theme-purple', label: 'Purple', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(279 30% 18%)', text: 'hsl(279 70% 95%)', primary: 'hsl(279 65% 70%)', secondary: 'hsl(279 30% 28%)' } },
+  { name: 'theme-green', label: 'Green', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(145 30% 15%)', text: 'hsl(145 60% 95%)', primary: 'hsl(145 60% 45%)', secondary: 'hsl(145 30% 25%)' } },
+  { name: 'theme-sunset', label: 'Sunset', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(20 100% 98%)', text: 'hsl(20 30% 25%)', primary: 'hsl(20 100% 65%)', secondary: 'hsl(20 100% 92%)' } },
+  { name: 'theme-mint', label: 'Mint', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(150 25% 15%)', text: 'hsl(150 100% 90%)', primary: 'hsl(150 100% 70%)', secondary: 'hsl(150 25% 25%)' } },
 ];
 
 const fonts: { name: Font; label: string; variable: string }[] = [
@@ -110,7 +107,8 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   const applyTheme = (theme: Theme) => {
     const body = document.body;
     const currentFontFamily = body.style.fontFamily;
-    body.className = body.className.split(' ').filter(c => !c.startsWith('theme-') && c !== 'light' && c !== 'dark' && !c.startsWith('font-')).join(' ');
+    const themeClassesToRemove = themes.map(t => t.name);
+    body.classList.remove(...themeClassesToRemove);
     
     if (theme) {
       body.classList.add(theme);

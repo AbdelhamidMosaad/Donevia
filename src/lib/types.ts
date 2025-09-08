@@ -146,7 +146,7 @@ export type ClientRequest = {
 
 /** User Settings */
 export interface UserSettings {
-    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-lavender' | 'theme-cornflower' | 'theme-teal' | 'theme-orange' | 'theme-mint';
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-sunset' | 'theme-mint';
     font:
         | 'inter'
         | 'roboto'
