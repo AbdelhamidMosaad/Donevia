@@ -38,7 +38,9 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
   const [stages, setStages] = useState<PipelineStage[]>([]);
 
   useEffect(() => {
-    setFormData(request);
+    if (isOpen) {
+        setFormData(request);
+    }
   }, [request, isOpen]);
 
    useEffect(() => {
@@ -79,7 +81,7 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
     }
   };
   
-  const handleChange = (field: keyof ClientRequest, value: any) => {
+  const handleChange = (field: keyof Omit<ClientRequest, 'id' | 'createdAt' | 'updatedAt'>, value: any) => {
     setFormData(prev => ({...prev, [field]: value }));
   }
 
