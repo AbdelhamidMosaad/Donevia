@@ -24,7 +24,6 @@ export default function CrmPage() {
   const [requests, setRequests] = useState<ClientRequest[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
@@ -80,10 +79,6 @@ export default function CrmPage() {
                     <p className="text-muted-foreground">Manage your clients, pipeline, invoices, and analytics.</p>
                 </div>
             </div>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Client
-            </Button>
         </div>
       
         <Tabs defaultValue="contacts" className="flex-1 flex flex-col min-h-0">
@@ -107,8 +102,6 @@ export default function CrmPage() {
                 <AnalyticsDashboard requests={requests} />
             </TabsContent>
         </Tabs>
-
-      <ClientDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
     </div>
   );
 }

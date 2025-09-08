@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Trash2, FileDown, Users } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, FileDown, Users, PlusCircle } from 'lucide-react';
 import type { Client } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +34,7 @@ export function ClientList({ clients }: ClientListProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const filteredClients = useMemo(() => {
     if (!searchQuery) return clients;
@@ -93,6 +94,10 @@ export function ClientList({ clients }: ClientListProps) {
                         className="max-w-xs"
                     />
                     <Button variant="outline" onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button onClick={() => setIsAddDialogOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        New Client
+                    </Button>
                 </div>
             </div>
           </CardHeader>
@@ -156,6 +161,7 @@ export function ClientList({ clients }: ClientListProps) {
             </div>
           </CardContent>
       </Card>
+      <ClientDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
       <ClientDialog client={editingClient} open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)} />
     </>
   );
