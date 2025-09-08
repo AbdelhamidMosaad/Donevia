@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { WorkActivity, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,15 @@ import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card } from '@/components/ui/card';
 import { WorkTrackerSettings } from '@/components/work-tracker/tracker-settings';
+import { useToast } from '@/hooks/use-toast';
+
 
 type View = 'table' | 'calendar';
 
 export default function WorkTrackerPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [activities, setActivities] = useState<WorkActivity[]>([]);
   const [view, setView] = useState<View>('table');
   const [settings, setSettings] = useState<WorkTrackerSettingsType>({
@@ -57,6 +60,32 @@ export default function WorkTrackerPage() {
     }
   }, [user]);
 
+  const handleAddNewSettingItem = async (
+    type: 'appointmentOptions' | 'categoryOptions' | 'customerOptions',
+    value: string
+  ) => {
+    if (!user || !value) return;
+
+    if (settings[type]?.includes(value)) {
+      toast({ variant: 'destructive', title: 'Item already exists' });
+      return;
+    }
+
+    const updatedSettings = {
+      ...settings,
+      [type]: [...(settings[type] || []), value],
+    };
+
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'workTrackerSettings');
+    try {
+      await setDoc(settingsRef, updatedSettings, { merge: true });
+      toast({ title: 'New option added!', description: `"${value}" is now available.` });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Error adding option' });
+    }
+  };
+
+
   if (loading || !user) {
     return <div>Loading...</div>;
   }
@@ -85,7 +114,7 @@ export default function WorkTrackerPage() {
       </div>
 
       <Card>
-        <ActivityForm settings={settings} />
+        <ActivityForm settings={settings} onAddNewItem={handleAddNewSettingItem} />
       </Card>
 
       <div className="flex-1">
