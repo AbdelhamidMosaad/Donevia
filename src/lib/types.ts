@@ -67,6 +67,7 @@ export type Bookmark = {
     description?: string;
     category: BookmarkCategory;
     createdAt: Timestamp;
+    color?: string;
 };
 
 /** CRM Types */

@@ -4,15 +4,16 @@
 import type { Bookmark } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, ExternalLink, Palette } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
-  onEdit: () => void;
+  onEdit: (focusColor?: boolean) => void;
   onDelete: () => void;
 }
 
@@ -23,7 +24,10 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
+    <Card 
+        className={cn("hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group")}
+        style={{ backgroundColor: bookmark.color }}
+    >
         <Link href={bookmark.url} target="_blank" rel="noopener noreferrer" className="flex flex-col flex-1">
             <CardHeader className="flex-row items-start justify-between pb-2">
                 <div>
@@ -37,7 +41,8 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent onClick={handleActionClick}>
-                        <DropdownMenuItem onSelect={onEdit}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => onEdit(false)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => onEdit(true)}><Palette className="mr-2 h-4 w-4" /> Change Color</DropdownMenuItem>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive w-full"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>

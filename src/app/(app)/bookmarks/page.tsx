@@ -42,6 +42,7 @@ export default function BookmarksPage() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
+  const [focusColorPicker, setFocusColorPicker] = useState(false);
 
   const debouncedSearch = useDebouncedCallback((value) => {
     setSearchQuery(value);
@@ -106,13 +107,15 @@ export default function BookmarksPage() {
     }
   };
 
-  const handleEditBookmark = (bookmark: Bookmark) => {
+  const handleEditBookmark = (bookmark: Bookmark, focusColor: boolean = false) => {
     setEditingBookmark(bookmark);
+    setFocusColorPicker(focusColor);
     setIsAddDialogOpen(true);
   };
   
   const handleOpenAddDialog = () => {
     setEditingBookmark(null);
+    setFocusColorPicker(false);
     setIsAddDialogOpen(true);
   }
 
@@ -216,7 +219,7 @@ export default function BookmarksPage() {
             <BookmarkCard
               key={bookmark.id}
               bookmark={bookmark}
-              onEdit={() => handleEditBookmark(bookmark)}
+              onEdit={(focusColor) => handleEditBookmark(bookmark, focusColor)}
               onDelete={() => handleDeleteBookmark(bookmark.id)}
             />
           ))}
@@ -228,6 +231,7 @@ export default function BookmarksPage() {
         onOpenChange={setIsAddDialogOpen}
         bookmark={editingBookmark}
         categories={allCategories.filter(c => c !== 'all')}
+        focusColorPicker={focusColorPicker}
       />
     </div>
   );

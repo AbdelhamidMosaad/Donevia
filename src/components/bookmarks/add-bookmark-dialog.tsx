@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,23 +20,30 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { Bookmark, BookmarkCategory } from '@/lib/types';
 import { addBookmark, updateBookmark } from '@/lib/bookmarks';
+import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 interface AddBookmarkDialogProps {
   bookmark?: Bookmark | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   categories: string[];
+  focusColorPicker?: boolean;
 }
+
+const colorPalette = ['#FFFFFF', '#FFCDD2', '#D1C4E9', '#BBDEFB', '#C8E6C9', '#FFF9C4', '#FFE0B2', '#F5F5F5'];
 
 export function AddBookmarkDialog({
   bookmark,
   open,
   onOpenChange,
   categories,
+  focusColorPicker,
 }: AddBookmarkDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   const isEditMode = !!bookmark;
 
@@ -44,11 +51,13 @@ export function AddBookmarkDialog({
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<BookmarkCategory>('work');
+  const [color, setColor] = useState<string | undefined>();
 
   const resetForm = () => {
     setTitle('');
     setUrl('');
     setDescription('');
+    setColor(undefined);
     setCategory(categories[0] as BookmarkCategory || 'other');
   };
 
@@ -59,12 +68,17 @@ export function AddBookmarkDialog({
         setUrl(bookmark.url);
         setDescription(bookmark.description || '');
         setCategory(bookmark.category);
+        setColor(bookmark.color);
       } else {
         resetForm();
       }
       setIsSaving(false);
+      
+      if (focusColorPicker && colorPickerRef.current) {
+        setTimeout(() => colorPickerRef.current?.focus(), 100);
+      }
     }
-  }, [open, bookmark, isEditMode, categories]);
+  }, [open, bookmark, isEditMode, categories, focusColorPicker]);
   
   const formatUrl = (inputUrl: string) => {
     if (!inputUrl.startsWith('http://') && !inputUrl.startsWith('https://')) {
@@ -89,6 +103,7 @@ export function AddBookmarkDialog({
       url: formatUrl(url),
       description,
       category,
+      color: color === '#FFFFFF' ? undefined : color, // Store default as undefined
     };
 
     try {
@@ -138,6 +153,22 @@ export function AddBookmarkDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+           <div ref={colorPickerRef} tabIndex={-1} className="grid grid-cols-4 items-center gap-4">
+             <Label htmlFor="color" className="text-right">Color</Label>
+             <div className="col-span-3 flex flex-wrap gap-2">
+                {colorPalette.map(c => (
+                    <button
+                        key={c}
+                        type="button"
+                        className={cn("h-8 w-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110", color === c || (!color && c === '#FFFFFF') ? 'ring-2 ring-offset-2 ring-primary' : '')}
+                        style={{ backgroundColor: c }}
+                        onClick={() => setColor(c)}
+                    >
+                       {(color === c || (!color && c === '#FFFFFF')) && <Check className="h-4 w-4" style={{color: c === '#FFFFFF' ? 'black' : 'white'}} />}
+                    </button>
+                ))}
+             </div>
           </div>
         </div>
         <DialogFooter>
