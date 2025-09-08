@@ -58,6 +58,17 @@ export type StickyNote = {
     gridPosition?: { col: number; row: number };
 };
 
+/** Bookmarks */
+export type BookmarkCategory = 'work' | 'personal' | 'education' | 'entertainment' | 'shopping' | 'other';
+export type Bookmark = {
+    id: string;
+    title: string;
+    url: string;
+    description?: string;
+    category: BookmarkCategory;
+    createdAt: Timestamp;
+};
+
 /** User Settings */
 export interface UserSettings {
     theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-lavender' | 'theme-cornflower' | 'theme-teal' | 'theme-orange' | 'theme-mint';
