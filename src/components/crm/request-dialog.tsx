@@ -38,10 +38,10 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
   const [stages, setStages] = useState<PipelineStage[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
-        setFormData(request);
-    }
-  }, [request, isOpen]);
+    // This effect runs when the dialog is opened or the request prop changes.
+    // It ensures the form data is always in sync with the deal being edited.
+    setFormData(request);
+  }, [request]);
 
    useEffect(() => {
     if (!user) return;

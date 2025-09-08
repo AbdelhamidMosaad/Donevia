@@ -15,10 +15,10 @@ interface RequestCardProps {
   request: ClientRequest;
   clients: Client[];
   onDelete: () => void;
+  onEdit: () => void;
 }
 
-export function RequestCard({ request, clients, onDelete }: RequestCardProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+export function RequestCard({ request, clients, onDelete, onEdit }: RequestCardProps) {
   const client = clients.find(c => c.id === request.clientId);
 
   const handleMenuClick = (e: React.MouseEvent) => {
@@ -29,7 +29,7 @@ export function RequestCard({ request, clients, onDelete }: RequestCardProps) {
     <>
       <Card 
         className="hover:shadow-md transition-shadow duration-200 cursor-pointer group"
-        onClick={() => setIsDialogOpen(true)}
+        onClick={onEdit}
       >
         <CardHeader className="p-3 pb-2 flex-row justify-between items-start">
           <CardTitle className="text-sm font-semibold leading-tight">{request.title}</CardTitle>
@@ -40,7 +40,7 @@ export function RequestCard({ request, clients, onDelete }: RequestCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent onClick={handleMenuClick}>
-                <DropdownMenuItem onSelect={() => setIsDialogOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                <DropdownMenuItem onSelect={onEdit}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive w-full"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
@@ -76,12 +76,6 @@ export function RequestCard({ request, clients, onDelete }: RequestCardProps) {
           </div>
         </CardContent>
       </Card>
-      <RequestDialog 
-        isOpen={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
-        request={request}
-        clients={clients}
-      />
     </>
   );
 }

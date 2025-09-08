@@ -31,11 +31,11 @@ export function RequestBoard() {
   const [requests, setRequests] = useState<ClientRequest[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [stages, setStages] = useState<PipelineStage[]>([]);
+  const [editingRequest, setEditingRequest] = useState<ClientRequest | null>(null);
   
   useEffect(() => {
     if (!user) return;
     
-    // Fetch CRM settings for pipeline stages
     const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
     const unsubscribeSettings = onSnapshot(settingsRef, async (docSnap) => {
         if (docSnap.exists()) {
@@ -47,7 +47,6 @@ export function RequestBoard() {
                  setStages(defaultStages);
             }
         } else {
-            // If settings doc doesn't exist, create it with default stages
             await setDoc(settingsRef, { crmSettings: { pipelineStages: defaultStages } });
             setStages(defaultStages);
         }
@@ -110,7 +109,7 @@ export function RequestBoard() {
     try {
         await addDoc(collection(db, 'users', user.uid, 'clientRequests'), {
             title: 'New Deal',
-            stage: stages[0].id, // Default to the first stage
+            stage: stages[0].id,
             clientId: '',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -129,6 +128,10 @@ export function RequestBoard() {
     } catch(e) {
       toast({ variant: 'destructive', title: 'Error deleting deal' });
     }
+  };
+
+  const handleEditRequest = (request: ClientRequest) => {
+    setEditingRequest(request);
   };
 
   return (
@@ -161,6 +164,7 @@ export function RequestBoard() {
                                   request={req} 
                                   clients={clients} 
                                   onDelete={() => handleDeleteRequest(req.id)}
+                                  onEdit={() => handleEditRequest(req)}
                                 />
                             </div>
                             )}
@@ -177,6 +181,17 @@ export function RequestBoard() {
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
+
+      {editingRequest && (
+        <RequestDialog
+            isOpen={!!editingRequest}
+            onOpenChange={(open) => {
+                if (!open) setEditingRequest(null);
+            }}
+            request={editingRequest}
+            clients={clients}
+        />
+      )}
     </div>
   );
 }
