@@ -164,30 +164,35 @@ export function MindMapTool() {
         
         let newX = 0, newY = 0;
         const siblingGap = 40;
+        const childGap = 100;
 
         if (parentNode) {
             const children = prevNodes.filter(n => connections.some(c => c.from === parentNode.id && c.to === n.id));
             
             switch(layoutDirection) {
                 case 'right':
-                    newX = parentNode.x + parentNode.width / 2 + siblingGap + newNode.width / 2;
+                    newX = parentNode.x + parentNode.width / 2 + childGap;
                     const totalChildrenHeight = children.reduce((sum, child) => sum + child.height + siblingGap, 0);
-                    newY = parentNode.y - totalChildrenHeight / 2 + children.reduce((sum, child) => sum + child.height + siblingGap, 0) + newNode.height / 2;
+                    const startY = parentNode.y - (totalChildrenHeight - siblingGap) / 2;
+                    newY = startY + totalChildrenHeight + newNode.height / 2;
                     break;
                 case 'left':
-                    newX = parentNode.x - parentNode.width / 2 - siblingGap - newNode.width / 2;
+                    newX = parentNode.x - parentNode.width / 2 - childGap;
                     const totalChildrenHeightLeft = children.reduce((sum, child) => sum + child.height + siblingGap, 0);
-                    newY = parentNode.y - totalChildrenHeightLeft / 2 + children.reduce((sum, child) => sum + child.height + siblingGap, 0) + newNode.height / 2;
+                    const startYLeft = parentNode.y - (totalChildrenHeightLeft - siblingGap) / 2;
+                    newY = startYLeft + totalChildrenHeightLeft + newNode.height / 2;
                     break;
                 case 'bottom':
                     const totalChildrenWidth = children.reduce((sum, child) => sum + child.width + siblingGap, 0);
-                    newX = parentNode.x - totalChildrenWidth / 2 + children.reduce((sum, child) => sum + child.width + siblingGap, 0) + newNode.width / 2;
-                    newY = parentNode.y + parentNode.height / 2 + siblingGap + newNode.height / 2;
+                    const startX = parentNode.x - (totalChildrenWidth - siblingGap) / 2;
+                    newX = startX + totalChildrenWidth + newNode.width / 2;
+                    newY = parentNode.y + parentNode.height / 2 + childGap;
                     break;
                  case 'top':
                     const totalChildrenWidthTop = children.reduce((sum, child) => sum + child.width + siblingGap, 0);
-                    newX = parentNode.x - totalChildrenWidthTop / 2 + children.reduce((sum, child) => sum + child.width + siblingGap, 0) + newNode.width / 2;
-                    newY = parentNode.y - parentNode.height / 2 - siblingGap - newNode.height / 2;
+                    const startXTop = parentNode.x - (totalChildrenWidthTop - siblingGap) / 2;
+                    newX = startXTop + totalChildrenWidthTop + newNode.width / 2;
+                    newY = parentNode.y - parentNode.height / 2 - childGap;
                     break;
             }
         } else {
@@ -678,15 +683,9 @@ export function MindMapTool() {
             </div>
 
 
-            <div 
-                className={cn("w-full h-full relative", {
-                  'cursor-crosshair': currentTool === 'node',
-                  'cursor-grab': currentTool === 'pan',
-                  'active:cursor-grabbing': currentTool === 'pan' && isPanning.current,
-                })}
-            >
-                <svg className="absolute top-0 left-0 w-[9999px] h-[9999px] pointer-events-none" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
-                    <g>
+            <div className="w-full h-full relative" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
+                <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ transform: `translate(${-offset.x/scale}px, ${-offset.y/scale}px)`}}>
+                    <g style={{ transform: `translate(${offset.x/scale}px, ${offset.y/scale}px)`}}>
                         {connections.map(conn => {
                             const from = nodes.find(n => n.id === conn.from);
                             const to = nodes.find(n => n.id === conn.to);
@@ -705,7 +704,7 @@ export function MindMapTool() {
                     </g>
                 </svg>
 
-                <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
+                <div>
                     {nodes.map(node => (
                         <div
                             key={node.id}
