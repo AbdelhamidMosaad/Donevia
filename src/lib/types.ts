@@ -213,6 +213,28 @@ export type Whiteboard = {
   backgroundGrid?: 'dotted' | 'lined' | 'plain';
 };
 
+/** Mind Map */
+export type MindMapNode = {
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    title: string;
+    style: string;
+    backgroundColor: string;
+    color: string;
+    isBold: boolean;
+    isItalic: boolean;
+    isUnderline: boolean;
+};
+
+export type MindMapConnection = {
+    from: string;
+    to: string;
+};
+
+
 /** Pomodoro */
 export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
 
