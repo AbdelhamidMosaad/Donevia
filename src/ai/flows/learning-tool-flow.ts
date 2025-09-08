@@ -55,3 +55,5 @@ export const StudyMaterialResponseSchema = z.object({
   flashcardContent: z.array(FlashcardSchema).optional().describe('An array of flashcards.'),
 });
 export type StudyMaterialResponse = z.infer<typeof StudyMaterialResponseSchema>;
+
+    

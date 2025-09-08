@@ -368,20 +368,20 @@ export const QuizQuestionSchema = z.object({
 });
 
 export const FlashcardSchema = z.object({
-  term: z.string(),
-  definition: z.string(),
+    front: z.string().describe('The content for the front of the flashcard (e.g., a term or a question).'),
+    back: z.string().describe('The content for the back of the flashcard (e.g., a definition or an answer).'),
 });
 
 export const StudyMaterialRequestSchema = z.object({
   sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
   generationType: z.enum(['quiz', 'flashcards', 'notes']),
   quizOptions: z.object({
-    numQuestions: z.number().min(1).max(20),
+    numQuestions: z.coerce.number().min(1).max(20),
     questionTypes: z.array(z.enum(['multiple-choice', 'true-false', 'short-answer'])),
     difficulty: z.enum(['easy', 'medium', 'hard']),
   }).optional(),
   flashcardsOptions: z.object({
-    numCards: z.number().min(1).max(30),
+    numCards: z.coerce.number().min(1).max(30),
     style: z.enum(['basic', 'detailed', 'question']),
   }).optional(),
   notesOptions: z.object({
@@ -397,3 +397,5 @@ export const StudyMaterialResponseSchema = z.object({
   flashcardContent: z.array(FlashcardSchema).optional(),
   notesContent: z.string().optional(),
 });
+
+    
