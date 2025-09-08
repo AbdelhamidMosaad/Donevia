@@ -36,10 +36,9 @@ interface AddTaskDialogProps {
 }
 
 const cardColors = [
-    '#FFFFFF',
+    '#FFFFFF', // White
     '#FEE2E2', // red-100
     '#FFEDD5', // orange-100
-    '#FEF3C7', // amber-100
     '#FEF9C3', // yellow-100
     '#ECFCCB', // lime-100
     '#D1FAE5', // emerald-100
@@ -50,6 +49,7 @@ const cardColors = [
     '#F3E8FF', // purple-100
     '#FAE8FF', // fuchsia-100
 ];
+
 
 const getRandomColor = () => cardColors[Math.floor(Math.random() * cardColors.length)];
 

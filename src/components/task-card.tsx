@@ -54,7 +54,7 @@ export function TaskCard({ task }: TaskCardProps) {
   return (
     <>
     <Card 
-        className={cn("hover:shadow-md transition-shadow duration-200 cursor-pointer active:cursor-grabbing")}
+        className={cn("hover:shadow-md transition-shadow duration-200 cursor-pointer active:cursor-grabbing text-[hsl(var(--card-foreground))] hover:bg-opacity-80")}
         style={{ backgroundColor: task.color }}
         onClick={() => setIsEditDialogOpen(true)}
     >
@@ -102,7 +102,7 @@ export function TaskCard({ task }: TaskCardProps) {
       </CardHeader>
       {(task.priority || task.dueDate || (task.tags && task.tags.length > 0)) &&
         <CardContent className="p-3 pt-0">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-muted-foreground" style={{color: "hsl(var(--card-foreground))"}}>
                 <div className="flex items-center gap-2">
                     {task.priority &&
                     <div className="flex items-center gap-1" title={task.priority}>
