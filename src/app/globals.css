@@ -33,7 +33,7 @@ body {
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --sidebar-background: 202 59% 54%;
+    --sidebar-background: 180 29% 75%;
     --sidebar-foreground: 215 40% 15%;
     --sidebar-primary: 210 70% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -68,7 +68,7 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 202 59% 54%;
+    --sidebar-background: 180 29% 75%;
     --sidebar-foreground: 215 40% 15%;
     --sidebar-primary: 210 70% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -98,7 +98,7 @@ body {
     --border: 242 30% 30%;
     --input: 242 30% 30%;
     --ring: 242 70% 65%;
-    --sidebar-background: 202 59% 54%;
+    --sidebar-background: 180 29% 75%;
     --sidebar-foreground: 215 40% 15%;
     --sidebar-primary: 242 70% 65%;
     --sidebar-primary-foreground: 242 70% 10%;
@@ -128,7 +128,7 @@ body {
     --border: 279 30% 30%;
     --input: 279 30% 30%;
     --ring: 279 65% 70%;
-    --sidebar-background: 202 59% 54%;
+    --sidebar-background: 180 29% 75%;
     --sidebar-foreground: 215 40% 15%;
     --sidebar-primary: 279 65% 70%;
     --sidebar-primary-foreground: 279 70% 10%;
@@ -158,7 +158,7 @@ body {
     --border: 145 30% 28%;
     --input: 145 30% 28%;
     --ring: 145 60% 45%;
-    --sidebar-background: 202 59% 54%;
+    --sidebar-background: 180 29% 75%;
     --sidebar-foreground: 215 40% 15%;
     --sidebar-primary: 145 60% 45%;
     --sidebar-primary-foreground: 145 60% 98%;
@@ -188,7 +188,7 @@ body {
       --border: 20 100% 90%;
       --input: 20 100% 90%;
       --ring: 20 100% 65%;
-      --sidebar-background: 202 59% 54%;
+      --sidebar-background: 180 29% 75%;
       --sidebar-foreground: 215 40% 15%;
   }
 
@@ -212,7 +212,7 @@ body {
       --border: 150 25% 28%;
       --input: 150 25% 28%;
       --ring: 150 100% 70%;
-      --sidebar-background: 202 59% 54%;
+      --sidebar-background: 180 29% 75%;
       --sidebar-foreground: 215 40% 15%;
   }
 }
