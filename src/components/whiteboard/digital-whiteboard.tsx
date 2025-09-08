@@ -22,6 +22,7 @@ import {
   Heart,
   GitBranch,
   StickyNote,
+  PenSquare,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
