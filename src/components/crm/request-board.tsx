@@ -15,6 +15,7 @@ import { RequestDialog } from './request-dialog';
 import { PipelineSettings } from './pipeline-settings';
 import { v4 as uuidv4 } from 'uuid';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { deleteRequest } from '@/lib/requests';
 
 const defaultStages: PipelineStage[] = [
     { id: 'new', name: 'New', order: 0 },
@@ -120,6 +121,16 @@ export function RequestBoard() {
     }
   };
 
+  const handleDeleteRequest = async (requestId: string) => {
+    if (!user) return;
+    try {
+      await deleteRequest(user.uid, requestId);
+      toast({ title: 'Deal deleted' });
+    } catch(e) {
+      toast({ variant: 'destructive', title: 'Error deleting deal' });
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-end mb-4 gap-2">
@@ -146,7 +157,11 @@ export function RequestBoard() {
                         <Draggable key={req.id} draggableId={req.id} index={index}>
                             {(provided, snapshot) => (
                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                <RequestCard request={req} clients={clients} />
+                                <RequestCard 
+                                  request={req} 
+                                  clients={clients} 
+                                  onDelete={() => handleDeleteRequest(req.id)}
+                                />
                             </div>
                             )}
                         </Draggable>
