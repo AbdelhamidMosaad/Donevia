@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -131,13 +130,6 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
               </div>
            )}
         </div>
-        <DialogFooter className="justify-between">
-          <Button variant="destructive" onClick={handleDelete}>Delete</Button>
-          <div>
-            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-            <Button onClick={handleSave} className="ml-2">Save</Button>
-          </div>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
