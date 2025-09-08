@@ -129,9 +129,6 @@ export function AppSidebar() {
                 {(provided) => (
                     <SidebarMenu {...provided.droppableProps} ref={provided.innerRef}>
                     {menuItems.map((item, index) => {
-                        if (item.type === 'separator') {
-                            return <SidebarSeparator key={item.id} className="my-2" />;
-                        }
                         return (
                              <Draggable key={item.id} draggableId={item.id} index={index}>
                                 {(provided) => (
@@ -172,7 +169,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip={{ children: 'Help' }}>
-              <Link href="#">
+              <Link href="/help">
                 <HelpCircle />
                 <span className="group-data-[collapsible=icon]:hidden">Help</span>
               </Link>

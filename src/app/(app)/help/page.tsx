@@ -1,0 +1,304 @@
+
+'use client';
+
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { HelpCircle, LayoutDashboard, Kanban, BarChart3, Sparkles, Briefcase, Repeat, Target, FileText, Bookmark, BrainCircuit, PenSquare, GitBranch, FileSignature, GraduationCap, Timer } from "lucide-react";
+import Image from 'next/image';
+
+const features = [
+    {
+        id: 'dashboard',
+        icon: <LayoutDashboard className="h-6 w-6 text-blue-500" />,
+        title: 'Dashboard',
+        description: "Your mission control for productivity. The dashboard gives you a quick, at-a-glance overview of your most important tasks.",
+        details: [
+            { 
+                title: 'Recently Created', 
+                text: "Quickly access the tasks you've just added, so nothing slips through the cracks.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "dashboard tasks recently"
+            },
+            { 
+                title: 'High Priority', 
+                text: "Focus on what matters most. This card automatically surfaces all tasks you've marked as 'High' priority.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "priority tasks dashboard"
+            },
+            { 
+                title: 'Due Soon', 
+                text: "Stay ahead of deadlines. This card shows tasks that are due within the next 7 days, helping you plan your week effectively.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "calendar deadlines tasks"
+            },
+        ],
+    },
+    {
+        id: 'tasks',
+        icon: <Kanban className="h-6 w-6 text-purple-500" />,
+        title: 'Task Management',
+        description: 'A powerful and flexible system to organize your work. Choose from multiple views to manage your tasks your way.',
+        details: [
+            { 
+                title: 'Task Lists', 
+                text: "Group your tasks into lists, like 'Work Projects' or 'Personal Errands'. You can view your lists as visual cards or a compact list. Create new lists with the '+ New List' button.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "project folders list"
+            },
+            { 
+                title: 'Board View', 
+                text: "Visualize your workflow with a Kanban-style board. Drag and drop tasks between customizable columns (stages) like 'To Do', 'In Progress', and 'Done'. You can customize these stages in 'Board Settings'.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "kanban board project"
+            },
+            { 
+                title: 'List, Table, and Calendar Views', 
+                text: "Switch between a simple list, a detailed table with sortable columns, and a full-page calendar view to see your tasks by their due dates.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "calendar schedule tasks"
+            },
+        ],
+    },
+    {
+        id: 'analytics',
+        icon: <BarChart3 className="h-6 w-6 text-green-500" />,
+        title: 'Task Analytics',
+        description: 'Gain insights into your productivity with visual dashboards.',
+        details: [
+            { 
+                title: 'Understand Your Habits', 
+                text: "Track your task completion rate, see how many tasks are overdue, and discover your average daily task completions. The 'Tasks by Status' chart gives you a clear breakdown of your current workload.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "analytics chart graph"
+            },
+        ],
+    },
+    {
+        id: 'recap',
+        icon: <Sparkles className="h-6 w-6 text-yellow-500" />,
+        title: 'AI-Powered Recap',
+        description: 'Let AI summarize your progress for you.',
+        details: [
+            { 
+                title: 'Generate Summaries', 
+                text: "Choose a daily or weekly period, and our AI will analyze your completed and pending tasks to generate an encouraging summary and highlight your key achievements.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "ai robot summary"
+            },
+        ],
+    },
+     {
+        id: 'crm',
+        icon: <Briefcase className="h-6 w-6 text-amber-500" />,
+        title: 'CRM',
+        description: 'Manage your entire client workflow, from initial contact to final invoice.',
+        details: [
+            { 
+                title: 'Client Management', 
+                text: "Keep a centralized list of all your contacts. Add, edit, and store important details, custom fields, and documents for each client.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "contacts list crm"
+            },
+             { 
+                title: 'Sales Pipeline', 
+                text: "Visualize your sales process with a Kanban board. Move deals through customizable stages like 'New Request', 'Proposal Sent', and 'Won' or 'Lost'. Customize stages in 'Pipeline Settings'.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "sales pipeline flowchart"
+            },
+             { 
+                title: 'Quotes & Invoices', 
+                text: "Create and manage quotations and invoices directly within a client's profile. Attach relevant files and track their status.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "invoice document billing"
+            },
+        ],
+    },
+    {
+        id: 'habits',
+        icon: <Repeat className="h-6 w-6 text-teal-500" />,
+        title: 'Habit Tracker',
+        description: 'Build consistency and achieve your long-term goals.',
+        details: [
+            { 
+                title: 'Daily Check-ins', 
+                text: "Create habits you want to build and check them off each day on the weekly calendar view. Building a streak helps maintain momentum and motivation.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "calendar checkmark habit"
+            },
+        ],
+    },
+    {
+        id: 'goals',
+        icon: <Target className="h-6 w-6 text-red-500" />,
+        title: 'Goal Tracker',
+        description: 'Define, track, and achieve your long-term ambitions.',
+        details: [
+            { 
+                title: 'Set and Track Goals', 
+                text: "Create overarching goals with specific start and target dates. Break them down into smaller, actionable milestones. Track your overall progress as you complete each milestone.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "target goal achievement"
+            },
+             { 
+                title: 'Progress Journal', 
+                text: "Keep a running log of your thoughts, achievements, and setbacks for each goal. This journal helps you stay reflective and motivated throughout your journey.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "journal writing progress"
+            },
+        ],
+    },
+    {
+        id: 'notes',
+        icon: <FileText className="h-6 w-6 text-orange-500" />,
+        title: 'Sticky Notes',
+        description: 'A flexible space for your quick thoughts and reminders.',
+        details: [
+            { 
+                title: 'Canvas & Board Views', 
+                text: "Organize your notes in two ways: a free-form 'Canvas' where you can arrange notes anywhere you like, or a structured 'Board' that automatically groups your notes by priority (High, Medium, Low).",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "sticky notes board"
+            },
+        ],
+    },
+    {
+        id: 'bookmarks',
+        icon: <Bookmark className="h-6 w-6 text-blue-500" />,
+        title: 'Bookmarks',
+        description: 'Save and organize your favorite websites.',
+        details: [
+            { 
+                title: 'Categorize & Find', 
+                text: "Save links with titles, descriptions, and categories. Filter by your custom categories or use the search bar to find exactly what you're looking for. Add a splash of color to make your bookmarks stand out.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "bookmark collection web"
+            },
+        ],
+    },
+    {
+        id: 'creativity-suite',
+        icon: <BrainCircuit className="h-6 w-6 text-violet-500" />,
+        title: 'Creativity Suite',
+        description: 'A collection of visual tools to brainstorm and plan.',
+        details: [
+             { 
+                title: 'Brainstorming Canvas', 
+                text: "Capture ideas as colored cards and arrange them in a structured grid. It's perfect for quickly getting thoughts down and organizing them later.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "brainstorming idea cards"
+            },
+            { 
+                title: 'Whiteboard', 
+                text: "A free-form digital canvas. Use the pen, eraser, and shape tools to draw, sketch, and visualize your ideas without limits. Customize the background to suit your needs.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "digital whiteboard drawing"
+            },
+            { 
+                title: 'Mind Map', 
+                text: "Create structured diagrams by connecting nodes. Add child nodes in any direction (right, left, up, or down) to build out your ideas logically. Use fullscreen for a focused experience and export your work as a PNG or PDF.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "mind map chart"
+            },
+        ],
+    },
+     {
+        id: 'docs',
+        icon: <FileSignature className="h-6 w-6 text-cyan-500" />,
+        title: 'Docs',
+        description: 'A powerful, feature-rich document editor.',
+        details: [
+            { 
+                title: 'Rich Text Editing', 
+                text: "Create beautiful documents with a full suite of formatting tools, including headings, text styles, colors, tables, and image uploads. Organize your documents into folders for easy management.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "text editor document"
+            },
+        ],
+    },
+    {
+        id: 'learning-tool',
+        icon: <GraduationCap className="h-6 w-6 text-lime-500" />,
+        title: 'Learning Assistant',
+        description: 'Supercharge your study sessions with AI.',
+        details: [
+            { 
+                title: 'Generate Study Materials', 
+                text: "Paste any text or upload a document, and let the AI generate comprehensive notes, interactive quizzes, or a set of flashcards to help you learn faster and more effectively.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "ai learning study"
+            },
+        ],
+    },
+     {
+        id: 'pomodoro',
+        icon: <Timer className="h-6 w-6 text-rose-500" />,
+        title: 'Pomodoro Timer',
+        description: 'Improve focus with a built-in time management tool.',
+        details: [
+            { 
+                title: 'Stay Focused', 
+                text: "Use the Pomodoro technique to break down your work into focused intervals. The timer is always accessible in the header. Customize the duration of your work sessions, short breaks, and long breaks in the settings.",
+                image: "https://picsum.photos/600/400",
+                dataAiHint: "pomodoro timer clock"
+            },
+        ],
+    },
+];
+
+export default function HelpPage() {
+  return (
+    <div className="flex flex-col h-full gap-6">
+        <div className="flex items-center gap-4">
+            <HelpCircle className="h-8 w-8 text-primary"/>
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Help & Documentation</h1>
+                <p className="text-muted-foreground">Find everything you need to know about using Donevia.</p>
+            </div>
+        </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Features Overview</CardTitle>
+                <CardDescription>Click on any feature to learn more about it.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Accordion type="single" collapsible className="w-full">
+                    {features.map(feature => (
+                         <AccordionItem value={feature.id} key={feature.id}>
+                            <AccordionTrigger>
+                                <div className="flex items-center gap-4">
+                                    {feature.icon}
+                                    <div className="text-left">
+                                        <h3 className="font-semibold">{feature.title}</h3>
+                                        <p className="text-sm text-muted-foreground font-normal">{feature.description}</p>
+                                    </div>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <div className="pl-14 space-y-8">
+                                    {feature.details.map((detail, index) => (
+                                        <div key={index} className="grid md:grid-cols-2 gap-6 items-center">
+                                            <div className="space-y-2">
+                                                <h4 className="font-semibold text-lg">{detail.title}</h4>
+                                                <p className="text-muted-foreground">{detail.text}</p>
+                                            </div>
+                                            <Image 
+                                                src={detail.image}
+                                                alt={detail.title}
+                                                width={600}
+                                                height={400}
+                                                data-ai-hint={detail.dataAiHint}
+                                                className="rounded-lg shadow-md"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+            </CardContent>
+        </Card>
+    </div>
+  );
+}
