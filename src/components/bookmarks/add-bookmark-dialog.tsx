@@ -7,10 +7,8 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,13 +19,13 @@ import { useToast } from '@/hooks/use-toast';
 import type { Bookmark, BookmarkCategory } from '@/lib/types';
 import { addBookmark, updateBookmark } from '@/lib/bookmarks';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 
 interface AddBookmarkDialogProps {
   bookmark?: Bookmark | null;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
   categories: string[];
   focusColorPicker?: boolean;
 }
@@ -36,18 +34,20 @@ const colorPalette = ['#FFFFFF', '#FFCDD2', '#D1C4E9', '#BBDEFB', '#C8E6C9', '#F
 
 export function AddBookmarkDialog({
   bookmark,
-  open,
   onOpenChange,
+  open,
   categories,
   focusColorPicker,
 }: AddBookmarkDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
+  const [currentBookmark, setCurrentBookmark] = useState(bookmark);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
 
-  const isEditMode = !!bookmark;
+  const isEditMode = !!currentBookmark;
 
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
@@ -61,27 +61,36 @@ export function AddBookmarkDialog({
     setDescription('');
     setColor(undefined);
     setCategory(categories[0] as BookmarkCategory || 'other');
+    setCurrentBookmark(null);
   };
 
   useEffect(() => {
     if (open) {
-      if (isEditMode && bookmark) {
+      setCurrentBookmark(bookmark);
+      if (bookmark) {
         setTitle(bookmark.title);
         setUrl(bookmark.url);
         setDescription(bookmark.description || '');
         setCategory(bookmark.category);
         setColor(bookmark.color);
       } else {
-        resetForm();
+        setTitle('');
+        setUrl('');
+        setDescription('');
+        setColor(undefined);
+        setCategory(categories[0] as BookmarkCategory || 'other');
       }
-      setIsSaving(false);
+      setSaveStatus('idle');
       isInitialMount.current = true;
       
       if (focusColorPicker && colorPickerRef.current) {
         setTimeout(() => colorPickerRef.current?.focus(), 100);
       }
+    } else {
+        // Reset form when dialog is closed
+        resetForm();
     }
-  }, [open, bookmark, isEditMode, categories, focusColorPicker]);
+  }, [open, bookmark, categories, focusColorPicker]);
   
   const formatUrl = (inputUrl: string) => {
     if (!inputUrl) return '';
@@ -90,92 +99,101 @@ export function AddBookmarkDialog({
     }
     return inputUrl;
   };
-  
-  const debouncedSave = useDebouncedCallback(async (bookmarkData) => {
-    if (!user || !isEditMode || !bookmark) return;
 
+  const createAndSetBookmark = async (newUrl: string) => {
+    if (!user || isEditMode) return; // Don't run if already editing
+    
+    setSaveStatus('saving');
+    const bookmarkData = {
+      title: 'New Bookmark',
+      url: formatUrl(newUrl),
+      description: '',
+      category: categories[0] as BookmarkCategory || 'other',
+    };
+    
     try {
-        await updateBookmark(user.uid, bookmark.id, bookmarkData);
-        toast({ title: '✓ Saved', description: 'Bookmark details have been updated.' });
+      const newDocRef = await addBookmark(user.uid, bookmarkData);
+      const newBookmark: Bookmark = { ...bookmarkData, id: newDocRef.id, createdAt: new Date() as any };
+      setCurrentBookmark(newBookmark);
+      setSaveStatus('saved');
+      toast({ title: 'Bookmark created!', description: 'You can now edit the details.'});
+    } catch (e) {
+      console.error("Error creating bookmark:", e);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to create bookmark.' });
+      setSaveStatus('idle');
+    }
+  };
+  
+  const debouncedSave = useDebouncedCallback(async (dataToSave) => {
+    if (!user || !isEditMode || !currentBookmark) return;
+    
+    setSaveStatus('saving');
+    try {
+        await updateBookmark(user.uid, currentBookmark.id, dataToSave);
+        setSaveStatus('saved');
     } catch (e) {
         console.error("Error auto-saving bookmark:", e);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to save bookmark.' });
+        setSaveStatus('idle');
     }
-  }, 1500);
+  }, 1000);
 
   useEffect(() => {
-    if (isInitialMount.current) {
+    if (isInitialMount.current && open) {
         isInitialMount.current = false;
         return;
     }
     
-    if (isEditMode && open) {
-        const bookmarkData = {
-            title,
-            url: formatUrl(url),
-            description,
-            category,
-            color: color === '#FFFFFF' ? undefined : color,
-        };
-        debouncedSave(bookmarkData);
+    if (open) {
+       if (!isEditMode) {
+            // Logic for creating a new bookmark automatically
+            const formattedUrl = formatUrl(url);
+            if (formattedUrl && url.includes('.')) { // Simple validation for a URL
+                createAndSetBookmark(url);
+            }
+       } else {
+            // Logic for auto-saving an existing bookmark
+            const bookmarkData = {
+                title,
+                url: formatUrl(url),
+                description,
+                category,
+                color: color === '#FFFFFF' ? undefined : color,
+            };
+            debouncedSave(bookmarkData);
+       }
     }
-  }, [title, url, description, category, color, isEditMode, open, debouncedSave]);
-
-  // Manual save for new bookmarks
-  const handleSaveNew = async () => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'You must be logged in.' });
-      return;
-    }
-    if (!title || !url) {
-      toast({ variant: 'destructive', title: 'Title and URL are required.' });
-      return;
-    }
-
-    setIsSaving(true);
-    const bookmarkData = {
-      title,
-      url: formatUrl(url),
-      description,
-      category,
-      color: color === '#FFFFFF' ? undefined : color,
-    };
-
-    try {
-      await addBookmark(user.uid, bookmarkData);
-      toast({ title: 'Bookmark Added', description: `"${title}" has been added successfully.` });
-      onOpenChange?.(false);
-    } catch (e) {
-      console.error("Error saving bookmark: ", e);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save bookmark.' });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  }, [title, url, description, category, color, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Edit Bookmark' : 'Add New Bookmark'}</DialogTitle>
-          <DialogDescription>{isEditMode ? 'Changes are saved automatically.' : 'Fill in the information below.'}</DialogDescription>
+        <DialogHeader className="flex flex-row items-center justify-between pr-10">
+          <div>
+            <DialogTitle>{isEditMode ? 'Edit Bookmark' : 'Add New Bookmark'}</DialogTitle>
+            <DialogDescription>
+                {isEditMode ? 'Changes are saved automatically.' : 'Start by entering a URL below.'}
+            </DialogDescription>
+          </div>
+           {saveStatus === 'saving' && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Saving...</div>}
+           {saveStatus === 'saved' && <div className="flex items-center gap-2 text-sm text-green-600"><Check className="h-4 w-4" /> Saved</div>}
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">Title</Label>
-            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="url" className="text-right">URL</Label>
-            <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} className="col-span-3" />
+            <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} className="col-span-3" placeholder="https://example.com" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="title" className="text-right">Title</Label>
+            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" disabled={!isEditMode} />
           </div>
            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Description</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" disabled={!isEditMode} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">Category</Label>
-            <Select onValueChange={(v: BookmarkCategory) => setCategory(v)} value={category}>
+            <Select onValueChange={(v: BookmarkCategory) => setCategory(v)} value={category} disabled={!isEditMode}>
               <SelectTrigger className="col-span-3 capitalize"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {categories.map(cat => (
@@ -191,9 +209,10 @@ export function AddBookmarkDialog({
                     <button
                         key={c}
                         type="button"
-                        className={cn("h-8 w-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110", color === c || (!color && c === '#FFFFFF') ? 'ring-2 ring-offset-2 ring-primary' : '')}
+                        className={cn("h-8 w-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110", color === c || (!color && c === '#FFFFFF') ? 'ring-2 ring-offset-2 ring-primary' : '', !isEditMode && 'cursor-not-allowed opacity-50')}
                         style={{ backgroundColor: c }}
                         onClick={() => setColor(c)}
+                        disabled={!isEditMode}
                     >
                        {(color === c || (!color && c === '#FFFFFF')) && <Check className="h-4 w-4" style={{color: c === '#FFFFFF' ? 'black' : 'white'}} />}
                     </button>
@@ -201,14 +220,6 @@ export function AddBookmarkDialog({
              </div>
           </div>
         </div>
-        {!isEditMode && (
-            <DialogFooter>
-            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-            <Button onClick={handleSaveNew} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save'}
-            </Button>
-            </DialogFooter>
-        )}
       </DialogContent>
     </Dialog>
   );
