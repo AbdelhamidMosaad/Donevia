@@ -46,6 +46,7 @@ const defaultMenuItems = [
     { href: '/dashboard/analytics', icon: <BarChart3 className="text-green-500" />, label: 'Analytics', tooltip: 'Analytics', id: 'analytics' },
     { href: '/dashboard/recap', icon: <Sparkles className="text-yellow-500" />, label: 'Recap', tooltip: 'Recap', id: 'recap' },
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
+    { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
     { href: '/habits', icon: <Repeat className="text-teal-500" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <Target className="text-red-500" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
     { href: '/notes', icon: <FileText className="text-orange-500" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
