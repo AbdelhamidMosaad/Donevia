@@ -39,7 +39,7 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
 
   useEffect(() => {
     setFormData(request);
-  }, [request]);
+  }, [request, isOpen]);
 
    useEffect(() => {
     if (!user) return;
