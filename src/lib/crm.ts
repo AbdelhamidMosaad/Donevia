@@ -15,11 +15,13 @@ import { db } from './firebase';
 import type { Client } from './types';
 
 // --- Client Management ---
-export const addClient = async (userId: string, clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt' | 'customFields'>) => {
+export const addClient = async (userId: string, clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt' | 'customFields' | 'quotations' | 'invoices'>) => {
   const clientsRef = collection(db, 'users', userId, 'clients');
   return await addDoc(clientsRef, {
     ...clientData,
     customFields: [],
+    quotations: [],
+    invoices: [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

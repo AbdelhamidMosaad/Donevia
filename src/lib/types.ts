@@ -277,6 +277,10 @@ export const StudyMaterialRequestSchema = z.object({
     questionTypes: z.array(z.enum(['multiple-choice', 'true-false', 'short-answer'])),
     difficulty: z.enum(['easy', 'medium', 'hard']),
   }).optional(),
+  flashcardsOptions: z.object({
+    numCards: z.number().min(1).max(30),
+    style: z.enum(['basic', 'detailed', 'question']),
+  }).optional(),
   notesOptions: z.object({
     style: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
     complexity: z.enum(['simple', 'medium', 'advanced']),
