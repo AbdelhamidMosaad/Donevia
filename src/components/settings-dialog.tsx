@@ -31,7 +31,6 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
 type Theme = UserSettings['theme'];
 type Font = UserSettings['font'];
-type SidebarTheme = UserSettings['sidebarTheme'];
 
 
 const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg: string; text: string; primary: string; secondary: string } }[] = [
@@ -42,14 +41,6 @@ const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg:
   { name: 'theme-green', label: 'Green', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(145 30% 15%)', text: 'hsl(145 60% 95%)', primary: 'hsl(145 60% 45%)', secondary: 'hsl(145 30% 25%)' } },
   { name: 'theme-sunset', label: 'Sunset', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(20 100% 98%)', text: 'hsl(20 30% 25%)', primary: 'hsl(20 100% 65%)', secondary: 'hsl(20 100% 92%)' } },
   { name: 'theme-mint', label: 'Mint', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(150 25% 15%)', text: 'hsl(150 100% 90%)', primary: 'hsl(150 100% 70%)', secondary: 'hsl(150 25% 25%)' } },
-];
-
-const sidebarThemes: { name: SidebarTheme; label: string; color: string; }[] = [
-    { name: 'default', label: 'Default', color: '#A6D6D6' },
-    { name: 'slate', label: 'Slate', color: '#404E67' },
-    { name: 'indigo', label: 'Indigo', color: '#334D8F' },
-    { name: 'rose', label: 'Rose', color: '#FCE4EC' },
-    { name: 'forest', label: 'Forest', color: '#3B685A' },
 ];
 
 const fonts: { name: Font; label: string; variable: string }[] = [
@@ -72,7 +63,6 @@ const fontVariables: Record<Font, string> = fonts.reduce((acc, font) => {
 
 const defaultSettings: UserSettings = {
     theme: 'light',
-    sidebarTheme: 'default',
     font: 'inter',
     sidebarOpen: true,
     notificationSound: true,
@@ -98,7 +88,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
           const data = settingsSnap.data();
           setSettings({
             theme: data.theme || defaultSettings.theme,
-            sidebarTheme: data.sidebarTheme || defaultSettings.sidebarTheme,
             font: data.font || defaultSettings.font,
             sidebarOpen: data.sidebarOpen !== false,
             notificationSound: data.notificationSound !== false,
@@ -122,12 +111,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
         const themeClassesToRemove = themes.map(t => t.name);
         body.classList.remove(...themeClassesToRemove);
         body.classList.add(newSettings.theme);
-    }
-
-    if (newSettings.sidebarTheme) {
-        const sidebarThemeClassesToRemove = sidebarThemes.map(t => `sidebar-theme-${t.name}`);
-        body.classList.remove(...sidebarThemeClassesToRemove);
-        body.classList.add(`sidebar-theme-${newSettings.sidebarTheme}`);
     }
 
     if (newSettings.font) {
@@ -195,7 +178,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
         await deleteDoc(settingsRef);
         setSettings(defaultSettings);
-        applyStyling({ theme: defaultSettings.theme, font: defaultSettings.font, sidebarTheme: defaultSettings.sidebarTheme });
+        applyStyling({ theme: defaultSettings.theme, font: defaultSettings.font });
         toast({
             title: 'Settings Reset',
             description: 'Your application settings have been restored to their defaults.',
@@ -264,27 +247,6 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                             </div>
                             ))}
                         </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><PanelLeft /> Sidebar Theme</CardTitle>
-                            <CardDescription>Choose a color for the main navigation sidebar.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                {sidebarThemes.map((theme) => (
-                                    <div key={theme.name} onClick={() => savePreferences({ sidebarTheme: theme.name })} className="cursor-pointer group">
-                                        <div className={cn(
-                                            'w-full aspect-square rounded-lg border-2 flex items-center justify-center transition-all',
-                                            settings.sidebarTheme === theme.name ? 'border-primary' : 'border-border/50 hover:border-primary/50'
-                                        )} style={{ backgroundColor: theme.color }}>
-                                          {settings.sidebarTheme === theme.name && <Check className="h-8 w-8 text-white" style={{ mixBlendMode: 'difference' }} />}
-                                        </div>
-                                         <p className="text-center text-sm font-medium mt-2">{theme.label}</p>
-                                    </div>
-                                ))}
-                            </div>
                         </CardContent>
                     </Card>
                     <Card>
