@@ -62,6 +62,12 @@ export function MindMapTool() {
 
   const [history, setHistory] = useState<{ nodes: MindMapNode[]; connections: MindMapConnection[] }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
+
 
   // Firestore Refs
   const getMindMapDocRef = useCallback(() => {
@@ -177,9 +183,9 @@ export function MindMapTool() {
     const target = e.target as HTMLElement;
     const nodeEl = target.closest('.mindmap-node');
     
-    if (currentTool === 'pan') {
-      setIsDragging(true);
-      setDragStart({ x: e.clientX, y: e.clientY });
+    if (currentTool === 'pan' || (e.button === 1 && !nodeEl)) { // Middle mouse button pan
+      setIsPanning(true);
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
       return;
     }
 
@@ -195,32 +201,41 @@ export function MindMapTool() {
         setConnectingNodeId(null);
         return;
       }
-      setDraggingNode(nodeId);
-      setDragStart({ x: e.clientX - nodes.find(n => n.id === nodeId)!.x, y: e.clientY - nodes.find(n => n.id === nodeId)!.y });
+      if(currentTool === 'select') {
+        setDraggingNode(nodeId);
+        setDragStart({ x: e.clientX - nodes.find(n => n.id === nodeId)!.x * scale, y: e.clientY - nodes.find(n => n.id === nodeId)!.y * scale });
+      }
     } else {
       setSelectedNodeId(null);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging && currentTool === 'pan') {
-        const dx = e.clientX - dragStart.x;
-        const dy = e.clientY - dragStart.y;
+    if (isPanning) {
+        const dx = e.clientX - lastMousePos.current.x;
+        const dy = e.clientY - lastMousePos.current.y;
         setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
-        setDragStart({ x: e.clientX, y: e.clientY });
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
         return;
     }
     if (draggingNode) {
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
+      const newX = (e.clientX - dragStart.x) / scale;
+      const newY = (e.clientY - dragStart.y) / scale;
       handleNodeUpdate(draggingNode, { x: newX, y: newY });
     }
   };
 
   const handleMouseUp = () => {
     if (draggingNode) saveToHistory(nodes, connections);
-    setIsDragging(false);
+    setIsPanning(false);
     setDraggingNode(null);
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const zoomSpeed = 0.1;
+    const newScale = e.deltaY > 0 ? scale * (1 - zoomSpeed) : scale * (1 + zoomSpeed);
+    setScale(Math.min(Math.max(newScale, 0.1), 5));
   };
   
   const undo = () => {
@@ -372,7 +387,14 @@ export function MindMapTool() {
             </div>
         </div>
 
-        <Card className="flex-1 relative overflow-hidden canvas-container">
+        <Card 
+          className="flex-1 relative overflow-hidden canvas-container"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+        >
             <div className="absolute top-4 left-4 z-10 bg-card p-2 rounded-lg shadow-md flex gap-1">
                 <Button variant={currentTool === 'select' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('select')}><MousePointer/></Button>
                 <Button variant={currentTool === 'pan' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('pan')}><Move/></Button>
@@ -401,20 +423,18 @@ export function MindMapTool() {
             )}
             
              <div className="absolute bottom-4 right-4 z-10 bg-card p-2 rounded-lg shadow-md flex flex-col gap-1">
-                <Button variant="ghost" size="icon" onClick={() => {}}><Plus/></Button>
-                <Button variant="ghost" size="icon" onClick={() => {}}><Minus/></Button>
+                <Button variant="ghost" size="icon" onClick={() => setScale(s => s * 1.2)}><Plus/></Button>
+                <Button variant="ghost" size="icon" onClick={() => setScale(s => s * 0.8)}><Minus/></Button>
                 <Button variant="ghost" size="icon" onClick={fitToScreen}><Expand/></Button>
             </div>
 
 
             <div 
                 className={cn("w-full h-full bg-muted/50", {
+                  'cursor-crosshair': currentTool === 'node',
                   'cursor-grab': currentTool === 'pan',
-                  'active:cursor-grabbing': currentTool === 'pan' && isDragging,
+                  'active:cursor-grabbing': currentTool === 'pan' && isPanning,
                 })}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
             >
                 <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
                     <svg className="absolute top-0 left-0 w-full h-full" style={{ width: 5000, height: 5000, pointerEvents: 'none'}}>
@@ -440,8 +460,8 @@ export function MindMapTool() {
                             key={node.id}
                             id={`node-${node.id}`}
                             className={cn('mindmap-node absolute p-3 rounded-lg shadow-lg flex flex-col items-center justify-center', 
-                            {'cursor-pointer': currentTool === 'select'},
-                            {'cursor-grab': currentTool === 'pan'},
+                            {'cursor-pointer': currentTool === 'select' || currentTool === 'connect'},
+                            {'cursor-grab': currentTool === 'select' && draggingNode === node.id},
                             selectedNodeId === node.id && 'ring-2 ring-primary')}
                             style={{
                                 left: node.x,
