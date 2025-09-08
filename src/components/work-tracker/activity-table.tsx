@@ -2,29 +2,27 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { WorkActivity } from '@/lib/types';
+import type { WorkActivity, WorkTrackerSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2 } from 'lucide-react';
+import { Trash2, FileDown } from 'lucide-react';
 import moment from 'moment';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import * as XLSX from 'xlsx';
 
 
 interface ActivityTableProps {
     activities: WorkActivity[];
+    settings: WorkTrackerSettings;
 }
 
-const appointmentOptions = ["Meeting", "Client Visit", "Phone Call", "Project Work", "Training", "Presentation", "Site Inspection"];
-const categoryOptions = ["Administration", "Sales", "Marketing", "Development", "Support", "Planning", "Research"];
-const customerOptions = ["ABC Corporation", "XYZ Ltd", "Global Tech", "Innovate Solutions", "Prime Services", "Tech Masters"];
-
-export function ActivityTable({ activities }: ActivityTableProps) {
+export function ActivityTable({ activities, settings }: ActivityTableProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [filterDate, setFilterDate] = useState('');
@@ -60,23 +58,46 @@ export function ActivityTable({ activities }: ActivityTableProps) {
         }
     };
 
+    const handleExport = () => {
+        const dataToExport = filteredActivities.map(a => ({
+            Date: moment(a.date.toDate()).format('YYYY-MM-DD'),
+            Appointment: a.appointment,
+            Category: a.category,
+            Description: a.description,
+            Customer: a.customer,
+            'Invoice #': a.invoiceNumber,
+            Amount: a.amount,
+            'Travel Allowance': a.travelAllowance,
+            'Overtime Hours': a.overtimeHours,
+            'Overtime Days': a.overtimeDays,
+            Notes: a.notes,
+        }));
+        
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'WorkActivities');
+        XLSX.writeFile(workbook, 'Work_Activities.xlsx');
+        toast({ title: 'Exporting data...' });
+    }
+
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 p-4 border rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 p-4 border rounded-lg">
                 <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} placeholder="Filter by date" />
                 <Select value={filterAppointment} onValueChange={setFilterAppointment}>
                     <SelectTrigger><SelectValue placeholder="All Appointments" /></SelectTrigger>
-                    <SelectContent>{appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                    <SelectContent>{settings.appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                 </Select>
                  <Select value={filterCategory} onValueChange={setFilterCategory}>
                     <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
-                    <SelectContent>{categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                    <SelectContent>{settings.categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                 </Select>
                  <Select value={filterCustomer} onValueChange={setFilterCustomer}>
                     <SelectTrigger><SelectValue placeholder="All Customers" /></SelectTrigger>
-                    <SelectContent>{customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                    <SelectContent>{settings.customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                 </Select>
                 <Button onClick={resetFilters} variant="outline">Reset Filters</Button>
+                <Button onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export to Excel</Button>
             </div>
             <div className="border rounded-lg">
                 <Table>

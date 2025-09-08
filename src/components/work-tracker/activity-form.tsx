@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { PlusCircle } from 'lucide-react';
 import moment from 'moment';
+import type { WorkTrackerSettings } from '@/lib/types';
 
 const activitySchema = z.object({
     date: z.string().nonempty('Date is required.'),
@@ -33,11 +34,11 @@ const activitySchema = z.object({
 
 type ActivityFormData = z.infer<typeof activitySchema>;
 
-const appointmentOptions = ["Meeting", "Client Visit", "Phone Call", "Project Work", "Training", "Presentation", "Site Inspection"];
-const categoryOptions = ["Administration", "Sales", "Marketing", "Development", "Support", "Planning", "Research"];
-const customerOptions = ["ABC Corporation", "XYZ Ltd", "Global Tech", "Innovate Solutions", "Prime Services", "Tech Masters"];
+interface ActivityFormProps {
+    settings: WorkTrackerSettings;
+}
 
-export function ActivityForm() {
+export function ActivityForm({ settings }: ActivityFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +102,7 @@ export function ActivityForm() {
                         <label>Appointment</label>
                         <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger><SelectValue placeholder="Select Appointment" /></SelectTrigger>
-                            <SelectContent>{appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                            <SelectContent>{settings.appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                         </Select>
                         {form.formState.errors.appointment && <p className="text-destructive text-xs">{form.formState.errors.appointment.message}</p>}
                     </div>
@@ -115,7 +116,7 @@ export function ActivityForm() {
                         <label>Category</label>
                         <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
-                            <SelectContent>{categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                            <SelectContent>{settings.categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                         </Select>
                         {form.formState.errors.category && <p className="text-destructive text-xs">{form.formState.errors.category.message}</p>}
                     </div>
@@ -129,7 +130,7 @@ export function ActivityForm() {
                         <label>Customer</label>
                         <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
-                            <SelectContent>{customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                            <SelectContent>{settings.customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                         </Select>
                         {form.formState.errors.customer && <p className="text-destructive text-xs">{form.formState.errors.customer.message}</p>}
                     </div>

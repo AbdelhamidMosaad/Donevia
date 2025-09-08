@@ -90,7 +90,8 @@ export interface UserSettings {
     sidebarOrder?: string[];
     bookmarkSettings?: {
         categories: string[];
-    }
+    };
+    workTrackerSettings?: WorkTrackerSettings;
 }
 
 /** Docs */
@@ -176,6 +177,12 @@ export type WorkActivity = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
 };
+
+export type WorkTrackerSettings = {
+    appointmentOptions: string[];
+    categoryOptions: string[];
+    customerOptions: string[];
+}
 
 
 /** Habits */

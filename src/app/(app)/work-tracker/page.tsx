@@ -4,16 +4,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { WorkActivity } from '@/lib/types';
+import type { WorkActivity, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Briefcase, List, Calendar } from 'lucide-react';
+import { Briefcase, List, Calendar, Settings } from 'lucide-react';
 import { ActivityForm } from '@/components/work-tracker/activity-form';
 import { ActivityTable } from '@/components/work-tracker/activity-table';
 import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card } from '@/components/ui/card';
+import { WorkTrackerSettings } from '@/components/work-tracker/tracker-settings';
 
 type View = 'table' | 'calendar';
 
@@ -22,6 +23,11 @@ export default function WorkTrackerPage() {
   const router = useRouter();
   const [activities, setActivities] = useState<WorkActivity[]>([]);
   const [view, setView] = useState<View>('table');
+  const [settings, setSettings] = useState<WorkTrackerSettingsType>({
+    appointmentOptions: [],
+    categoryOptions: [],
+    customerOptions: [],
+  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -32,11 +38,22 @@ export default function WorkTrackerPage() {
   useEffect(() => {
     if (user) {
       const q = query(collection(db, 'users', user.uid, 'workActivities'), orderBy('date', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribeActivities = onSnapshot(q, (snapshot) => {
         const activitiesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkActivity));
         setActivities(activitiesData);
       });
-      return () => unsubscribe();
+
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'workTrackerSettings');
+      const unsubscribeSettings = onSnapshot(settingsRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setSettings(docSnap.data() as WorkTrackerSettingsType);
+        }
+      });
+      
+      return () => {
+        unsubscribeActivities();
+        unsubscribeSettings();
+      };
     }
   }, [user]);
 
@@ -55,6 +72,7 @@ export default function WorkTrackerPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
+            <WorkTrackerSettings settings={settings} />
             <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
               <ToggleGroupItem value="table" aria-label="Table view">
                 <List className="h-4 w-4" />
@@ -67,11 +85,11 @@ export default function WorkTrackerPage() {
       </div>
 
       <Card>
-        <ActivityForm />
+        <ActivityForm settings={settings} />
       </Card>
 
       <div className="flex-1">
-        {view === 'table' ? <ActivityTable activities={activities} /> : <ActivityCalendar activities={activities} />}
+        {view === 'table' ? <ActivityTable activities={activities} settings={settings} /> : <ActivityCalendar activities={activities} />}
       </div>
     </div>
   );
