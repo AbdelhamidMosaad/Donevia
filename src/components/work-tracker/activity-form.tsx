@@ -106,7 +106,14 @@ export function ActivityForm({ settings, onAddNewItem }: ActivityFormProps) {
                         <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger><SelectValue placeholder="Select Appointment" /></SelectTrigger>
                             <SelectContent>
-                                {settings.appointmentOptions?.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                {settings.appointmentOptions?.map(o => (
+                                    <SelectItem key={o.id} value={o.value}>
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: o.color }} />
+                                            {o.value}
+                                        </div>
+                                    </SelectItem>
+                                ))}
                                 <Separator />
                                 <AddSettingItem type="appointmentOptions" onAdd={onAddNewItem} />
                             </SelectContent>
@@ -124,7 +131,14 @@ export function ActivityForm({ settings, onAddNewItem }: ActivityFormProps) {
                         <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                             <SelectContent>
-                                {settings.categoryOptions?.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                {settings.categoryOptions?.map(o => (
+                                    <SelectItem key={o.id} value={o.value}>
+                                       <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: o.color }} />
+                                            {o.value}
+                                        </div>
+                                    </SelectItem>
+                                ))}
                                 <Separator />
                                 <AddSettingItem type="categoryOptions" onAdd={onAddNewItem} />
                             </SelectContent>
@@ -142,7 +156,14 @@ export function ActivityForm({ settings, onAddNewItem }: ActivityFormProps) {
                         <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
                             <SelectContent>
-                                {settings.customerOptions?.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                {settings.customerOptions?.map(o => (
+                                    <SelectItem key={o.id} value={o.value}>
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: o.color }} />
+                                            {o.value}
+                                        </div>
+                                    </SelectItem>
+                                ))}
                                 <Separator />
                                 <AddSettingItem type="customerOptions" onAdd={onAddNewItem} />
                             </SelectContent>

@@ -178,10 +178,16 @@ export type WorkActivity = {
     updatedAt: Timestamp;
 };
 
+export type WorkTrackerSettingItem = {
+    id: string;
+    value: string;
+    color: string;
+};
+
 export type WorkTrackerSettings = {
-    appointmentOptions: string[];
-    categoryOptions: string[];
-    customerOptions: string[];
+    appointmentOptions: WorkTrackerSettingItem[];
+    categoryOptions: WorkTrackerSettingItem[];
+    customerOptions: WorkTrackerSettingItem[];
 }
 
 

@@ -18,9 +18,12 @@ import { Settings, PlusCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
+import type { WorkTrackerSettingItem, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
+import { v4 as uuidv4 } from 'uuid';
+
+const colorPalette = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FED766", "#2AB7CA", "#F0CF65", "#9B59B6", "#3498DB", "#1ABC9C", "#E74C3C"];
 
 interface WorkTrackerSettingsProps {
   settings: WorkTrackerSettingsType;
@@ -32,9 +35,9 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState(initialSettings);
   const [newValues, setNewValues] = useState({
-    appointment: '',
-    category: '',
-    customer: '',
+    appointmentOptions: '',
+    categoryOptions: '',
+    customerOptions: '',
   });
 
   useEffect(() => {
@@ -42,31 +45,45 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
   }, [initialSettings, isOpen]);
 
   const handleAddItem = (type: 'appointmentOptions' | 'categoryOptions' | 'customerOptions') => {
-    const key = type.replace('Options', '') as keyof typeof newValues;
+    const key = type as keyof typeof newValues;
     const value = newValues[key].trim();
     if (!value) return;
     
-    if(settings[type]?.includes(value)) {
+    if(settings[type]?.some(item => item.value === value)) {
         toast({ variant: 'destructive', title: "Item already exists" });
         return;
     }
 
+    const newItem: WorkTrackerSettingItem = {
+      id: uuidv4(),
+      value,
+      color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+    };
+
     const updatedSettings = {
         ...settings,
-        [type]: [...(settings[type] || []), value]
+        [type]: [...(settings[type] || []), newItem]
     };
     setSettings(updatedSettings);
     setNewValues(prev => ({...prev, [key]: ''}));
   };
   
-  const handleDeleteItem = (type: 'appointmentOptions' | 'categoryOptions' | 'customerOptions', itemToDelete: string) => {
+  const handleDeleteItem = (type: 'appointmentOptions' | 'categoryOptions' | 'customerOptions', itemToDeleteId: string) => {
     const updatedSettings = {
         ...settings,
-        [type]: settings[type]?.filter(item => item !== itemToDelete)
+        [type]: settings[type]?.filter(item => item.id !== itemToDeleteId)
     };
     setSettings(updatedSettings);
   };
   
+  const handleColorChange = (type: 'appointmentOptions' | 'categoryOptions' | 'customerOptions', itemId: string, newColor: string) => {
+    const updatedSettings = {
+        ...settings,
+        [type]: settings[type]?.map(item => item.id === itemId ? { ...item, color: newColor } : item)
+    };
+    setSettings(updatedSettings);
+  };
+
   const handleSave = async () => {
     if(!user) return;
     try {
@@ -83,16 +100,24 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
       type: 'appointmentOptions' | 'categoryOptions' | 'customerOptions',
       label: string
     ) => {
-        const key = type.replace('Options', '') as keyof typeof newValues;
+        const key = type as keyof typeof newValues;
         return (
             <div className="space-y-2">
                 <Label>{label}</Label>
                  <ScrollArea className="h-40 border rounded-md p-2">
                     <div className="space-y-1">
                         {settings[type]?.map((item) => (
-                            <div key={item} className="flex items-center justify-between text-sm p-1 rounded-md hover:bg-muted">
-                                <span>{item}</span>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteItem(type, item)}>
+                            <div key={item.id} className="flex items-center justify-between text-sm p-1 rounded-md hover:bg-muted">
+                                <div className="flex items-center gap-2">
+                                    <input 
+                                        type="color" 
+                                        value={item.color} 
+                                        onChange={(e) => handleColorChange(type, item.id, e.target.value)} 
+                                        className="w-6 h-6 p-0 border-none bg-transparent cursor-pointer"
+                                    />
+                                    <span>{item.value}</span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteItem(type, item.id)}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                             </div>

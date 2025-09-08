@@ -112,6 +112,12 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
         const years = new Set(activities.map(a => moment(a.date.toDate()).year()));
         return Array.from(years).sort((a,b) => b-a).map(String);
     }, [activities]);
+    
+    const settingsMap = useMemo(() => ({
+        appointmentOptions: new Map(settings.appointmentOptions?.map(o => [o.value, o.color])),
+        categoryOptions: new Map(settings.categoryOptions?.map(o => [o.value, o.color])),
+        customerOptions: new Map(settings.customerOptions?.map(o => [o.value, o.color])),
+    }), [settings]);
 
     return (
         <div className="space-y-4">
@@ -176,7 +182,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                             <SelectTrigger><SelectValue placeholder="All Appointments" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Appointments</SelectItem>
-                                {settings.appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                {settings.appointmentOptions?.map(o => <SelectItem key={o.id} value={o.value}>{o.value}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -186,7 +192,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                             <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
-                                {settings.categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                {settings.categoryOptions?.map(o => <SelectItem key={o.id} value={o.value}>{o.value}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -196,7 +202,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                             <SelectTrigger><SelectValue placeholder="All Customers" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Customers</SelectItem>
-                                {settings.customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                {settings.customerOptions?.map(o => <SelectItem key={o.id} value={o.value}>{o.value}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -230,10 +236,25 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                             filteredActivities.map(activity => (
                                 <TableRow key={activity.id}>
                                     <TableCell>{moment(activity.date.toDate()).format('YYYY-MM-DD')}</TableCell>
-                                    <TableCell>{activity.appointment}</TableCell>
-                                    <TableCell>{activity.category}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: settingsMap.appointmentOptions.get(activity.appointment) }} />
+                                            {activity.appointment}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: settingsMap.categoryOptions.get(activity.category) }} />
+                                            {activity.category}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>{activity.description}</TableCell>
-                                    <TableCell>{activity.customer}</TableCell>
+                                    <TableCell>
+                                         <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: settingsMap.customerOptions.get(activity.customer) }} />
+                                            {activity.customer}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>{activity.invoiceNumber || '-'}</TableCell>
                                     <TableCell>{activity.amount?.toFixed(2) || '-'}</TableCell>
                                     <TableCell>{activity.travelAllowance?.toFixed(2) || '-'}</TableCell>

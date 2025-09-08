@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { WorkActivity, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
+import type { WorkActivity, WorkTrackerSettingItem, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Briefcase, List, Calendar, Settings } from 'lucide-react';
 import { ActivityForm } from '@/components/work-tracker/activity-form';
@@ -16,9 +16,10 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card } from '@/components/ui/card';
 import { WorkTrackerSettings } from '@/components/work-tracker/tracker-settings';
 import { useToast } from '@/hooks/use-toast';
-
+import { v4 as uuidv4 } from 'uuid';
 
 type View = 'table' | 'calendar';
+const colorPalette = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FED766", "#2AB7CA", "#F0CF65", "#9B59B6", "#3498DB", "#1ABC9C", "#E74C3C"];
 
 export default function WorkTrackerPage() {
   const { user, loading } = useAuth();
@@ -66,14 +67,20 @@ export default function WorkTrackerPage() {
   ) => {
     if (!user || !value) return;
 
-    if (settings[type]?.includes(value)) {
+    if (settings[type]?.some(item => item.value === value)) {
       toast({ variant: 'destructive', title: 'Item already exists' });
       return;
     }
 
+    const newItem: WorkTrackerSettingItem = {
+      id: uuidv4(),
+      value,
+      color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+    };
+
     const updatedSettings = {
       ...settings,
-      [type]: [...(settings[type] || []), value],
+      [type]: [...(settings[type] || []), newItem],
     };
 
     const settingsRef = doc(db, 'users', user.uid, 'profile', 'workTrackerSettings');
