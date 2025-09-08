@@ -19,6 +19,7 @@ import {
   Underline,
   GitBranch,
   Save,
+  Expand,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -185,9 +186,6 @@ export function MindMapTool() {
       }
       setDraggingNode(nodeId);
       setDragStart({ x: e.clientX - nodes.find(n => n.id === nodeId)!.x, y: e.clientY - nodes.find(n => n.id === nodeId)!.y });
-    } else {
-      setIsDragging(true);
-      setDragStart({ x: e.clientX, y: e.clientY });
     }
   };
 
@@ -196,8 +194,6 @@ export function MindMapTool() {
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
       handleNodeUpdate(draggingNode, { x: newX, y: newY });
-    } else if (isDragging) {
-      // Panning logic would go here
     }
   };
 
@@ -235,11 +231,19 @@ export function MindMapTool() {
     }
   }, 1000);
 
+  const fitToScreen = () => {
+    if (!nodes.length) return;
+    // Fit to screen logic would be implemented here
+    toast({ title: "Fit to screen coming soon!" });
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        // Don't interfere with text input
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        const activeElement = document.activeElement;
+        const isEditingText = activeElement instanceof HTMLInputElement && activeElement.type === 'text' || activeElement instanceof HTMLTextAreaElement;
+
+        if (isEditingText) {
             return;
         }
 
@@ -263,15 +267,15 @@ export function MindMapTool() {
         const currentNode = nodes.find(n => n.id === selectedNodeId);
         if (!currentNode) return;
     
-        const children = connections.filter(c => c.from === currentNode.id).map(c => nodes.find(n => n.id === c.to));
+        const children = connections.filter(c => c.from === currentNode.id).map(c => nodes.find(n => n.id === c.to)).filter(Boolean) as MindMapNode[];
         const parentConnection = connections.find(c => c.to === currentNode.id);
         const parent = parentConnection ? nodes.find(n => n.id === parentConnection.from) : null;
-        const siblings = parent ? connections.filter(c => c.from === parent.id).map(c => nodes.find(n => n.id === c.to)) : [];
+        const siblings = parent ? (connections.filter(c => c.from === parent.id).map(c => nodes.find(n => n.id === c.to)).filter(Boolean) as MindMapNode[]) : [];
         const currentIndex = siblings.findIndex(s => s?.id === currentNode.id);
 
         switch (key) {
             case 'ArrowDown':
-                if (currentIndex < siblings.length - 1) {
+                if (currentIndex !== -1 && currentIndex < siblings.length - 1) {
                     setSelectedNodeId(siblings[currentIndex + 1]!.id);
                 } else if (children.length > 0) {
                      setSelectedNodeId(children[0]!.id);
@@ -350,6 +354,13 @@ export function MindMapTool() {
                     </Popover>
                  </div>
             )}
+            
+             <div className="absolute bottom-4 right-4 z-10 bg-card p-2 rounded-lg shadow-md flex flex-col gap-1">
+                <Button variant="ghost" size="icon" onClick={() => {}}><Plus/></Button>
+                <Button variant="ghost" size="icon" onClick={() => {}}><Minus/></Button>
+                <Button variant="ghost" size="icon" onClick={fitToScreen}><Expand/></Button>
+            </div>
+
 
             <div 
                 className="w-full h-full cursor-grab active:cursor-grabbing bg-muted/50"
@@ -363,10 +374,11 @@ export function MindMapTool() {
                             const from = nodes.find(n => n.id === conn.from);
                             const to = nodes.find(n => n.id === conn.to);
                             if (!from || !to) return null;
+                            const path = `M ${from.x} ${from.y} C ${from.x + 100} ${from.y}, ${to.x - 100} ${to.y}, ${to.x} ${to.y}`;
                             return (
                                 <path
                                     key={`${from.id}-${to.id}`}
-                                    d={`M ${from.x} ${from.y} C ${from.x + 100} ${from.y}, ${to.x - 100} ${to.y}, ${to.x} ${to.y}`}
+                                    d={path}
                                     stroke="#9ca3af"
                                     strokeWidth="2"
                                     fill="none"
