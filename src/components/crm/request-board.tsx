@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { ClientRequest, Client, PipelineStage } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { collection, onSnapshot, query, doc, updateDoc, writeBatch, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc, writeBatch, getDocs, addDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ import { PlusCircle, Settings } from 'lucide-react';
 import { RequestDialog } from './request-dialog';
 import { PipelineSettings } from './pipeline-settings';
 import { v4 as uuidv4 } from 'uuid';
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 
 const defaultStages: PipelineStage[] = [
     { id: 'new', name: 'New', order: 0 },
@@ -39,7 +40,7 @@ export function RequestBoard() {
         if (docSnap.exists()) {
             const settings = docSnap.data();
             if (settings.crmSettings?.pipelineStages) {
-                setStages(settings.crmSettings.pipelineStages.sort((a,b) => a.order - b.order));
+                setStages(settings.crmSettings.pipelineStages.sort((a:PipelineStage,b:PipelineStage) => a.order - b.order));
             } else {
                  await updateDoc(settingsRef, { 'crmSettings.pipelineStages': defaultStages });
                  setStages(defaultStages);
@@ -120,42 +121,47 @@ export function RequestBoard() {
   };
 
   return (
-    <>
+    <div className="h-full flex flex-col">
       <div className="flex justify-end mb-4 gap-2">
         <PipelineSettings currentStages={stages} />
         <Button onClick={handleAddNewRequest}>
           <PlusCircle className="mr-2 h-4 w-4" /> New Deal
         </Button>
       </div>
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-start">
-          {stages.map(stage => (
-            <div key={stage.id} className="flex flex-col">
-              <h2 className="text-lg font-semibold font-headline p-3 capitalize">{stage.name}</h2>
-              <Droppable droppableId={stage.id}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`flex flex-col gap-4 bg-muted/50 rounded-lg p-4 min-h-[300px] transition-colors ${snapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
-                  >
-                    {requestsByStage[stage.id]?.map((req, index) => (
-                      <Draggable key={req.id} draggableId={req.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                            <RequestCard request={req} clients={clients} />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
+      <ScrollArea className="flex-1">
+        <div className="flex pb-4">
+        <DragDropContext onDragEnd={onDragEnd}>
+            <div className="flex gap-6 items-start">
+            {stages.map(stage => (
+                <div key={stage.id} className="flex flex-col w-72">
+                <h2 className="text-lg font-semibold font-headline p-3 capitalize">{stage.name}</h2>
+                <Droppable droppableId={stage.id}>
+                    {(provided, snapshot) => (
+                    <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`flex flex-col gap-4 bg-muted/50 rounded-lg p-4 min-h-[300px] transition-colors ${snapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
+                    >
+                        {requestsByStage[stage.id]?.map((req, index) => (
+                        <Draggable key={req.id} draggableId={req.id} index={index}>
+                            {(provided, snapshot) => (
+                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                <RequestCard request={req} clients={clients} />
+                            </div>
+                            )}
+                        </Draggable>
+                        ))}
+                        {provided.placeholder}
+                    </div>
+                    )}
+                </Droppable>
+                </div>
+            ))}
             </div>
-          ))}
+        </DragDropContext>
         </div>
-      </DragDropContext>
-    </>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
   );
 }

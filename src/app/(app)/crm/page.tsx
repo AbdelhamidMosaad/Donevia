@@ -92,7 +92,7 @@ export default function CrmPage() {
             <TabsContent value="contacts" className="flex-1 mt-4">
                 <ClientList clients={clients} />
             </TabsContent>
-            <TabsContent value="pipeline" className="flex-1 mt-4 overflow-y-auto">
+            <TabsContent value="pipeline" className="flex-1 mt-4 overflow-hidden">
                  <RequestBoard />
             </TabsContent>
             <TabsContent value="invoices" className="flex-1 mt-4">
