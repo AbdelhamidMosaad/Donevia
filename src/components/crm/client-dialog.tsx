@@ -49,8 +49,8 @@ export function ClientDialog({
   const debouncedSave = useDebouncedCallback(async (clientData) => {
     if (!user) return;
     
-    if (!clientData.name || !clientData.company) {
-        // Don't save if required fields are missing, but don't show toast on auto-save
+    if (!clientData.company) {
+        // Don't save if required field is missing, but don't show toast on auto-save
         return;
     }
 
@@ -104,8 +104,8 @@ export function ClientDialog({
       toast({ variant: 'destructive', title: 'You must be logged in.' });
       return;
     }
-    if (!name || !company) {
-        toast({ variant: 'destructive', title: 'Contact Person and Company are required.' });
+    if (!company) {
+        toast({ variant: 'destructive', title: 'Company name is required.' });
         return;
     }
 
@@ -115,10 +115,10 @@ export function ClientDialog({
     try {
       if (isEditMode && client) {
         await updateClient(user.uid, client.id, clientData);
-        toast({ title: 'Client Updated', description: `"${name}" has been updated.` });
+        toast({ title: 'Client Updated', description: `"${name || company}" has been updated.` });
       } else {
         await addClient(user.uid, clientData);
-        toast({ title: 'Client Added', description: `"${name}" has been added successfully.` });
+        toast({ title: 'Client Added', description: `"${name || company}" has been added successfully.` });
       }
       onOpenChange?.(false);
     } catch (e) {
@@ -140,13 +140,13 @@ export function ClientDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="company" className="text-right">Company</Label>
+            <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} className="col-span-3" />
+          </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">Contact Person</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="company" className="text-right">Company</Label>
-            <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="email" className="text-right">Email</Label>
