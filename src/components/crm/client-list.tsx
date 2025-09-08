@@ -66,10 +66,10 @@ export function ClientList({ clients }: ClientListProps) {
   const handleExport = () => {
     const dataToExport = filteredClients.map(c => ({
         Company: c.company,
-        Name: c.name,
+        'Contact Person': c.name,
         Email: c.email,
         Phone: c.phone,
-        Created: c.createdAt.toDate().toLocaleDateString()
+        Created: c.createdAt ? c.createdAt.toDate().toLocaleDateString() : 'N/A'
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
