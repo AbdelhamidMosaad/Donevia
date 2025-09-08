@@ -209,6 +209,8 @@ export type Whiteboard = {
   ownerId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  backgroundColor?: string;
+  backgroundGrid?: 'dotted' | 'lined' | 'plain';
 };
 
 /** Pomodoro */

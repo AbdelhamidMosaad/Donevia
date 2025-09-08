@@ -24,6 +24,11 @@ import {
   StickyNote,
   PenSquare,
   Save,
+  Settings,
+  Palette,
+  Grid3x3,
+  List,
+  Baseline,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
@@ -33,6 +38,10 @@ import { cn } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
 import type { Whiteboard } from '@/lib/types';
 import { Input } from '../ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Label } from '../ui/label';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { useDebouncedCallback } from 'use-debounce';
 
 type Tool = 'pen' | 'eraser' | 'text' | 'select' | 'shape';
 type Shape =
@@ -43,6 +52,10 @@ type Shape =
   | 'triangle'
   | 'star'
   | 'heart';
+
+const backgroundColors = [
+    '#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'
+];
 
 export function DigitalWhiteboard() {
   const { user } = useAuth();
@@ -127,7 +140,7 @@ export function DigitalWhiteboard() {
       });
       return () => unsub();
     }
-  }, [user, whiteboardId]);
+  }, [user, whiteboardId, getWhiteboardDocRef, router, toast]);
 
   // Save state
   const saveState = useCallback(async () => {
@@ -174,7 +187,7 @@ export function DigitalWhiteboard() {
     );
 
     return () => unsubscribe();
-  }, [user, ctx, whiteboardId]);
+  }, [user, ctx, whiteboardId, getDocRef, saveState, toast]);
 
   // --- Drawing Logic ---
   const getCoords = (e: MouseEvent | React.MouseEvent) => {
@@ -197,7 +210,8 @@ export function DigitalWhiteboard() {
   const draw = (e: React.MouseEvent) => {
     if (!isDrawing || !ctx) return;
     const { x, y } = getCoords(e);
-    ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : currentColor;
+    const bgColor = whiteboard?.backgroundColor || '#FFFFFF';
+    ctx.strokeStyle = currentTool === 'eraser' ? bgColor : currentColor;
     ctx.lineWidth = brushSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -256,13 +270,20 @@ export function DigitalWhiteboard() {
     }
   };
 
-  const handleNameChange = async () => {
+  const handleNameChange = useDebouncedCallback(async (newName: string) => {
     const boardRef = getWhiteboardDocRef();
-    if (boardRef && whiteboard && boardName.trim() !== whiteboard.name) {
-      await updateDoc(boardRef, { name: boardName.trim(), updatedAt: new Date() });
+    if (boardRef && whiteboard && newName.trim() !== whiteboard.name) {
+      await updateDoc(boardRef, { name: newName.trim(), updatedAt: new Date() });
       toast({ title: "Whiteboard renamed!" });
     }
-  };
+  }, 1000);
+  
+  const handleSettingChange = async (setting: Partial<Whiteboard>) => {
+      const boardRef = getWhiteboardDocRef();
+      if(boardRef && whiteboard) {
+          await updateDoc(boardRef, setting);
+      }
+  }
 
 
   // --- Tools ---
@@ -338,12 +359,54 @@ export function DigitalWhiteboard() {
             <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><PenSquare className="h-4 w-4" /></Button>
             <Input 
                 value={boardName}
-                onChange={(e) => setBoardName(e.target.value)}
-                onBlur={handleNameChange}
+                onChange={(e) => {
+                    setBoardName(e.target.value);
+                    handleNameChange(e.target.value);
+                }}
                 className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
          </div>
-         <Button onClick={saveState}><Save className="mr-2 h-4 w-4" /> Save</Button>
+         <div className="flex items-center gap-2">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon"><Settings className="h-4 w-4" /></Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Settings</h4>
+                            <p className="text-sm text-muted-foreground">Customize your whiteboard.</p>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Background Color</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {backgroundColors.map(color => (
+                                    <button 
+                                        key={color} 
+                                        onClick={() => handleSettingChange({ backgroundColor: color })}
+                                        className={cn("w-8 h-8 rounded-full border", whiteboard.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
+                                        style={{ backgroundColor: color }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                             <Label>Background Style</Label>
+                             <ToggleGroup
+                                type="single"
+                                value={whiteboard.backgroundGrid || 'dotted'}
+                                onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}
+                            >
+                                <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
+                                <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
+                                <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
+                            </ToggleGroup>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+            <Button onClick={saveState}><Save className="mr-2 h-4 w-4" /> Save</Button>
+         </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
@@ -398,10 +461,14 @@ export function DigitalWhiteboard() {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 border rounded-lg bg-card overflow-hidden relative">
+        <div className="flex-1 border rounded-lg overflow-hidden relative" style={{ backgroundColor: whiteboard.backgroundColor || '#FFFFFF' }}>
           <canvas
             ref={canvasRef}
-            className={cn('absolute inset-0 whiteboard-bg', {
+            className={cn('absolute inset-0',
+             {
+                'whiteboard-bg-dotted': whiteboard.backgroundGrid === 'dotted' || !whiteboard.backgroundGrid,
+                'whiteboard-bg-lined': whiteboard.backgroundGrid === 'lined',
+                'whiteboard-bg-plain': whiteboard.backgroundGrid === 'plain',
                 'cursor-crosshair': currentTool === 'pen',
                 'cursor-text': currentTool === 'text',
             })}

@@ -345,10 +345,16 @@ body {
 }
 
 /* Whiteboard Styles */
-.whiteboard-bg {
-    background-color: hsl(var(--card));
+.whiteboard-bg-dotted {
     background-image:
         linear-gradient(hsla(var(--border)) 1px, transparent 1px),
         linear-gradient(90deg, hsla(var(--border)) 1px, transparent 1px);
     background-size: 20px 20px;
+}
+.whiteboard-bg-lined {
+    background-image: linear-gradient(hsla(var(--border)) 1px, transparent 1px);
+    background-size: 100% 24px; /* Adjust line spacing */
+}
+.whiteboard-bg-plain {
+    background-image: none;
 }
