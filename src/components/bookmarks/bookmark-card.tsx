@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Bookmark } from '@/lib/types';
@@ -23,7 +24,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
 
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
-        <a href={bookmark.url} target="_blank" rel="noopener noreferrer" className="flex flex-col flex-1">
+        <Link href={bookmark.url} target="_blank" rel="noopener noreferrer" className="flex flex-col flex-1">
             <CardHeader className="flex-row items-start justify-between pb-2">
                 <div>
                 <CardTitle className="font-headline text-lg group-hover:underline leading-tight line-clamp-2">{bookmark.title}</CardTitle>
@@ -62,11 +63,9 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
             </CardContent>
             <div className="p-6 pt-0 flex justify-between items-center">
                  <Badge variant="secondary" className="capitalize">{bookmark.category}</Badge>
-                 <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={handleActionClick}>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
-                 </a>
+                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
             </div>
-        </a>
+        </Link>
     </Card>
   );
 }
