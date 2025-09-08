@@ -20,6 +20,7 @@ import {
   GitBranch,
   Save,
   Expand,
+  Minus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
