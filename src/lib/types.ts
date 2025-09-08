@@ -94,6 +94,19 @@ export interface UserSettings {
     workTrackerSettings?: WorkTrackerSettings;
 }
 
+/** Brainstorming */
+export type BrainstormingIdea = {
+    id: string;
+    content: string;
+    color: string;
+    priority: 'High' | 'Medium' | 'Low';
+    tags?: string[];
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    order: number;
+}
+
+
 /** Docs */
 export type Doc = {
     id: string;
