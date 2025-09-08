@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,14 +25,14 @@ interface AddBookmarkDialogProps {
   bookmark?: Bookmark | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  categories: string[];
 }
-
-const CATEGORIES: BookmarkCategory[] = ['work', 'personal', 'education', 'entertainment', 'shopping', 'other'];
 
 export function AddBookmarkDialog({
   bookmark,
   open,
   onOpenChange,
+  categories,
 }: AddBookmarkDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -48,7 +49,7 @@ export function AddBookmarkDialog({
     setTitle('');
     setUrl('');
     setDescription('');
-    setCategory('work');
+    setCategory(categories[0] as BookmarkCategory || 'other');
   };
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export function AddBookmarkDialog({
       }
       setIsSaving(false);
     }
-  }, [open, bookmark, isEditMode]);
+  }, [open, bookmark, isEditMode, categories]);
   
   const formatUrl = (inputUrl: string) => {
     if (!inputUrl.startsWith('http://') && !inputUrl.startsWith('https://')) {
@@ -132,7 +133,7 @@ export function AddBookmarkDialog({
             <Select onValueChange={(v: BookmarkCategory) => setCategory(v)} value={category}>
               <SelectTrigger className="col-span-3 capitalize"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CATEGORIES.filter(c => c !== 'all').map(cat => (
+                {categories.map(cat => (
                     <SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>
                 ))}
               </SelectContent>

@@ -59,7 +59,7 @@ export type StickyNote = {
 };
 
 /** Bookmarks */
-export type BookmarkCategory = 'work' | 'personal' | 'education' | 'entertainment' | 'shopping' | 'other';
+export type BookmarkCategory = 'work' | 'personal' | 'education' | 'entertainment' | 'shopping' | 'other' | string;
 export type Bookmark = {
     id: string;
     title: string;
@@ -88,6 +88,9 @@ export interface UserSettings {
     docsView?: 'card' | 'list';
     lectureNotesView?: 'card' | 'list';
     sidebarOrder?: string[];
+    bookmarkSettings?: {
+        categories: string[];
+    }
 }
 
 /** Docs */

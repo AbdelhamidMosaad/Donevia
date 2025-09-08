@@ -1,12 +1,13 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Bookmark as BookmarkIcon, Search } from 'lucide-react';
+import { PlusCircle, Bookmark as BookmarkIcon, Search, FolderPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Bookmark } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { deleteBookmark } from '@/lib/bookmarks';
@@ -14,8 +15,20 @@ import { AddBookmarkDialog } from '@/components/bookmarks/add-bookmark-dialog';
 import { BookmarkCard } from '@/components/bookmarks/bookmark-card';
 import { Input } from '@/components/ui/input';
 import { useDebouncedCallback } from 'use-debounce';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Label } from '@/components/ui/label';
 
-const CATEGORIES = ['all', 'work', 'personal', 'education', 'entertainment', 'shopping', 'other'];
+const DEFAULT_CATEGORIES = ['work', 'personal', 'education', 'entertainment', 'shopping', 'other'];
 
 export default function BookmarksPage() {
   const { user, loading } = useAuth();
@@ -25,9 +38,10 @@ export default function BookmarksPage() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
-  
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState('');
 
   const debouncedSearch = useDebouncedCallback((value) => {
     setSearchQuery(value);
@@ -46,9 +60,40 @@ export default function BookmarksPage() {
         const bookmarksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bookmark));
         setBookmarks(bookmarksData);
       });
-      return () => unsubscribe();
+
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'bookmarkSettings');
+      const unsubscribeSettings = onSnapshot(settingsRef, (docSnap) => {
+          if (docSnap.exists()) {
+              setCustomCategories(docSnap.data().categories || []);
+          }
+      });
+      
+      return () => {
+          unsubscribe();
+          unsubscribeSettings();
+      }
     }
   }, [user]);
+
+  const handleAddNewCategory = async () => {
+    if (!user || !newCategory.trim()) return;
+    const lowerCaseCategory = newCategory.trim().toLowerCase();
+    
+    if (allCategories.includes(lowerCaseCategory)) {
+        toast({ variant: 'destructive', title: 'Category already exists' });
+        return;
+    }
+
+    const newCategories = [...customCategories, lowerCaseCategory];
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'bookmarkSettings');
+    try {
+        await setDoc(settingsRef, { categories: newCategories }, { merge: true });
+        toast({ title: 'Category Added', description: `"${newCategory}" has been added.`});
+        setNewCategory('');
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error adding category' });
+    }
+  }
 
   const handleDeleteBookmark = async (bookmarkId: string) => {
     if (!user) return;
@@ -71,9 +116,14 @@ export default function BookmarksPage() {
     setIsAddDialogOpen(true);
   }
 
+  const allCategories = useMemo(() => {
+    const combined = [...DEFAULT_CATEGORIES, ...customCategories];
+    return ['all', ...Array.from(new Set(combined))];
+  }, [customCategories]);
+
   const filteredBookmarks = useMemo(() => {
     return bookmarks.filter(bookmark => {
-      const categoryMatch = activeCategory === 'all' || bookmark.category === activeCategory;
+      const categoryMatch = activeCategory === 'all' || bookmark.category.toLowerCase() === activeCategory;
       const searchMatch = searchQuery.trim() === '' ||
         bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         bookmark.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -109,8 +159,8 @@ export default function BookmarksPage() {
             onChange={(e) => debouncedSearch(e.target.value)}
           />
         </div>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(category => (
+        <div className="flex flex-wrap items-center gap-2">
+          {allCategories.map(category => (
             <Button
               key={category}
               variant={activeCategory === category ? 'default' : 'outline'}
@@ -120,6 +170,32 @@ export default function BookmarksPage() {
               {category}
             </Button>
           ))}
+           <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                        <FolderPlus className="mr-2 h-4 w-4" /> New Category
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Add New Category</AlertDialogTitle>
+                        <AlertDialogDescription>Enter a name for your new bookmark category.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="new-category-name" className="sr-only">Category Name</Label>
+                        <Input
+                            id="new-category-name"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="e.g. Design Inspiration"
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setNewCategory('')}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleAddNewCategory} disabled={!newCategory.trim()}>Add</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
       </div>
 
@@ -151,6 +227,7 @@ export default function BookmarksPage() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         bookmark={editingBookmark}
+        categories={allCategories.filter(c => c !== 'all')}
       />
     </div>
   );
