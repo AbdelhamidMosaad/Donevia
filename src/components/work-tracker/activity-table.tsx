@@ -16,6 +16,7 @@ import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 import { Label } from '../ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 interface ActivityTableProps {
     activities: WorkActivity[];
@@ -114,90 +115,98 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 border rounded-lg items-end">
-                {/* Date Filters */}
-                <div className="flex flex-col space-y-1.5">
-                    <Label>Date Filter Type</Label>
-                    <Select value={dateFilterType} onValueChange={(v: 'all' | 'month' | 'period') => setDateFilterType(v)}>
-                        <SelectTrigger><SelectValue/></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Time</SelectItem>
-                            <SelectItem value="month">By Month</SelectItem>
-                            <SelectItem value="period">By Period</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Filters &amp; Export</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+                    {/* Date Filters */}
+                    <div className="flex flex-col space-y-1.5">
+                        <Label>Date Filter</Label>
+                        <Select value={dateFilterType} onValueChange={(v: 'all' | 'month' | 'period') => setDateFilterType(v)}>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Time</SelectItem>
+                                <SelectItem value="month">By Month</SelectItem>
+                                <SelectItem value="period">By Period</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                {dateFilterType === 'month' && (
-                    <>
-                        <div className="flex flex-col space-y-1.5">
-                             <Label>Month</Label>
-                            <Select value={filterMonth} onValueChange={setFilterMonth}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {moment.months().map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex flex-col space-y-1.5">
-                            <Label>Year</Label>
-                            <Select value={filterYear} onValueChange={setFilterYear}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </>
-                )}
+                    {dateFilterType === 'month' && (
+                        <>
+                            <div className="flex flex-col space-y-1.5">
+                                <Label>Month</Label>
+                                <Select value={filterMonth} onValueChange={setFilterMonth}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {moment.months().map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col space-y-1.5">
+                                <Label>Year</Label>
+                                <Select value={filterYear} onValueChange={setFilterYear}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </>
+                    )}
 
-                {dateFilterType === 'period' && (
-                     <>
-                        <div className="flex flex-col space-y-1.5">
-                             <Label>Start Date</Label>
-                            <Input type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
-                        </div>
-                        <div className="flex flex-col space-y-1.5">
-                            <Label>End Date</Label>
-                            <Input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
-                        </div>
-                    </>
-                )}
+                    {dateFilterType === 'period' && (
+                        <>
+                            <div className="flex flex-col space-y-1.5">
+                                <Label>Start Date</Label>
+                                <Input type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
+                            </div>
+                            <div className="flex flex-col space-y-1.5">
+                                <Label>End Date</Label>
+                                <Input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
+                            </div>
+                        </>
+                    )}
 
-                {/* Other Filters */}
-                <div className="flex flex-col space-y-1.5">
-                    <Label>Appointment</Label>
-                    <Select value={filterAppointment} onValueChange={setFilterAppointment}>
-                        <SelectTrigger><SelectValue placeholder="All Appointments" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="">All Appointments</SelectItem>
-                            {settings.appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                 <div className="flex flex-col space-y-1.5">
-                    <Label>Category</Label>
-                    <Select value={filterCategory} onValueChange={setFilterCategory}>
-                        <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="">All Categories</SelectItem>
-                            {settings.categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                 <div className="flex flex-col space-y-1.5">
-                    <Label>Customer</Label>
-                    <Select value={filterCustomer} onValueChange={setFilterCustomer}>
-                        <SelectTrigger><SelectValue placeholder="All Customers" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="">All Customers</SelectItem>
-                            {settings.customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                 </div>
-                <Button onClick={resetFilters} variant="outline">Reset Filters</Button>
-                <Button onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export</Button>
-            </div>
+                    {/* Other Filters */}
+                    <div className="flex flex-col space-y-1.5">
+                        <Label>Appointment</Label>
+                        <Select value={filterAppointment} onValueChange={setFilterAppointment}>
+                            <SelectTrigger><SelectValue placeholder="All Appointments" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="">All Appointments</SelectItem>
+                                {settings.appointmentOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-col space-y-1.5">
+                        <Label>Category</Label>
+                        <Select value={filterCategory} onValueChange={setFilterCategory}>
+                            <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="">All Categories</SelectItem>
+                                {settings.categoryOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-col space-y-1.5">
+                        <Label>Customer</Label>
+                        <Select value={filterCustomer} onValueChange={setFilterCustomer}>
+                            <SelectTrigger><SelectValue placeholder="All Customers" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="">All Customers</SelectItem>
+                                {settings.customerOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button onClick={resetFilters} variant="outline" className="w-full">Reset</Button>
+                        <Button onClick={handleExport} className="w-full"><FileDown className="mr-2 h-4 w-4" /> Export</Button>
+                    </div>
+                </CardContent>
+            </Card>
+
             <div className="border rounded-lg">
                 <Table>
                     <TableHeader>
