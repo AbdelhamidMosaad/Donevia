@@ -65,8 +65,8 @@ export function ClientList({ clients }: ClientListProps) {
   
   const handleExport = () => {
     const dataToExport = filteredClients.map(c => ({
-        Name: c.name,
         Company: c.company,
+        Name: c.name,
         Email: c.email,
         Phone: c.phone,
         Created: c.createdAt.toDate().toLocaleDateString()
@@ -106,8 +106,8 @@ export function ClientList({ clients }: ClientListProps) {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>Name</TableHead>
                     <TableHead>Company</TableHead>
+                    <TableHead>Contact Person</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -121,8 +121,8 @@ export function ClientList({ clients }: ClientListProps) {
                         className="cursor-pointer"
                         onClick={() => router.push(`/crm/clients/${client.id}`)}
                         >
-                        <TableCell className="font-medium">{client.name}</TableCell>
-                        <TableCell>{client.company}</TableCell>
+                        <TableCell className="font-medium">{client.company}</TableCell>
+                        <TableCell>{client.name}</TableCell>
                         <TableCell>{client.email}</TableCell>
                         <TableCell>{client.phone}</TableCell>
                         <TableCell className="text-right">
