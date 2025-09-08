@@ -645,7 +645,7 @@ export function MindMapTool() {
                 })}
             >
                 <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
-                    <svg className="absolute top-0 left-0 w-full h-full" style={{ width: '200vw', height: '200vh', pointerEvents: 'none', transform: 'translate(-50%, -50%)', left: '50%', top: '50%'}}>
+                    <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
                         {connections.map(conn => {
                             const from = nodes.find(n => n.id === conn.from);
                             const to = nodes.find(n => n.id === conn.to);
