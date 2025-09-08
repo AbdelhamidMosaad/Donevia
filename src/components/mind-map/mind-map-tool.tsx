@@ -638,14 +638,14 @@ export function MindMapTool() {
 
 
             <div 
-                className={cn("w-full h-full", {
+                className={cn("w-full h-full relative", {
                   'cursor-crosshair': currentTool === 'node',
                   'cursor-grab': currentTool === 'pan',
                   'active:cursor-grabbing': currentTool === 'pan' && isPanning.current,
                 })}
             >
-                <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
-                    <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <g style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}>
                         {connections.map(conn => {
                             const from = nodes.find(n => n.id === conn.from);
                             const to = nodes.find(n => n.id === conn.to);
@@ -661,8 +661,10 @@ export function MindMapTool() {
                                 />
                             )
                         })}
-                    </svg>
+                    </g>
+                </svg>
 
+                <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
                     {nodes.map(node => (
                         <div
                             key={node.id}
