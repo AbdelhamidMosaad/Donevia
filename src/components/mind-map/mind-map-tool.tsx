@@ -78,6 +78,7 @@ export function MindMapTool() {
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
   
   const [currentTool, setCurrentTool] = useState<Tool>('select');
+  const previousToolRef = useRef<Tool>('select');
 
   const [history, setHistory] = useState<{ nodes: MindMapNode[]; connections: MindMapConnection[] }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -344,6 +345,15 @@ export function MindMapTool() {
 
         if (isEditingText) return;
 
+        if (e.key === ' ') { // Spacebar for panning
+            e.preventDefault();
+            if (currentTool !== 'pan') {
+                previousToolRef.current = currentTool;
+                setCurrentTool('pan');
+            }
+            return;
+        }
+
         if (selectedNodeId) {
             if (e.key === 'Tab') {
                 e.preventDefault();
@@ -359,6 +369,12 @@ export function MindMapTool() {
             }
         }
     };
+    
+    const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.key === ' ') {
+            setCurrentTool(previousToolRef.current);
+        }
+    }
 
     const navigateNodes = (key: string) => {
         const currentNode = nodes.find(n => n.id === selectedNodeId);
@@ -397,8 +413,12 @@ export function MindMapTool() {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, addNode, deleteNode, nodes, connections]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+    }
+  }, [selectedNodeId, addNode, deleteNode, nodes, connections, currentTool]);
 
   const toggleFullscreen = () => {
     const elem = mindMapContainerRef.current;
