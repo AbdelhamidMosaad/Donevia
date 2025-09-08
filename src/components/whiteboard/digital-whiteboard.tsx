@@ -29,6 +29,9 @@ import {
   Grid3x3,
   List,
   Baseline,
+  Move,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
@@ -43,7 +46,7 @@ import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { useDebouncedCallback } from 'use-debounce';
 
-type Tool = 'pen' | 'eraser' | 'text' | 'select' | 'shape';
+type Tool = 'pen' | 'eraser' | 'text' | 'select' | 'shape' | 'pan';
 type Shape =
   | 'rectangle'
   | 'circle'
@@ -80,6 +83,7 @@ export function DigitalWhiteboard() {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const lastMousePos = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
 
   // --- Initialization and Canvas Setup ---
   useEffect(() => {
@@ -200,14 +204,24 @@ export function DigitalWhiteboard() {
   };
 
   const startDrawing = (e: React.MouseEvent) => {
-    if (!ctx) return;
     const { x, y } = getCoords(e);
+    if (currentTool === 'pan') {
+      isPanning.current = true;
+      lastMousePos.current = { x, y };
+      return;
+    }
+    if (!ctx) return;
     setIsDrawing(true);
     ctx.beginPath();
     ctx.moveTo(x, y);
   };
 
   const draw = (e: React.MouseEvent) => {
+    if (isPanning.current && currentTool === 'pan') {
+      // Panning logic would go here if we were transforming the canvas view
+      // For now, we just move the cursor.
+      return;
+    }
     if (!isDrawing || !ctx) return;
     const { x, y } = getCoords(e);
     const bgColor = whiteboard?.backgroundColor || '#FFFFFF';
@@ -220,6 +234,7 @@ export function DigitalWhiteboard() {
   };
 
   const stopDrawing = () => {
+    isPanning.current = false;
     if (!isDrawing || !ctx) return;
     ctx.closePath();
     setIsDrawing(false);
@@ -339,12 +354,13 @@ export function DigitalWhiteboard() {
     icon: React.ElementType;
   }) => (
     <Button
-      variant={currentTool === tool ? 'default' : 'outline'}
+      variant={currentTool === tool ? 'secondary' : 'ghost'}
       onClick={() => handleToolClick(tool)}
       size="sm"
+      className="w-full justify-start"
     >
       <Icon className="mr-2 h-4 w-4" />
-      {label}
+      {!isToolbarCollapsed && label}
     </Button>
   );
 
@@ -411,16 +427,24 @@ export function DigitalWhiteboard() {
 
       <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
         {/* Toolbar */}
-        <div className="flex md:flex-col gap-4 p-4 border rounded-lg bg-card md:w-64">
-          <div className="flex md:flex-col gap-2 flex-wrap">
-            <h3 className="font-semibold w-full">Tools</h3>
+        <div className={cn(
+          "flex flex-col gap-4 p-2 border rounded-lg bg-card transition-all duration-300",
+          isToolbarCollapsed ? 'md:w-16 items-center' : 'md:w-64'
+        )}>
+          <div className="flex flex-col gap-2 w-full">
+             <Button variant="ghost" size="sm" onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)} className="w-full justify-start">
+               {isToolbarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="mr-2 h-4 w-4" />}
+               {!isToolbarCollapsed && 'Collapse'}
+            </Button>
+            <h3 className={cn("font-semibold px-2", isToolbarCollapsed && "hidden")}>Tools</h3>
             <ToolButton tool="pen" label="Pen" icon={Pen} />
             <ToolButton tool="eraser" label="Eraser" icon={Eraser} />
+            <ToolButton tool="pan" label="Pan" icon={Move} />
             <ToolButton tool="text" label="Text" icon={Type} />
             <ToolButton tool="select" label="Select" icon={MousePointer} />
           </div>
-          <div className="flex md:flex-col gap-2 flex-wrap">
-            <h3 className="font-semibold w-full">Color</h3>
+          <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
+            <h3 className="font-semibold px-2">Color</h3>
             <input
               type="color"
               value={currentColor}
@@ -428,8 +452,8 @@ export function DigitalWhiteboard() {
               className="w-full h-10 p-1 bg-card border rounded-md cursor-pointer"
             />
           </div>
-           <div className="flex md:flex-col gap-2 flex-wrap">
-            <h3 className="font-semibold w-full">Brush Size</h3>
+           <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
+            <h3 className="font-semibold px-2">Brush Size</h3>
             <input
               type="range"
               min="1"
@@ -438,24 +462,24 @@ export function DigitalWhiteboard() {
               onChange={(e) => setBrushSize(Number(e.target.value))}
             />
           </div>
-          <div className="flex md:flex-col gap-2 flex-wrap">
-             <h3 className="font-semibold w-full">Shapes</h3>
-             <Button variant="outline" size="sm" onClick={() => drawShape('rectangle')}><Square className="mr-2 h-4 w-4" /> Rectangle</Button>
-             <Button variant="outline" size="sm" onClick={() => drawShape('circle')}><Circle className="mr-2 h-4 w-4" /> Circle</Button>
+          <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
+             <h3 className="font-semibold px-2">Shapes</h3>
+             <Button variant="outline" size="sm" onClick={() => drawShape('rectangle')} className="justify-start"><Square className="mr-2 h-4 w-4" /> Rectangle</Button>
+             <Button variant="outline" size="sm" onClick={() => drawShape('circle')} className="justify-start"><Circle className="mr-2 h-4 w-4" /> Circle</Button>
           </div>
-           <div className="flex md:flex-col gap-2 flex-wrap">
-             <h3 className="font-semibold w-full">Notes</h3>
-             <Button variant="outline" size="sm" onClick={() => addStickyNote('#FFF9C4')}><StickyNote className="mr-2 h-4 w-4" /> Sticky Note</Button>
+           <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
+             <h3 className="font-semibold px-2">Notes</h3>
+             <Button variant="outline" size="sm" onClick={() => addStickyNote('#FFF9C4')} className="justify-start"><StickyNote className="mr-2 h-4 w-4" /> Sticky Note</Button>
           </div>
-          <div className="flex md:flex-col gap-2 mt-auto">
-            <Button variant="outline" size="sm" onClick={undo} disabled={historyIndex <= 0}>
-              <Undo className="mr-2 h-4 w-4" /> Undo
+          <div className="flex flex-col gap-2 mt-auto w-full">
+            <Button variant="outline" size="sm" onClick={undo} disabled={historyIndex <= 0} className="justify-start">
+              <Undo className="mr-2 h-4 w-4" /> {!isToolbarCollapsed && 'Undo'}
             </Button>
-            <Button variant="outline" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1}>
-              <Redo className="mr-2 h-4 w-4" /> Redo
+            <Button variant="outline" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1} className="justify-start">
+              <Redo className="mr-2 h-4 w-4" /> {!isToolbarCollapsed && 'Redo'}
             </Button>
-            <Button variant="destructive" size="sm" onClick={clearCanvas}>
-              <Trash2 className="mr-2 h-4 w-4" /> Clear All
+            <Button variant="destructive" size="sm" onClick={clearCanvas} className="justify-start">
+              <Trash2 className="mr-2 h-4 w-4" /> {!isToolbarCollapsed && 'Clear All'}
             </Button>
           </div>
         </div>
@@ -471,7 +495,8 @@ export function DigitalWhiteboard() {
                 'whiteboard-bg-plain': whiteboard.backgroundGrid === 'plain',
                 'cursor-crosshair': currentTool === 'pen',
                 'cursor-text': currentTool === 'text',
-            })}
+                'cursor-grab': currentTool === 'pan',
+             })}
             onMouseDown={startDrawing}
             onMouseMove={draw}
             onMouseUp={stopDrawing}
