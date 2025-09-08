@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { ClientRequest, Client, PipelineStage } from '@/lib/types';
-import { updateRequest, deleteRequest } from '@/lib/requests';
+import { updateRequest } from '@/lib/requests';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -35,11 +32,14 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
   const { toast } = useToast();
   const [formData, setFormData] = useState(request);
   const [stages, setStages] = useState<PipelineStage[]>([]);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     // This effect runs when the dialog is opened or the request prop changes.
     // It ensures the form data is always in sync with the deal being edited.
     setFormData(request);
+    isInitialMount.current = true;
   }, [request]);
 
    useEffect(() => {
@@ -56,30 +56,42 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
      return () => unsubscribe();
   }, [user]);
 
-  const handleSave = async () => {
-    if (!user) return;
-    try {
-      // Exclude id from the data being sent to Firestore
-      const { id, ...dataToSave } = formData;
-      await updateRequest(user.uid, request.id, dataToSave);
-      toast({ title: 'Deal updated' });
-      onOpenChange(false);
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Error updating deal' });
+  useEffect(() => {
+    // Skip the first render to avoid saving on mount
+    if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
     }
-  };
+    
+    // Clear the previous timeout if there's a new change
+    if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Set a new timeout for auto-saving
+    debounceTimeoutRef.current = setTimeout(async () => {
+        if (!user || !request) return;
+        
+        // Only save if there's a change
+        if (JSON.stringify(formData) === JSON.stringify(request)) return;
 
-  const handleDelete = async () => {
-    if (!user) return;
-    try {
-      await deleteRequest(user.uid, request.id);
-      toast({ title: 'Deal deleted' });
-      onOpenChange(false);
-    } catch(e) {
-      toast({ variant: 'destructive', title: 'Error deleting deal' });
-    }
-  };
-  
+        try {
+            const { id, ...dataToSave } = formData;
+            await updateRequest(user.uid, request.id, dataToSave);
+            toast({ title: '✓ Saved', description: 'Your changes have been saved.' });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Error updating deal' });
+        }
+    }, 1000); // 1-second debounce
+
+    // Cleanup timeout on component unmount
+    return () => {
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+        }
+    };
+  }, [formData, request, user, toast]);
+
   const handleChange = (field: keyof Omit<ClientRequest, 'id' | 'createdAt' | 'updatedAt'>, value: any) => {
     setFormData(prev => ({...prev, [field]: value }));
   }
@@ -89,7 +101,7 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Deal</DialogTitle>
-          <DialogDescription>Update the details for this deal.</DialogDescription>
+          <DialogDescription>Changes are saved automatically.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
