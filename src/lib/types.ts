@@ -69,6 +69,70 @@ export type Bookmark = {
     createdAt: Timestamp;
 };
 
+/** CRM Types */
+export type Attachment = {
+  id: string;
+  filename: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: Timestamp;
+}
+
+export type CustomField = {
+  id: string;
+  key: string;
+  value: string;
+}
+
+export type Quotation = {
+  id: string;
+  quoteNumber: string;
+  amount: number;
+  status: 'Draft' | 'Sent' | 'Accepted' | 'Rejected';
+  createdAt: Timestamp;
+  attachments: Attachment[];
+}
+
+export type Invoice = {
+  id: string;
+  invoiceNumber: string;
+  amount: number;
+  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';
+  dueDate: Timestamp;
+  createdAt: Timestamp;
+  attachments: Attachment[];
+}
+
+export type Client = {
+  id: string;
+  name: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  customFields: CustomField[];
+  quotations: Quotation[];
+  invoices: Invoice[];
+};
+
+export type ClientRequestStage = 'new' | 'contacted' | 'proposal' | 'win' | 'lost';
+export type LossReason = 'Price' | 'Timing' | 'Competition' | 'Features' | 'Other';
+
+export type ClientRequest = {
+  id: string;
+  title: string;
+  clientId: string;
+  stage: ClientRequestStage;
+  value?: number;
+  lossReason?: LossReason | null;
+  quoteAmount?: number;
+  invoiceAmount?: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
 /** User Settings */
 export interface UserSettings {
     theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-lavender' | 'theme-cornflower' | 'theme-teal' | 'theme-orange' | 'theme-mint';
