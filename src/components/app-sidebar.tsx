@@ -30,6 +30,7 @@ import {
   GraduationCap,
   Bookmark,
   Briefcase,
+  BrainCircuit,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -50,6 +51,7 @@ const defaultMenuItems = [
     { href: '/notes', icon: <FileText className="text-orange-500" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
     { href: '/bookmarks', icon: <Bookmark className="text-blue-500" />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
     { href: '/work-tracker', icon: <Briefcase className="text-amber-500" />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
+    { href: '/brainstorming', icon: <BrainCircuit className="text-violet-500" />, label: 'Brainstorming', tooltip: 'Brainstorming', id: 'brainstorming' },
     { href: '/whiteboard', icon: <PenSquare className="text-indigo-500" />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
     { href: '/mind-map', icon: <GitBranch className="text-pink-500" />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
     { href: '/docs', icon: <FileSignature className="text-cyan-500" />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
