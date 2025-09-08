@@ -30,6 +30,10 @@ import {
   Grid3x3,
   List,
   Baseline,
+  ArrowDown,
+  ArrowUp,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -57,6 +61,8 @@ const backgroundColors = [
 type Shape =
   | 'rectangle'
   | 'circle';
+
+type LayoutDirection = 'right' | 'bottom' | 'left' | 'top';
 
 
 export function MindMapTool() {
@@ -90,6 +96,7 @@ export function MindMapTool() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mindMapContainerRef = useRef<HTMLDivElement>(null);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
+  const [layoutDirection, setLayoutDirection] = useState<LayoutDirection>('right');
 
 
   // Firestore Refs
@@ -149,22 +156,47 @@ export function MindMapTool() {
             return prevNodes;
         }
 
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 200;
         const newNode: MindMapNode = {
-            id: uuidv4(),
-            x: parentNode ? parentNode.x + Math.cos(angle) * distance : (mindMapContainerRef.current?.clientWidth || window.innerWidth) / (2*scale) - offset.x/scale,
-            y: parentNode ? parentNode.y + Math.sin(angle) * distance : (mindMapContainerRef.current?.clientHeight || window.innerHeight) / (2*scale) - offset.y/scale,
-            width: 150,
-            height: 50,
-            title: '',
-            style: 'default',
-            backgroundColor: '#f8f9fa',
-            color: '#212529',
-            isBold: false,
-            isItalic: false,
-            isUnderline: false,
+            id: uuidv4(), x: 0, y: 0, width: 150, height: 50, title: '', style: 'default',
+            backgroundColor: '#f8f9fa', color: '#212529',
+            isBold: false, isItalic: false, isUnderline: false,
         };
+        
+        let newX = 0, newY = 0;
+        const siblingGap = 40;
+
+        if (parentNode) {
+            const children = prevNodes.filter(n => connections.some(c => c.from === parentNode.id && c.to === n.id));
+            
+            switch(layoutDirection) {
+                case 'right':
+                    newX = parentNode.x + parentNode.width / 2 + siblingGap + newNode.width / 2;
+                    const totalChildrenHeight = children.reduce((sum, child) => sum + child.height + siblingGap, 0);
+                    newY = parentNode.y - totalChildrenHeight / 2 + children.reduce((sum, child) => sum + child.height + siblingGap, 0) + newNode.height / 2;
+                    break;
+                case 'left':
+                    newX = parentNode.x - parentNode.width / 2 - siblingGap - newNode.width / 2;
+                    const totalChildrenHeightLeft = children.reduce((sum, child) => sum + child.height + siblingGap, 0);
+                    newY = parentNode.y - totalChildrenHeightLeft / 2 + children.reduce((sum, child) => sum + child.height + siblingGap, 0) + newNode.height / 2;
+                    break;
+                case 'bottom':
+                    const totalChildrenWidth = children.reduce((sum, child) => sum + child.width + siblingGap, 0);
+                    newX = parentNode.x - totalChildrenWidth / 2 + children.reduce((sum, child) => sum + child.width + siblingGap, 0) + newNode.width / 2;
+                    newY = parentNode.y + parentNode.height / 2 + siblingGap + newNode.height / 2;
+                    break;
+                 case 'top':
+                    const totalChildrenWidthTop = children.reduce((sum, child) => sum + child.width + siblingGap, 0);
+                    newX = parentNode.x - totalChildrenWidthTop / 2 + children.reduce((sum, child) => sum + child.width + siblingGap, 0) + newNode.width / 2;
+                    newY = parentNode.y - parentNode.height / 2 - siblingGap - newNode.height / 2;
+                    break;
+            }
+        } else {
+             newX = (mindMapContainerRef.current?.clientWidth || window.innerWidth) / (2*scale) - offset.x/scale;
+             newY = (mindMapContainerRef.current?.clientHeight || window.innerHeight) / (2*scale) - offset.y/scale;
+        }
+
+        newNode.x = newX;
+        newNode.y = newY;
         
         const newNodes = [...prevNodes, newNode];
         
@@ -180,7 +212,7 @@ export function MindMapTool() {
         setSelectedNodeId(newNode.id);
         return newNodes;
     });
-  }, [selectedNodeId, toast, saveToHistory, scale, offset]);
+  }, [selectedNodeId, toast, saveToHistory, scale, offset, connections, layoutDirection]);
   
   const deleteNode = useCallback((nodeId: string) => {
     if (nodes.length <= 1) {
@@ -555,7 +587,42 @@ export function MindMapTool() {
                     className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
             </div>
-            <div className="flex gap-2">
+             <div className="flex items-center gap-2">
+                 <Popover>
+                    <PopoverTrigger asChild><Button variant="outline"><Settings className="mr-2 h-4 w-4"/> Settings</Button></PopoverTrigger>
+                    <PopoverContent className="w-80">
+                        <div className="grid gap-4">
+                            <div className="space-y-2"><h4 className="font-medium leading-none">Settings</h4></div>
+                            <div className="grid gap-2">
+                                <Label>Background Color</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {backgroundColors.map(color => (
+                                        <button key={color} onClick={() => handleSettingChange({ backgroundColor: color })}
+                                            className={cn("w-8 h-8 rounded-full border", mindMap.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
+                                            style={{ backgroundColor: color }} />
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Grid Style</Label>
+                                <ToggleGroup type="single" value={mindMap.backgroundGrid || 'dotted'} onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}>
+                                    <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
+                                    <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
+                                    <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
+                                </ToggleGroup>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Layout Direction</Label>
+                                <ToggleGroup type="single" value={layoutDirection} onValueChange={(value: LayoutDirection) => value && setLayoutDirection(value)}>
+                                    <ToggleGroupItem value="right" aria-label="Layout Right"><ArrowRight /></ToggleGroupItem>
+                                    <ToggleGroupItem value="bottom" aria-label="Layout Down"><ArrowDown /></ToggleGroupItem>
+                                    <ToggleGroupItem value="left" aria-label="Layout Left"><ArrowLeft /></ToggleGroupItem>
+                                    <ToggleGroupItem value="top" aria-label="Layout Up"><ArrowUp /></ToggleGroupItem>
+                                </ToggleGroup>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
                 <Button variant="outline" onClick={handleExportPNG}><Download className="mr-2"/> Export PNG</Button>
                 <Button variant="outline" onClick={handleExportPDF}><Download className="mr-2"/> Export PDF</Button>
             </div>
@@ -581,32 +648,6 @@ export function MindMapTool() {
                 <Button variant={connectingNodeId ? 'secondary' : 'ghost'} size="icon" onClick={() => setConnectingNodeId(selectedNodeId)}><LinkIcon/></Button>
                  <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
                 <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1}><Redo/></Button>
-                <Popover>
-                  <PopoverTrigger asChild><Button variant="ghost" size="icon"><Settings /></Button></PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <div className="grid gap-4">
-                        <div className="space-y-2"><h4 className="font-medium leading-none">Settings</h4></div>
-                        <div className="grid gap-2">
-                            <Label>Background Color</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {backgroundColors.map(color => (
-                                    <button key={color} onClick={() => handleSettingChange({ backgroundColor: color })}
-                                        className={cn("w-8 h-8 rounded-full border", mindMap.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
-                                        style={{ backgroundColor: color }} />
-                                ))}
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                             <Label>Grid Style</Label>
-                             <ToggleGroup type="single" value={mindMap.backgroundGrid || 'dotted'} onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}>
-                                <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
-                                <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
-                                <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
-                            </ToggleGroup>
-                        </div>
-                    </div>
-                </PopoverContent>
-            </Popover>
             </div>
             
             {selectedNode && (
@@ -644,8 +685,8 @@ export function MindMapTool() {
                   'active:cursor-grabbing': currentTool === 'pan' && isPanning.current,
                 })}
             >
-                <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                    <g style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}>
+                <svg className="absolute top-0 left-0 w-[9999px] h-[9999px] pointer-events-none" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
+                    <g>
                         {connections.map(conn => {
                             const from = nodes.find(n => n.id === conn.from);
                             const to = nodes.find(n => n.id === conn.to);
