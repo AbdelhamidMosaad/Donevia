@@ -425,7 +425,6 @@ export function MindMapTool() {
                 />
             </div>
             <div className="flex gap-2">
-                <Button variant="outline"><Users className="mr-2"/> Invite</Button>
                 <Button><Download className="mr-2"/> Export</Button>
             </div>
         </div>
