@@ -343,3 +343,12 @@ body {
 .bg-landing-gradient {
     background: linear-gradient(135deg, hsl(270, 70%, 96%), hsl(210, 100%, 96%));
 }
+
+/* Whiteboard Styles */
+.whiteboard-bg {
+    background-color: hsl(var(--card));
+    background-image:
+        linear-gradient(hsla(var(--border)) 1px, transparent 1px),
+        linear-gradient(90deg, hsla(var(--border)) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
