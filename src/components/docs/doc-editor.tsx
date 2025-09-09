@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import { EditorToolbar } from './editor-toolbar';
 import { slashCommands } from './slash-commands';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Maximize, Minimize } from 'lucide-react';
 import { Image as TipTapImage } from '@tiptap/extension-image';
 import { FontSize } from '@/lib/tiptap/font-size';
 import TextStyle from '@tiptap/extension-text-style';
@@ -33,6 +33,7 @@ import { FontFamily } from '@/lib/tiptap/font-family';
 import { TextTransform } from '@/lib/tiptap/text-transform';
 import { cn } from '@/lib/utils';
 import { Callout } from '@/lib/tiptap/callout';
+import { Button } from '../ui/button';
 
 
 interface DocEditorProps {
@@ -44,6 +45,8 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   const { toast } = useToast();
   const [docData, setDocData] = useState(initialDoc);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const debouncedSave = useDebouncedCallback(async (updatedDoc: Doc) => {
     if (!user) return;
@@ -107,7 +110,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       debouncedSave(updatedDoc);
     },
   });
-
+  
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
     const updatedDoc = { ...docData, title: newTitle };
@@ -120,6 +123,28 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
     setDocData(updatedDoc);
     debouncedSave(updatedDoc);
   }
+
+  const toggleFullscreen = useCallback(() => {
+    const elem = editorContainerRef.current;
+    if (!elem) return;
+
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch(err => {
+        toast({ variant: 'destructive', title: 'Error entering fullscreen.', description: err.message });
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   useEffect(() => {
     if (editor && JSON.stringify(editor.getJSON()) !== JSON.stringify(docData.content)) {
@@ -136,7 +161,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-hidden bg-background">
+    <div ref={editorContainerRef} className="flex-1 flex flex-col h-full overflow-y-hidden bg-background">
         <div className="p-4 border-b pr-16 relative bg-card">
             <div className="flex items-center gap-4">
                 <input
@@ -152,9 +177,12 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
                 backgroundColor={docData.backgroundColor || '#FFFFFF'}
                 onBackgroundColorChange={handleBackgroundColorChange}
               />
-             <div className="absolute top-4 right-16 flex items-center gap-2 text-sm text-muted-foreground">
+             <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-muted-foreground">
                 {saveStatus === 'saving' && <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>}
                 {saveStatus === 'saved' && <span>Saved</span>}
+                <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                    {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                </Button>
             </div>
         </div>
        
