@@ -33,26 +33,15 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setAuthChecked(true);
+      setLoading(false);
     });
 
     return () => unsubscribeAuth();
   }, []);
-  
-  useEffect(() => {
-    // Hide welcome screen after a short delay once auth is checked
-    if (authChecked) {
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 1500); // Keep welcome screen for at least 1.5 seconds for branding
-      return () => clearTimeout(timer);
-    }
-  }, [authChecked]);
 
   useEffect(() => {
     let unsubscribeSettings = () => {};
@@ -99,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   return (
-    <AuthContext.Provider value={{ user, loading: !authChecked }}>
+    <AuthContext.Provider value={{ user, loading }}>
       {children}
     </AuthContext.Provider>
   );
