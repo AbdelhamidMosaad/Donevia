@@ -22,7 +22,7 @@ import { db } from '@/lib/firebase';
 import { useState, useEffect, useMemo } from 'react';
 import moment from 'moment';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart as RechartsBarChart } from 'recharts';
 
 interface InsightsDashboardProps {
   goals: StudyGoal[];
@@ -109,16 +109,23 @@ export function InsightsDashboard({ goals, subtopics, sessions, onAddSample, onC
                 <CardDescription>Completion percentage for each of your study goals.</CardDescription>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={{}} className="h-[250px] w-full">
-                    <ResponsiveContainer>
-                        <BarChart data={progressPerGoal} layout="vertical" margin={{ left: 10, right: 30 }}>
-                             <CartesianGrid strokeDasharray="3 3" />
-                             <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-                             <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
-                             <ChartTooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent />} />
-                             <Bar dataKey="progress" fill="hsl(var(--primary))" radius={4} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <ChartContainer config={{
+                    progress: {
+                        label: 'Progress',
+                        color: 'hsl(var(--primary))',
+                    }
+                }} className="h-[250px] w-full">
+                    <RechartsBarChart
+                        data={progressPerGoal}
+                        layout="vertical"
+                        margin={{ left: 10, right: 30 }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" dataKey="progress" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                        <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
+                        <ChartTooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel />} />
+                        <Bar dataKey="progress" radius={4} />
+                    </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
         </Card>
