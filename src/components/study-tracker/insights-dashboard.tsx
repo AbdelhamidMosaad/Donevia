@@ -22,7 +22,7 @@ import { db } from '@/lib/firebase';
 import { useState, useEffect, useMemo } from 'react';
 import moment from 'moment';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 interface InsightsDashboardProps {
   goals: StudyGoal[];
@@ -112,6 +112,7 @@ export function InsightsDashboard({ goals, subtopics, sessions, onAddSample, onC
                 <ChartContainer config={{}} className="h-[250px] w-full">
                     <ResponsiveContainer>
                         <BarChart data={progressPerGoal} layout="vertical" margin={{ left: 10, right: 30 }}>
+                             <CartesianGrid strokeDasharray="3 3" />
                              <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
                              <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
                              <ChartTooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent />} />
@@ -154,4 +155,3 @@ export function InsightsDashboard({ goals, subtopics, sessions, onAddSample, onC
     </div>
   );
 }
-
