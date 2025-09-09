@@ -380,3 +380,39 @@ export const QuizQuestionSchema = GenkitQuizQuestionSchema;
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 export const FlashcardSchema = GenkitFlashcardSchema;
 export type Flashcard = z.infer<typeof FlashcardSchema>;
+
+
+/** English Coach */
+export type EnglishCoachProfile = {
+  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  dailyVocab?: { word: string; sentence: string }[];
+  dailyVocabDate?: string; // YYYY-MM-DD
+  createdAt: Timestamp;
+};
+
+export type Recording = {
+  id: string;
+  uid: string;
+  url: string;
+  createdAt: Timestamp;
+  feedback?: any; // To store AI feedback
+};
+
+
+/** Flashcard Tool */
+export type Deck = {
+    id: string;
+    name: string;
+    description?: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
+export type FlashcardToolCard = {
+    id: string;
+    deckId: string;
+    front: string;
+    back: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};

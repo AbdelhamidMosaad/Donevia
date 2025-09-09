@@ -34,6 +34,7 @@ import {
   BrainCircuit,
   Users,
   BookOpen,
+  Layers,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -51,6 +52,7 @@ const defaultMenuItems = [
     { href: '/english-coach', icon: <BookOpen className="text-orange-500" />, label: 'English Coach', tooltip: 'English Coach', id: 'english-coach' },
     { href: '/habits', icon: <Repeat className="text-teal-500" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <Target className="text-red-500" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
+    { href: '/flashcards', icon: <Layers className="text-indigo-500" />, label: 'Flashcards', tooltip: 'Flashcards', id: 'flashcards' },
     { href: '/notes', icon: <FileText className="text-orange-500" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
     { href: '/bookmarks', icon: <Bookmark className="text-blue-500" />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
     { href: '/work-tracker', icon: <Briefcase className="text-amber-500" />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
@@ -100,6 +102,9 @@ export function AppSidebar() {
     }
      if (href === '/crm') {
       return pathname === '/crm' || pathname.startsWith('/crm/');
+    }
+     if (href === '/flashcards') {
+      return pathname.startsWith('/flashcards');
     }
     return pathname.startsWith(href);
   };
