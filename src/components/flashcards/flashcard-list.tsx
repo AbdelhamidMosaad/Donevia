@@ -41,6 +41,8 @@ export function FlashcardList({ cards }: FlashcardListProps) {
             <TableRow>
               <TableHead>Front</TableHead>
               <TableHead>Back</TableHead>
+              <TableHead>Correct</TableHead>
+              <TableHead>Wrong</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -49,6 +51,8 @@ export function FlashcardList({ cards }: FlashcardListProps) {
               <TableRow key={card.id}>
                 <TableCell className="font-medium truncate max-w-sm">{card.front}</TableCell>
                 <TableCell className="truncate max-w-sm">{card.back}</TableCell>
+                <TableCell className="text-green-600">{card.correct || 0}</TableCell>
+                <TableCell className="text-red-600">{card.wrong || 0}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

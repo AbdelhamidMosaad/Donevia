@@ -31,7 +31,7 @@ export const TaskSchema = z.object({
     priority: z.enum(['Low', 'Medium', 'High']),
     dueDate: FirebaseTimestampSchema,
     tags: z.array(z.string()),
-    createdAt: FirebaseTimestampSchema,
+    createdAt: FirebaseTimestampSchema.optional(),
     listId: z.string(),
     reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
     color: z.string().optional(),
@@ -413,6 +413,8 @@ export type FlashcardToolCard = {
     deckId: string;
     front: string;
     back: string;
+    correct?: number;
+    wrong?: number;
     createdAt: Timestamp;
     updatedAt: Timestamp;
 };

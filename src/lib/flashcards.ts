@@ -52,6 +52,8 @@ export const addCard = async (userId: string, cardData: Omit<FlashcardToolCard, 
   const cardsRef = collection(db, 'users', userId, 'flashcards');
   return await addDoc(cardsRef, {
     ...cardData,
+    correct: 0,
+    wrong: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

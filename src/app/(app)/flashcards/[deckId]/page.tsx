@@ -1,18 +1,22 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Layers3, PlusCircle, BookOpen } from 'lucide-react';
+import { ArrowLeft, Layers3, PlusCircle, BookOpen, Search, Download, Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import type { Deck, FlashcardToolCard } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { FlashcardList } from '@/components/flashcards/flashcard-list';
 import { AddFlashcardDialog } from '@/components/flashcards/add-flashcard-dialog';
+import { Input } from '@/components/ui/input';
+import { useDebouncedCallback } from 'use-debounce';
+import { exportDeckToJSON, importDeckFromJSON } from '@/lib/flashcards-import-export';
+import { addCard } from '@/lib/flashcards';
 
 export default function DeckDetailPage() {
   const { user, loading } = useAuth();
@@ -24,6 +28,13 @@ export default function DeckDetailPage() {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [cards, setCards] = useState<FlashcardToolCard[]>([]);
   const [isAddCardOpen, setIsAddCardOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+
+
+  const debouncedSearch = useDebouncedCallback((value) => {
+    setSearchQuery(value);
+  }, 300);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -58,6 +69,62 @@ export default function DeckDetailPage() {
     }
   }, [user, deckId, router, toast]);
 
+  const filteredCards = useMemo(() => {
+    return cards.filter(card => 
+        card.front.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        card.back.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }, [cards, searchQuery]);
+
+  const handleExport = () => {
+    if (!deck) return;
+    const json = exportDeckToJSON(deck, cards);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${deck.name.replace(/ /g, '_')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Deck exported successfully!' });
+  };
+  
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !deckId) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const result = e.target?.result as string;
+            const importedData = importDeckFromJSON(result);
+            if (!importedData) {
+                throw new Error("Invalid JSON file.");
+            }
+            
+            const batch = writeBatch(db);
+            importedData.cards.forEach(card => {
+                const cardRef = doc(collection(db, 'users', user.uid, 'flashcards'));
+                batch.set(cardRef, {
+                    deckId,
+                    front: card.front,
+                    back: card.back,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+            });
+            await batch.commit();
+            toast({ title: `${importedData.cards.length} cards imported successfully!`});
+        } catch (error) {
+            console.error("Import failed:", error);
+            toast({ variant: 'destructive', title: 'Import failed', description: (error as Error).message });
+        } finally {
+             if(importFileInputRef.current) importFileInputRef.current.value = "";
+        }
+    };
+    reader.readAsText(file);
+  }
 
   if (loading || !user || !deck) {
     return <div>Loading deck...</div>;
@@ -86,12 +153,22 @@ export default function DeckDetailPage() {
       
       <Card>
           <CardHeader>
-              <CardTitle>Flashcards in this Deck</CardTitle>
-               <CardDescription>Manage the cards in your "{deck.name}" deck.</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                    <CardTitle>Flashcards in this Deck</CardTitle>
+                    <CardDescription>Manage the cards in your "{deck.name}" deck.</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Input placeholder="Search cards..." className="w-64" onChange={(e) => debouncedSearch(e.target.value)} />
+                    <Button variant="outline" size="sm" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>
+                    <input type="file" ref={importFileInputRef} className="hidden" accept=".json" onChange={handleImport} />
+                    <Button variant="outline" size="sm" onClick={() => importFileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4" /> Import</Button>
+                </div>
+              </div>
           </CardHeader>
           <CardContent>
               {cards.length > 0 ? (
-                  <FlashcardList cards={cards} />
+                  <FlashcardList cards={filteredCards} />
               ) : (
                   <div className="text-center py-8 text-muted-foreground">
                       <p>This deck is empty. Add a flashcard to get started!</p>

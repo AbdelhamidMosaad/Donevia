@@ -1,25 +1,19 @@
 
 'use client';
 
-import { useState } from 'react';
 import type { FlashcardToolCard } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '../ui/card';
+import { Card } from '../ui/card';
 
 interface StudyCardProps {
   card: FlashcardToolCard;
+  isFlipped: boolean;
+  onFlip: () => void;
 }
 
-export function StudyCard({ card }: StudyCardProps) {
-  const [isFlipped, setIsFlipped] = useState(false);
-
-  // Reset flip state when card changes
-  useState(() => {
-    setIsFlipped(false);
-  });
-
+export function StudyCard({ card, isFlipped, onFlip }: StudyCardProps) {
   return (
-    <div className="w-full max-w-2xl h-80 perspective-1000 cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
+    <div className="w-full max-w-2xl h-80 perspective-1000 cursor-pointer" onClick={onFlip}>
       <div
         className={cn(
           "relative w-full h-full transition-transform duration-500 transform-style-3d",
