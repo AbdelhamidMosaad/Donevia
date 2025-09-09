@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, orderBy, updateDoc, writeBatch } from 'firebase/firestore';
@@ -19,6 +19,8 @@ import { useDebouncedCallback } from 'use-debounce';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { logStudySession } from '@/lib/study-tracker';
 import moment from 'moment';
+import Confetti from 'react-confetti';
+import { useWindowSize } from '@/hooks/use-window-size';
 
 
 export default function StudyGoalDetailPage() {
@@ -36,6 +38,59 @@ export default function StudyGoalDetailPage() {
   
   const [activeTimer, setActiveTimer] = useState<{subtopicId: string, startTime: number} | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { width, height } = useWindowSize();
+  const prevCompletionState = useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    // Initialize previous completion state
+    const initialCompletionState: Record<string, boolean> = {};
+     chapters.forEach(chapter => {
+      const chapterSubtopics = subtopics.filter(s => s.chapterId === chapter.id);
+      const isChapterComplete = chapterSubtopics.length > 0 && chapterSubtopics.every(s => s.isCompleted);
+      initialCompletionState[chapter.id] = isChapterComplete;
+    });
+    const isGoalComplete = chapters.length > 0 && chapters.every(c => initialCompletionState[c.id]);
+    initialCompletionState['goal'] = isGoalComplete;
+    prevCompletionState.current = initialCompletionState;
+
+  }, []); // Run only once on mount
+
+
+   useEffect(() => {
+    if (loading || !user) return;
+    
+    // Check for chapter completions
+    chapters.forEach(chapter => {
+        const chapterSubtopics = subtopics.filter(s => s.chapterId === chapter.id);
+        if (chapterSubtopics.length === 0) return;
+
+        const isNowComplete = chapterSubtopics.every(s => s.isCompleted);
+        const wasPreviouslyComplete = prevCompletionState.current[chapter.id];
+
+        if (isNowComplete && !wasPreviouslyComplete) {
+            toast({ title: 'Chapter Complete!', description: `You finished "${chapter.title}"!` });
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 5000); // Confetti for 5 seconds
+        }
+        prevCompletionState.current[chapter.id] = isNowComplete;
+    });
+    
+    // Check for overall goal completion
+    const allChaptersComplete = chapters.length > 0 && chapters.every(c => {
+         const chapterSubtopics = subtopics.filter(s => s.chapterId === c.id);
+         return chapterSubtopics.length > 0 && chapterSubtopics.every(s => s.isCompleted);
+    });
+
+    if (allChaptersComplete && !prevCompletionState.current['goal']) {
+       toast({ title: 'Goal Achieved!', description: `Congratulations on completing "${goal?.title}"!`, duration: 10000 });
+       setShowConfetti(true);
+       setTimeout(() => setShowConfetti(false), 10000);
+    }
+    prevCompletionState.current['goal'] = allChaptersComplete;
+
+  }, [subtopics, chapters, goal, loading, user, toast]);
 
 
   useEffect(() => {
@@ -239,6 +294,7 @@ export default function StudyGoalDetailPage() {
 
   return (
     <div className="flex flex-col h-full gap-6">
+       {showConfetti && <Confetti width={width} height={height} recycle={false} />}
        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className='flex items-center gap-4'>
             <Button variant="outline" size="icon" onClick={() => router.push('/study-tracker')}><ArrowLeft className="h-4 w-4" /></Button>
