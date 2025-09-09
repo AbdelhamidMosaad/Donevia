@@ -36,7 +36,7 @@ function OverviewTab({ tasks }: { tasks: Task[] }) {
     const [dueSoonTasks, setDueSoonTasks] = useState<Task[]>([]);
     
     useEffect(() => {
-        setRecentTasks(tasks.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, 5));
+        setRecentTasks(tasks.filter(t => !!t.createdAt).sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, 5));
         setHighPriorityTasks(tasks.filter(t => t.priority === 'High').slice(0, 5));
         
         const sevenDaysFromNow = moment().add(7, 'days').toDate();
