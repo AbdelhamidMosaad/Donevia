@@ -32,6 +32,8 @@ import {
   Bookmark,
   Briefcase,
   BrainCircuit,
+  Users,
+  BookOpen,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -44,10 +46,9 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 
 const defaultMenuItems = [
     { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
-    { href: '/dashboard/analytics', icon: <BarChart3 className="text-green-500" />, label: 'Task Analytics', tooltip: 'Task Analytics', id: 'analytics' },
-    { href: '/dashboard/recap', icon: <Sparkles className="text-yellow-500" />, label: 'Recap', tooltip: 'Recap', id: 'recap' },
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
     { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
+    { href: '/english-coach', icon: <BookOpen className="text-orange-500" />, label: 'English Coach', tooltip: 'English Coach', id: 'english-coach' },
     { href: '/habits', icon: <Repeat className="text-teal-500" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <Target className="text-red-500" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
     { href: '/notes', icon: <FileText className="text-orange-500" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
@@ -95,7 +96,7 @@ export function AppSidebar() {
   const isActive = (href?: string) => {
     if (!href) return false;
     if (href === '/dashboard') {
-      return pathname === '/dashboard';
+      return pathname === '/dashboard' || pathname.startsWith('/dashboard/list');
     }
      if (href === '/crm') {
       return pathname === '/crm' || pathname.startsWith('/crm/');
