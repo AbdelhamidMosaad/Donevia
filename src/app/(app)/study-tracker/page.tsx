@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import type { StudyGoal } from '@/lib/types';
+import type { StudyGoal, StudySubtopic, StudySession } from '@/lib/types';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
@@ -21,6 +21,8 @@ export default function StudyTrackerPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [goals, setGoals] = useState<StudyGoal[]>([]);
+  const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
+  const [sessions, setSessions] = useState<StudySession[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -31,12 +33,29 @@ export default function StudyTrackerPage() {
   
   useEffect(() => {
     if (user) {
-      const q = query(collection(db, 'users', user.uid, 'studyGoals'), orderBy('createdAt', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const goalsQuery = query(collection(db, 'users', user.uid, 'studyGoals'), orderBy('createdAt', 'desc'));
+      const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => {
         const goalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyGoal));
         setGoals(goalsData);
       });
-      return () => unsubscribe();
+
+      const subtopicsQuery = query(collection(db, 'users', user.uid, 'studySubtopics'));
+      const unsubscribeSubtopics = onSnapshot(subtopicsQuery, (snapshot) => {
+        const subtopicsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySubtopic));
+        setSubtopics(subtopicsData);
+      });
+      
+      const sessionsQuery = query(collection(db, 'users', user.uid, 'studySessions'));
+      const unsubscribeSessions = onSnapshot(sessionsQuery, (snapshot) => {
+        const sessionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySession));
+        setSessions(sessionsData);
+      });
+
+      return () => {
+        unsubscribeGoals();
+        unsubscribeSubtopics();
+        unsubscribeSessions();
+      }
     }
   }, [user]);
 
@@ -91,7 +110,13 @@ export default function StudyTrackerPage() {
       </div>
       
       <div className="grid lg:grid-cols-[1fr_350px] gap-6">
-        <InsightsDashboard goals={goals} onAddSample={handleAddSample} onCleanup={handleCleanup} />
+        <InsightsDashboard 
+            goals={goals} 
+            subtopics={subtopics} 
+            sessions={sessions}
+            onAddSample={handleAddSample} 
+            onCleanup={handleCleanup} 
+        />
         <div className="lg:col-start-2 lg:row-start-1">
           <GamificationProfile />
         </div>
@@ -116,3 +141,4 @@ export default function StudyTrackerPage() {
     </div>
   );
 }
+

@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -495,10 +496,7 @@ export type StudySubtopic = {
 
 export type StudySession = {
     id: string;
-    goalId: string;
-    chapterId: string;
     subtopicId: string;
-    startTime: Timestamp;
-    endTime: Timestamp;
+    date: Timestamp;
     durationSeconds: number;
 }
