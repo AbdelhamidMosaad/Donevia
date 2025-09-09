@@ -2,22 +2,22 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check ownership
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // Users can only access their own user document subcollections.
-    match /users/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+    
+    // Allow users to read, write, and delete their own user document
+    match /users/{userId} {
+      allow read, write, delete: if request.auth.uid == userId;
     }
     
-    // Public flashcard decks can be read by anyone, but only created/updated
-    // through server-side logic (which is why write is false).
-    match /publicDecks/{deckId} {
-      allow read: if true;
-      allow write: if false; 
+    // Allow users to manage their own data within any subcollection
+    // This is a secure way to manage user-specific data like tasks, notes, etc.
+    match /users/{userId}/{collection}/{documentId} {
+      allow read, write, delete: if request.auth.uid == userId;
+    }
+
+    // Allow users to manage documents in any sub-subcollection
+    // This is necessary for nested data like flashcards within a deck
+    match /users/{userId}/{collection}/{documentId}/{subcollection}/{subDocumentId} {
+        allow read, write, delete: if request.auth.uid == userId;
     }
   }
 }
