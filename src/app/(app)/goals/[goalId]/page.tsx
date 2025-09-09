@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
@@ -164,4 +164,3 @@ export default function GoalDetailPage() {
     </div>
   );
 }
-
