@@ -399,6 +399,7 @@ export type WorkTrackerSettingItem = {
 };
 
 export type WorkTrackerSettings = {
+    ownerId: string;
     appointmentOptions: WorkTrackerSettingItem[];
     categoryOptions: WorkTrackerSettingItem[];
     customerOptions: WorkTrackerSettingItem[];

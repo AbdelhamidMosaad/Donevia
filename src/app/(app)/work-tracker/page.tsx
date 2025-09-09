@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { WorkActivity, WorkTrackerSettingItem, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -77,17 +77,35 @@ export default function WorkTrackerPage() {
       value,
       color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
     };
-
-    const updatedSettings = {
-      ...settings,
-      [type]: [...(settings[type] || []), newItem],
-    };
-
+    
     const settingsRef = doc(db, 'users', user.uid, 'profile', 'workTrackerSettings');
+
     try {
+        const docSnap = await getDoc(settingsRef);
+        let updatedSettings: WorkTrackerSettingsType;
+
+        if (docSnap.exists()) {
+            // Document exists, update it
+            const currentSettings = docSnap.data() as WorkTrackerSettingsType;
+            updatedSettings = {
+                ...currentSettings,
+                [type]: [...(currentSettings[type] || []), newItem],
+            };
+        } else {
+            // Document doesn't exist, create it with the new item
+            updatedSettings = {
+                ownerId: user.uid, // Set ownerId on creation
+                appointmentOptions: [],
+                categoryOptions: [],
+                customerOptions: [],
+                [type]: [newItem],
+            };
+        }
+        
       await setDoc(settingsRef, updatedSettings, { merge: true });
       toast({ title: 'New option added!', description: `"${value}" is now available.` });
     } catch (e) {
+      console.error('Error adding new setting item:', e);
       toast({ variant: 'destructive', title: 'Error adding option' });
     }
   };
