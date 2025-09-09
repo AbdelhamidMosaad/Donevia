@@ -89,7 +89,7 @@ export function StudyGoalCard({ goal, onDelete }: StudyGoalCardProps) {
             </div>
           </CardContent>
           <CardFooter>
-             <p className="text-xs text-muted-foreground">Created on {moment(goal.createdAt.toDate()).format('MMM D, YYYY')}</p>
+             <p className="text-xs text-muted-foreground">Created on {goal.createdAt ? moment(goal.createdAt.toDate()).format('MMM D, YYYY') : 'just now'}</p>
           </CardFooter>
         </Card>
       </Link>
