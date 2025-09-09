@@ -42,10 +42,10 @@ export default function GoalsPage() {
     if (!user) return;
     try {
       await deleteGoal(user.uid, goalId);
-      toast({ title: 'Goal Deleted', description: 'The goal and its related data have been removed.' });
+      toast({ title: 'Goal Deleted', description: 'The study tracker and its related data have been removed.' });
     } catch (e) {
       console.error("Error deleting goal: ", e);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete goal.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete study tracker.' });
     }
   };
 
@@ -57,13 +57,13 @@ export default function GoalsPage() {
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
-            <h1 className="text-3xl font-bold font-headline">Goals</h1>
+            <h1 className="text-3xl font-bold font-headline">Study Tracker</h1>
             <p className="text-muted-foreground">Track your ambitions and milestones.</p>
         </div>
         <div className="flex items-center gap-2">
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              New Goal
+              New Study Goal
             </Button>
         </div>
       </div>
@@ -71,8 +71,8 @@ export default function GoalsPage() {
        {goals.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
             <Target className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold font-headline">No Goals Yet</h3>
-            <p className="text-muted-foreground">Click "New Goal" to set your first one.</p>
+            <h3 className="text-xl font-semibold font-headline">No Study Goals Yet</h3>
+            <p className="text-muted-foreground">Click "New Study Goal" to set your first one.</p>
         </div>
       ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
