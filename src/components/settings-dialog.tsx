@@ -60,6 +60,7 @@ const fonts: { name: Font; label: string; variable: string }[] = [
     { name: 'montserrat', label: 'Montserrat', variable: 'var(--font-montserrat)' },
     { name: 'playfair-display', label: 'Playfair Display', variable: 'var(--font-playfair-display)' },
     { name: 'jetbrains-mono', label: 'JetBrains Mono', variable: 'var(--font-jetbrains-mono)' },
+    { name: 'bahnschrift', label: 'Bahnschrift', variable: 'Bahnschrift, sans-serif' },
 ];
 
 const fontVariables: Record<Font, string> = fonts.reduce((acc, font) => {

@@ -188,7 +188,8 @@ export interface UserSettings {
         | 'nunito'
         | 'montserrat'
         | 'playfair-display'
-        | 'jetbrains-mono';
+        | 'jetbrains-mono'
+        | 'bahnschrift';
     sidebarOpen: boolean;
     notificationSound: boolean;
     taskListsView?: 'card' | 'list';

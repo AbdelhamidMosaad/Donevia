@@ -24,6 +24,7 @@ const fonts: Record<string, string> = {
     montserrat: 'var(--font-montserrat)',
     'playfair-display': 'var(--font-playfair-display)',
     'jetbrains-mono': 'var(--font-jetbrains-mono)',
+    bahnschrift: 'Bahnschrift, sans-serif',
 };
 
 

@@ -142,6 +142,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
     { name: 'Courier New', value: '\'Courier New\', monospace' },
     { name: 'Verdana', value: 'Verdana, sans-serif' },
     { name: 'Poppins', value: 'Poppins, sans-serif' },
+    { name: 'Bahnschrift', value: 'Bahnschrift, sans-serif' },
   ];
 
   return (
