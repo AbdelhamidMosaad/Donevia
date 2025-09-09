@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table, ArrowLeft } from 'lucide-react';
 import { TaskCalendar } from '@/components/task-calendar';
 import { TaskList } from '@/components/task-list';
 import { TaskBoard } from '@/components/task-board';
@@ -110,9 +110,12 @@ export default function TaskListPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-            <h1 className="text-3xl font-bold font-headline capitalize">{listName}</h1>
-            <p className="text-muted-foreground">Manage your tasks for this list.</p>
+        <div className="flex items-center gap-4">
+           <Button variant="outline" size="icon" onClick={() => router.push('/dashboard/lists')}><ArrowLeft className="h-4 w-4" /></Button>
+            <div>
+                <h1 className="text-3xl font-bold font-headline capitalize">{listName}</h1>
+                <p className="text-muted-foreground">Manage your tasks for this list.</p>
+            </div>
         </div>
         <div className="flex items-center gap-2">
            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">

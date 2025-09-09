@@ -188,16 +188,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   return (
     <div ref={editorContainerRef} className="flex-1 flex flex-col h-full overflow-y-hidden bg-background">
         <div className="p-4 border-b pr-16 relative bg-card">
-            <div className="flex items-center gap-4">
-                <input
-                    type="text"
-                    value={docData.title}
-                    onChange={handleTitleChange}
-                    className="flex-grow w-full text-2xl font-bold bg-transparent outline-none border-none focus:ring-0"
-                    placeholder="Document Title"
-                />
-            </div>
-             <EditorToolbar 
+            <EditorToolbar 
                 editor={editor} 
                 backgroundColor={docData.backgroundColor || '#FFFFFF'}
                 onBackgroundColorChange={handleBackgroundColorChange}

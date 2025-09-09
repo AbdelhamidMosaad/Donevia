@@ -582,7 +582,7 @@ export function MindMapTool() {
     <div ref={mindMapContainerRef} className={cn("flex flex-col h-full gap-4", isFullscreen && "bg-background")}>
         <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => router.push('/mind-map')}><GitBranch className="h-4 w-4"/></Button>
+                <Button variant="outline" size="icon" onClick={() => router.push('/mind-map')}><ArrowLeft className="h-4 w-4"/></Button>
                 <Input 
                     value={mapName}
                     onChange={(e) => {

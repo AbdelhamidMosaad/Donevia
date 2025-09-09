@@ -10,6 +10,8 @@ import { db } from '@/lib/firebase';
 import type { Doc } from '@/lib/types';
 import { DocEditor } from '@/components/docs/doc-editor';
 import { WelcomeScreen } from '@/components/welcome-screen';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 
 export default function DocPage() {
@@ -49,6 +51,12 @@ export default function DocPage() {
 
   return (
     <div className="h-full flex flex-col">
+        <div className="p-4 border-b flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => router.push('/docs')}>
+                <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-xl font-semibold truncate">{docData.title}</h1>
+        </div>
         <DocEditor key={docData.id} doc={docData} />
     </div>
   );

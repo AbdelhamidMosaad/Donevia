@@ -32,6 +32,7 @@ import {
   Move,
   PanelLeftClose,
   PanelLeftOpen,
+  ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
@@ -372,7 +373,7 @@ export function DigitalWhiteboard() {
     <div className="flex flex-col h-full gap-4">
       <div className="flex items-center justify-between gap-4">
          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><PenSquare className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><ArrowLeft className="h-4 w-4" /></Button>
             <Input 
                 value={boardName}
                 onChange={(e) => {
