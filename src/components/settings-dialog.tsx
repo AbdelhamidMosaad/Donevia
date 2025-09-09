@@ -69,6 +69,7 @@ const defaultSettings: UserSettings = {
     taskListsView: 'card',
     docsView: 'card',
     notesView: 'board',
+    studyTrackerView: 'card',
     sidebarOrder: [],
     studyProfile: {
         currentStreak: 0,
@@ -102,6 +103,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             taskListsView: data.taskListsView || defaultSettings.taskListsView,
             docsView: data.docsView || defaultSettings.docsView,
             notesView: data.notesView || defaultSettings.notesView,
+            studyTrackerView: data.studyTrackerView || defaultSettings.studyTrackerView,
             sidebarOrder: data.sidebarOrder || [],
             studyProfile: data.studyProfile || defaultSettings.studyProfile,
           });
