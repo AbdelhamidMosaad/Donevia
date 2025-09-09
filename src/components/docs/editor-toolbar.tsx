@@ -7,7 +7,7 @@ import {
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
   Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive,
-  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets, MessageSquareQuote, AlignVerticalSpaceAround
+  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets, MessageSquareQuote, AlignVerticalSpaceAround, Settings
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -156,6 +156,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
           <TabsTrigger value="format">Format</TabsTrigger>
           <TabsTrigger value="insert">Insert</TabsTrigger>
           {editor.isActive('table') && <TabsTrigger value="table">Table</TabsTrigger>}
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="format" className="pt-2">
           <div className="flex items-center gap-x-1 gap-y-2 flex-wrap">
@@ -239,22 +240,6 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
               </TooltipTrigger>
               <TooltipContent><p>Highlight Color</p></TooltipContent>
             </Tooltip>
-             <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Droplets className="h-4 w-4 mr-2" /> Paper Color
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-2">
-                <div className="flex gap-1">
-                  {paperColors.map(c => (
-                    <button key={c} onClick={() => onBackgroundColorChange(c)} className={cn('h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center')} style={{ backgroundColor: c }}>
-                      {backgroundColor === c && <Check className="h-4 w-4 text-black" />}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
           </div>
         </TabsContent>
         <TabsContent value="insert" className="pt-2">
@@ -290,6 +275,43 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                 <DropdownMenuItem onSelect={() => editor.commands.transform('capitalize')}>Capitalize</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+        </TabsContent>
+        <TabsContent value="table" className="pt-2">
+            <div className="flex items-center gap-x-1 gap-y-2 flex-wrap">
+                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnBefore().run()} label="Add Column Before" icon={Columns} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnAfter().run()} label="Add Column After" icon={Columns} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteColumn().run()} label="Delete Column" icon={Trash2} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addRowBefore().run()} label="Add Row Before" icon={Rows} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addRowAfter().run()} label="Add Row After" icon={Rows} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteRow().run()} label="Delete Row" icon={Trash2} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteTable().run()} label="Delete Table" icon={Trash2} />
+                <Separator orientation="vertical" className="h-6 mx-1" />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().mergeCells().run()} label="Merge Cells" icon={Square} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().splitCell().run()} label="Split Cell" icon={ChevronsLeftRight} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderColumn().run()} label="Toggle Header Column" icon={FlipHorizontal} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderRow().run()} label="Toggle Header Row" icon={FlipVertical} />
+                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderCell().run()} label="Toggle Header Cell" icon={Square} />
+            </div>
+        </TabsContent>
+        <TabsContent value="settings" className="pt-2">
+          <div className="flex items-center gap-x-1 gap-y-2 flex-wrap">
+             <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Droplets className="h-4 w-4 mr-2" /> Paper Color
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2">
+                <div className="flex gap-1">
+                  {paperColors.map(c => (
+                    <button key={c} onClick={() => onBackgroundColorChange(c)} className={cn('h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center')} style={{ backgroundColor: c }}>
+                      {backgroundColor === c && <Check className="h-4 w-4 text-black" />}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
@@ -313,23 +335,6 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                 </TooltipContent>
             </Tooltip>
           </div>
-        </TabsContent>
-        <TabsContent value="table" className="pt-2">
-            <div className="flex items-center gap-x-1 gap-y-2 flex-wrap">
-                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnBefore().run()} label="Add Column Before" icon={Columns} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnAfter().run()} label="Add Column After" icon={Columns} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteColumn().run()} label="Delete Column" icon={Trash2} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addRowBefore().run()} label="Add Row Before" icon={Rows} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addRowAfter().run()} label="Add Row After" icon={Rows} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteRow().run()} label="Delete Row" icon={Trash2} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteTable().run()} label="Delete Table" icon={Trash2} />
-                <Separator orientation="vertical" className="h-6 mx-1" />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().mergeCells().run()} label="Merge Cells" icon={Square} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().splitCell().run()} label="Split Cell" icon={ChevronsLeftRight} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderColumn().run()} label="Toggle Header Column" icon={FlipHorizontal} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderRow().run()} label="Toggle Header Row" icon={FlipVertical} />
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderCell().run()} label="Toggle Header Cell" icon={Square} />
-            </div>
         </TabsContent>
       </Tabs>
     </TooltipProvider>
