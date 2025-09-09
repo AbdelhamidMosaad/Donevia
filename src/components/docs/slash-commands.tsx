@@ -100,17 +100,25 @@ CommandList.displayName = "CommandList";
 
 export const slashCommands = Extension.create({
   name: 'slashCommands',
+  addOptions() {
+    return {
+      suggestion: {
+        char: '/',
+        command: ({ editor, range, props }: any) => {
+          props.command({ editor, range });
+        },
+        items: ({ query }: { query: string }) => {
+          return commands.filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()));
+        },
+        appendTo: () => document.body,
+      },
+    };
+  },
   addProseMirrorPlugins() {
     return [
       Suggestion({
         editor: this.editor,
-        char: '/',
-        command: ({ editor, range, props }) => {
-          props.command({ editor, range });
-        },
-        items: ({ query }) => {
-          return commands.filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()));
-        },
+        ...this.options.suggestion,
         render: () => {
           let component: ReactRenderer;
           let popup: Instance[];
@@ -128,7 +136,7 @@ export const slashCommands = Extension.create({
 
               popup = tippy('body', {
                 getReferenceClientRect: props.clientRect,
-                appendTo: () => document.body,
+                appendTo: this.options.suggestion.appendTo,
                 content: component.element,
                 showOnCreate: true,
                 interactive: true,

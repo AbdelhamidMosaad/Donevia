@@ -109,7 +109,11 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       TableRow,
       TableHeader,
       TableCell,
-      slashCommands,
+      slashCommands.configure({
+        suggestion: {
+          appendTo: () => editorContainerRef.current,
+        },
+      }),
       TipTapImage,
       TextStyle,
       FontFamily,
