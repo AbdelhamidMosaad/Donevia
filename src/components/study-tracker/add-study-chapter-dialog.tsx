@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { StudyChapter } from '@/lib/types';
+import type { StudyChapter, StudyDifficulty } from '@/lib/types';
 import { addStudyChapter, updateStudyChapter } from '@/lib/study-tracker';
 import { Timestamp } from 'firebase/firestore';
 import moment from 'moment';
@@ -46,11 +46,13 @@ export function AddStudyChapterDialog({
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [reminder, setReminder] = useState<StudyChapter['reminder']>('none');
+  const [difficulty, setDifficulty] = useState<StudyDifficulty>('Medium');
 
   const resetForm = () => {
     setTitle('');
     setDueDate(null);
     setReminder('none');
+    setDifficulty('Medium');
   };
 
   useEffect(() => {
@@ -59,6 +61,7 @@ export function AddStudyChapterDialog({
         setTitle(chapter.title);
         setDueDate(chapter.dueDate ? chapter.dueDate.toDate() : null);
         setReminder(chapter.reminder || 'none');
+        setDifficulty(chapter.difficulty || 'Medium');
       } else {
         resetForm();
       }
@@ -83,6 +86,7 @@ export function AddStudyChapterDialog({
         order: chapter?.order ?? chaptersCount,
         dueDate: dueDate ? Timestamp.fromDate(dueDate) : null,
         reminder: reminder,
+        difficulty: difficulty,
     };
 
     try {
@@ -128,6 +132,17 @@ export function AddStudyChapterDialog({
                 <SelectItem value="1-day">1 day before</SelectItem>
                 <SelectItem value="2-days">2 days before</SelectItem>
                 <SelectItem value="1-week">1 week before</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="difficulty" className="text-right">Difficulty</Label>
+             <Select onValueChange={(v: StudyDifficulty) => setDifficulty(v)} value={difficulty}>
+              <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Easy">Easy</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="Hard">Hard</SelectItem>
               </SelectContent>
             </Select>
           </div>

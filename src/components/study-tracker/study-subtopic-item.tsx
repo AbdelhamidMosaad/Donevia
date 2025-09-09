@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { toggleStudySubtopicCompletion } from '@/lib/study-tracker';
 import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
-import { MoreHorizontal, Edit, Trash2, Link, FileText, GripVertical, Play, Pause } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Link, FileText, GripVertical, Play, Pause, Flag } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -30,6 +30,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface StudySubtopicItemProps {
   subtopic: StudySubtopic;
@@ -49,6 +50,12 @@ const formatTime = (seconds: number) => {
         .join(':');
 }
 
+const difficultyConfig = {
+  Easy: { color: 'text-green-500', label: 'Easy' },
+  Medium: { color: 'text-yellow-500', label: 'Medium' },
+  Hard: { color: 'text-red-500', label: 'Hard' },
+};
+
 
 export function StudySubtopicItem({
   subtopic,
@@ -58,6 +65,7 @@ export function StudySubtopicItem({
   isTimerActive,
 }: StudySubtopicItemProps) {
   const { user } = useAuth();
+  const difficultyInfo = subtopic.difficulty ? difficultyConfig[subtopic.difficulty] : null;
 
   const handleToggle = async () => {
     if (!user) return;
@@ -91,18 +99,32 @@ export function StudySubtopicItem({
             className="mt-1"
           />
           <div className="flex-1">
-            <CollapsibleTrigger asChild disabled={!hasExtraContent}>
-                 <label
-                    htmlFor={`subtopic-${subtopic.id}`}
-                    className={cn(
-                      'font-medium cursor-pointer text-sm',
-                      subtopic.isCompleted && 'line-through text-muted-foreground',
-                      hasExtraContent && "hover:underline"
-                    )}
-                  >
-                    {subtopic.title}
-                  </label>
-            </CollapsibleTrigger>
+             <div className="flex items-center gap-2">
+                {difficultyInfo && (
+                   <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Flag className={cn("h-4 w-4", difficultyInfo.color)} />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{difficultyInfo.label} Difficulty</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                )}
+                <CollapsibleTrigger asChild disabled={!hasExtraContent}>
+                     <label
+                        htmlFor={`subtopic-${subtopic.id}`}
+                        className={cn(
+                          'font-medium cursor-pointer text-sm',
+                          subtopic.isCompleted && 'line-through text-muted-foreground',
+                          hasExtraContent && "hover:underline"
+                        )}
+                      >
+                        {subtopic.title}
+                      </label>
+                </CollapsibleTrigger>
+            </div>
             {subtopic.timeSpentSeconds && subtopic.timeSpentSeconds > 0 ? (
                  <p className="text-xs text-muted-foreground">{formatTime(subtopic.timeSpentSeconds)} studied</p>
             ) : null}

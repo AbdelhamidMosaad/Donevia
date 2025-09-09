@@ -457,6 +457,8 @@ export type FlashcardProgress = {
 };
 
 /** Study Tracker */
+export type StudyDifficulty = 'Easy' | 'Medium' | 'Hard';
+
 export type StudyGoal = {
     id: string;
     title: string;
@@ -475,6 +477,7 @@ export type StudyChapter = {
     createdAt: Timestamp;
     dueDate?: Timestamp | null;
     reminder?: 'none' | 'on-due-date' | '1-day' | '2-days' | '1-week';
+    difficulty?: StudyDifficulty;
 }
 
 export type StudySubtopicResource = {
@@ -494,6 +497,7 @@ export type StudySubtopic = {
     notes?: string;
     resources?: StudySubtopicResource[];
     timeSpentSeconds?: number;
+    difficulty?: StudyDifficulty;
 }
 
 export type StudySession = {

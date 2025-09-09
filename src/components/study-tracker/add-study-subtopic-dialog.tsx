@@ -16,11 +16,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { StudySubtopic, StudySubtopicResource } from '@/lib/types';
+import type { StudySubtopic, StudySubtopicResource, StudyDifficulty } from '@/lib/types';
 import { addStudySubtopic, updateStudySubtopic } from '@/lib/study-tracker';
 import { Textarea } from '../ui/textarea';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface AddStudySubtopicDialogProps {
   goalId: string;
@@ -48,6 +49,7 @@ export function AddStudySubtopicDialog({
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [resources, setResources] = useState<StudySubtopicResource[]>([]);
+  const [difficulty, setDifficulty] = useState<StudyDifficulty>('Medium');
   const [newResourceTitle, setNewResourceTitle] = useState('');
   const [newResourceUrl, setNewResourceUrl] = useState('');
 
@@ -56,6 +58,7 @@ export function AddStudySubtopicDialog({
     setTitle('');
     setNotes('');
     setResources([]);
+    setDifficulty('Medium');
     setNewResourceTitle('');
     setNewResourceUrl('');
   };
@@ -66,6 +69,7 @@ export function AddStudySubtopicDialog({
         setTitle(subtopic.title);
         setNotes(subtopic.notes || '');
         setResources(subtopic.resources || []);
+        setDifficulty(subtopic.difficulty || 'Medium');
       } else {
         resetForm();
       }
@@ -90,6 +94,7 @@ export function AddStudySubtopicDialog({
         title,
         notes,
         resources,
+        difficulty,
         isCompleted: subtopic?.isCompleted || false,
         order: subtopic?.order ?? subtopicsCount,
     };
@@ -137,6 +142,17 @@ export function AddStudySubtopicDialog({
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="title" className="text-right">Title</Label>
                 <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />
+            </div>
+             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="difficulty" className="text-right">Difficulty</Label>
+              <Select onValueChange={(v: StudyDifficulty) => setDifficulty(v)} value={difficulty}>
+                <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Easy">Easy</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Hard">Hard</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
              <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="notes" className="text-right pt-2">Notes</Label>
