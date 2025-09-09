@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { StudyGoal, StudySubtopic } from '@/lib/types';
 import {
   Table,
@@ -75,7 +74,7 @@ function GoalRow({ goal, onDelete }: { goal: StudyGoal; onDelete: (goalId: strin
           </div>
         </TableCell>
         <TableCell>{goal.dueDate ? moment(goal.dueDate.toDate()).format('MMM D, YYYY') : '-'}</TableCell>
-        <TableCell>{moment(goal.createdAt.toDate()).format('MMM D, YYYY')}</TableCell>
+        <TableCell>{goal.createdAt ? moment(goal.createdAt.toDate()).format('MMM D, YYYY') : '-'}</TableCell>
         <TableCell>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
