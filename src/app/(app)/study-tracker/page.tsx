@@ -14,6 +14,7 @@ import { StudyGoalCard } from '@/components/study-tracker/study-goal-card';
 import { deleteStudyGoal, addSampleStudyGoal, cleanupFinishedSubtopics } from '@/lib/study-tracker';
 import { useToast } from '@/hooks/use-toast';
 import { InsightsDashboard } from '@/components/study-tracker/insights-dashboard';
+import { GamificationProfile } from '@/components/study-tracker/gamification-profile';
 
 export default function StudyTrackerPage() {
   const { user, loading } = useAuth();
@@ -89,7 +90,13 @@ export default function StudyTrackerPage() {
         </div>
       </div>
       
-      <InsightsDashboard goals={goals} onAddSample={handleAddSample} onCleanup={handleCleanup} />
+      <div className="grid lg:grid-cols-[1fr_350px] gap-6">
+        <InsightsDashboard goals={goals} onAddSample={handleAddSample} onCleanup={handleCleanup} />
+        <div className="lg:col-start-2 lg:row-start-1">
+          <GamificationProfile />
+        </div>
+      </div>
+
 
        {goals.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">

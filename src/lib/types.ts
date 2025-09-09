@@ -152,10 +152,26 @@ export type ClientRequest = {
   updatedAt: Timestamp;
 };
 
+/** Gamification */
+export type BadgeId = 
+    | 'subtopic-master-1' | 'subtopic-master-10' | 'subtopic-master-50' | 'subtopic-master-100'
+    | 'goal-crusher-1' | 'goal-crusher-5'
+    | 'perfect-week' | 'knowledge-architect';
+
+export type Badge = {
+    id: BadgeId;
+    name: string;
+    description: string;
+    icon: React.ReactNode | string;
+}
+
 export type StudyProfile = {
     currentStreak: number;
     longestStreak: number;
     lastStudyDay: string; // YYYY-MM-DD
+    level: number;
+    experiencePoints: number;
+    earnedBadges: BadgeId[];
 };
 
 /** User Settings */

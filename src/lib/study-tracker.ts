@@ -16,6 +16,7 @@ import {
 import { db } from './firebase';
 import type { StudyGoal, StudyChapter, StudySubtopic, StudyProfile } from './types';
 import moment from 'moment';
+import { checkAndAwardBadges } from './gamification';
 
 // --- Goals ---
 export const addStudyGoal = async (userId: string, goalData: Omit<StudyGoal, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -99,6 +100,7 @@ export const toggleStudySubtopicCompletion = async (userId: string, subtopicId: 
     await updateDoc(subtopicRef, { isCompleted });
     if(isCompleted) {
         await logStudyActivity(userId);
+        await checkAndAwardBadges(userId, 'subtopic');
     }
 }
 
@@ -119,6 +121,9 @@ export const logStudyActivity = async (userId: string) => {
         currentStreak: 0,
         longestStreak: 0,
         lastStudyDay: '',
+        level: 1,
+        experiencePoints: 0,
+        earnedBadges: [],
     };
     
     if (currentProfile.lastStudyDay === today) {
@@ -129,6 +134,7 @@ export const logStudyActivity = async (userId: string) => {
     const newStreak = currentProfile.lastStudyDay === yesterday ? currentProfile.currentStreak + 1 : 1;
     
     const newProfile: StudyProfile = {
+        ...currentProfile,
         currentStreak: newStreak,
         longestStreak: Math.max(currentProfile.longestStreak, newStreak),
         lastStudyDay: today,

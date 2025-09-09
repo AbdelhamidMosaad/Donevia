@@ -74,6 +74,9 @@ const defaultSettings: UserSettings = {
         currentStreak: 0,
         longestStreak: 0,
         lastStudyDay: '',
+        level: 1,
+        experiencePoints: 0,
+        earnedBadges: [],
     }
 };
 

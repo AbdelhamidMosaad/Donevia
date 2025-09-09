@@ -51,7 +51,7 @@ export function InsightsDashboard({ goals, onAddSample, onCleanup }: InsightsDas
             if (doc.exists() && doc.data().studyProfile) {
                 setStudyProfile(doc.data().studyProfile);
             } else {
-                setStudyProfile({ currentStreak: 0, longestStreak: 0, lastStudyDay: '' });
+                setStudyProfile({ currentStreak: 0, longestStreak: 0, lastStudyDay: '', level: 1, experiencePoints: 0, earnedBadges: [] });
             }
         });
         return () => unsubscribe();
@@ -60,10 +60,9 @@ export function InsightsDashboard({ goals, onAddSample, onCleanup }: InsightsDas
 
   const totalGoals = goals.length;
   const totalStudyTime = goals.reduce((acc, goal) => acc + (goal.timeSpentSeconds || 0), 0);
-  const currentStreak = studyProfile?.currentStreak || 0;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 col-span-full lg:col-span-1">
         <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Total Goals</CardTitle>
@@ -78,15 +77,6 @@ export function InsightsDashboard({ goals, onAddSample, onCleanup }: InsightsDas
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{formatTime(totalStudyTime)}</div>
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Current Streak</CardTitle>
-                <Flame className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{currentStreak} {currentStreak === 1 ? 'day' : 'days'}</div>
             </CardContent>
         </Card>
         <Card className="flex flex-col justify-center">
