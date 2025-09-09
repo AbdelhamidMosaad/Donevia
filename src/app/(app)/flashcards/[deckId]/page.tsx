@@ -21,6 +21,7 @@ import dayjs from 'dayjs';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ShareDeckDialog } from '@/components/flashcards/share-deck-dialog';
+import { AIGenerator } from '@/components/flashcards/ai-generator';
 
 
 export default function DeckDetailPage() {
@@ -225,6 +226,8 @@ export default function DeckDetailPage() {
             </CardContent>
         </Card>
       </div>
+
+       {isOwner && <AIGenerator deckId={deckId} />}
 
       <Card>
           <CardHeader>
