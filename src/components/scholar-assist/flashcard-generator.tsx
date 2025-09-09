@@ -121,18 +121,18 @@ export function FlashcardGenerator() {
         </CardHeader>
         <CardContent className="flex-1 flex flex-col items-center justify-center gap-4">
             <div className="w-full text-center font-semibold text-lg">{currentCardIndex + 1} / {totalCards}</div>
-            <div className="w-full max-w-xl h-72 perspective-1000">
+            <div className="w-full max-w-xl h-72 [perspective:1000px]">
                 <div 
                     className={cn(
-                        "relative w-full h-full transition-transform duration-700 transform-style-preserve-3d",
-                        isFlipped && "rotate-y-180"
+                        "relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]",
+                        isFlipped && "[transform:rotateY(180deg)]"
                     )}
                     onClick={() => setIsFlipped(!isFlipped)}
                 >
-                    <div className="absolute w-full h-full backface-hidden rounded-xl p-6 flex items-center justify-center text-center bg-primary text-primary-foreground shadow-lg cursor-pointer">
+                    <div className="absolute w-full h-full [backface-visibility:hidden] rounded-xl p-6 flex items-center justify-center text-center bg-primary text-primary-foreground shadow-lg cursor-pointer">
                         <p className="text-2xl font-bold">{currentCard.front}</p>
                     </div>
-                     <div className="absolute w-full h-full backface-hidden rounded-xl p-6 flex items-center justify-center text-center bg-card border shadow-lg cursor-pointer rotate-y-180">
+                     <div className="absolute w-full h-full [backface-visibility:hidden] rounded-xl p-6 flex items-center justify-center text-center bg-card border shadow-lg cursor-pointer [transform:rotateY(180deg)]">
                         <p className="text-lg">{currentCard.back}</p>
                     </div>
                 </div>
