@@ -7,7 +7,7 @@ import { ArrowLeft, Layers3, RefreshCw, Shuffle, RotateCcw } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import type { Deck, FlashcardToolCard } from '@/lib/types';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { StudyCard } from '@/components/flashcards/study-card';
