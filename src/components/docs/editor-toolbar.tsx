@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -145,213 +146,165 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
 
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-x-1 gap-y-2 p-2 border-t mt-2 flex-wrap">
-        <ToolbarButton editor={editor} onClick={() => editor.chain().focus().undo().run()} label="Undo" icon={Undo} />
-        <ToolbarButton editor={editor} onClick={() => editor.chain().focus().redo().run()} label="Redo" icon={Redo} />
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+      <Tabs defaultValue="format" className="w-full mt-2">
+        <TabsList className="h-auto p-1">
+          <TabsTrigger value="format">Format</TabsTrigger>
+          <TabsTrigger value="insert">Insert</TabsTrigger>
+          {editor.isActive('table') && <TabsTrigger value="table">Table</TabsTrigger>}
+        </TabsList>
+        <TabsContent value="format" className="pt-2">
+          <div className="flex items-center gap-x-1 gap-y-2 flex-wrap">
+            <ToolbarButton editor={editor} onClick={() => editor.chain().focus().undo().run()} label="Undo" icon={Undo} />
+            <ToolbarButton editor={editor} onClick={() => editor.chain().focus().redo().run()} label="Redo" icon={Redo} />
+            <Separator orientation="vertical" className="h-6 mx-1" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
-                    <Pilcrow className="h-4 w-4 mr-2" />
-                    {
-                        (editor.isActive('heading', {level: 1}) && 'Heading 1') ||
-                        (editor.isActive('heading', {level: 2}) && 'Heading 2') ||
-                        (editor.isActive('heading', {level: 3}) && 'Heading 3') ||
-                        'Paragraph'
-                    }
+                  <Pilcrow className="h-4 w-4 mr-2" />
+                  {(editor.isActive('heading', { level: 1 }) && 'Heading 1') ||
+                   (editor.isActive('heading', { level: 2 }) && 'Heading 2') ||
+                   (editor.isActive('heading', { level: 3 }) && 'Heading 3') ||
+                   'Paragraph'}
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
                 <DropdownMenuItem onSelect={() => editor.chain().focus().setParagraph().run()}>Paragraph</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({level: 1}).run()}>Heading 1</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({level: 2}).run()}>Heading 2</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({level: 3}).run()}>Heading 3</DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+                <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>Heading 1</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>Heading 2</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>Heading 3</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
-                    <CaseSensitive className="h-4 w-4 mr-2" />
-                     {editor.getAttributes('textStyle').fontFamily?.split(',')[0].replace(/'/g, '') || 'Inter'}
+                  <CaseSensitive className="h-4 w-4 mr-2" />
+                  {editor.getAttributes('textStyle').fontFamily?.split(',')[0].replace(/'/g, '') || 'Inter'}
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
                 {fontFamilies.map(font => (
-                    <DropdownMenuItem key={font.name} onSelect={() => editor.chain().focus().setFontFamily(font.value).run()} style={{fontFamily: font.value}}>
-                        {font.name}
-                    </DropdownMenuItem>
+                  <DropdownMenuItem key={font.name} onSelect={() => editor.chain().focus().setFontFamily(font.value).run()} style={{ fontFamily: font.value }}>
+                    {font.name}
+                  </DropdownMenuItem>
                 ))}
-                 <DropdownMenuItem onSelect={() => editor.chain().focus().unsetFontFamily().run()}>
-                    Reset
-                 </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+                <DropdownMenuItem onSelect={() => editor.chain().focus().unsetFontFamily().run()}>Reset</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
-                    <Type className="h-4 w-4 mr-2" />
-                     {editor.getAttributes('textStyle').fontSize || '16px'}
+                  <Type className="h-4 w-4 mr-2" />
+                  {editor.getAttributes('textStyle').fontSize || '16px'}
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
                 {fontSizes.map(size => (
-                    <DropdownMenuItem key={size} onSelect={() => editor.chain().focus().setFontSize(size).run()}>
-                        {size}
-                    </DropdownMenuItem>
+                  <DropdownMenuItem key={size} onSelect={() => editor.chain().focus().setFontSize(size).run()}>{size}</DropdownMenuItem>
                 ))}
-                 <DropdownMenuItem onSelect={() => editor.chain().focus().unsetFontSize().run()}>
-                    Reset
-                 </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
-                    <PilcrowLeft className="h-4 w-4 mr-2" />
-                    Text Transform
+                <DropdownMenuItem onSelect={() => editor.chain().focus().unsetFontSize().run()}>Reset</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Separator orientation="vertical" className="h-6 mx-1" />
+            <ToolbarButton editor={editor} name="bold" label="Bold" icon={Bold} />
+            <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
+            <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
+            <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
+            <ToolbarButton editor={editor} name="superscript" label="Superscript" icon={Superscript} />
+            <ToolbarButton editor={editor} name="subscript" label="Subscript" icon={Subscript} />
+            <Separator orientation="vertical" className="h-6 mx-1" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Toggle size="sm" asChild>
+                  <label style={{ color: editor.getAttributes('textStyle').color }} className="relative p-2 rounded-md hover:bg-muted cursor-pointer">
+                    <Palette className="h-4 w-4" />
+                    <input type="color" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" onInput={(event) => editor.chain().focus().setColor((event.target as HTMLInputElement).value).run()} value={editor.getAttributes('textStyle').color || '#000000'} />
+                  </label>
+                </Toggle>
+              </TooltipTrigger>
+              <TooltipContent><p>Text Color</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Toggle size="sm" asChild>
+                  <label className="relative p-2 rounded-md hover:bg-muted cursor-pointer">
+                    <Highlighter className="h-4 w-4" />
+                    <input type="color" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" onInput={(event) => editor.chain().focus().toggleHighlight({ color: (event.target as HTMLInputElement).value }).run()} value={editor.getAttributes('highlight')?.color || '#ffffff'} />
+                  </label>
+                </Toggle>
+              </TooltipTrigger>
+              <TooltipContent><p>Highlight Color</p></TooltipContent>
+            </Tooltip>
+             <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Droplets className="h-4 w-4 mr-2" /> Paper Color
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2">
+                <div className="flex gap-1">
+                  {paperColors.map(c => (
+                    <button key={c} onClick={() => onBackgroundColorChange(c)} className={cn('h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center')} style={{ backgroundColor: c }}>
+                      {backgroundColor === c && <Check className="h-4 w-4 text-black" />}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </TabsContent>
+        <TabsContent value="insert" className="pt-2">
+          <div className="flex items-center gap-x-1 gap-y-2 flex-wrap">
+            <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
+            <ToolbarButton editor={editor} label="Image from URL" icon={ImageIcon} onClick={addImage} />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Toggle size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4" />
+                </Toggle>
+              </TooltipTrigger>
+              <TooltipContent><p>Upload Image</p></TooltipContent>
+            </Tooltip>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+            <ToolbarButton editor={editor} label="Table" icon={Table} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+            <ToolbarButton editor={editor} label="2 Columns" icon={Columns} onClick={() => editor.chain().focus().insertTable({ rows: 1, cols: 2, withHeaderRow: false }).run()} />
+            <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
+            <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
+            <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
+            <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
+            <ToolbarButton editor={editor} label="Callout" icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleCallout().run()} />
+            <ToolbarButton editor={editor} label="Horizontal Line" icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
+             <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
+                  <PilcrowLeft className="h-4 w-4 mr-2" /> Text Transform
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
                 <DropdownMenuItem onSelect={() => editor.commands.transform('uppercase')}>UPPERCASE</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.commands.transform('lowercase')}>lowercase</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.commands.transform('capitalize')}>Capitalize</DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <Toggle size="sm" asChild>
-                    <label style={{ color: editor.getAttributes('textStyle').color }} className="relative p-2 rounded-md hover:bg-muted cursor-pointer">
-                        <Palette className="h-4 w-4" />
-                        <input
-                            type="color"
-                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                            onInput={(event) => editor.chain().focus().setColor((event.target as HTMLInputElement).value).run()}
-                            value={editor.getAttributes('textStyle').color || '#000000'}
-                        />
-                    </label>
-                </Toggle>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>Text Color</p>
-            </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <Toggle size="sm" asChild>
-                     <label className="relative p-2 rounded-md hover:bg-muted cursor-pointer">
-                        <Highlighter className="h-4 w-4" />
-                        <input
-                            type="color"
-                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                            onInput={(event) => editor.chain().focus().toggleHighlight({ color: (event.target as HTMLInputElement).value }).run()}
-                            value={editor.getAttributes('highlight')?.color || '#ffffff'}
-                        />
-                    </label>
-                </Toggle>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>Highlight Color</p>
-            </TooltipContent>
-        </Tooltip>
-        
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm">
-                    <Droplets className="h-4 w-4 mr-2" />
-                    Paper Color
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2">
-                <div className="flex gap-1">
-                    {paperColors.map(c => (
-                        <button
-                            key={c}
-                            onClick={() => onBackgroundColorChange(c)}
-                            className={cn('h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center')}
-                            style={{backgroundColor: c}}
-                        >
-                            {backgroundColor === c && <Check className="h-4 w-4 text-black"/>}
-                        </button>
-                    ))}
-                </div>
-            </PopoverContent>
-        </Popover>
-
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-
-        <ToolbarButton editor={editor} name="bold" label="Bold" icon={Bold} />
-        <ToolbarButton editor={editor} name="italic" label="Italic" icon={Italic} />
-        <ToolbarButton editor={editor} name="underline" label="Underline" icon={Underline} />
-        <ToolbarButton editor={editor} name="strike" label="Strikethrough" icon={Strikethrough} />
-        <ToolbarButton editor={editor} name="superscript" label="Superscript" icon={Superscript} />
-        <ToolbarButton editor={editor} name="subscript" label="Subscript" icon={Subscript} />
-
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-
-        <ToolbarButton editor={editor} name="alignLeft" label="Align Left" icon={AlignLeft} align="left" />
-        <ToolbarButton editor={editor} name="alignCenter" label="Align Center" icon={AlignCenter} align="center" />
-        <ToolbarButton editor={editor} name="alignRight" label="Align Right" icon={AlignRight} align="right" />
-        <ToolbarButton editor={editor} name="alignJustify" label="Align Justify" icon={AlignJustify} align="justify" />
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-
-        <ToolbarButton editor={editor} name="bulletList" label="Bullet List" icon={List} />
-        <ToolbarButton editor={editor} name="orderedList" label="Numbered List" icon={ListOrdered} />
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        <ToolbarButton editor={editor} name="link" label="Link" icon={Link} onClick={setLink} />
-        <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
-        <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
-        <ToolbarButton editor={editor} label="Image from URL" icon={ImageIcon} onClick={addImage} />
-        <ToolbarButton editor={editor} label="Horizontal Line" icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
-        <ToolbarButton editor={editor} label="Callout" icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleCallout().run()} />
-        
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <Toggle size="sm" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="h-4 w-4" />
-                </Toggle>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>Upload Image</p>
-            </TooltipContent>
-        </Tooltip>
-        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-        
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        <ToolbarButton editor={editor} name="table" label="Table" icon={Table} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
-        <ToolbarButton editor={editor} label="2 Columns" icon={Columns} onClick={() => editor.chain().focus().insertTable({ rows: 1, cols: 2, withHeaderRow: false }).run()} />
-
-        {editor.isActive('table') && (
-            <>
-                <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnBefore().run()} label="Add Column Before" icon={Columns} />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </TabsContent>
+        <TabsContent value="table" className="pt-2">
+            <div className="flex items-center gap-x-1 gap-y-2 flex-wrap">
+                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnBefore().run()} label="Add Column Before" icon={Columns} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addColumnAfter().run()} label="Add Column After" icon={Columns} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteColumn().run()} label="Delete Column" icon={Trash2} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addRowBefore().run()} label="Add Row Before" icon={Rows} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().addRowAfter().run()} label="Add Row After" icon={Rows} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteRow().run()} label="Delete Row" icon={Trash2} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().deleteTable().run()} label="Delete Table" icon={Trash2} />
+                <Separator orientation="vertical" className="h-6 mx-1" />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().mergeCells().run()} label="Merge Cells" icon={Square} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().splitCell().run()} label="Split Cell" icon={ChevronsLeftRight} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderColumn().run()} label="Toggle Header Column" icon={FlipHorizontal} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderRow().run()} label="Toggle Header Row" icon={FlipVertical} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderCell().run()} label="Toggle Header Cell" icon={Square} />
-            </>
-        )}
-      </div>
+            </div>
+        </TabsContent>
+      </Tabs>
     </TooltipProvider>
   );
 }
