@@ -358,8 +358,15 @@ export type RecapRequest = z.infer<typeof RecapRequestSchema>;
 
 export const RecapResponseSchema = z.object({
   title: z.string().describe('A short, engaging title for the recap.'),
-  summary: z.string().describe("A 2-3 sentence paragraph summarizing the user's activity."),
-  highlights: z.array(z.string()).describe('A bulleted list of 2-4 key highlights or achievements.'),
+  quantitativeSummary: z.object({
+    tasksCompleted: z.number().describe('The number of tasks completed in the period.'),
+    tasksCreated: z.number().describe('The number of tasks created in the period.'),
+    tasksOverdue: z.number().describe('The number of tasks that are overdue.'),
+  }),
+  accomplishments: z.array(z.string()).describe('A bulleted list of 2-4 key achievements.'),
+  challenges: z.array(z.string()).describe('A bulleted list of 1-3 challenges or overdue items.'),
+  productivityInsights: z.string().describe('A 2-3 sentence paragraph offering one key observation or piece of advice.'),
+  nextPeriodFocus: z.string().describe('A 1-2 sentence summary suggesting a focus for the next period.'),
 });
 export type RecapResponse = z.infer<typeof RecapResponseSchema>;
 
