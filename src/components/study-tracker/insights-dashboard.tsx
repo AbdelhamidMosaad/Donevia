@@ -28,8 +28,6 @@ interface InsightsDashboardProps {
   goals: StudyGoal[];
   subtopics: StudySubtopic[];
   sessions: StudySession[];
-  onAddSample: () => void;
-  onCleanup: () => void;
 }
 
 function formatTime(totalSeconds: number): string {
@@ -43,7 +41,7 @@ function formatTime(totalSeconds: number): string {
     return parts.length > 0 ? parts.join(' ') : '0m';
 }
 
-export function InsightsDashboard({ goals, subtopics, sessions, onAddSample, onCleanup }: InsightsDashboardProps) {
+export function InsightsDashboard({ goals, subtopics, sessions }: InsightsDashboardProps) {
   const { user } = useAuth();
 
   const totalGoals = goals.length;
@@ -130,36 +128,6 @@ export function InsightsDashboard({ goals, subtopics, sessions, onAddSample, onC
                         <Bar dataKey="progress" radius={4} />
                     </RechartsBarChart>
                 </ChartContainer>
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader>
-                 <CardTitle>Utilities</CardTitle>
-                 <CardDescription>Extra actions for managing your study tracker.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col md:flex-row items-center justify-center gap-4">
-                 <Button onClick={onAddSample} variant="outline" className="w-full md:w-auto">
-                    <PlusSquare className="mr-2 h-4 w-4" /> Sample
-                </Button>
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive" className="w-full md:w-auto">
-                            <Trash2 className="mr-2 h-4 w-4" /> Cleanup
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will permanently delete all subtopics that have been marked as completed across all of your study goals. This action cannot be undone.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={onCleanup}>Yes, cleanup</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </CardContent>
         </Card>
     </div>

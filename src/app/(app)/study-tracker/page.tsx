@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, GraduationCap, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, GraduationCap, LayoutGrid, List, PlusSquare, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { StudyGoal, StudySubtopic, StudySession } from '@/lib/types';
@@ -17,6 +17,9 @@ import { InsightsDashboard } from '@/components/study-tracker/insights-dashboard
 import { GamificationProfile } from '@/components/study-tracker/gamification-profile';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StudyGoalListView } from '@/components/study-tracker/study-goal-list-view';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 type View = 'card' | 'list';
 
@@ -143,19 +146,45 @@ export default function StudyTrackerPage() {
         </div>
       </div>
       
-      <div className="grid lg:grid-cols-[1fr_auto] gap-6">
+      <div className="grid lg:grid-cols-[1fr_350px] gap-6">
+          <InsightsDashboard 
+              goals={goals} 
+              subtopics={subtopics} 
+              sessions={sessions}
+          />
           <div className="flex flex-col gap-6">
-            <InsightsDashboard 
-                goals={goals} 
-                subtopics={subtopics} 
-                sessions={sessions}
-                onAddSample={handleAddSample} 
-                onCleanup={handleCleanup} 
-            />
+            <GamificationProfile />
+             <Card>
+                <CardHeader>
+                    <CardTitle>Utilities</CardTitle>
+                    <CardDescription>Extra actions for managing your study tracker.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2">
+                    <Button onClick={handleAddSample} variant="outline" className="w-full">
+                        <PlusSquare className="mr-2 h-4 w-4" /> Add Sample Goal
+                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" className="w-full">
+                                <Trash2 className="mr-2 h-4 w-4" /> Cleanup Finished Subtopics
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently delete all subtopics that have been marked as completed across all of your study goals. This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleCleanup}>Yes, cleanup</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardContent>
+            </Card>
           </div>
-        <div className="w-full lg:w-[350px]">
-          <GamificationProfile />
-        </div>
       </div>
 
        <div className="mt-6">
