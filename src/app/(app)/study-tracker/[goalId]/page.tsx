@@ -273,6 +273,7 @@ export default function StudyGoalDetailPage() {
                                                 <StudyChapterItem 
                                                     chapter={chapter} 
                                                     subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
+                                                    chaptersCount={chapters.length}
                                                 />
                                             </div>
                                         )}

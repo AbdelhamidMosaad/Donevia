@@ -4,8 +4,7 @@
 import { useState } from 'react';
 import type { StudyChapter, StudySubtopic } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { toggleStudySubtopicCompletion, deleteStudyChapter, deleteStudySubtopic } from '@/lib/study-tracker';
-import { Checkbox } from '../ui/checkbox';
+import { deleteStudyChapter, deleteStudySubtopic } from '@/lib/study-tracker';
 import { cn } from '@/lib/utils';
 import { MoreHorizontal, Edit, Trash2, PlusCircle, GripVertical } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -20,9 +19,10 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 interface StudyChapterItemProps {
   chapter: StudyChapter;
   subtopics: StudySubtopic[];
+  chaptersCount: number;
 }
 
-export function StudyChapterItem({ chapter, subtopics }: StudyChapterItemProps) {
+export function StudyChapterItem({ chapter, subtopics, chaptersCount }: StudyChapterItemProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
@@ -124,7 +124,7 @@ export function StudyChapterItem({ chapter, subtopics }: StudyChapterItemProps) 
         chapter={chapter} 
         open={isEditChapterOpen} 
         onOpenChange={setIsEditChapterOpen}
-        chaptersCount={0} // Not needed for editing
+        chaptersCount={chaptersCount}
       />
       
        <AddStudySubtopicDialog
