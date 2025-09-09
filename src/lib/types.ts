@@ -228,6 +228,7 @@ export type Doc = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
     folderId?: string | null;
+    backgroundColor?: string;
 };
 
 export type DocFolder = {

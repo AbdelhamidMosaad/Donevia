@@ -7,7 +7,7 @@ import {
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
   Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive,
-  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft
+  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -18,9 +18,14 @@ import { Button } from '../ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 interface EditorToolbarProps {
   editor: Editor;
+  onBackgroundColorChange: (color: string) => void;
+  backgroundColor: string;
 }
 
 const ToolbarButton = ({
@@ -73,8 +78,9 @@ const ToolbarButton = ({
   );
 };
 
+const paperColors = ['#FFFFFF', '#FDF6E3', '#F5F5F5', '#E8F5E9', '#E3F2FD'];
 
-export function EditorToolbar({ editor }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor }: EditorToolbarProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -256,6 +262,29 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                 <p>Highlight Color</p>
             </TooltipContent>
         </Tooltip>
+        
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm">
+                    <Droplets className="h-4 w-4 mr-2" />
+                    Paper Color
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2">
+                <div className="flex gap-1">
+                    {paperColors.map(c => (
+                        <button
+                            key={c}
+                            onClick={() => onBackgroundColorChange(c)}
+                            className={cn('h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center')}
+                            style={{backgroundColor: c}}
+                        >
+                            {backgroundColor === c && <Check className="h-4 w-4 text-black"/>}
+                        </button>
+                    ))}
+                </div>
+            </PopoverContent>
+        </Popover>
 
 
         <Separator orientation="vertical" className="h-6 mx-1" />

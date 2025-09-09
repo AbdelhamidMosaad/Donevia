@@ -31,6 +31,7 @@ import Subscript from '@tiptap/extension-subscript';
 import { CharacterCount } from '@tiptap/extension-character-count';
 import { FontFamily } from '@/lib/tiptap/font-family';
 import { TextTransform } from '@/lib/tiptap/text-transform';
+import { cn } from '@/lib/utils';
 
 
 interface DocEditorProps {
@@ -51,6 +52,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       await updateDoc(docRef, {
         title: updatedDoc.title,
         content: updatedDoc.content,
+        backgroundColor: updatedDoc.backgroundColor,
         updatedAt: serverTimestamp(),
       });
       setSaveStatus('saved');
@@ -110,6 +112,12 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
     setDocData(updatedDoc);
     debouncedSave(updatedDoc);
   };
+  
+  const handleBackgroundColorChange = (color: string) => {
+    const updatedDoc = { ...docData, backgroundColor: color };
+    setDocData(updatedDoc);
+    debouncedSave(updatedDoc);
+  }
 
   useEffect(() => {
     if (editor && JSON.stringify(editor.getJSON()) !== JSON.stringify(docData.content)) {
@@ -126,8 +134,8 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-hidden">
-        <div className="p-4 border-b pr-16 relative">
+    <div className="flex-1 flex flex-col h-full overflow-y-hidden bg-background">
+        <div className="p-4 border-b pr-16 relative bg-card">
             <div className="flex items-center gap-4">
                 <input
                     type="text"
@@ -137,17 +145,27 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
                     placeholder="Document Title"
                 />
             </div>
-             <EditorToolbar editor={editor} />
+             <EditorToolbar 
+                editor={editor} 
+                backgroundColor={docData.backgroundColor || '#FFFFFF'}
+                onBackgroundColorChange={handleBackgroundColorChange}
+              />
              <div className="absolute top-4 right-16 flex items-center gap-2 text-sm text-muted-foreground">
                 {saveStatus === 'saving' && <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>}
                 {saveStatus === 'saved' && <span>Saved</span>}
             </div>
         </div>
        
-        <div className="relative flex-1 overflow-y-auto" onClick={() => editor.commands.focus()}>
-            <EditorContent editor={editor} />
+        <div 
+          className="relative flex-1 overflow-y-auto" 
+          onClick={() => editor.commands.focus()}
+          style={{ backgroundColor: docData.backgroundColor || '#FFFFFF' }}
+        >
+            <div className="max-w-4xl mx-auto my-8 bg-transparent">
+              <EditorContent editor={editor} />
+            </div>
         </div>
-        <div className="border-t text-xs text-muted-foreground p-2 flex justify-end gap-4">
+        <div className="border-t text-xs text-muted-foreground p-2 flex justify-end gap-4 bg-card">
             <span>Words: {editor.storage.characterCount.words()}</span>
             <span>Characters: {editor.storage.characterCount.characters()}</span>
         </div>
