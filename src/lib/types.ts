@@ -448,6 +448,12 @@ export type StudyChapter = {
     createdAt: Timestamp;
 }
 
+export type StudySubtopicResource = {
+    id: string;
+    title: string;
+    url: string;
+}
+
 export type StudySubtopic = {
     id: string;
     goalId: string;
@@ -456,4 +462,6 @@ export type StudySubtopic = {
     isCompleted: boolean;
     order: number;
     createdAt: Timestamp;
+    notes?: string;
+    resources?: StudySubtopicResource[];
 }

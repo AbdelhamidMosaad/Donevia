@@ -10,7 +10,7 @@ import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Edit, PlusCircle, Flag } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Flag, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -73,6 +73,30 @@ export default function StudyGoalDetailPage() {
   
   const flagPosition = `${progressPercentage}%`;
 
+  const handleShareProgress = () => {
+    if (!goal || subtopics.length === 0) return;
+    const completedCount = subtopics.filter(s => s.isCompleted).length;
+    const totalCount = subtopics.length;
+    const percentage = Math.round(progressPercentage);
+
+    let progressText = `My Study Progress for "${goal.title}":\n`;
+    progressText += `✅ ${completedCount} of ${totalCount} subtopics completed (${percentage}%)\n\n`;
+    
+    chapters.forEach(chapter => {
+        progressText += `Chapter: ${chapter.title}\n`;
+        subtopics.filter(s => s.chapterId === chapter.id)
+            .sort((a,b) => a.order - b.order)
+            .forEach(subtopic => {
+                progressText += `  [${subtopic.isCompleted ? 'x' : ' '}] ${subtopic.title}\n`;
+            });
+        progressText += '\n';
+    });
+
+    navigator.clipboard.writeText(progressText);
+    toast({ title: "Progress copied to clipboard!" });
+  };
+
+
   if (loading || !user || !goal) {
     return <div className="flex items-center justify-center h-full"><p>Loading goal...</p></div>;
   }
@@ -87,7 +111,10 @@ export default function StudyGoalDetailPage() {
                 <p className="text-muted-foreground">{goal.description}</p>
             </div>
         </div>
-        <Button variant="outline" onClick={() => setIsEditGoalOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit Goal</Button>
+        <div className='flex items-center gap-2'>
+            <Button variant="outline" onClick={handleShareProgress}><Share2 className="mr-2 h-4 w-4" /> Share Progress</Button>
+            <Button variant="outline" onClick={() => setIsEditGoalOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit Goal</Button>
+        </div>
       </div>
 
       <Card>
