@@ -70,6 +70,8 @@ const defaultSettings: UserSettings = {
     docsView: 'card',
     notesView: 'board',
     studyTrackerView: 'card',
+    listViews: {},
+    tableColumns: {},
     sidebarOrder: [],
     studyProfile: {
         currentStreak: 0,
@@ -96,16 +98,8 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
         if (settingsSnap.exists() && settingsSnap.data()) {
           const data = settingsSnap.data();
           setSettings({
-            theme: data.theme || defaultSettings.theme,
-            font: data.font || defaultSettings.font,
-            sidebarOpen: data.sidebarOpen !== false,
-            notificationSound: data.notificationSound !== false,
-            taskListsView: data.taskListsView || defaultSettings.taskListsView,
-            docsView: data.docsView || defaultSettings.docsView,
-            notesView: data.notesView || defaultSettings.notesView,
-            studyTrackerView: data.studyTrackerView || defaultSettings.studyTrackerView,
-            sidebarOrder: data.sidebarOrder || [],
-            studyProfile: data.studyProfile || defaultSettings.studyProfile,
+            ...defaultSettings,
+            ...data
           });
         } else {
             setSettings(defaultSettings);

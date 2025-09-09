@@ -195,6 +195,8 @@ export interface UserSettings {
     docsView?: 'card' | 'list';
     notesView?: 'board' | 'canvas';
     studyTrackerView?: 'card' | 'list';
+    listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
+    tableColumns?: { [listId: string]: string[] };
     sidebarOrder?: string[];
     bookmarkSettings?: {
         categories: string[];
