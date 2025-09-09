@@ -10,7 +10,7 @@ import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { AddStudyChapterDialog } from '@/components/study-tracker/add-study-chapter-dialog';
@@ -18,6 +18,7 @@ import { StudyChapterItem } from '@/components/study-tracker/study-chapter-item'
 import { useDebouncedCallback } from 'use-debounce';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { logStudySession } from '@/lib/study-tracker';
+import moment from 'moment';
 
 
 export default function StudyGoalDetailPage() {
@@ -117,6 +118,24 @@ export default function StudyGoalDetailPage() {
   const totalTimeSpent = useMemo(() => {
       return subtopics.reduce((acc, s) => acc + (s.timeSpentSeconds || 0), 0);
   }, [subtopics]);
+
+  const adaptivePlan = useMemo(() => {
+    if (!goal?.dueDate) return null;
+    
+    const remainingSubtopics = subtopics.filter(s => !s.isCompleted).length;
+    if (remainingSubtopics === 0) return null;
+
+    const daysRemaining = moment(goal.dueDate.toDate()).diff(moment(), 'days');
+    
+    if (daysRemaining < 1) {
+        return `The deadline has passed! You still have ${remainingSubtopics} subtopics left.`;
+    }
+
+    const pace = Math.ceil(remainingSubtopics / daysRemaining);
+    return `To finish by ${moment(goal.dueDate.toDate()).format('ll')}, you should aim to complete ~${pace} subtopic${pace > 1 ? 's' : ''} per day.`;
+
+  }, [goal, subtopics]);
+
 
   const handleShareProgress = () => {
     if (!goal || subtopics.length === 0) return;
@@ -234,8 +253,8 @@ export default function StudyGoalDetailPage() {
         </div>
       </div>
 
-       <div className="grid md:grid-cols-2 gap-6">
-        <Card>
+       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle>Progress Track</CardTitle>
                 <CardDescription>{subtopics.filter(s => s.isCompleted).length} of {subtopics.length} subtopics completed</CardDescription>
@@ -266,6 +285,15 @@ export default function StudyGoalDetailPage() {
             </CardContent>
         </Card>
       </div>
+
+      {adaptivePlan && (
+        <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-4 flex items-center gap-4">
+                <Lightbulb className="h-6 w-6 text-blue-500" />
+                <p className="text-blue-800 dark:text-blue-200 font-medium text-sm">{adaptivePlan}</p>
+            </CardContent>
+        </Card>
+      )}
 
 
         <Card className="flex flex-col flex-1 min-h-0">
