@@ -61,6 +61,8 @@ export function AddMilestoneDialog({
         resetForm();
       }
       setIsSaving(false);
+    } else {
+        resetForm();
     }
   }, [open, milestone, isEditMode]);
 

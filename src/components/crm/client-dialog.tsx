@@ -14,7 +14,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -50,7 +49,6 @@ export function ClientDialog({
     if (!user || !isEditMode || !client) return;
     
     if (!clientData.company) {
-        // Don't save if required field is missing, but don't show toast on auto-save
         return;
     }
 
@@ -64,7 +62,14 @@ export function ClientDialog({
     } finally {
         setIsSaving(false);
     }
-  }, 1500); // 1.5-second debounce
+  }, 1500);
+
+  const resetForm = () => {
+    setName('');
+    setCompany('');
+    setEmail('');
+    setPhone('');
+  };
 
   useEffect(() => {
     if (open) {
@@ -74,18 +79,16 @@ export function ClientDialog({
         setEmail(client.email || '');
         setPhone(client.phone || '');
       } else {
-        setName('');
-        setCompany('');
-        setEmail('');
-        setPhone('');
+        resetForm();
       }
+    } else {
+        resetForm();
     }
   }, [open, client, isEditMode]);
 
   useEffect(() => {
     if (isEditMode && open) {
         const clientData = { name, company, email, phone };
-        // Don't trigger save on initial load
         if (client?.name !== name || client?.company !== company || client?.email !== email || client?.phone !== phone) {
             debouncedSave(clientData);
         }
@@ -108,6 +111,7 @@ export function ClientDialog({
 
     try {
       if (isEditMode && client) {
+        // This part is mostly for completion, as auto-save handles it.
         await updateClient(user.uid, client.id, clientData);
         toast({ title: 'Client Updated', description: `"${name || company}" has been updated.` });
       } else {

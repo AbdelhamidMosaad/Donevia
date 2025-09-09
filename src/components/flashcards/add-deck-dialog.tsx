@@ -34,10 +34,14 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
   const [name, setName] = useState(deck.name);
   const [description, setDescription] = useState(deck.description || '');
 
-  useEffect(() => {
-    if (open) {
+  const resetForm = () => {
       setName(deck.name);
       setDescription(deck.description || '');
+  }
+
+  useEffect(() => {
+    if (open) {
+      resetForm();
       setIsSaving(false);
     }
   }, [open, deck]);

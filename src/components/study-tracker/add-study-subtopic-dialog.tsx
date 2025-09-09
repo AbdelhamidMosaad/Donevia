@@ -74,6 +74,8 @@ export function AddStudySubtopicDialog({
         resetForm();
       }
       setIsSaving(false);
+    } else {
+        resetForm();
     }
   }, [open, subtopic, isEditMode]);
 

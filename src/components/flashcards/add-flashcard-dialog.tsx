@@ -50,6 +50,8 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
         resetForm();
       }
       setIsSaving(false);
+    } else {
+        resetForm();
     }
   }, [open, card, isEditMode]);
 

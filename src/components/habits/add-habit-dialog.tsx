@@ -37,10 +37,10 @@ export function AddHabitDialog({
   };
 
   useEffect(() => {
-    if (open) {
+    if (!open) {
       resetForm();
-      setIsSaving(false);
     }
+    setIsSaving(false);
   }, [open]);
 
   const handleSave = async () => {

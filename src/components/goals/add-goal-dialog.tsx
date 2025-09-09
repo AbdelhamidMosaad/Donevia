@@ -77,6 +77,8 @@ export function AddGoalDialog({
         resetForm();
       }
       setIsSaving(false);
+    } else {
+      resetForm();
     }
   }, [open, goal, isEditMode]);
 

@@ -42,7 +42,9 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
   });
 
   useEffect(() => {
-    setSettings(initialSettings);
+    if (isOpen) {
+      setSettings(initialSettings);
+    }
   }, [initialSettings, isOpen]);
 
   const handleAddItem = (type: 'appointmentOptions' | 'categoryOptions' | 'customerOptions') => {

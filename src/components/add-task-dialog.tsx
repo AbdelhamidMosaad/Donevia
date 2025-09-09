@@ -106,7 +106,6 @@ export function AddTaskDialog({
           const listData = docSnap.data();
           const listStages = listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || [];
           setStages(listStages);
-          // Set default status when stages are loaded for a new task
           if (!isEditMode && listStages.length > 0) {
             setStatus(listStages[0].id);
           }
@@ -130,6 +129,8 @@ export function AddTaskDialog({
       } else {
         resetForm();
       }
+    } else {
+      resetForm();
     }
   }, [open, task, isEditMode, stages, defaultDueDate]);
 
@@ -173,7 +174,7 @@ export function AddTaskDialog({
             description: `"${title}" has been updated.`,
           });
           onTaskUpdated?.();
-          setOpen(false); // Close after editing
+          if (!andAddNew) setOpen(false);
       } else {
           const docRef = await addDoc(collection(db, 'users', user.uid, 'tasks'), taskData);
           toast({
