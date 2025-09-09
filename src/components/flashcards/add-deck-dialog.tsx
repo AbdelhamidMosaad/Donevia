@@ -38,6 +38,7 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
     if (open) {
       setName(deck.name);
       setDescription(deck.description || '');
+      setIsSaving(false);
     }
   }, [open, deck]);
 

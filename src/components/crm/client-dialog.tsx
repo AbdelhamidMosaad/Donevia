@@ -47,7 +47,7 @@ export function ClientDialog({
   const isEditMode = !!client;
 
   const debouncedSave = useDebouncedCallback(async (clientData) => {
-    if (!user) return;
+    if (!user || !isEditMode || !client) return;
     
     if (!clientData.company) {
         // Don't save if required field is missing, but don't show toast on auto-save
@@ -56,13 +56,7 @@ export function ClientDialog({
 
     setIsSaving(true);
     try {
-        if (isEditMode && client) {
-            await updateClient(user.uid, client.id, clientData);
-        } else {
-            // This is for auto-saving a new client, which is not a standard pattern.
-            // For now, auto-save only works on edits. A manual save would be needed for creation.
-            // However, the prompt asked to remove save/cancel, so we focus on edit.
-        }
+        await updateClient(user.uid, client.id, clientData);
         toast({ title: '✓ Saved', description: 'Client details have been updated.'});
     } catch (e) {
         console.error("Error auto-saving client: ", e);
@@ -159,7 +153,7 @@ export function ClientDialog({
         </div>
         {!isEditMode && (
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => onOpenChange?.(false)}>Cancel</Button>
+             <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Client'}
             </Button>
