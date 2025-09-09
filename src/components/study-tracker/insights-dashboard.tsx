@@ -1,10 +1,10 @@
 
 'use client';
 
-import type { StudyGoal } from '@/lib/types';
+import type { StudyGoal, StudyProfile } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Lightbulb, PlusSquare, Trash2 } from 'lucide-react';
+import { Lightbulb, PlusSquare, Trash2, Flame } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +16,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useState, useEffect } from 'react';
 
 interface InsightsDashboardProps {
   goals: StudyGoal[];
@@ -37,8 +41,26 @@ function formatTime(totalSeconds: number): string {
 }
 
 export function InsightsDashboard({ goals, onAddSample, onCleanup }: InsightsDashboardProps) {
+  const { user } = useAuth();
+  const [studyProfile, setStudyProfile] = useState<StudyProfile | null>(null);
+
+  useEffect(() => {
+    if (user) {
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        const unsubscribe = onSnapshot(settingsRef, (doc) => {
+            if (doc.exists() && doc.data().studyProfile) {
+                setStudyProfile(doc.data().studyProfile);
+            } else {
+                setStudyProfile({ currentStreak: 0, longestStreak: 0, lastStudyDay: '' });
+            }
+        });
+        return () => unsubscribe();
+    }
+  }, [user]);
+
   const totalGoals = goals.length;
   const totalStudyTime = goals.reduce((acc, goal) => acc + (goal.timeSpentSeconds || 0), 0);
+  const currentStreak = studyProfile?.currentStreak || 0;
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -58,15 +80,24 @@ export function InsightsDashboard({ goals, onAddSample, onCleanup }: InsightsDas
                 <div className="text-2xl font-bold">{formatTime(totalStudyTime)}</div>
             </CardContent>
         </Card>
-        <Card className="col-span-1 md:col-span-2 flex flex-col justify-center">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Current Streak</CardTitle>
+                <Flame className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{currentStreak} {currentStreak === 1 ? 'day' : 'days'}</div>
+            </CardContent>
+        </Card>
+        <Card className="flex flex-col justify-center">
             <CardContent className="pt-6 flex flex-col md:flex-row items-center justify-center gap-4">
                  <Button onClick={onAddSample} variant="outline" className="w-full md:w-auto">
-                    <PlusSquare className="mr-2 h-4 w-4" /> Create Sample Goal
+                    <PlusSquare className="mr-2 h-4 w-4" /> Sample
                 </Button>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button variant="destructive" className="w-full md:w-auto">
-                            <Trash2 className="mr-2 h-4 w-4" /> Cleanup Finished Subtopics
+                            <Trash2 className="mr-2 h-4 w-4" /> Cleanup
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>

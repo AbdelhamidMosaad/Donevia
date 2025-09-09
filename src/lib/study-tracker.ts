@@ -9,10 +9,13 @@ import {
   writeBatch,
   query,
   where,
-  getDocs
+  getDocs,
+  getDoc,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { StudyGoal, StudyChapter, StudySubtopic } from './types';
+import type { StudyGoal, StudyChapter, StudySubtopic, StudyProfile } from './types';
+import moment from 'moment';
 
 // --- Goals ---
 export const addStudyGoal = async (userId: string, goalData: Omit<StudyGoal, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -93,7 +96,10 @@ export const updateStudySubtopic = async (userId: string, subtopicId: string, su
 
 export const toggleStudySubtopicCompletion = async (userId: string, subtopicId: string, isCompleted: boolean) => {
     const subtopicRef = doc(db, 'users', userId, 'studySubtopics', subtopicId);
-    return await updateDoc(subtopicRef, { isCompleted });
+    await updateDoc(subtopicRef, { isCompleted });
+    if(isCompleted) {
+        await logStudyActivity(userId);
+    }
 }
 
 export const deleteStudySubtopic = async (userId: string, subtopicId: string) => {
@@ -103,6 +109,33 @@ export const deleteStudySubtopic = async (userId: string, subtopicId: string) =>
 
 
 // --- Advanced Operations ---
+
+export const logStudyActivity = async (userId: string) => {
+    const settingsRef = doc(db, 'users', userId, 'profile', 'settings');
+    const today = moment().format('YYYY-MM-DD');
+    
+    const settingsSnap = await getDoc(settingsRef);
+    const currentProfile: StudyProfile = settingsSnap.data()?.studyProfile || {
+        currentStreak: 0,
+        longestStreak: 0,
+        lastStudyDay: '',
+    };
+    
+    if (currentProfile.lastStudyDay === today) {
+        return; // Already logged for today
+    }
+    
+    const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
+    const newStreak = currentProfile.lastStudyDay === yesterday ? currentProfile.currentStreak + 1 : 1;
+    
+    const newProfile: StudyProfile = {
+        currentStreak: newStreak,
+        longestStreak: Math.max(currentProfile.longestStreak, newStreak),
+        lastStudyDay: today,
+    };
+    
+    await setDoc(settingsRef, { studyProfile: newProfile }, { merge: true });
+};
 
 export const addSampleStudyGoal = async (userId: string) => {
     const batch = writeBatch(db);

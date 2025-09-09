@@ -70,6 +70,11 @@ const defaultSettings: UserSettings = {
     docsView: 'card',
     notesView: 'board',
     sidebarOrder: [],
+    studyProfile: {
+        currentStreak: 0,
+        longestStreak: 0,
+        lastStudyDay: '',
+    }
 };
 
 
@@ -95,6 +100,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
             docsView: data.docsView || defaultSettings.docsView,
             notesView: data.notesView || defaultSettings.notesView,
             sidebarOrder: data.sidebarOrder || [],
+            studyProfile: data.studyProfile || defaultSettings.studyProfile,
           });
         } else {
             setSettings(defaultSettings);

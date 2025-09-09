@@ -152,6 +152,12 @@ export type ClientRequest = {
   updatedAt: Timestamp;
 };
 
+export type StudyProfile = {
+    currentStreak: number;
+    longestStreak: number;
+    lastStudyDay: string; // YYYY-MM-DD
+};
+
 /** User Settings */
 export interface UserSettings {
     theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-sunset' | 'theme-mint';
@@ -177,6 +183,7 @@ export interface UserSettings {
     };
     workTrackerSettings?: WorkTrackerSettings;
     crmSettings?: CrmSettings;
+    studyProfile?: StudyProfile;
 }
 
 /** Brainstorming */
