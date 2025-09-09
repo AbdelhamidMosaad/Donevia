@@ -18,6 +18,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyChapter } from '@/lib/types';
 import { addStudyChapter, updateStudyChapter } from '@/lib/study-tracker';
+import { Timestamp } from 'firebase/firestore';
+import moment from 'moment';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface AddStudyChapterDialogProps {
   goalId: string;
@@ -41,15 +44,21 @@ export function AddStudyChapterDialog({
   const isEditMode = !!chapter;
 
   const [title, setTitle] = useState('');
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [reminder, setReminder] = useState<StudyChapter['reminder']>('none');
 
   const resetForm = () => {
     setTitle('');
+    setDueDate(null);
+    setReminder('none');
   };
 
   useEffect(() => {
     if (open) {
       if (isEditMode && chapter) {
         setTitle(chapter.title);
+        setDueDate(chapter.dueDate ? chapter.dueDate.toDate() : null);
+        setReminder(chapter.reminder || 'none');
       } else {
         resetForm();
       }
@@ -72,6 +81,8 @@ export function AddStudyChapterDialog({
         goalId,
         title,
         order: chapter?.order ?? chaptersCount,
+        dueDate: dueDate ? Timestamp.fromDate(dueDate) : null,
+        reminder: reminder,
     };
 
     try {
@@ -102,6 +113,23 @@ export function AddStudyChapterDialog({
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">Title</Label>
             <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dueDate" className="text-right">Due Date</Label>
+            <Input id="dueDate" type="date" value={dueDate ? moment(dueDate).format('YYYY-MM-DD') : ''} onChange={(e) => setDueDate(e.target.value ? new Date(e.target.value) : null)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="reminder" className="text-right">Reminder</Label>
+             <Select onValueChange={(v: StudyChapter['reminder']) => setReminder(v)} value={reminder}>
+              <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="on-due-date">On due date</SelectItem>
+                <SelectItem value="1-day">1 day before</SelectItem>
+                <SelectItem value="2-days">2 days before</SelectItem>
+                <SelectItem value="1-week">1 week before</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>

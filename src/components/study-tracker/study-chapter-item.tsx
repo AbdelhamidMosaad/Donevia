@@ -6,7 +6,7 @@ import type { StudyChapter, StudySubtopic } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { deleteStudyChapter, deleteStudySubtopic } from '@/lib/study-tracker';
 import { cn } from '@/lib/utils';
-import { MoreHorizontal, Edit, Trash2, PlusCircle, GripVertical, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, PlusCircle, GripVertical, ChevronRight, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { StudySubtopicItem } from './study-subtopic-item';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import moment from 'moment';
 
 
 interface StudyChapterItemProps {
@@ -45,7 +46,7 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount }: StudyCha
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
   const [isAddSubtopicOpen, setIsAddSubtopicOpen] = useState(false);
   const [editingSubtopic, setEditingSubtopic] = useState<StudySubtopic | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const handleDeleteChapter = async () => {
     if (!user) return;
@@ -79,6 +80,12 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount }: StudyCha
                         <h3 className="font-bold text-lg">{chapter.title}</h3>
                     </Button>
                 </CollapsibleTrigger>
+                {chapter.dueDate && (
+                  <div className="flex items-center text-xs text-muted-foreground gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>Due: {moment(chapter.dueDate.toDate()).format('MMM D')}</span>
+                  </div>
+                )}
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setIsAddSubtopicOpen(true)}>

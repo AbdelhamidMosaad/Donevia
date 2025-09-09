@@ -20,6 +20,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyGoal } from '@/lib/types';
 import { addStudyGoal, updateStudyGoal } from '@/lib/study-tracker';
+import { Timestamp } from 'firebase/firestore';
+import moment from 'moment';
 
 interface AddStudyGoalDialogProps {
   goal?: StudyGoal | null;
@@ -42,10 +44,12 @@ export function AddStudyGoalDialog({
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState<Date | null>(null);
   
   const resetForm = () => {
     setTitle('');
     setDescription('');
+    setDueDate(null);
   };
 
   useEffect(() => {
@@ -53,6 +57,7 @@ export function AddStudyGoalDialog({
       if (isEditMode && goal) {
         setTitle(goal.title);
         setDescription(goal.description || '');
+        setDueDate(goal.dueDate ? goal.dueDate.toDate() : null);
       } else {
         resetForm();
       }
@@ -74,6 +79,7 @@ export function AddStudyGoalDialog({
     const goalData = {
         title,
         description,
+        dueDate: dueDate ? Timestamp.fromDate(dueDate) : null,
     };
 
     try {
@@ -109,6 +115,10 @@ export function AddStudyGoalDialog({
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dueDate" className="text-right">Due Date</Label>
+            <Input id="dueDate" type="date" value={dueDate ? moment(dueDate).format('YYYY-MM-DD') : ''} onChange={(e) => setDueDate(e.target.value ? new Date(e.target.value) : null)} className="col-span-3" />
           </div>
         </div>
         <DialogFooter>

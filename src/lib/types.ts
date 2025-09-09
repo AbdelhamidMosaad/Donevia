@@ -439,6 +439,7 @@ export type StudyGoal = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
     timeSpentSeconds?: number;
+    dueDate?: Timestamp | null;
 }
 
 export type StudyChapter = {
@@ -447,6 +448,8 @@ export type StudyChapter = {
     title: string;
     order: number;
     createdAt: Timestamp;
+    dueDate?: Timestamp | null;
+    reminder?: 'none' | 'on-due-date' | '1-day' | '2-days' | '1-week';
 }
 
 export type StudySubtopicResource = {

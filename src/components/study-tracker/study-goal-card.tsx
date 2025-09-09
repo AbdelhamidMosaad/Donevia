@@ -5,7 +5,7 @@ import type { StudyGoal, StudySubtopic } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, GraduationCap } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, GraduationCap, Calendar } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
@@ -88,9 +88,15 @@ export function StudyGoalCard({ goal, onDelete }: StudyGoalCardProps) {
                 <p className="text-xs text-muted-foreground">{subtopics.filter(m => m.isCompleted).length} of {subtopics.length} subtopics complete.</p>
             </div>
           </CardContent>
-          <CardFooter>
-             <p className="text-xs text-muted-foreground">Created on {goal.createdAt ? moment(goal.createdAt.toDate()).format('MMM D, YYYY') : 'just now'}</p>
-          </CardFooter>
+           <CardFooter className="flex justify-between items-center text-xs text-muted-foreground">
+             <p>Created: {goal.createdAt ? moment(goal.createdAt.toDate()).format('MMM D, YYYY') : 'just now'}</p>
+             {goal.dueDate && (
+                <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>Target: {moment(goal.dueDate.toDate()).format('MMM D, YYYY')}</span>
+                </div>
+             )}
+           </CardFooter>
         </Card>
       </Link>
       <AddStudyGoalDialog goal={goal} open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />

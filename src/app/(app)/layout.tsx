@@ -1,11 +1,66 @@
-import { MainLayout } from '@/components/main-layout';
-import { Toaster } from '@/components/ui/toaster';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+'use client';
+
+import { AppHeader } from '@/components/app-header';
+import { AppSidebar } from '@/components/app-sidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { WelcomeScreen } from './welcome-screen';
+import { TaskReminderProvider } from '@/hooks/use-task-reminders';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { PomodoroProvider } from '@/hooks/use-pomodoro';
+import { StudyReminderProvider } from '@/hooks/use-study-reminders';
+
+export function MainLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+  
+  useEffect(() => {
+    if (user) {
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      getDoc(settingsRef).then(docSnap => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.sidebarOpen !== undefined) {
+              setSidebarOpen(data.sidebarOpen);
+            }
+        }
+      });
+    }
+  }, [user]);
+
+
+  if (loading || !user) {
+    return <WelcomeScreen />;
+  }
+
   return (
-    <>
-      <MainLayout>{children}</MainLayout>
-      <Toaster />
-    </>
+    <TaskReminderProvider>
+      <StudyReminderProvider>
+        <PomodoroProvider>
+          <SidebarProvider defaultOpen={sidebarOpen}>
+          <AppSidebar />
+          <SidebarInset>
+              <div className="flex flex-col h-screen">
+              <AppHeader />
+              <main className="flex-1 overflow-y-auto p-4 md:p-6">
+                  {children}
+              </main>
+              </div>
+          </SidebarInset>
+          </SidebarProvider>
+        </PomodoroProvider>
+      </StudyReminderProvider>
+    </TaskReminderProvider>
   );
 }
