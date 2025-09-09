@@ -40,6 +40,26 @@ interface DocEditorProps {
   doc: Doc;
 }
 
+// Helper function to recursively remove undefined values from an object
+function deepCleanUndefined(obj: any): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj === undefined ? null : obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(deepCleanUndefined);
+  }
+  
+  const cleaned: { [key: string]: any } = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = deepCleanUndefined(value);
+    }
+  }
+  return cleaned;
+}
+
+
 export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -56,12 +76,14 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
     const dataToSave = {
       title: updatedDoc.title,
       content: updatedDoc.content,
-      backgroundColor: updatedDoc.backgroundColor ?? null,
+      backgroundColor: updatedDoc.backgroundColor,
       updatedAt: serverTimestamp(),
     };
+    
+    const cleanedData = deepCleanUndefined(dataToSave);
 
     try {
-      await updateDoc(docRef, dataToSave);
+      await updateDoc(docRef, cleanedData);
       setSaveStatus('saved');
     } catch (error) {
       console.error("Error saving document: ", error);
