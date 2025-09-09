@@ -76,7 +76,7 @@ export function StudySubtopicItem({
             className="mt-1"
           />
           <div className="flex-1">
-            <CollapsibleTrigger asChild disabled={!hasExtraContent} className="w-full text-left">
+            <CollapsibleTrigger asChild disabled={!hasExtraContent}>
                  <label
                     htmlFor={`subtopic-${subtopic.id}`}
                     className={cn(
@@ -130,7 +130,7 @@ export function StudySubtopicItem({
           </DropdownMenu>
         </div>
          <CollapsibleContent>
-            <div className="pl-10 pr-4 pb-2 space-y-4">
+            <div className="pl-12 pr-4 pb-2 space-y-4">
               {subtopic.notes && (
                 <div className="mt-2 text-sm text-muted-foreground bg-background p-3 rounded-md border">
                     <p className="font-semibold mb-1 flex items-center gap-2"><FileText className="h-4 w-4"/> Notes</p>
