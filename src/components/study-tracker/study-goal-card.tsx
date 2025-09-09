@@ -5,7 +5,7 @@ import type { StudyGoal, StudySubtopic } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, GraduationCap, Calendar } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, GraduationCap, Calendar, Tag } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { AddStudyGoalDialog } from './add-study-goal-dialog';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Badge } from '../ui/badge';
 
 interface StudyGoalCardProps {
   goal: StudyGoal;
@@ -86,6 +87,13 @@ export function StudyGoalCard({ goal, onDelete }: StudyGoalCardProps) {
             <div className="space-y-2">
                 <Progress value={progressPercentage} aria-label={`${Math.round(progressPercentage)}% complete`} />
                 <p className="text-xs text-muted-foreground">{subtopics.filter(m => m.isCompleted).length} of {subtopics.length} subtopics complete.</p>
+                 {goal.tags && goal.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-2">
+                        {goal.tags.map(tag => (
+                            <Badge key={tag} variant="secondary">{tag}</Badge>
+                        ))}
+                    </div>
+                )}
             </div>
           </CardContent>
            <CardFooter className="flex justify-between items-center text-xs text-muted-foreground">

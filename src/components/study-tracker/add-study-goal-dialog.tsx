@@ -44,11 +44,13 @@ export function AddStudyGoalDialog({
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState('');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   
   const resetForm = () => {
     setTitle('');
     setDescription('');
+    setTags('');
     setDueDate(null);
   };
 
@@ -57,6 +59,7 @@ export function AddStudyGoalDialog({
       if (isEditMode && goal) {
         setTitle(goal.title);
         setDescription(goal.description || '');
+        setTags(goal.tags?.join(', ') || '');
         setDueDate(goal.dueDate ? goal.dueDate.toDate() : null);
       } else {
         resetForm();
@@ -79,6 +82,7 @@ export function AddStudyGoalDialog({
     const goalData = {
         title,
         description,
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         dueDate: dueDate ? Timestamp.fromDate(dueDate) : null,
     };
 
@@ -115,6 +119,10 @@ export function AddStudyGoalDialog({
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="tags" className="text-right">Tags</Label>
+            <Input id="tags" value={tags} onChange={(e) => setTags(e.target.value)} className="col-span-3" placeholder="e.g. Math, Programming, History" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dueDate" className="text-right">Due Date</Label>

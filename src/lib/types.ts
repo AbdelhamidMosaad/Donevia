@@ -163,8 +163,9 @@ export type Badge = {
     id: BadgeId;
     name: string;
     description: string;
-    icon: React.ReactNode | string;
-}
+    icon: string;
+};
+
 
 export type StudyProfile = {
     currentStreak: number;
@@ -460,6 +461,7 @@ export type StudyGoal = {
     id: string;
     title: string;
     description?: string;
+    tags?: string[];
     createdAt: Timestamp;
     updatedAt: Timestamp;
     dueDate?: Timestamp | null;
