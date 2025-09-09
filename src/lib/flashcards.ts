@@ -11,9 +11,10 @@ import {
   where,
   getDocs,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Deck, FlashcardToolCard } from './types';
+import type { Deck, Flashcard, FlashcardToolCard } from './types';
 
 
 // --- Decks ---
@@ -69,6 +70,24 @@ export const addCard = async (userId: string, deckId: string, cardData: Omit<Fla
   });
 };
 
+export const addCardsToDeck = async (userId: string, deckId: string, cards: Omit<Flashcard, 'id'>[]) => {
+    const batch = writeBatch(db);
+    const cardsRef = collection(db, 'users', userId, 'flashcardDecks', deckId, 'cards');
+    cards.forEach(cardData => {
+        const newCardRef = doc(cardsRef);
+        batch.set(newCardRef, {
+            ...cardData,
+            deckId,
+            correct: 0,
+            wrong: 0,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        });
+    });
+    await batch.commit();
+}
+
+
 export const updateCard = async (userId: string, deckId: string, cardId: string, cardData: Partial<Omit<FlashcardToolCard, 'id'>>) => {
   const cardRef = doc(db, 'users', userId, 'flashcardDecks', deckId, 'cards', cardId);
   return await updateDoc(cardRef, {
@@ -88,6 +107,28 @@ export const deleteCard = async (userId: string, deckId: string, cardId: string)
 
     return await batch.commit();
 };
+
+// --- Folders ---
+export const addFlashcardFolder = async (userId: string, folderName: string) => {
+  const foldersRef = collection(db, 'users', userId, 'flashcardFolders');
+  return await addDoc(foldersRef, {
+    name: folderName,
+    ownerId: userId,
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const updateFlashcardFolder = async (userId: string, folderId: string, folderData: { name: string }) => {
+  const folderRef = doc(db, 'users', userId, 'flashcardFolders', folderId);
+  return await updateDoc(folderRef, folderData);
+};
+
+export const deleteFlashcardFolder = async (userId: string, folderId: string) => {
+  // This currently only deletes the folder itself. Decks inside are not deleted.
+  const folderRef = doc(db, 'users', userId, 'flashcardFolders', folderId);
+  return await deleteDoc(folderRef);
+};
+
 
 // --- Sharing & Public Decks ---
 export const publishDeck = async (deck: Deck) => {

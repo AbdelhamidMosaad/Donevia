@@ -8,14 +8,16 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyMaterialRequest, StudyMaterialResponse, Flashcard } from '@/ai/flows/learning-tool-flow';
 import { Button } from '../ui/button';
-import { Loader2, Copy, Download, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Loader2, Copy, Download, ChevronLeft, ChevronRight, RefreshCw, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SaveToDeckDialog } from './shared/save-to-deck-dialog';
 
 export function FlashcardGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [result, setResult] = useState<StudyMaterialResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaveOpen, setIsSaveOpen] = useState(false);
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -114,47 +116,57 @@ export function FlashcardGenerator() {
     if (!result || !result.flashcardContent || !currentCard) return null;
     
     return (
-      <Card className="flex-1 flex flex-col h-full">
-        <CardHeader>
-            <CardTitle>{result.title}</CardTitle>
-            <CardDescription>Your AI-generated flashcards are ready. Click a card to flip it.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col items-center justify-center gap-4">
-            <div className="w-full text-center font-semibold text-lg">{currentCardIndex + 1} / {totalCards}</div>
-            <div className="w-full max-w-xl h-72 perspective-1000">
-                <div 
-                    className={cn(
-                        "relative w-full h-full transition-transform duration-700 transform-style-3d",
-                        isFlipped && "rotate-y-180"
-                    )}
-                    onClick={() => setIsFlipped(!isFlipped)}
-                >
-                    <div className="absolute w-full h-full backface-hidden rounded-xl p-6 flex items-center justify-center text-center bg-primary text-primary-foreground shadow-lg cursor-pointer">
-                        <p className="text-2xl font-bold">{currentCard.front}</p>
-                    </div>
-                     <div className="absolute w-full h-full backface-hidden rounded-xl p-6 flex items-center justify-center text-center bg-card border shadow-lg cursor-pointer rotate-y-180">
-                        <p className="text-lg">{currentCard.back}</p>
+      <>
+        <Card className="flex-1 flex flex-col h-full">
+            <CardHeader>
+                <CardTitle>{result.title}</CardTitle>
+                <CardDescription>Your AI-generated flashcards are ready. Click a card to flip it.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col items-center justify-center gap-4">
+                <div className="w-full text-center font-semibold text-lg">{currentCardIndex + 1} / {totalCards}</div>
+                <div className="w-full max-w-xl h-72 perspective-1000">
+                    <div 
+                        className={cn(
+                            "relative w-full h-full transition-transform duration-700 transform-style-3d",
+                            isFlipped && "rotate-y-180"
+                        )}
+                        onClick={() => setIsFlipped(!isFlipped)}
+                    >
+                        <div className="absolute w-full h-full backface-hidden rounded-xl p-6 flex items-center justify-center text-center bg-primary text-primary-foreground shadow-lg cursor-pointer">
+                            <p className="text-2xl font-bold">{currentCard.front}</p>
+                        </div>
+                        <div className="absolute w-full h-full backface-hidden rounded-xl p-6 flex items-center justify-center text-center bg-card border shadow-lg cursor-pointer rotate-y-180">
+                            <p className="text-lg">{currentCard.back}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div className="flex items-center gap-4 mt-4">
-                <Button variant="outline" onClick={() => navigateCard('prev')} disabled={currentCardIndex === 0}>
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                </Button>
-                 <Button onClick={() => setIsFlipped(!isFlipped)}>
-                    <RefreshCw className="mr-2 h-4 w-4" /> Flip Card
-                </Button>
-                <Button variant="outline" onClick={() => navigateCard('next')} disabled={currentCardIndex === totalCards - 1}>
-                    Next <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-            </div>
-        </CardContent>
-         <CardFooter className="flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={handleReset}>Generate New Flashcards</Button>
-            <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
-            <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
-        </CardFooter>
-      </Card>
+                <div className="flex items-center gap-4 mt-4">
+                    <Button variant="outline" onClick={() => navigateCard('prev')} disabled={currentCardIndex === 0}>
+                        <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+                    </Button>
+                    <Button onClick={() => setIsFlipped(!isFlipped)}>
+                        <RefreshCw className="mr-2 h-4 w-4" /> Flip Card
+                    </Button>
+                    <Button variant="outline" onClick={() => navigateCard('next')} disabled={currentCardIndex === totalCards - 1}>
+                        Next <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
+            </CardContent>
+            <CardFooter className="flex-wrap justify-end gap-2">
+                <Button variant="secondary" onClick={handleReset}>Generate New Flashcards</Button>
+                <Button variant="outline" onClick={() => setIsSaveOpen(true)}><Save className="mr-2 h-4 w-4"/> Save to Deck</Button>
+                <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
+                <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
+            </CardFooter>
+        </Card>
+        <SaveToDeckDialog
+            isOpen={isSaveOpen}
+            onOpenChange={setIsSaveOpen}
+            cards={result.flashcardContent}
+            deckNameSuggestion={result.title}
+            onSaveComplete={handleReset}
+        />
+      </>
     );
   };
 

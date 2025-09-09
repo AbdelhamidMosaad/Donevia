@@ -429,6 +429,13 @@ export type Recording = {
 
 
 /** Flashcard Tool */
+export type FlashcardFolder = {
+    id: string;
+    name: string;
+    ownerId: string;
+    createdAt: Timestamp;
+};
+
 export type Deck = {
     id: string;
     name: string;
@@ -439,6 +446,7 @@ export type Deck = {
     viewers: string[];
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    folderId?: string | null;
 };
 
 export type FlashcardToolCard = {

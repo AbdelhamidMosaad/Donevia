@@ -3,21 +3,32 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Layers } from 'lucide-react';
+import { PlusCircle, Layers, FolderPlus, Move, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import type { Deck } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy, addDoc, Timestamp } from 'firebase/firestore';
+import type { Deck, FlashcardFolder } from '@/lib/types';
+import { collection, onSnapshot, query, orderBy, addDoc, Timestamp, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DeckCard } from '@/components/flashcards/deck-card';
 import { useToast } from '@/hooks/use-toast';
-import { deleteDeck } from '@/lib/flashcards';
+import { deleteDeck, addFlashcardFolder, deleteFlashcardFolder } from '@/lib/flashcards';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent
+} from '@/components/ui/dropdown-menu';
+import { FolderCard } from '@/components/flashcards/folder-card';
 
 export default function FlashcardsDashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [decks, setDecks] = useState<Deck[]>([]);
+  const [folders, setFolders] = useState<FlashcardFolder[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -27,36 +38,53 @@ export default function FlashcardsDashboardPage() {
   
   useEffect(() => {
     if (user) {
-      const q = query(collection(db, 'users', user.uid, 'flashcardDecks'), orderBy('createdAt', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const decksQuery = query(collection(db, 'users', user.uid, 'flashcardDecks'), orderBy('createdAt', 'desc'));
+      const unsubscribeDecks = onSnapshot(decksQuery, (snapshot) => {
         const decksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Deck));
         setDecks(decksData);
       });
-      return () => unsubscribe();
+
+      const foldersQuery = query(collection(db, 'users', user.uid, 'flashcardFolders'), orderBy('createdAt', 'desc'));
+      const unsubscribeFolders = onSnapshot(foldersQuery, (snapshot) => {
+        setFolders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FlashcardFolder)));
+      });
+
+      return () => {
+        unsubscribeDecks();
+        unsubscribeFolders();
+      };
     }
   }, [user]);
-
+  
   const handleAddDeck = async () => {
     if (!user) return;
     try {
       const docRef = await addDoc(collection(db, 'users', user.uid, 'flashcardDecks'), {
         name: 'Untitled Deck',
         description: '',
+        folderId: null,
+        ownerId: user.uid,
+        isPublic: false,
+        editors: [],
+        viewers: [],
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
-      toast({
-        title: '✓ Deck Created',
-        description: `"Untitled Deck" has been created.`,
-      });
+      toast({ title: '✓ Deck Created' });
       router.push(`/flashcards/${docRef.id}`);
     } catch (e) {
       console.error("Error adding deck: ", e);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to create deck. Please try again.',
-      });
+      toast({ variant: 'destructive', title: 'Error creating deck.'});
+    }
+  };
+
+  const handleAddFolder = async () => {
+    if (!user) return;
+    try {
+        await addFlashcardFolder(user.uid, 'New Folder');
+        toast({ title: '✓ Folder Created' });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error creating folder.'});
     }
   };
   
@@ -71,6 +99,29 @@ export default function FlashcardsDashboardPage() {
       }
   }
 
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!user) return;
+    try {
+      await deleteFlashcardFolder(user.uid, folderId);
+      toast({ title: 'Folder deleted.'});
+    } catch(e) {
+      toast({ variant: 'destructive', title: 'Error deleting folder.'});
+    }
+  };
+  
+  const handleMoveDeckToFolder = async (deckId: string, folderId: string | null) => {
+    if (!user) return;
+    try {
+      const deckRef = doc(db, 'users', user.uid, 'flashcardDecks', deckId);
+      await updateDoc(deckRef, { folderId });
+      toast({ title: '✓ Deck Moved' });
+    } catch(e) {
+       toast({ variant: 'destructive', title: 'Error moving deck.'});
+    }
+  };
+
+  const unfiledDecks = decks.filter(d => !d.folderId);
+
   if (loading || !user) {
     return <div>Loading...</div>;
   }
@@ -82,24 +133,60 @@ export default function FlashcardsDashboardPage() {
           <h1 className="text-3xl font-bold font-headline">Flashcard Decks</h1>
           <p className="text-muted-foreground">Organize your flashcards into decks for focused studying.</p>
         </div>
-        <Button onClick={handleAddDeck}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Deck
-        </Button>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" /> New
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuItem onSelect={handleAddDeck}>
+                    <Layers className="mr-2 h-4 w-4"/> New Deck
+                </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={handleAddFolder}>
+                    <FolderPlus className="mr-2 h-4 w-4"/> New Folder
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
-      {decks.length === 0 ? (
+       {decks.length === 0 && folders.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
           <Layers className="h-16 w-16 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold font-headline">No Decks Yet</h3>
-          <p className="text-muted-foreground">Click "New Deck" to create your first set of flashcards.</p>
+          <p className="text-muted-foreground">Click "New" to create your first deck or folder.</p>
         </div>
       ) : (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {decks.map(deck => (
-                <DeckCard key={deck.id} deck={deck} onDelete={() => handleDeleteDeck(deck.id)} />
-            ))}
-        </div>
+         <div className="space-y-8">
+            {folders.length > 0 && (
+                <div>
+                    <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {folders.map(folder => (
+                            <FolderCard key={folder.id} folder={folder} onDelete={() => handleDeleteFolder(folder.id)} />
+                        ))}
+                    </div>
+                </div>
+            )}
+             <div>
+                <h2 className="text-2xl font-bold font-headline mb-4">Decks</h2>
+                {unfiledDecks.length > 0 ? (
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {unfiledDecks.map(deck => (
+                            <DeckCard 
+                                key={deck.id} 
+                                deck={deck} 
+                                folders={folders}
+                                onDelete={() => handleDeleteDeck(deck.id)} 
+                                onMove={handleMoveDeckToFolder}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground text-sm">No decks outside of folders.</p>
+                )}
+            </div>
+         </div>
       )}
     </div>
   );
