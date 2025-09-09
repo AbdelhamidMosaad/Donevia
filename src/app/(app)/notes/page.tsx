@@ -83,7 +83,8 @@ export default function StickyNotesPage() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         priority: 'Medium',
-        gridPosition: position
+        gridPosition: position,
+        ownerId: user.uid,
       });
       toast({
         title: '✓ Note Added',
