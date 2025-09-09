@@ -52,7 +52,6 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
     } else {
         resetForm();
     }
-    setIsSaving(false);
   }, [open, card, isEditMode]);
 
   const handleSave = async () => {
@@ -111,7 +110,7 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Card'}
+            {isSaving ? 'Saved' : 'Save Card'}
           </Button>
         </DialogFooter>
       </DialogContent>

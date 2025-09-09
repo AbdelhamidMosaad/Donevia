@@ -76,7 +76,6 @@ export function AddStudySubtopicDialog({
     } else {
         resetForm();
     }
-    setIsSaving(false);
   }, [open, subtopic, isEditMode]);
 
   const handleSave = async () => {
@@ -188,7 +187,7 @@ export function AddStudySubtopicDialog({
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? 'Saved' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

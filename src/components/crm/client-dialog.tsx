@@ -161,7 +161,7 @@ export function ClientDialog({
           <DialogFooter>
              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save Client'}
+              {isSaving ? 'Saved' : 'Save Client'}
             </Button>
           </DialogFooter>
         )}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, ReactNode, useRef } from 'react';
@@ -66,7 +67,6 @@ export function AddStudyGoalDialog({
     } else {
         resetForm();
     }
-    setIsSaving(false);
   }, [open, goal, isEditMode]);
 
   const handleSave = async () => {
@@ -141,7 +141,7 @@ export function AddStudyGoalDialog({
             </Button>
           </DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Goal'}
+            {isSaving ? 'Saved' : 'Save Goal'}
           </Button>
         </DialogFooter>
       </DialogContent>

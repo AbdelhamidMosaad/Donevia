@@ -79,7 +79,6 @@ export function AddGoalDialog({
     } else {
       resetForm();
     }
-    setIsSaving(false);
   }, [open, goal, isEditMode]);
 
   const handleSave = async () => {
@@ -160,7 +159,7 @@ export function AddGoalDialog({
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? 'Saved' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

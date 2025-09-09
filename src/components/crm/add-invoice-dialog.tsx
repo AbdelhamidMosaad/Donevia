@@ -62,7 +62,6 @@ export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDial
     if (!open) {
       resetForm();
     }
-    setIsSaving(false);
   }, [open]);
 
   const handleSave = async () => {
@@ -149,7 +148,7 @@ export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDial
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Add Invoice'}
+            {isSaving ? 'Saved' : 'Add Invoice'}
           </Button>
         </DialogFooter>
       </DialogContent>

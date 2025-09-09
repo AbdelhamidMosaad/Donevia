@@ -207,7 +207,7 @@ export function ActivityForm({ settings, onAddNewItem }: ActivityFormProps) {
         </CardContent>
         <CardFooter className="flex justify-end">
             <Button type="submit" disabled={isSaving}>
-                <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Adding...' : 'Add Activity'}
+                <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Saved' : 'Add Activity'}
             </Button>
         </CardFooter>
       </form>

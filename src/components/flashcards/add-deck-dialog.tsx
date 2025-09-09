@@ -42,8 +42,9 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
   useEffect(() => {
     if (open) {
       resetForm();
+    } else {
+      resetForm();
     }
-    setIsSaving(false);
   }, [open, deck]);
 
   const handleSave = async () => {
@@ -90,7 +91,7 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? 'Saved' : 'Save Changes'}
           </Button>
         </DialogFooter>
       </DialogContent>

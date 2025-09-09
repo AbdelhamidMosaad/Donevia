@@ -40,7 +40,6 @@ export function AddHabitDialog({
     if (!open) {
       resetForm();
     }
-    setIsSaving(false);
   }, [open]);
 
   const handleSave = async () => {
@@ -84,7 +83,7 @@ export function AddHabitDialog({
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? 'Saved' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

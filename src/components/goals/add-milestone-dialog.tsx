@@ -63,7 +63,6 @@ export function AddMilestoneDialog({
     } else {
         resetForm();
     }
-    setIsSaving(false);
   }, [open, milestone, isEditMode]);
 
   const handleSave = async () => {
@@ -127,7 +126,7 @@ export function AddMilestoneDialog({
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? 'Saved' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

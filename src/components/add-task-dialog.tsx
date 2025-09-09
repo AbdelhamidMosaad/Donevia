@@ -265,11 +265,11 @@ export function AddTaskDialog({
           </DialogClose>
           {!isEditMode && (
             <Button onClick={() => handleSave(true)} disabled={isSaving} variant="outline">
-              {isSaving ? 'Saving...' : 'Save & Add Another'}
+              {isSaving ? 'Saved' : 'Save & Add Another'}
             </Button>
           )}
           <Button onClick={() => handleSave(false)} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? 'Saved' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

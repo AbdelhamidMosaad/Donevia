@@ -168,7 +168,7 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
         <DialogFooter>
           <Button variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? 'Saved' : 'Save Changes'}
           </Button>
         </DialogFooter>
       </DialogContent>
