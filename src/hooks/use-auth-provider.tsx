@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Function to strip all theme and font classes
     const resetStyling = () => {
-        const themeClasses: UserSettings['theme'][] = ['light', 'dark', 'theme-indigo', 'theme-purple', 'theme-green', 'theme-sunset', 'theme-mint'];
+        const themeClasses: UserSettings['theme'][] = ['light', 'dark', 'theme-indigo', 'theme-purple', 'theme-green', 'theme-sunset', 'theme-mint', 'theme-jade', 'theme-periwinkle', 'theme-sky', 'theme-orchid', 'theme-sage', 'theme-coral'];
         body.classList.remove(...themeClasses);
         body.style.fontFamily = ''; // Reset inline font style
     }

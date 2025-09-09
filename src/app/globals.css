@@ -172,6 +172,139 @@ body {
       --ring: 150 100% 70%;
   }
 
+  .theme-jade {
+    --background: 158 30% 97%;
+    --foreground: 158 25% 25%;
+    --card: 158 30% 100%;
+    --card-foreground: 158 25% 25%;
+    --popover: 158 30% 100%;
+    --popover-foreground: 158 25% 25%;
+    --primary: 158 45% 57%; /* #67C090 */
+    --primary-foreground: 158 30% 10%;
+    --secondary: 158 30% 90%;
+    --secondary-foreground: 158 25% 25%;
+    --muted: 158 30% 90%;
+    --muted-foreground: 158 20% 55%;
+    --accent: 158 40% 80%;
+    --accent-foreground: 158 25% 15%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 158 30% 85%;
+    --input: 158 30% 85%;
+    --ring: 158 45% 57%;
+  }
+
+  .theme-periwinkle {
+    --background: 233 35% 20%;
+    --foreground: 233 50% 95%;
+    --card: 233 35% 24%;
+    --card-foreground: 233 50% 95%;
+    --popover: 233 35% 20%;
+    --popover-foreground: 233 50% 95%;
+    --primary: 233 33% 62%; /* #7A85C1 */
+    --primary-foreground: 233 50% 98%;
+    --secondary: 233 35% 30%;
+    --secondary-foreground: 233 50% 95%;
+    --muted: 233 35% 30%;
+    --muted-foreground: 233 30% 70%;
+    --accent: 233 33% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 233 35% 32%;
+    --input: 233 35% 32%;
+    --ring: 233 33% 62%;
+  }
+
+  .theme-sky {
+    --background: 195 40% 96%;
+    --foreground: 195 30% 25%;
+    --card: 195 40% 100%;
+    --card-foreground: 195 30% 25%;
+    --popover: 195 40% 100%;
+    --popover-foreground: 195 30% 25%;
+    --primary: 195 45% 73%; /* #9ECAD6 */
+    --primary-foreground: 195 30% 15%;
+    --secondary: 195 40% 90%;
+    --secondary-foreground: 195 30% 25%;
+    --muted: 195 40% 90%;
+    --muted-foreground: 195 25% 55%;
+    --accent: 195 40% 85%;
+    --accent-foreground: 195 30% 10%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 195 40% 88%;
+    --input: 195 40% 88%;
+    --ring: 195 45% 73%;
+  }
+
+  .theme-orchid {
+    --background: 319 70% 15%;
+    --foreground: 319 60% 95%;
+    --card: 319 70% 18%;
+    --card-foreground: 319 60% 95%;
+    --popover: 319 70% 15%;
+    --popover-foreground: 319 60% 95%;
+    --primary: 319 71% 35%; /* #9B177E */
+    --primary-foreground: 319 60% 98%;
+    --secondary: 319 70% 25%;
+    --secondary-foreground: 319 60% 95%;
+    --muted: 319 70% 25%;
+    --muted-foreground: 319 20% 70%;
+    --accent: 319 71% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 319 70% 28%;
+    --input: 319 70% 28%;
+    --ring: 319 71% 35%;
+  }
+
+  .theme-sage {
+    --background: 161 10% 98%;
+    --foreground: 161 10% 25%;
+    --card: 161 10% 100%;
+    --card-foreground: 161 10% 25%;
+    --popover: 161 10% 100%;
+    --popover-foreground: 161 10% 25%;
+    --primary: 161 9% 55%; /* #819A91 */
+    --primary-foreground: 161 10% 10%;
+    --secondary: 161 10% 92%;
+    --secondary-foreground: 161 10% 25%;
+    --muted: 161 10% 92%;
+    --muted-foreground: 161 8% 55%;
+    --accent: 161 10% 85%;
+    --accent-foreground: 161 10% 15%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 161 10% 90%;
+    --input: 161 10% 90%;
+    --ring: 161 9% 55%;
+  }
+
+  .theme-coral {
+    --background: 0 50% 18%;
+    --foreground: 0 40% 95%;
+    --card: 0 50% 22%;
+    --card-foreground: 0 40% 95%;
+    --popover: 0 50% 18%;
+    --popover-foreground: 0 40% 95%;
+    --primary: 0 62% 64%; /* #DA6C6C */
+    --primary-foreground: 0 40% 98%;
+    --secondary: 0 50% 28%;
+    --secondary-foreground: 0 40% 95%;
+    --muted: 0 50% 28%;
+    --muted-foreground: 0 20% 70%;
+    --accent: 0 62% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 50% 30%;
+    --input: 0 50% 30%;
+    --ring: 0 62% 64%;
+  }
+
+
   /* Sidebar Themes */
   :root {
     --sidebar-background: hsl(var(--background));

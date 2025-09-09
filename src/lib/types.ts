@@ -177,7 +177,7 @@ export type StudyProfile = {
 
 /** User Settings */
 export interface UserSettings {
-    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-sunset' | 'theme-mint';
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-sunset' | 'theme-mint' | 'theme-jade' | 'theme-periwinkle' | 'theme-sky' | 'theme-orchid' | 'theme-sage' | 'theme-coral';
     font:
         | 'inter'
         | 'roboto'
