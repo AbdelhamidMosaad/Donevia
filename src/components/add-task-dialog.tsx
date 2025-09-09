@@ -186,7 +186,7 @@ export function AddTaskDialog({
           if (andAddNew) {
             resetForm();
           } else {
-            setTimeout(() => setOpen(false), 500);
+            setOpen(false);
           }
       }
     } catch (e) {

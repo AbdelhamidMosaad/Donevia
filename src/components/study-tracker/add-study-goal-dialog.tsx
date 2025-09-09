@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, ReactNode, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,6 +22,7 @@ import type { StudyGoal } from '@/lib/types';
 import { addStudyGoal, updateStudyGoal } from '@/lib/study-tracker';
 import { Timestamp } from 'firebase/firestore';
 import moment from 'moment';
+import { useDebouncedCallback } from 'use-debounce';
 
 interface AddStudyGoalDialogProps {
   goal?: StudyGoal | null;
@@ -39,69 +40,94 @@ export function AddStudyGoalDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [currentGoal, setCurrentGoal] = useState(goal);
+  const isInitialMount = useRef(true);
 
-  const isEditMode = !!goal;
+  const isEditMode = !!currentGoal;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setTags('');
-    setDueDate(null);
-  };
-
   useEffect(() => {
     if (open) {
-      if (isEditMode && goal) {
-        setTitle(goal.title);
-        setDescription(goal.description || '');
-        setTags(goal.tags?.join(', ') || '');
-        setDueDate(goal.dueDate ? goal.dueDate.toDate() : null);
-      } else {
-        resetForm();
-      }
-      setIsSaving(false);
+        if (goal) {
+            setCurrentGoal(goal);
+            setTitle(goal.title);
+            setDescription(goal.description || '');
+            setTags(goal.tags?.join(', ') || '');
+            setDueDate(goal.dueDate ? goal.dueDate.toDate() : null);
+        } else {
+            setCurrentGoal(null);
+            setTitle('');
+            setDescription('');
+            setTags('');
+            setDueDate(null);
+        }
+        setIsSaving(false);
+        isInitialMount.current = true;
     }
-  }, [open, goal, isEditMode]);
+  }, [open, goal]);
 
-  const handleSave = async () => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'You must be logged in.' });
+  const debouncedSave = useDebouncedCallback(async (dataToSave) => {
+    if (!user || !isEditMode || !currentGoal) return;
+    
+    setIsSaving(true);
+    try {
+        await updateStudyGoal(user.uid, currentGoal.id, dataToSave);
+        toast({ title: '✓ Saved' });
+    } catch (e) {
+        console.error("Error auto-saving goal:", e);
+        toast({ variant: 'destructive', title: 'Error saving goal' });
+    } finally {
+        setIsSaving(false);
+    }
+  }, 1500);
+
+  const createAndSetGoal = async (newTitle: string) => {
+    if (!user || isEditMode) return;
+    
+    setIsSaving(true);
+    try {
+        const newDocRef = await addStudyGoal(user.uid, { title: newTitle });
+        const newGoal: StudyGoal = { 
+            id: newDocRef.id, 
+            title: newTitle, 
+            createdAt: Timestamp.now(), 
+            updatedAt: Timestamp.now() 
+        };
+        setCurrentGoal(newGoal);
+        toast({ title: 'Goal created!', description: 'You can now edit the other details.' });
+    } catch (e) {
+        console.error("Error creating goal:", e);
+        toast({ variant: 'destructive', title: 'Error creating goal' });
+    } finally {
+        setIsSaving(false);
+    }
+  }
+
+  useEffect(() => {
+    if (isInitialMount.current && open) {
+      isInitialMount.current = false;
       return;
     }
-    if (!title) {
-        toast({ variant: 'destructive', title: 'Goal title is required.' });
-        return;
-    }
-
-    setIsSaving(true);
-    const goalData = {
-        title,
-        description,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-        dueDate: dueDate ? Timestamp.fromDate(dueDate) : null,
-    };
-
-    try {
-      if (isEditMode && goal) {
-        await updateStudyGoal(user.uid, goal.id, goalData);
-        toast({ title: 'Goal Updated', description: `"${title}" has been updated.` });
-      } else {
-        await addStudyGoal(user.uid, goalData);
-        toast({ title: 'Goal Added', description: `"${title}" has been added successfully.` });
+    
+    if (open) {
+      if (!isEditMode && title.trim()) {
+        createAndSetGoal(title);
+      } else if (isEditMode) {
+        const goalData = {
+          title,
+          description,
+          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+          dueDate: dueDate ? Timestamp.fromDate(dueDate) : null,
+        };
+        debouncedSave(goalData);
       }
-      onOpenChange?.(false);
-    } catch (e) {
-      console.error("Error saving study goal: ", e);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save goal.' });
-    } finally {
-      setIsSaving(false);
     }
-  };
+  }, [title, description, tags, dueDate, open]);
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,7 +135,9 @@ export function AddStudyGoalDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Study Goal' : 'Create New Study Goal'}</DialogTitle>
-          <DialogDescription>{isEditMode ? 'Update the details of your study goal.' : 'Define your new learning objective.'}</DialogDescription>
+          <DialogDescription>
+             {isEditMode ? "Changes are saved automatically." : "Start by typing a title to create a new goal."}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -118,23 +146,17 @@ export function AddStudyGoalDialog({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Description</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" disabled={!isEditMode} />
           </div>
            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="tags" className="text-right">Tags</Label>
-            <Input id="tags" value={tags} onChange={(e) => setTags(e.target.value)} className="col-span-3" placeholder="e.g. Math, Programming, History" />
+            <Input id="tags" value={tags} onChange={(e) => setTags(e.target.value)} className="col-span-3" placeholder="e.g. Math, Programming, History" disabled={!isEditMode} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dueDate" className="text-right">Due Date</Label>
-            <Input id="dueDate" type="date" value={dueDate ? moment(dueDate).format('YYYY-MM-DD') : ''} onChange={(e) => setDueDate(e.target.value ? new Date(e.target.value) : null)} className="col-span-3" />
+            <Input id="dueDate" type="date" value={dueDate ? moment(dueDate).format('YYYY-MM-DD') : ''} onChange={(e) => setDueDate(e.target.value ? new Date(e.target.value) : null)} className="col-span-3" disabled={!isEditMode} />
           </div>
         </div>
-        <DialogFooter>
-          <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
