@@ -65,17 +65,16 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
 
     setIsSaving(true);
     const cardData = {
-      deckId,
       front,
       back,
     };
 
     try {
       if (isEditMode && card) {
-        await updateCard(user.uid, card.id, cardData);
+        await updateCard(user.uid, deckId, card.id, cardData);
         toast({ title: 'Card updated successfully!' });
       } else {
-        await addCard(user.uid, cardData);
+        await addCard(user.uid, deckId, cardData);
         toast({ title: 'Card added successfully!' });
       }
       onOpenChange(false);

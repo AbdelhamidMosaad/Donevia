@@ -418,3 +418,11 @@ export type FlashcardToolCard = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
 };
+
+export type FlashcardProgress = {
+    repetitions: number;
+    efactor: number;
+    intervalDays: number;
+    dueDate: string; // ISO string
+    lastReviewedAt: string | null; // ISO string
+};

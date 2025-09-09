@@ -1,18 +1,23 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Layers3, RefreshCw, Shuffle, RotateCcw, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ArrowLeft, Check, HelpCircle, Loader2, RefreshCw, X } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
-import type { Deck, FlashcardToolCard } from '@/lib/types';
-import { collection, onSnapshot, query, where, doc, updateDoc, increment } from 'firebase/firestore';
+import type { Deck, FlashcardToolCard, FlashcardProgress } from '@/lib/types';
+import { collection, onSnapshot, query, doc, getDocs, getDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { StudyCard } from '@/components/flashcards/study-card';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { initProgress, sm2Next } from '@/lib/srs';
+import dayjs from 'dayjs';
+
+type ReviewItem = {
+    card: FlashcardToolCard;
+    progress: FlashcardProgress;
+};
 
 export default function StudyPage() {
   const { user, loading } = useAuth();
@@ -22,107 +27,110 @@ export default function StudyPage() {
   const { toast } = useToast();
   
   const [deck, setDeck] = useState<Deck | null>(null);
-  const [cards, setCards] = useState<FlashcardToolCard[]>([]);
-  const [shuffledCards, setShuffledCards] = useState<FlashcardToolCard[]>([]);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [queue, setQueue] = useState<ReviewItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
+  const loadDueCards = useCallback(async () => {
+    if (!user || !deckId) return;
+    setIsLoading(true);
+
+    const cardsSnap = await getDocs(collection(db, "users", user.uid, "flashcardDecks", deckId, "cards"));
+    const cards = cardsSnap.docs.map(d => ({ id: d.id, ...d.data() } as FlashcardToolCard));
+
+    const progressColl = collection(db, "users", user.uid, "flashcardDecks", deckId, "progress");
+    const progressSnap = await getDocs(progressColl);
+    const progressMap = new Map(progressSnap.docs.map(d => [d.id, d.data() as FlashcardProgress]));
+    
+    const now = dayjs();
+    const dueList: ReviewItem[] = [];
+    for (const card of cards) {
+      const progress = progressMap.get(card.id);
+      if (!progress) {
+        dueList.push({ card, progress: initProgress() });
+      } else {
+        const dueDate = dayjs(progress.dueDate);
+        if (dueDate.isBefore(now) || dueDate.isSame(now, 'day')) {
+          dueList.push({ card, progress });
+        }
+      }
     }
-  }, [user, loading, router]);
-  
+    
+    dueList.sort((a, b) => dayjs(a.progress.dueDate).diff(dayjs(b.progress.dueDate)));
+
+    setQueue(dueList);
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    setIsLoading(false);
+  }, [user, deckId]);
+
   useEffect(() => {
     if (user && deckId) {
       const deckRef = doc(db, 'users', user.uid, 'flashcardDecks', deckId);
       const unsubscribeDeck = onSnapshot(deckRef, (doc) => {
-        if (doc.exists()) {
-          setDeck({ id: doc.id, ...doc.data() } as Deck);
-        } else {
-          router.push('/flashcards');
-        }
+        if (doc.exists()) setDeck({ id: doc.id, ...doc.data() } as Deck);
+        else router.push('/flashcards');
       });
+
+      loadDueCards();
       
-      const cardsQuery = query(collection(db, 'users', user.uid, 'flashcards'), where('deckId', '==', deckId));
-      const unsubscribeCards = onSnapshot(cardsQuery, (snapshot) => {
-        const cardsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FlashcardToolCard));
-        setCards(cardsData);
-        setShuffledCards(cardsData); // Initially set to original order
-        setCurrentCardIndex(0);
-      });
-      
-      return () => {
-        unsubscribeDeck();
-        unsubscribeCards();
-      };
+      return () => unsubscribeDeck();
     }
-  }, [user, deckId, router]);
+  }, [user, deckId, router, loadDueCards]);
 
-  const handleShuffle = () => {
-    setShuffledCards([...cards].sort(() => Math.random() - 0.5));
-    setCurrentCardIndex(0);
-    setIsFlipped(false);
-    toast({ title: "Deck shuffled!" });
-  };
 
-  const handleRestart = () => {
-    setCurrentCardIndex(0);
-    setShuffledCards(cards); // Reset to original order
-    setIsFlipped(false);
-    toast({ title: "Deck restarted." });
-  };
+  const handleQuality = async (quality: number) => {
+    if (!user || !currentCard) return;
 
-  const handleNext = () => {
-    if (currentCardIndex < shuffledCards.length - 1) {
-      setIsFlipped(false);
-      setCurrentCardIndex(currentCardIndex + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentCardIndex > 0) {
-      setIsFlipped(false);
-      setCurrentCardIndex(currentCardIndex - 1);
-    }
-  };
-  
-  const handleProgressUpdate = async (isCorrect: boolean) => {
-    if (!user) return;
-    const currentCard = shuffledCards[currentCardIndex];
-    if (!currentCard) return;
-
-    const cardRef = doc(db, 'users', user.uid, 'flashcards', currentCard.id);
-    const fieldToUpdate = isCorrect ? 'correct' : 'wrong';
+    const { card, progress } = currentCard;
+    const progressRef = doc(db, 'users', user.uid, 'flashcardDecks', deckId, 'progress', card.id);
+    const cardRef = doc(db, 'users', user.uid, 'flashcardDecks', deckId, 'cards', card.id);
     
-    try {
-        await updateDoc(cardRef, {
-            [fieldToUpdate]: increment(1)
-        });
-        toast({ title: isCorrect ? "Marked as known!" : "Marked for review!" });
-        handleNext(); // Automatically go to next card
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Error updating progress.' });
-    }
-  }
+    const nextProgress = sm2Next(progress, quality);
+    const isCorrect = quality >= 3;
 
-  if (loading || !user || !deck) {
-    return <div>Loading study session...</div>;
-  }
-  
-  if (cards.length === 0) {
+    const batch = writeBatch(db);
+    batch.set(progressRef, { ...nextProgress, updatedAt: serverTimestamp() }, { merge: true });
+    batch.update(cardRef, { 
+      [isCorrect ? 'correct' : 'wrong']: (isCorrect ? card.correct || 0 : card.wrong || 0) + 1,
+      updatedAt: serverTimestamp()
+    });
+    
+    await batch.commit();
+
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < queue.length) {
+        setCurrentIndex(nextIndex);
+        setIsFlipped(false);
+    } else {
+        await loadDueCards();
+    }
+  };
+
+  const currentCard = queue[currentIndex];
+
+  if (loading || isLoading) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center">
-            <h2 className="text-2xl font-bold">This deck is empty!</h2>
-            <p className="text-muted-foreground">Add some cards to start studying.</p>
+            <Loader2 className="h-12 w-12 text-primary animate-spin" />
+            <p className="mt-4 text-muted-foreground">Loading review session...</p>
+        </div>
+    );
+  }
+  
+  if (!currentCard) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center gap-4">
+            <h2 className="text-2xl font-bold">No cards are due for review.</h2>
+            <p className="text-muted-foreground">Well done! Come back later to review more cards.</p>
             <Button onClick={() => router.push(`/flashcards/${deckId}`)} className="mt-4">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Go Back to Deck
             </Button>
         </div>
     )
   }
-
-  const currentCard = shuffledCards[currentCardIndex];
 
   return (
     <div className="flex flex-col h-full items-center justify-center gap-6">
@@ -132,31 +140,31 @@ export default function StudyPage() {
             </Button>
         </div>
        <div className="text-center">
-        <h1 className="text-3xl font-bold font-headline">Studying: {deck.name}</h1>
-        <p className="text-muted-foreground">Card {currentCardIndex + 1} of {shuffledCards.length}</p>
+        <h1 className="text-3xl font-bold font-headline">Reviewing: {deck?.name}</h1>
+        <p className="text-muted-foreground">Card {currentIndex + 1} of {queue.length}</p>
        </div>
 
-       <StudyCard card={currentCard} isFlipped={isFlipped} onFlip={() => setIsFlipped(!isFlipped)} />
+       <StudyCard card={currentCard.card} isFlipped={isFlipped} onFlip={() => setIsFlipped(!isFlipped)} />
 
-       <div className="flex items-center gap-4 mt-4">
-            <Button variant="secondary" onClick={handlePrev} disabled={currentCardIndex === 0}>
-                <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="destructive" onClick={() => handleProgressUpdate(false)} className="w-32"><ThumbsDown className="mr-2"/> Didn't Know</Button>
-            <Button variant="default" onClick={() => handleProgressUpdate(true)} className="w-32 bg-green-600 hover:bg-green-700"><ThumbsUp className="mr-2"/> Knew It</Button>
-            <Button variant="secondary" onClick={handleNext} disabled={currentCardIndex === shuffledCards.length - 1}>
-                <ChevronRight className="h-4 w-4" />
-            </Button>
-       </div>
+       {isFlipped && (
+            <div className="mt-4 space-y-4 text-center">
+                <p className="font-semibold">How well did you know this?</p>
+                <div className="flex items-center justify-center gap-2">
+                    <Button variant="destructive" onClick={() => handleQuality(0)} title="Forgot completely">0</Button>
+                    <Button variant="destructive" onClick={() => handleQuality(1)} title="Recalled with great difficulty">1</Button>
+                    <Button variant="secondary" onClick={() => handleQuality(2)} title="Recalled with difficulty">2</Button>
+                    <Button variant="secondary" onClick={() => handleQuality(3)} title="Recalled correctly, but with hesitation">3</Button>
+                    <Button variant="default" className="bg-blue-500 hover:bg-blue-600" onClick={() => handleQuality(4)} title="Recalled with ease">4</Button>
+                    <Button variant="default" className="bg-green-600 hover:bg-green-700" onClick={() => handleQuality(5)} title="Recalled perfectly">5</Button>
+                </div>
+            </div>
+       )}
 
-        <div className="flex items-center gap-4">
-             <Button variant="outline" onClick={handleShuffle}>
-                <Shuffle className="mr-2 h-4 w-4" /> Shuffle
-            </Button>
-            <Button variant="outline" onClick={handleRestart}>
-                <RotateCcw className="mr-2 h-4 w-4" /> Restart
-            </Button>
-        </div>
+       {!isFlipped && (
+             <div className="mt-4">
+                <Button size="lg" onClick={() => setIsFlipped(true)}>Show Answer</Button>
+            </div>
+       )}
     </div>
   );
 }

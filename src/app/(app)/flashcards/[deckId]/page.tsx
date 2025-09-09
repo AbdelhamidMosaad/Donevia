@@ -3,11 +3,11 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Layers3, PlusCircle, BookOpen, Search, Download, Upload } from 'lucide-react';
+import { ArrowLeft, Layers3, PlusCircle, BookOpen, Search, Download, Upload, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
-import type { Deck, FlashcardToolCard } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy, doc, writeBatch } from 'firebase/firestore';
+import type { Deck, FlashcardToolCard, FlashcardProgress } from '@/lib/types';
+import { collection, onSnapshot, query, orderBy, doc, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { useDebouncedCallback } from 'use-debounce';
 import { exportDeckToJSON, importDeckFromJSON } from '@/lib/flashcards-import-export';
 import { addCard } from '@/lib/flashcards';
+import dayjs from 'dayjs';
 
 export default function DeckDetailPage() {
   const { user, loading } = useAuth();
@@ -27,10 +28,10 @@ export default function DeckDetailPage() {
   
   const [deck, setDeck] = useState<Deck | null>(null);
   const [cards, setCards] = useState<FlashcardToolCard[]>([]);
+  const [progressData, setProgressData] = useState<Map<string, FlashcardProgress>>(new Map());
   const [isAddCardOpen, setIsAddCardOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const importFileInputRef = useRef<HTMLInputElement>(null);
-
 
   const debouncedSearch = useDebouncedCallback((value) => {
     setSearchQuery(value);
@@ -54,20 +55,39 @@ export default function DeckDetailPage() {
         }
       });
       
-      const cardsQuery = query(collection(db, 'users', user.uid, 'flashcards'), orderBy('createdAt', 'asc'));
+      const cardsQuery = query(collection(db, 'users', user.uid, 'flashcardDecks', deckId, 'cards'), orderBy('createdAt', 'asc'));
       const unsubscribeCards = onSnapshot(cardsQuery, (snapshot) => {
-        const cardsData = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as FlashcardToolCard))
-          .filter(card => card.deckId === deckId);
+        const cardsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FlashcardToolCard));
         setCards(cardsData);
+      });
+
+      const progressQuery = query(collection(db, 'users', user.uid, 'flashcardDecks', deckId, 'progress'));
+      const unsubscribeProgress = onSnapshot(progressQuery, (snapshot) => {
+        const newProgressData = new Map<string, FlashcardProgress>();
+        snapshot.forEach(doc => {
+            newProgressData.set(doc.id, doc.data() as FlashcardProgress);
+        });
+        setProgressData(newProgressData);
       });
       
       return () => {
         unsubscribeDeck();
         unsubscribeCards();
+        unsubscribeProgress();
       };
     }
   }, [user, deckId, router, toast]);
+
+  const dueCardsCount = useMemo(() => {
+      const now = dayjs();
+      return cards.reduce((count, card) => {
+          const progress = progressData.get(card.id);
+          if (!progress || dayjs(progress.dueDate).isBefore(now) || dayjs(progress.dueDate).isSame(now, 'day')) {
+              return count + 1;
+          }
+          return count;
+      }, 0);
+  }, [cards, progressData]);
 
   const filteredCards = useMemo(() => {
     return cards.filter(card => 
@@ -105,7 +125,7 @@ export default function DeckDetailPage() {
             
             const batch = writeBatch(db);
             importedData.cards.forEach(card => {
-                const cardRef = doc(collection(db, 'users', user.uid, 'flashcards'));
+                const cardRef = doc(collection(db, 'users', user.uid, 'flashcardDecks', deckId, 'cards'));
                 batch.set(cardRef, {
                     deckId,
                     front: card.front,
@@ -145,8 +165,8 @@ export default function DeckDetailPage() {
         </div>
         <div className="flex items-center gap-2">
            <Button variant="outline" onClick={() => setIsAddCardOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Card</Button>
-            <Button onClick={() => router.push(`/flashcards/${deckId}/study`)} disabled={cards.length === 0}>
-              <BookOpen className="mr-2 h-4 w-4" /> Start Studying
+            <Button onClick={() => router.push(`/flashcards/${deckId}/study`)} disabled={dueCardsCount === 0}>
+              <BookOpen className="mr-2 h-4 w-4" /> Study ({dueCardsCount} due)
             </Button>
         </div>
       </div>
@@ -155,7 +175,7 @@ export default function DeckDetailPage() {
           <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                    <CardTitle>Flashcards in this Deck</CardTitle>
+                    <CardTitle>Flashcards in this Deck ({cards.length} total)</CardTitle>
                     <CardDescription>Manage the cards in your "{deck.name}" deck.</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
@@ -168,7 +188,7 @@ export default function DeckDetailPage() {
           </CardHeader>
           <CardContent>
               {cards.length > 0 ? (
-                  <FlashcardList cards={filteredCards} />
+                  <FlashcardList cards={filteredCards} deckId={deckId} />
               ) : (
                   <div className="text-center py-8 text-muted-foreground">
                       <p>This deck is empty. Add a flashcard to get started!</p>

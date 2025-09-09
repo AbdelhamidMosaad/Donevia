@@ -16,9 +16,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface FlashcardListProps {
   cards: FlashcardToolCard[];
+  deckId: string;
 }
 
-export function FlashcardList({ cards }: FlashcardListProps) {
+export function FlashcardList({ cards, deckId }: FlashcardListProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [editingCard, setEditingCard] = useState<FlashcardToolCard | null>(null);
@@ -26,7 +27,7 @@ export function FlashcardList({ cards }: FlashcardListProps) {
   const handleDelete = async (cardId: string) => {
     if (!user) return;
     try {
-      await deleteCard(user.uid, cardId);
+      await deleteCard(user.uid, deckId, cardId);
       toast({ title: 'Card deleted.' });
     } catch (e) {
       toast({ variant: 'destructive', title: 'Error deleting card.' });

@@ -39,19 +39,24 @@ export const deleteDeck = async (userId: string, deckId: string) => {
   const deckRef = doc(db, 'users', userId, 'flashcardDecks', deckId);
   batch.delete(deckRef);
 
-  const cardsQuery = query(collection(db, 'users', userId, 'flashcards'), where('deckId', '==', deckId));
+  const cardsQuery = query(collection(db, 'users', userId, 'flashcardDecks', deckId, 'cards'));
   const cardsSnapshot = await getDocs(cardsQuery);
   cardsSnapshot.forEach((doc) => batch.delete(doc.ref));
+  
+  const progressQuery = query(collection(db, 'users', userId, 'flashcardDecks', deckId, 'progress'));
+  const progressSnapshot = await getDocs(progressQuery);
+  progressSnapshot.forEach((doc) => batch.delete(doc.ref));
 
   return await batch.commit();
 };
 
 
 // --- Cards ---
-export const addCard = async (userId: string, cardData: Omit<FlashcardToolCard, 'id' | 'createdAt' | 'updatedAt'>) => {
-  const cardsRef = collection(db, 'users', userId, 'flashcards');
+export const addCard = async (userId: string, deckId: string, cardData: Omit<FlashcardToolCard, 'id' | 'createdAt' | 'updatedAt' | 'deckId'>) => {
+  const cardsRef = collection(db, 'users', userId, 'flashcardDecks', deckId, 'cards');
   return await addDoc(cardsRef, {
     ...cardData,
+    deckId,
     correct: 0,
     wrong: 0,
     createdAt: serverTimestamp(),
@@ -59,15 +64,22 @@ export const addCard = async (userId: string, cardData: Omit<FlashcardToolCard, 
   });
 };
 
-export const updateCard = async (userId: string, cardId: string, cardData: Partial<Omit<FlashcardToolCard, 'id'>>) => {
-  const cardRef = doc(db, 'users', userId, 'flashcards', cardId);
+export const updateCard = async (userId: string, deckId: string, cardId: string, cardData: Partial<Omit<FlashcardToolCard, 'id'>>) => {
+  const cardRef = doc(db, 'users', userId, 'flashcardDecks', deckId, 'cards', cardId);
   return await updateDoc(cardRef, {
     ...cardData,
     updatedAt: serverTimestamp(),
   });
 };
 
-export const deleteCard = async (userId: string, cardId: string) => {
-  const cardRef = doc(db, 'users', userId, 'flashcards', cardId);
-  return await deleteDoc(cardRef);
+export const deleteCard = async (userId: string, deckId: string, cardId: string) => {
+    const batch = writeBatch(db);
+    const cardRef = doc(db, 'users', userId, 'flashcardDecks', deckId, 'cards', cardId);
+    batch.delete(cardRef);
+    
+    // Also delete the progress document if it exists
+    const progressRef = doc(db, 'users', userId, 'flashcardDecks', deckId, 'progress', cardId);
+    batch.delete(progressRef);
+
+    return await batch.commit();
 };
