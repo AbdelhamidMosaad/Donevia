@@ -103,6 +103,7 @@ export function AddBookmarkDialog({
   const createAndSetBookmark = async (newUrl: string) => {
     if (!user || isEditMode) return;
     
+    console.log('Attempting to create bookmark for URL:', newUrl);
     setSaveStatus('saving');
     const bookmarkData = {
       title: 'New Bookmark',
@@ -127,6 +128,7 @@ export function AddBookmarkDialog({
   const debouncedSave = useDebouncedCallback(async (dataToSave) => {
     if (!user || !isEditMode || !currentBookmark) return;
     
+    console.log('Auto-saving bookmark:', currentBookmark.id);
     setSaveStatus('saving');
     try {
         await updateBookmark(user.uid, currentBookmark.id, dataToSave);

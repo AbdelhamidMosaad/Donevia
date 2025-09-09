@@ -52,6 +52,7 @@ export function ClientDialog({
         return;
     }
 
+    console.log('Auto-saving client:', client.id);
     setIsSaving(true);
     try {
         await updateClient(user.uid, client.id, clientData);
@@ -106,6 +107,7 @@ export function ClientDialog({
         return;
     }
 
+    console.log('Attempting to save client:', name || company);
     setIsSaving(true);
     const clientData = { name, company, email, phone };
 

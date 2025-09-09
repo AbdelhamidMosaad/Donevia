@@ -149,6 +149,7 @@ export function AddTaskDialog({
         return;
     }
 
+    console.log('Attempting to save task:', title);
     setIsSaving(true);
     const taskData = {
         title,

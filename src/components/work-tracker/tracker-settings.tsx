@@ -89,6 +89,7 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
 
   const handleSave = async () => {
     if(!user) return;
+    console.log('Attempting to save work tracker settings.');
     setIsSaving(true);
     try {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'workTrackerSettings');
@@ -96,6 +97,7 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
         toast({ title: "Settings saved successfully!"});
         setIsOpen(false);
     } catch(e) {
+        console.error("Error saving settings:", e);
         toast({ variant: 'destructive', title: "Error saving settings" });
     } finally {
         setIsSaving(false);

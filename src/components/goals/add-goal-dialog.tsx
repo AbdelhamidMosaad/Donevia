@@ -76,10 +76,10 @@ export function AddGoalDialog({
       } else {
         resetForm();
       }
-      setIsSaving(false);
     } else {
       resetForm();
     }
+    setIsSaving(false);
   }, [open, goal, isEditMode]);
 
   const handleSave = async () => {
@@ -92,6 +92,7 @@ export function AddGoalDialog({
         return;
     }
 
+    console.log('Attempting to save goal:', title);
     setIsSaving(true);
     const goalData = {
         title,

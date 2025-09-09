@@ -81,6 +81,7 @@ export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDial
         return;
     }
 
+    console.log('Attempting to add invoice:', invoiceNumber);
     setIsSaving(true);
     
     const newInvoice: Invoice = {

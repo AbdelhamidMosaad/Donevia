@@ -73,10 +73,10 @@ export function AddStudySubtopicDialog({
       } else {
         resetForm();
       }
-      setIsSaving(false);
     } else {
         resetForm();
     }
+    setIsSaving(false);
   }, [open, subtopic, isEditMode]);
 
   const handleSave = async () => {
@@ -89,6 +89,7 @@ export function AddStudySubtopicDialog({
         return;
     }
 
+    console.log('Attempting to save subtopic:', title);
     setIsSaving(true);
     const subtopicData = {
         goalId,

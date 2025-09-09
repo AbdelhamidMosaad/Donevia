@@ -60,10 +60,10 @@ export function AddMilestoneDialog({
       } else {
         resetForm();
       }
-      setIsSaving(false);
     } else {
         resetForm();
     }
+    setIsSaving(false);
   }, [open, milestone, isEditMode]);
 
   const handleSave = async () => {
@@ -76,6 +76,7 @@ export function AddMilestoneDialog({
         return;
     }
 
+    console.log('Attempting to save milestone:', title);
     setIsSaving(true);
     const milestoneData = {
         goalId,

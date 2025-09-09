@@ -49,10 +49,10 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
       } else {
         resetForm();
       }
-      setIsSaving(false);
     } else {
         resetForm();
     }
+    setIsSaving(false);
   }, [open, card, isEditMode]);
 
   const handleSave = async () => {
@@ -65,6 +65,7 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
       return;
     }
 
+    console.log('Attempting to save flashcard:', front);
     setIsSaving(true);
     const cardData = {
       front,

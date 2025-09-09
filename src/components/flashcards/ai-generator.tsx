@@ -31,6 +31,8 @@ export function AIGenerator({ deckId }: AIGeneratorProps) {
       return;
     }
     if (!user) return;
+    
+    console.log('Attempting to generate flashcards from text.');
     setLoading(true);
 
     try {
@@ -70,7 +72,7 @@ export function AIGenerator({ deckId }: AIGeneratorProps) {
         toast({ variant: 'destructive', title: 'No cards were generated. Try refining your text.' });
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error generating cards:", err);
       toast({ variant: 'destructive', title: 'Error generating cards', description: (err as Error).message });
     } finally {
       setLoading(false);

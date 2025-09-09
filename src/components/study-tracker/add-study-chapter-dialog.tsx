@@ -65,10 +65,10 @@ export function AddStudyChapterDialog({
       } else {
         resetForm();
       }
-      setIsSaving(false);
     } else {
         resetForm();
     }
+    setIsSaving(false);
   }, [open, chapter, isEditMode]);
 
   const handleSave = async () => {
@@ -81,6 +81,7 @@ export function AddStudyChapterDialog({
         return;
     }
 
+    console.log('Attempting to save chapter:', title);
     setIsSaving(true);
     const chapterData = {
         goalId,

@@ -53,6 +53,7 @@ export function AddHabitDialog({
         return;
     }
 
+    console.log('Attempting to save habit:', name);
     setIsSaving(true);
     
     try {

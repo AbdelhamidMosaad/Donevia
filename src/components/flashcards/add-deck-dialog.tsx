@@ -42,8 +42,8 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
   useEffect(() => {
     if (open) {
       resetForm();
-      setIsSaving(false);
     }
+    setIsSaving(false);
   }, [open, deck]);
 
   const handleSave = async () => {
@@ -56,6 +56,7 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
       return;
     }
 
+    console.log('Attempting to save deck:', name);
     setIsSaving(true);
     try {
       await updateDeck(user.uid, deck.id, { name, description });

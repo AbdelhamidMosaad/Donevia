@@ -64,6 +64,7 @@ export function ActivityForm({ settings, onAddNewItem }: ActivityFormProps) {
         toast({ variant: 'destructive', title: 'You must be logged in.'});
         return;
     }
+    console.log('Attempting to save work activity:', data.description);
     setIsSaving(true);
     try {
         await addDoc(collection(db, 'users', user.uid, 'workActivities'), {

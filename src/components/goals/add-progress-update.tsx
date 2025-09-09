@@ -21,6 +21,7 @@ export function AddProgressUpdate({ goalId, milestoneId }: AddProgressUpdateProp
 
   const handleSave = async () => {
     if (!text.trim() || !user) return;
+    console.log('Attempting to save progress update.');
     setIsSaving(true);
     try {
       await addProgressUpdate(user.uid, {

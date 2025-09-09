@@ -77,11 +77,13 @@ export function AddStudyGoalDialog({
 
   const debouncedSave = useDebouncedCallback(async (dataToSave, goalId) => {
     if (!user) return;
+    console.log('Auto-saving study goal:', goalId);
     setSaveStatus('saving');
     try {
         await updateStudyGoal(user.uid, goalId, dataToSave);
         setSaveStatus('saved');
     } catch(e) {
+        console.error("Error auto-saving study goal:", e);
         setSaveStatus('idle');
         toast({ variant: 'destructive', title: 'Error saving goal' });
     }
@@ -89,6 +91,8 @@ export function AddStudyGoalDialog({
 
   const createAndSetGoal = async (newTitle: string) => {
     if (!user || isEditMode) return;
+    
+    console.log('Attempting to create study goal:', newTitle);
     setSaveStatus('saving');
     try {
         const goalData = {
@@ -104,6 +108,7 @@ export function AddStudyGoalDialog({
         toast({ title: 'Goal created!', description: 'You can now edit the details.'});
     } catch (e) {
         setSaveStatus('idle');
+        console.error("Error creating study goal:", e);
         toast({ variant: 'destructive', title: 'Error creating goal' });
     }
   }
