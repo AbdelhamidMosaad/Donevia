@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, GraduationCap, LayoutGrid, List, PlusSquare, Trash2 } from 'lucide-react';
+import { PlusCircle, GraduationCap, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { StudyGoal, StudySubtopic, StudySession } from '@/lib/types';
@@ -11,14 +11,12 @@ import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc } from 'fir
 import { db } from '@/lib/firebase';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { StudyGoalCard } from '@/components/study-tracker/study-goal-card';
-import { deleteStudyGoal, addSampleStudyGoal, cleanupFinishedSubtopics } from '@/lib/study-tracker';
+import { deleteStudyGoal } from '@/lib/study-tracker';
 import { useToast } from '@/hooks/use-toast';
 import { InsightsDashboard } from '@/components/study-tracker/insights-dashboard';
 import { GamificationProfile } from '@/components/study-tracker/gamification-profile';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StudyGoalListView } from '@/components/study-tracker/study-goal-list-view';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 type View = 'card' | 'list';
@@ -89,26 +87,6 @@ export default function StudyTrackerPage() {
     }
   };
   
-  const handleAddSample = async () => {
-    if(!user) return;
-    try {
-        await addSampleStudyGoal(user.uid);
-        toast({ title: "Sample Goal Added!", description: "A sample study goal has been added to your list."});
-    } catch (e) {
-         toast({ variant: 'destructive', title: 'Error', description: 'Failed to add sample goal.' });
-    }
-  };
-  
-  const handleCleanup = async () => {
-    if(!user) return;
-     try {
-        const count = await cleanupFinishedSubtopics(user.uid);
-        toast({ title: "Cleanup Complete!", description: `${count} completed subtopics were deleted.`});
-    } catch (e) {
-         toast({ variant: 'destructive', title: 'Error', description: 'Failed to clean up subtopics.' });
-    }
-  }
-
   const handleViewChange = (newView: View) => {
     if (newView) {
         setView(newView);
@@ -152,39 +130,7 @@ export default function StudyTrackerPage() {
               subtopics={subtopics} 
               sessions={sessions}
           />
-          <div className="flex flex-col gap-6">
-            <GamificationProfile />
-             <Card>
-                <CardHeader>
-                    <CardTitle>Utilities</CardTitle>
-                    <CardDescription>Extra actions for managing your study tracker.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-2">
-                    <Button onClick={handleAddSample} variant="outline" className="w-full">
-                        <PlusSquare className="mr-2 h-4 w-4" /> Add Sample Goal
-                    </Button>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" className="w-full">
-                                <Trash2 className="mr-2 h-4 w-4" /> Cleanup Finished Subtopics
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will permanently delete all subtopics that have been marked as completed across all of your study goals. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleCleanup}>Yes, cleanup</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </CardContent>
-            </Card>
-          </div>
+          <GamificationProfile />
       </div>
 
        <div className="mt-6">
@@ -193,7 +139,7 @@ export default function StudyTrackerPage() {
             <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
                 <GraduationCap className="h-16 w-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold font-headline">No Study Goals Yet</h3>
-                <p className="text-muted-foreground">Click "New Study Goal" to set your first one, or add a sample goal to see how it works.</p>
+                <p className="text-muted-foreground">Click "New Study Goal" to set your first one.</p>
             </div>
           ) : view === 'list' ? (
               <StudyGoalListView goals={goals} onDelete={handleDeleteGoal} />

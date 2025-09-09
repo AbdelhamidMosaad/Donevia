@@ -109,7 +109,7 @@ export default function TaskListsPage() {
         title: '✓ List Added',
         description: `"Untitled List" has been added.`,
       });
-      router.push(`/dashboard/lists/${docRef.id}`);
+      router.push(`/dashboard/list/${docRef.id}`);
     } catch (e) {
       console.error("Error adding document: ", e);
       toast({

@@ -24,7 +24,7 @@ import {
 } from './ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import moment from 'moment';
 
@@ -56,13 +56,18 @@ export function TaskTable({ listId }: TaskTableProps) {
   const [visibleColumns, setVisibleColumns] = useState<Column[]>(['title', 'status', 'priority', 'dueDate']);
 
   useEffect(() => {
-    if (listId) {
-      const savedColumns = localStorage.getItem(`table-columns-${listId}`);
-      if (savedColumns) {
-        setVisibleColumns(JSON.parse(savedColumns));
-      }
+    if (user && listId) {
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      getDoc(settingsRef).then(docSnap => {
+        if (docSnap.exists()) {
+          const tableColumns = docSnap.data().tableColumns || {};
+          if (tableColumns[listId]) {
+            setVisibleColumns(tableColumns[listId]);
+          }
+        }
+      });
     }
-  }, [listId]);
+  }, [user, listId]);
   
   useEffect(() => {
     if (user && listId) {
@@ -93,12 +98,19 @@ export function TaskTable({ listId }: TaskTableProps) {
 
   const doneStageId = stages.find(s => s.name.toLowerCase() === 'done')?.id;
   
-  const handleColumnVisibilityChange = (columnId: Column) => {
+  const handleColumnVisibilityChange = async (columnId: Column) => {
     const newVisibleColumns = visibleColumns.includes(columnId)
       ? visibleColumns.filter(id => id !== columnId)
       : [...visibleColumns, columnId];
     setVisibleColumns(newVisibleColumns);
-    localStorage.setItem(`table-columns-${listId}`, JSON.stringify(newVisibleColumns));
+    if(user) {
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, {
+            tableColumns: {
+                [listId]: newVisibleColumns
+            }
+        }, { merge: true });
+    }
   };
   
   const columnsToRender = useMemo(() => {

@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import type { Doc, DocFolder } from '@/lib/types';
-import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, where, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, where, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { DocListCardView } from '@/components/docs/doc-list-card-view';
