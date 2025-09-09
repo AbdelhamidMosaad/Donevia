@@ -101,7 +101,7 @@ export function AddBookmarkDialog({
   };
 
   const createAndSetBookmark = async (newUrl: string) => {
-    if (!user || isEditMode) return; // Don't run if already editing
+    if (!user || isEditMode) return;
     
     setSaveStatus('saving');
     const bookmarkData = {

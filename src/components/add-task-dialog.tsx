@@ -130,7 +130,6 @@ export function AddTaskDialog({
       } else {
         resetForm();
       }
-      setIsSaving(false);
     }
   }, [open, task, isEditMode, stages, defaultDueDate]);
 

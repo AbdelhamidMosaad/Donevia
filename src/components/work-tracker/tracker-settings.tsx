@@ -34,6 +34,7 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState(initialSettings);
+  const [isSaving, setIsSaving] = useState(false);
   const [newValues, setNewValues] = useState({
     appointmentOptions: '',
     categoryOptions: '',
@@ -86,6 +87,7 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
 
   const handleSave = async () => {
     if(!user) return;
+    setIsSaving(true);
     try {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'workTrackerSettings');
         await setDoc(settingsRef, settings, { merge: true });
@@ -93,6 +95,8 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
         setIsOpen(false);
     } catch(e) {
         toast({ variant: 'destructive', title: "Error saving settings" });
+    } finally {
+        setIsSaving(false);
     }
   }
   
@@ -159,7 +163,9 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave}>Save Changes</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
