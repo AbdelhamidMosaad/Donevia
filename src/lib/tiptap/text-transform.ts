@@ -2,7 +2,6 @@
 'use client';
 
 import { Extension } from '@tiptap/core';
-import { capitalCase, lowerCase, upperCase } from 'change-case-all';
 
 type TransformType = 'uppercase' | 'lowercase' | 'capitalize';
 
@@ -13,6 +12,12 @@ declare module '@tiptap/core' {
     };
   }
 }
+
+// Helper function for capitalizing text
+const capitalCase = (str: string) => {
+  return str.toLowerCase().replace(/(^|\s)\S/g, (L) => L.toUpperCase());
+};
+
 
 export const TextTransform = Extension.create({
   name: 'textTransform',
@@ -39,10 +44,10 @@ export const TextTransform = Extension.create({
 
               switch (transformType) {
                 case 'uppercase':
-                  transformedText += upperCase(selectedText);
+                  transformedText += selectedText.toUpperCase();
                   break;
                 case 'lowercase':
-                  transformedText += lowerCase(selectedText);
+                  transformedText += selectedText.toLowerCase();
                   break;
                 case 'capitalize':
                   transformedText += capitalCase(selectedText);
