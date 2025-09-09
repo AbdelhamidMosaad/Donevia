@@ -29,6 +29,8 @@ interface EditorToolbarProps {
   backgroundColor: string;
   margin: 'small' | 'medium' | 'large';
   onMarginChange: (margin: 'small' | 'medium' | 'large') => void;
+  fullWidth: boolean;
+  onFullWidthToggle: () => void;
 }
 
 const ToolbarButton = ({
@@ -83,7 +85,7 @@ const ToolbarButton = ({
 
 const paperColors = ['#FFFFFF', '#FDF6E3', '#F5F5F5', '#E8F5E9', '#E3F2FD'];
 
-export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor, margin, onMarginChange }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor, margin, onMarginChange, fullWidth, onFullWidthToggle }: EditorToolbarProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -300,6 +302,16 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                 <DropdownMenuItem onSelect={() => onMarginChange('large')}>Large</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Toggle size="sm" pressed={fullWidth} onPressedChange={onFullWidthToggle}>
+                        <ChevronsLeftRight className="h-4 w-4" />
+                    </Toggle>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Toggle Full Width</p>
+                </TooltipContent>
+            </Tooltip>
           </div>
         </TabsContent>
         <TabsContent value="table" className="pt-2">

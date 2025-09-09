@@ -231,6 +231,7 @@ export type Doc = {
     folderId?: string | null;
     backgroundColor?: string;
     margin?: 'small' | 'medium' | 'large';
+    fullWidth?: boolean;
 };
 
 export type DocFolder = {

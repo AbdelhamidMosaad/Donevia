@@ -78,6 +78,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       content: updatedDoc.content,
       backgroundColor: updatedDoc.backgroundColor,
       margin: updatedDoc.margin,
+      fullWidth: updatedDoc.fullWidth,
       updatedAt: serverTimestamp(),
     };
     
@@ -163,6 +164,12 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
     debouncedSave(updatedDoc);
   };
 
+  const handleFullWidthToggle = () => {
+    const updatedDoc = { ...docData, fullWidth: !docData.fullWidth };
+    setDocData(updatedDoc);
+    debouncedSave(updatedDoc);
+  };
+
   const toggleFullscreen = useCallback(() => {
     const elem = editorContainerRef.current;
     if (!elem) return;
@@ -214,6 +221,8 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
                 onBackgroundColorChange={handleBackgroundColorChange}
                 margin={docData.margin || 'medium'}
                 onMarginChange={handleMarginChange}
+                fullWidth={!!docData.fullWidth}
+                onFullWidthToggle={handleFullWidthToggle}
               />
              <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-muted-foreground">
                 {saveStatus === 'saving' && <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>}
@@ -230,8 +239,9 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
           style={{ backgroundColor: docData.backgroundColor || '#FFFFFF' }}
         >
             <div className={cn(
-                "max-w-4xl mx-auto bg-transparent",
-                marginClasses[docData.margin || 'medium']
+                "bg-transparent transition-all",
+                marginClasses[docData.margin || 'medium'],
+                !docData.fullWidth ? "max-w-4xl mx-auto" : "px-4 md:px-8"
             )}>
               <EditorContent editor={editor} />
             </div>
