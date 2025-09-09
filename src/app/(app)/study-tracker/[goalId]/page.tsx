@@ -6,17 +6,16 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { StudyGoal, StudyMilestone } from '@/lib/types';
+import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Edit, PlusCircle, Flag } from 'lucide-react';
-import { AddStudyMilestoneDialog } from '@/components/study-tracker/add-study-milestone-dialog';
-import { StudyMilestoneItem } from '@/components/study-tracker/study-milestone-item';
-import { deleteStudyMilestone } from '@/lib/study-tracker';
 import { useToast } from '@/hooks/use-toast';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AddStudyChapterDialog } from '@/components/study-tracker/add-study-chapter-dialog';
+import { StudyChapterItem } from '@/components/study-tracker/study-chapter-item';
 
 export default function StudyGoalDetailPage() {
   const { user, loading } = useAuth();
@@ -26,9 +25,10 @@ export default function StudyGoalDetailPage() {
   const goalId = params.goalId as string;
 
   const [goal, setGoal] = useState<StudyGoal | null>(null);
-  const [milestones, setMilestones] = useState<StudyMilestone[]>([]);
-  const [isAddMilestoneOpen, setIsAddMilestoneOpen] = useState(false);
+  const [chapters, setChapters] = useState<StudyChapter[]>([]);
+  const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
   const [isEditGoalOpen, setIsEditGoalOpen] = useState(false);
+  const [isAddChapterOpen, setIsAddChapterOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -47,33 +47,29 @@ export default function StudyGoalDetailPage() {
         }
       });
 
-      const milestonesQuery = query(collection(db, 'users', user.uid, 'studyMilestones'), where('goalId', '==', goalId), orderBy('order', 'asc'));
-      const unsubscribeMilestones = onSnapshot(milestonesQuery, (snapshot) => {
-        setMilestones(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyMilestone)));
+      const chaptersQuery = query(collection(db, 'users', user.uid, 'studyChapters'), where('goalId', '==', goalId), orderBy('order', 'asc'));
+      const unsubscribeChapters = onSnapshot(chaptersQuery, (snapshot) => {
+        setChapters(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyChapter)));
+      });
+      
+      const subtopicsQuery = query(collection(db, 'users', user.uid, 'studySubtopics'), where('goalId', '==', goalId));
+      const unsubscribeSubtopics = onSnapshot(subtopicsQuery, (snapshot) => {
+        setSubtopics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySubtopic)));
       });
       
       return () => {
         unsubscribeGoal();
-        unsubscribeMilestones();
+        unsubscribeChapters();
+        unsubscribeSubtopics();
       };
     }
   }, [user, goalId, router]);
 
-  const handleDeleteMilestone = async (milestoneId: string) => {
-    if (!user) return;
-    try {
-        await deleteStudyMilestone(user.uid, milestoneId);
-        toast({ title: "Subtopic deleted successfully." });
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Error deleting subtopic.' });
-    }
-  }
-
   const progressPercentage = useMemo(() => {
-    if (milestones.length === 0) return 0;
-    const completedCount = milestones.filter(m => m.isCompleted).length;
-    return (completedCount / milestones.length) * 100;
-  }, [milestones]);
+    if (subtopics.length === 0) return 0;
+    const completedCount = subtopics.filter(m => m.isCompleted).length;
+    return (completedCount / subtopics.length) * 100;
+  }, [subtopics]);
   
   const flagPosition = `${progressPercentage}%`;
 
@@ -95,7 +91,10 @@ export default function StudyGoalDetailPage() {
       </div>
 
       <Card>
-          <CardHeader><CardTitle>Progress Track</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Progress Track</CardTitle>
+            <CardDescription>{subtopics.filter(s => s.isCompleted).length} of {subtopics.length} subtopics completed</CardDescription>
+          </CardHeader>
           <CardContent>
               <div className="relative h-10">
                   <div className="absolute bottom-2 left-0 right-0 h-2 bg-red-200 rounded-full overflow-hidden">
@@ -112,26 +111,30 @@ export default function StudyGoalDetailPage() {
         <Card className="flex flex-col flex-1 min-h-0">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                  <CardTitle>Chapters & Subtopics</CardTitle>
-                  <CardDescription>{milestones.filter(m => m.isCompleted).length}/{milestones.length} completed</CardDescription>
+                  <CardTitle>Content Breakdown</CardTitle>
+                  <CardDescription>Organize your study material into chapters and subtopics.</CardDescription>
               </div>
-              <Button size="sm" variant="outline" onClick={() => setIsAddMilestoneOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Subtopic</Button>
+              <Button size="sm" variant="outline" onClick={() => setIsAddChapterOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Chapter</Button>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
-                {milestones.length > 0 ? (
+                {chapters.length > 0 ? (
                     <div className="space-y-4">
-                        {milestones.map(m => (
-                            <StudyMilestoneItem key={m.id} milestone={m} onDelete={() => handleDeleteMilestone(m.id)} />
+                        {chapters.map(chapter => (
+                            <StudyChapterItem 
+                                key={chapter.id} 
+                                chapter={chapter} 
+                                subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
+                            />
                         ))}
                     </div>
                 ) : (
-                    <p className="text-center text-muted-foreground py-8">No subtopics yet. Add one to get started!</p>
+                    <p className="text-center text-muted-foreground py-8">No chapters yet. Add one to get started!</p>
                 )}
             </CardContent>
         </Card>
 
-       <AddStudyMilestoneDialog goalId={goalId} open={isAddMilestoneOpen} onOpenChange={setIsAddMilestoneOpen} milestonesCount={milestones.length}/>
        <AddStudyGoalDialog goal={goal} open={isEditGoalOpen} onOpenChange={setIsEditGoalOpen} />
+       <AddStudyChapterDialog goalId={goalId} open={isAddChapterOpen} onOpenChange={setIsAddChapterOpen} chaptersCount={chapters.length}/>
     </div>
   );
 }

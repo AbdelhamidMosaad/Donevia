@@ -440,9 +440,18 @@ export type StudyGoal = {
     updatedAt: Timestamp;
 }
 
-export type StudyMilestone = {
+export type StudyChapter = {
     id: string;
     goalId: string;
+    title: string;
+    order: number;
+    createdAt: Timestamp;
+}
+
+export type StudySubtopic = {
+    id: string;
+    goalId: string;
+    chapterId: string;
     title: string;
     isCompleted: boolean;
     order: number;

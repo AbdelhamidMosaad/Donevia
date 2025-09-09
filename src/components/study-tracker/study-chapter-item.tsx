@@ -1,0 +1,129 @@
+
+'use client';
+
+import { useState } from 'react';
+import type { StudyChapter, StudySubtopic } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { toggleStudySubtopicCompletion, deleteStudyChapter, deleteStudySubtopic } from '@/lib/study-tracker';
+import { Checkbox } from '../ui/checkbox';
+import { cn } from '@/lib/utils';
+import { MoreHorizontal, Edit, Trash2, PlusCircle } from 'lucide-react';
+import { Button } from '../ui/button';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { AddStudyChapterDialog } from './add-study-chapter-dialog';
+import { AddStudySubtopicDialog } from './add-study-subtopic-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { StudySubtopicItem } from './study-subtopic-item';
+
+interface StudyChapterItemProps {
+  chapter: StudyChapter;
+  subtopics: StudySubtopic[];
+}
+
+export function StudyChapterItem({ chapter, subtopics }: StudyChapterItemProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
+  const [isAddSubtopicOpen, setIsAddSubtopicOpen] = useState(false);
+  const [editingSubtopic, setEditingSubtopic] = useState<StudySubtopic | null>(null);
+
+  const handleDeleteChapter = async () => {
+    if (!user) return;
+    try {
+        await deleteStudyChapter(user.uid, chapter.id);
+        toast({ title: "Chapter deleted successfully" });
+    } catch(e) {
+        toast({ variant: "destructive", title: "Error deleting chapter" });
+    }
+  }
+
+  const handleDeleteSubtopic = async (subtopicId: string) => {
+    if(!user) return;
+    try {
+        await deleteStudySubtopic(user.uid, subtopicId);
+        toast({ title: "Subtopic deleted successfully" });
+    } catch (e) {
+        toast({ variant: "destructive", title: "Error deleting subtopic" });
+    }
+  }
+
+  return (
+    <>
+      <div className="p-4 rounded-lg bg-muted/50 border">
+        <div className="flex justify-between items-center mb-2">
+            <h3 className="font-bold text-lg">{chapter.title}</h3>
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setIsAddSubtopicOpen(true)}>
+                    <PlusCircle className="h-4 w-4 mr-2"/>
+                    Add Subtopic
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4"/></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => setIsEditChapterOpen(true)}>
+                            <Edit className="mr-2 h-4 w-4"/>Edit Chapter
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Chapter</DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Chapter?</AlertDialogTitle>
+                                    <AlertDialogDescription>Are you sure you want to delete "{chapter.title}" and all its subtopics? This action is permanent.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteChapter}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </div>
+        <div className="space-y-2 pl-4 border-l-2">
+           {subtopics.sort((a,b) => a.order - b.order).map(subtopic => (
+               <StudySubtopicItem 
+                    key={subtopic.id}
+                    subtopic={subtopic}
+                    onDelete={() => handleDeleteSubtopic(subtopic.id)}
+                    onEdit={() => setEditingSubtopic(subtopic)}
+               />
+           ))}
+           {subtopics.length === 0 && <p className="text-sm text-muted-foreground py-2">No subtopics yet.</p>}
+        </div>
+      </div>
+      
+      <AddStudyChapterDialog 
+        goalId={chapter.goalId} 
+        chapter={chapter} 
+        open={isEditChapterOpen} 
+        onOpenChange={setIsEditChapterOpen}
+        chaptersCount={0} // Not needed for editing
+      />
+      
+       <AddStudySubtopicDialog
+        goalId={chapter.goalId}
+        chapterId={chapter.id}
+        open={isAddSubtopicOpen}
+        onOpenChange={setIsAddSubtopicOpen}
+        subtopicsCount={subtopics.length}
+      />
+      
+      {editingSubtopic && (
+        <AddStudySubtopicDialog
+            goalId={editingSubtopic.goalId}
+            chapterId={editingSubtopic.chapterId}
+            subtopic={editingSubtopic}
+            open={!!editingSubtopic}
+            onOpenChange={(isOpen) => !isOpen && setEditingSubtopic(null)}
+            subtopicsCount={subtopics.length}
+        />
+      )}
+    </>
+  );
+}

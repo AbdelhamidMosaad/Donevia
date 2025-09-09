@@ -16,29 +16,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { StudyMilestone } from '@/lib/types';
-import { addStudyMilestone, updateStudyMilestone } from '@/lib/study-tracker';
+import type { StudySubtopic } from '@/lib/types';
+import { addStudySubtopic, updateStudySubtopic } from '@/lib/study-tracker';
 
-interface AddStudyMilestoneDialogProps {
+interface AddStudySubtopicDialogProps {
   goalId: string;
-  milestone?: StudyMilestone | null;
+  chapterId: string;
+  subtopic?: StudySubtopic | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  milestonesCount: number;
+  subtopicsCount: number;
 }
 
-export function AddStudyMilestoneDialog({
+export function AddStudySubtopicDialog({
   goalId,
-  milestone,
+  chapterId,
+  subtopic,
   open,
   onOpenChange,
-  milestonesCount,
-}: AddStudyMilestoneDialogProps) {
+  subtopicsCount,
+}: AddStudySubtopicDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  const isEditMode = !!milestone;
+  const isEditMode = !!subtopic;
 
   const [title, setTitle] = useState('');
 
@@ -48,14 +50,14 @@ export function AddStudyMilestoneDialog({
 
   useEffect(() => {
     if (open) {
-      if (isEditMode && milestone) {
-        setTitle(milestone.title);
+      if (isEditMode && subtopic) {
+        setTitle(subtopic.title);
       } else {
         resetForm();
       }
       setIsSaving(false);
     }
-  }, [open, milestone, isEditMode]);
+  }, [open, subtopic, isEditMode]);
 
   const handleSave = async () => {
     if (!user) {
@@ -68,24 +70,25 @@ export function AddStudyMilestoneDialog({
     }
 
     setIsSaving(true);
-    const milestoneData = {
+    const subtopicData = {
         goalId,
+        chapterId,
         title,
-        isCompleted: milestone?.isCompleted || false,
-        order: milestone?.order ?? milestonesCount,
+        isCompleted: subtopic?.isCompleted || false,
+        order: subtopic?.order ?? subtopicsCount,
     };
 
     try {
-      if (isEditMode && milestone) {
-        await updateStudyMilestone(user.uid, milestone.id, milestoneData);
+      if (isEditMode && subtopic) {
+        await updateStudySubtopic(user.uid, subtopic.id, subtopicData);
         toast({ title: 'Subtopic Updated' });
       } else {
-        await addStudyMilestone(user.uid, milestoneData);
+        await addStudySubtopic(user.uid, subtopicData);
         toast({ title: 'Subtopic Added' });
       }
       onOpenChange?.(false);
     } catch (e) {
-      console.error("Error saving milestone: ", e);
+      console.error("Error saving subtopic: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to save subtopic.' });
     } finally {
       setIsSaving(false);
@@ -97,7 +100,7 @@ export function AddStudyMilestoneDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Subtopic' : 'Add New Subtopic'}</DialogTitle>
-          <DialogDescription>{isEditMode ? 'Update this subtopic.' : 'Add a new chapter or subtopic to your study goal.'}</DialogDescription>
+          <DialogDescription>{isEditMode ? 'Update this subtopic.' : 'Add a new subtopic to this chapter.'}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">

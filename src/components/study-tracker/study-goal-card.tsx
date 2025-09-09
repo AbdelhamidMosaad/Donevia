@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { StudyGoal, StudyMilestone } from '@/lib/types';
+import type { StudyGoal, StudySubtopic } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -24,23 +24,23 @@ interface StudyGoalCardProps {
 export function StudyGoalCard({ goal, onDelete }: StudyGoalCardProps) {
   const { user } = useAuth();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [milestones, setMilestones] = useState<StudyMilestone[]>([]);
+  const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
 
   useEffect(() => {
     if (user && goal.id) {
-        const milestonesQuery = query(collection(db, 'users', user.uid, 'studyMilestones'), where('goalId', '==', goal.id));
-        const unsubscribe = onSnapshot(milestonesQuery, (snapshot) => {
-            setMilestones(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyMilestone)));
+        const subtopicsQuery = query(collection(db, 'users', user.uid, 'studySubtopics'), where('goalId', '==', goal.id));
+        const unsubscribe = onSnapshot(subtopicsQuery, (snapshot) => {
+            setSubtopics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySubtopic)));
         });
         return () => unsubscribe();
     }
   }, [user, goal.id]);
 
   const progressPercentage = useMemo(() => {
-    if (milestones.length === 0) return 0;
-    const completedCount = milestones.filter(m => m.isCompleted).length;
-    return (completedCount / milestones.length) * 100;
-  }, [milestones]);
+    if (subtopics.length === 0) return 0;
+    const completedCount = subtopics.filter(m => m.isCompleted).length;
+    return (completedCount / subtopics.length) * 100;
+  }, [subtopics]);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -71,7 +71,7 @@ export function StudyGoalCard({ goal, onDelete }: StudyGoalCardProps) {
                   <AlertDialogContent onClick={handleDeleteClick}>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>This will permanently delete the goal "{goal.title}" and all its subtopics.</AlertDialogDescription>
+                      <AlertDialogDescription>This will permanently delete the goal "{goal.title}" and all its chapters and subtopics.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -85,7 +85,7 @@ export function StudyGoalCard({ goal, onDelete }: StudyGoalCardProps) {
           <CardContent className="flex-1">
             <div className="space-y-2">
                 <Progress value={progressPercentage} aria-label={`${Math.round(progressPercentage)}% complete`} />
-                <p className="text-xs text-muted-foreground">{milestones.filter(m => m.isCompleted).length} of {milestones.length} subtopics complete.</p>
+                <p className="text-xs text-muted-foreground">{subtopics.filter(m => m.isCompleted).length} of {subtopics.length} subtopics complete.</p>
             </div>
           </CardContent>
           <CardFooter>
