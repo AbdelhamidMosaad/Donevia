@@ -38,6 +38,7 @@ import { Button } from '../ui/button';
 
 interface DocEditorProps {
   doc: Doc;
+  onEditorInstance?: (editor: Editor) => void;
 }
 
 // Helper function to recursively remove undefined values from an object
@@ -60,7 +61,7 @@ function deepCleanUndefined(obj: any): any {
 }
 
 
-export function DocEditor({ doc: initialDoc }: DocEditorProps) {
+export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [docData, setDocData] = useState(initialDoc);
@@ -142,6 +143,9 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       const updatedDoc = { ...docData, content: newContent };
       setDocData(updatedDoc);
       debouncedSave(updatedDoc);
+    },
+    onCreate: ({ editor }) => {
+      onEditorInstance?.(editor);
     },
   });
   

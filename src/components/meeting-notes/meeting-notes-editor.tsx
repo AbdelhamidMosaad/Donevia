@@ -11,9 +11,12 @@ import { DocEditor } from '@/components/docs/doc-editor';
 import { Input } from '../ui/input';
 import moment from 'moment';
 import { Button } from '../ui/button';
-import { Trash2, UserPlus, ListPlus } from 'lucide-react';
+import { Trash2, UserPlus, ListPlus, Download, FileText } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { v4 as uuidv4 } from 'uuid';
+import jsPDF from 'jspdf';
+import { JSDOM } from 'jsdom';
+
 
 interface MeetingNotesEditorProps {
   note: MeetingNote;
@@ -23,6 +26,8 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
   const { user } = useAuth();
   const { toast } = useToast();
   const [note, setNote] = useState(initialNote);
+  const [editorInstance, setEditorInstance] = useState<any>(null);
+
 
   const debouncedSave = useDebouncedCallback(async (updatedNote: Partial<MeetingNote>) => {
     if (!user) return;
@@ -74,19 +79,82 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
       const updatedAgenda = note.agenda.filter(item => item.id !== itemId);
       handleFieldChange('agenda', updatedAgenda);
   }
+  
+   const handleExportPDF = () => {
+    if (!editorInstance) {
+        toast({ variant: 'destructive', title: 'Editor not ready for export.'});
+        return;
+    }
+
+    const docContent = editorInstance.getHTML();
+    
+    // Create a new jsPDF instance
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'pt',
+      format: 'a4'
+    });
+
+    // --- Header ---
+    pdf.setFontSize(22);
+    pdf.text(note.title, 40, 60);
+
+    pdf.setFontSize(12);
+    pdf.text(`Date: ${moment(note.date.toDate()).format('MMMM Do, YYYY')}`, 40, 80);
+
+    // --- Attendees ---
+    pdf.setFontSize(14);
+    pdf.text('Attendees', 40, 120);
+    pdf.setFontSize(10);
+    note.attendees.forEach((attendee, index) => {
+      pdf.text(`- ${attendee.name} (${attendee.email})`, 50, 135 + (index * 15));
+    });
+
+    const lastAttendeeY = 135 + (note.attendees.length * 15);
+    
+    // --- Agenda ---
+    pdf.setFontSize(14);
+    pdf.text('Agenda', 40, lastAttendeeY + 30);
+    pdf.setFontSize(10);
+    note.agenda.forEach((item, index) => {
+        pdf.text(`- ${item.topic} (${item.presenter}, ${item.time} mins)`, 50, lastAttendeeY + 45 + (index * 15));
+    });
+
+    const lastAgendaY = lastAttendeeY + 45 + (note.agenda.length * 15);
+
+    // --- Notes Content from Editor ---
+    pdf.html(docContent, {
+        x: 40,
+        y: lastAgendaY + 20,
+        width: 515, // A4 width is ~595pts, with 40pt margins
+        windowWidth: 515,
+        callback: function(doc) {
+            doc.save(`${note.title.replace(/ /g, '_')}_meeting_notes.pdf`);
+            toast({title: "Exporting PDF..."});
+        }
+    });
+  };
 
 
   return (
     <div className="h-full flex flex-col md:grid md:grid-cols-[1fr_350px] gap-4">
         <div className="flex-1 min-h-0 order-2 md:order-1">
-            <DocEditor doc={{
-                ...note,
-                content: note.notes,
-                ownerId: note.ownerId,
-            }} />
+            <DocEditor 
+                doc={{
+                    ...note,
+                    content: note.notes,
+                    ownerId: note.ownerId,
+                }} 
+                onEditorInstance={(instance) => setEditorInstance(instance)}
+            />
         </div>
         <div className="order-1 md:order-2 space-y-4 p-4 border-l bg-card">
-            <h2 className="text-xl font-bold font-headline">Meeting Details</h2>
+            <div className="flex justify-between items-center">
+                 <h2 className="text-xl font-bold font-headline">Meeting Details</h2>
+                 <Button variant="outline" onClick={handleExportPDF}>
+                    <Download className="mr-2 h-4 w-4" /> Export PDF
+                </Button>
+            </div>
             <div>
                 <label className="text-sm font-medium">Meeting Title</label>
                 <Input
