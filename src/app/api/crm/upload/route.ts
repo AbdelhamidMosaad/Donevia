@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminStorage } from '@/lib/firebase-admin';
 import Busboy from 'busboy';
+import { Readable } from 'stream';
 
 export const config = {
   api: {
@@ -46,17 +47,8 @@ async function parseForm(req: Request): Promise<{ fields: Record<string, string>
     busboy.on('error', reject);
 
     if (req.body) {
-        const reader = (req.body as any).getReader();
-        const read = async () => {
-            const { done, value } = await reader.read();
-            if (done) {
-                busboy.end();
-                return;
-            }
-            busboy.write(value);
-            read();
-        };
-        read();
+        const readable = Readable.fromWeb(req.body as any);
+        readable.pipe(busboy);
     } else {
         busboy.end();
     }

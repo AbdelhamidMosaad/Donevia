@@ -27,6 +27,7 @@ export default function TaskListPage() {
   const [view, setView] = useState<View>('board');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [listName, setListName] = useState('');
+  const [listExists, setListExists] = useState<boolean | null>(null);
   
   useEffect(() => {
     if (!loading && !user) {
@@ -50,8 +51,10 @@ export default function TaskListPage() {
       const unsubscribeList = onSnapshot(listDocRef, (doc) => {
         if (doc.exists()) {
           setListName(doc.data().name);
+          setListExists(true);
         } else {
           // Handle case where list doesn't exist, maybe redirect
+          setListExists(false);
           router.push('/dashboard/lists');
         }
       });
@@ -81,8 +84,13 @@ export default function TaskListPage() {
     }
   };
     
-  if (loading || !user) {
+  if (loading || !user || listExists === null) {
     return <div>Loading...</div>; // Or a spinner component
+  }
+
+  if (listExists === false) {
+    // This case is handled by the redirect, but it's a good failsafe.
+    return <div>List not found. Redirecting...</div>;
   }
 
   const renderView = () => {

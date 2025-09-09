@@ -13,7 +13,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { AddTaskDialog } from '@/components/add-task-dialog';
 import type { Task } from '@/lib/types';
-import { collection, onSnapshot, query, where, doc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 type View = 'calendar' | 'list' | 'board' | 'table';
@@ -36,6 +36,16 @@ export default function TaskListPage() {
   
   useEffect(() => {
     if (user && listId) {
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        getDoc(settingsRef).then(docSnap => {
+            if (docSnap.exists()) {
+                const listViews = docSnap.data().listViews || {};
+                if (listViews[listId]) {
+                    setView(listViews[listId]);
+                }
+            }
+        });
+
       const listDocRef = doc(db, 'users', user.uid, 'taskLists', listId);
       const unsubscribeList = onSnapshot(listDocRef, (doc) => {
         if (doc.exists()) {
@@ -59,6 +69,17 @@ export default function TaskListPage() {
     }
   }, [user, listId, router]);
 
+  const handleViewChange = async (newView: View) => {
+    if (newView && user) {
+        setView(newView);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { 
+            listViews: {
+                [listId]: newView
+            }
+        }, { merge: true });
+    }
+  };
     
   if (loading || !user) {
     return <div>Loading...</div>; // Or a spinner component
@@ -86,7 +107,7 @@ export default function TaskListPage() {
             <p className="text-muted-foreground">Manage your tasks for this list.</p>
         </div>
         <div className="flex items-center gap-2">
-           <ToggleGroup type="single" value={view} onValueChange={(value: View) => value && setView(value)} aria-label="Task view">
+           <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
               <ToggleGroupItem value="board" aria-label="Board view">
                 <LayoutGrid className="h-4 w-4" />
               </ToggleGroupItem>

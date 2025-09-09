@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { StickyNote } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
@@ -25,13 +25,16 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
   const [cols, setCols] = useState(1);
 
   // Derive a sorted list of notes to ensure stable order for dnd
-  const sortedNotes = [...notes].sort((a, b) => {
+  const sortedNotes = useMemo(() => {
+    return [...notes].sort((a, b) => {
       const posA = a.gridPosition || { row: 0, col: 0 };
       const posB = b.gridPosition || { row: 0, col: 0 };
       const indexA = posA.row * 1000 + posA.col; // Assuming max 1000 cols
       const indexB = posB.row * 1000 + posB.col;
       return indexA - indexB;
-  });
+    });
+  }, [notes]);
+
 
   useEffect(() => {
     const handleResize = () => {
