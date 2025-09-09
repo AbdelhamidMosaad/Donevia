@@ -52,17 +52,16 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
     if (!user) return;
     setSaveStatus('saving');
     const docRef = doc(db, 'users', user.uid, 'docs', updatedDoc.id);
-    
-    // Create an object with only defined values to prevent Firestore errors
-    const updateData: { [key: string]: any } = {
-        updatedAt: serverTimestamp(),
+
+    const dataToSave = {
+      title: updatedDoc.title,
+      content: updatedDoc.content,
+      backgroundColor: updatedDoc.backgroundColor ?? null,
+      updatedAt: serverTimestamp(),
     };
-    if (updatedDoc.title !== undefined) updateData.title = updatedDoc.title;
-    if (updatedDoc.content !== undefined) updateData.content = updatedDoc.content;
-    if (updatedDoc.backgroundColor !== undefined) updateData.backgroundColor = updatedDoc.backgroundColor;
 
     try {
-      await updateDoc(docRef, updateData);
+      await updateDoc(docRef, dataToSave);
       setSaveStatus('saved');
     } catch (error) {
       console.error("Error saving document: ", error);
