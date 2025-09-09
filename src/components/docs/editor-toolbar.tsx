@@ -7,7 +7,7 @@ import {
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
   Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive,
-  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets
+  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets, MessageSquareQuote
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -316,6 +316,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
         <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
         <ToolbarButton editor={editor} label="Image from URL" icon={ImageIcon} onClick={addImage} />
         <ToolbarButton editor={editor} label="Horizontal Line" icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
+        <ToolbarButton editor={editor} label="Callout" icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleCallout().run()} />
         
         <Tooltip>
             <TooltipTrigger asChild>
@@ -332,6 +333,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
         <Separator orientation="vertical" className="h-6 mx-1" />
         
         <ToolbarButton editor={editor} name="table" label="Table" icon={Table} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+        <ToolbarButton editor={editor} label="2 Columns" icon={Columns} onClick={() => editor.chain().focus().insertTable({ rows: 1, cols: 2, withHeaderRow: false }).run()} />
 
         {editor.isActive('table') && (
             <>

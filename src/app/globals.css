@@ -335,6 +335,16 @@ body {
   .prose p {
     @apply text-base;
   }
+  
+  /* Callout block styling */
+  .prose div[data-type="callout"] {
+    @apply p-4 my-6 bg-muted border-l-4 border-primary rounded-r-lg;
+  }
+  
+  .prose div[data-type="callout"] p {
+    @apply my-0;
+  }
+
   #editor ul, #editor ol {
     margin: 1em 0;
     padding-left: 2em !important;

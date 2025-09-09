@@ -3,7 +3,7 @@ import { Extension } from '@tiptap/core';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 import { ReactRenderer } from '@tiptap/react';
 import {
-  Heading1, Heading2, Heading3, List, ListOrdered, Code, Quote, Image, Table
+  Heading1, Heading2, Heading3, List, ListOrdered, Code, Quote, Image, Table, Minus, MessageSquareQuote, Calendar
 } from 'lucide-react';
 import tippy, { Instance } from 'tippy.js';
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
@@ -16,8 +16,11 @@ const commands = [
   { title: 'Heading 3', icon: Heading3, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 3 }).run() },
   { title: 'Bullet List', icon: List, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
   { title: 'Numbered List', icon: ListOrdered, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).toggleOrderedList().run() },
-  { title: 'Code Block', icon: Code, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
+  { title: 'Callout', icon: MessageSquareQuote, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).toggleCallout().run() },
   { title: 'Blockquote', icon: Quote, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
+  { title: 'Code Block', icon: Code, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
+  { title: 'Divider', icon: Minus, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).setHorizontalRule().run() },
+  { title: 'Date', icon: Calendar, command: ({ editor, range }: any) => editor.chain().focus().deleteRange(range).insertContent(new Date().toLocaleDateString()).run() },
   { title: 'Image', icon: Image, command: ({ editor, range }: any) => {
     const url = window.prompt('Image URL');
     if (url) {

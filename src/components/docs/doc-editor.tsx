@@ -32,6 +32,7 @@ import { CharacterCount } from '@tiptap/extension-character-count';
 import { FontFamily } from '@/lib/tiptap/font-family';
 import { TextTransform } from '@/lib/tiptap/text-transform';
 import { cn } from '@/lib/utils';
+import { Callout } from '@/lib/tiptap/callout';
 
 
 interface DocEditorProps {
@@ -90,6 +91,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       Subscript,
       CharacterCount,
       TextTransform,
+      Callout,
     ],
     content: docData.content,
     editorProps: {
