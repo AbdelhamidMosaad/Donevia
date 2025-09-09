@@ -11,8 +11,9 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { StudyGoalCard } from '@/components/study-tracker/study-goal-card';
-import { deleteStudyGoal } from '@/lib/study-tracker';
+import { deleteStudyGoal, addSampleStudyGoal, cleanupFinishedSubtopics } from '@/lib/study-tracker';
 import { useToast } from '@/hooks/use-toast';
+import { InsightsDashboard } from '@/components/study-tracker/insights-dashboard';
 
 export default function StudyTrackerPage() {
   const { user, loading } = useAuth();
@@ -48,31 +49,53 @@ export default function StudyTrackerPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete study goal.' });
     }
   };
+  
+  const handleAddSample = async () => {
+    if(!user) return;
+    try {
+        await addSampleStudyGoal(user.uid);
+        toast({ title: "Sample Goal Added!", description: "A sample study goal has been added to your list."});
+    } catch (e) {
+         toast({ variant: 'destructive', title: 'Error', description: 'Failed to add sample goal.' });
+    }
+  };
+  
+  const handleCleanup = async () => {
+    if(!user) return;
+     try {
+        const count = await cleanupFinishedSubtopics(user.uid);
+        toast({ title: "Cleanup Complete!", description: `${count} completed subtopics were deleted.`});
+    } catch (e) {
+         toast({ variant: 'destructive', title: 'Error', description: 'Failed to clean up subtopics.' });
+    }
+  }
 
   if (loading || !user) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+    <div className="flex flex-col h-full gap-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
             <h1 className="text-3xl font-bold font-headline">Study Tracker</h1>
             <p className="text-muted-foreground">Track your learning goals and progress.</p>
         </div>
         <div className="flex items-center gap-2">
-            <Button onClick={() => setIsAddDialogOpen(true)}>
+             <Button onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Study Goal
             </Button>
         </div>
       </div>
       
+      <InsightsDashboard goals={goals} onAddSample={handleAddSample} onCleanup={handleCleanup} />
+
        {goals.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
             <GraduationCap className="h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold font-headline">No Study Goals Yet</h3>
-            <p className="text-muted-foreground">Click "New Study Goal" to set your first one.</p>
+            <p className="text-muted-foreground">Click "New Study Goal" to set your first one, or add a sample goal to see how it works.</p>
         </div>
       ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

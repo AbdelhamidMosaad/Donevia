@@ -438,6 +438,7 @@ export type StudyGoal = {
     description?: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    timeSpentSeconds?: number;
 }
 
 export type StudyChapter = {

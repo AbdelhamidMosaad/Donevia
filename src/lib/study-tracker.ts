@@ -100,3 +100,65 @@ export const deleteStudySubtopic = async (userId: string, subtopicId: string) =>
   const subtopicRef = doc(db, 'users', userId, 'studySubtopics', subtopicId);
   return await deleteDoc(subtopicRef);
 };
+
+
+// --- Advanced Operations ---
+
+export const addSampleStudyGoal = async (userId: string) => {
+    const batch = writeBatch(db);
+    const goalRef = doc(collection(db, 'users', userId, 'studyGoals'));
+    batch.set(goalRef, {
+        title: 'Learn React',
+        description: 'Master the fundamentals of React for web development.',
+        timeSpentSeconds: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+
+    const chapters = [
+        { title: '1. Introduction to React', order: 0, subtopics: ['What is React?', 'Setting up a React project', 'Understanding JSX'] },
+        { title: '2. Components & Props', order: 1, subtopics: ['Functional Components', 'Class Components', 'Passing Props'] },
+        { title: '3. State & Lifecycle', order: 2, subtopics: ['useState Hook', 'useEffect Hook', 'Lifecycle Methods'] },
+    ];
+
+    for (const chapterData of chapters) {
+        const chapterRef = doc(collection(db, 'users', userId, 'studyChapters'));
+        batch.set(chapterRef, {
+            goalId: goalRef.id,
+            title: chapterData.title,
+            order: chapterData.order,
+            createdAt: serverTimestamp(),
+        });
+
+        for (const [i, subtopicTitle] of chapterData.subtopics.entries()) {
+            const subtopicRef = doc(collection(db, 'users', userId, 'studySubtopics'));
+            batch.set(subtopicRef, {
+                goalId: goalRef.id,
+                chapterId: chapterRef.id,
+                title: subtopicTitle,
+                isCompleted: false,
+                order: i,
+                createdAt: serverTimestamp(),
+            });
+        }
+    }
+    await batch.commit();
+}
+
+
+export const cleanupFinishedSubtopics = async (userId: string): Promise<number> => {
+    const q = query(collection(db, 'users', userId, 'studySubtopics'), where('isCompleted', '==', true));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        return 0;
+    }
+    
+    const batch = writeBatch(db);
+    snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    return snapshot.size;
+}

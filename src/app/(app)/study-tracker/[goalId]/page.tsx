@@ -1,21 +1,22 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
-import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Edit, PlusCircle, Flag, Share2 } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Play, Pause, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AddStudyChapterDialog } from '@/components/study-tracker/add-study-chapter-dialog';
 import { StudyChapterItem } from '@/components/study-tracker/study-chapter-item';
+import { useDebouncedCallback } from 'use-debounce';
 
 export default function StudyGoalDetailPage() {
   const { user, loading } = useAuth();
@@ -29,6 +30,8 @@ export default function StudyGoalDetailPage() {
   const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
   const [isEditGoalOpen, setIsEditGoalOpen] = useState(false);
   const [isAddChapterOpen, setIsAddChapterOpen] = useState(false);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [timeElapsed, setTimeElapsed] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -65,6 +68,27 @@ export default function StudyGoalDetailPage() {
     }
   }, [user, goalId, router]);
 
+  const saveTime = useDebouncedCallback(async (newTime) => {
+    if(!user || !goal) return;
+    const goalRef = doc(db, 'users', user.uid, 'studyGoals', goalId);
+    await updateDoc(goalRef, { timeSpentSeconds: (goal.timeSpentSeconds || 0) + newTime });
+    setTimeElapsed(0);
+  }, 5000); // Save every 5 seconds
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if(isTimerActive) {
+      interval = setInterval(() => {
+        setTimeElapsed(prev => prev + 1);
+      }, 1000);
+      saveTime(timeElapsed);
+    }
+    return () => {
+        if (interval) clearInterval(interval);
+        if (timeElapsed > 0) saveTime(timeElapsed);
+    }
+  }, [isTimerActive, timeElapsed, saveTime]);
+
   const progressPercentage = useMemo(() => {
     if (subtopics.length === 0) return 0;
     const completedCount = subtopics.filter(m => m.isCompleted).length;
@@ -96,6 +120,14 @@ export default function StudyGoalDetailPage() {
     toast({ title: "Progress copied to clipboard!" });
   };
 
+  const formatTime = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours > 0 ? `${hours}h ` : ''}${minutes > 0 ? `${minutes}m ` : ''}${seconds}s`;
+  }
+  
+  const totalTime = (goal?.timeSpentSeconds || 0) + timeElapsed;
 
   if (loading || !user || !goal) {
     return <div className="flex items-center justify-center h-full"><p>Loading goal...</p></div>;
@@ -117,22 +149,41 @@ export default function StudyGoalDetailPage() {
         </div>
       </div>
 
-      <Card>
-          <CardHeader>
-            <CardTitle>Progress Track</CardTitle>
-            <CardDescription>{subtopics.filter(s => s.isCompleted).length} of {subtopics.length} subtopics completed</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <div className="relative h-10">
-                  <div className="absolute bottom-2 left-0 right-0 h-2 bg-red-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-green-400" style={{ width: `${progressPercentage}%` }}></div>
-                  </div>
-                  <div className="absolute top-0 transition-all duration-500 ease-out" style={{ left: `calc(${flagPosition} - 12px)` }}>
-                      <Flag className="h-6 w-6 text-primary" />
-                  </div>
-              </div>
-          </CardContent>
-      </Card>
+       <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Progress Track</CardTitle>
+                <CardDescription>{subtopics.filter(s => s.isCompleted).length} of {subtopics.length} subtopics completed</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="relative h-10">
+                    <div className="absolute bottom-2 left-0 right-0 h-2 bg-red-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-400" style={{ width: `${progressPercentage}%` }}></div>
+                    </div>
+                    <div className="absolute top-0 transition-all duration-500 ease-out" style={{ left: `calc(${flagPosition} - 12px)` }}>
+                        <Flag className="h-6 w-6 text-primary" />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+        <Card>
+             <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                    <span>Study Timer</span>
+                    <span className="text-2xl font-mono font-bold">{formatTime(totalTime)}</span>
+                </CardTitle>
+                <CardDescription>Track your study sessions for this goal.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center gap-4">
+                <Button onClick={() => setIsTimerActive(!isTimerActive)} size="lg">
+                    {isTimerActive ? <><Pause className="mr-2 h-5 w-5"/>Pause</> : <><Play className="mr-2 h-5 w-5"/>Start</>}
+                </Button>
+                <Button onClick={() => setTimeElapsed(0)} variant="outline" size="lg" disabled={isTimerActive}>
+                    <RotateCcw className="mr-2 h-5 w-5"/>Reset
+                </Button>
+            </CardContent>
+        </Card>
+      </div>
 
 
         <Card className="flex flex-col flex-1 min-h-0">
