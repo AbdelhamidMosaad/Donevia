@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { toggleStudySubtopicCompletion } from '@/lib/study-tracker';
 import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
-import { MoreHorizontal, Edit, Trash2, Link, FileText } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Link, FileText, GripVertical } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -64,10 +64,11 @@ export function StudySubtopicItem({
       <Collapsible>
         <div
           className={cn(
-            'flex items-start gap-4 p-2 rounded-md transition-colors',
+            'flex items-start gap-2 p-2 rounded-md transition-colors group',
             subtopic.isCompleted ? '' : 'hover:bg-accent/50'
           )}
         >
+          <GripVertical className="h-5 w-5 text-muted-foreground mt-1 cursor-grab" />
           <Checkbox
             id={`subtopic-${subtopic.id}`}
             checked={subtopic.isCompleted}
@@ -90,7 +91,7 @@ export function StudySubtopicItem({
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

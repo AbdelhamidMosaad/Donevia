@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { toggleStudySubtopicCompletion, deleteStudyChapter, deleteStudySubtopic } from '@/lib/study-tracker';
 import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
-import { MoreHorizontal, Edit, Trash2, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, PlusCircle, GripVertical } from 'lucide-react';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
@@ -15,6 +15,7 @@ import { AddStudyChapterDialog } from './add-study-chapter-dialog';
 import { AddStudySubtopicDialog } from './add-study-subtopic-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { StudySubtopicItem } from './study-subtopic-item';
+import { Droppable, Draggable } from '@hello-pangea/dnd';
 
 interface StudyChapterItemProps {
   chapter: StudyChapter;
@@ -52,7 +53,10 @@ export function StudyChapterItem({ chapter, subtopics }: StudyChapterItemProps) 
     <>
       <div className="p-4 rounded-lg bg-muted/50 border">
         <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-lg">{chapter.title}</h3>
+            <div className="flex items-center gap-2">
+                <GripVertical className="h-5 w-5 text-muted-foreground" />
+                <h3 className="font-bold text-lg">{chapter.title}</h3>
+            </div>
             <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setIsAddSubtopicOpen(true)}>
                     <PlusCircle className="h-4 w-4 mr-2"/>
@@ -85,17 +89,34 @@ export function StudyChapterItem({ chapter, subtopics }: StudyChapterItemProps) 
                 </DropdownMenu>
             </div>
         </div>
-        <div className="space-y-2 pl-4 border-l-2">
-           {subtopics.sort((a,b) => a.order - b.order).map(subtopic => (
-               <StudySubtopicItem 
-                    key={subtopic.id}
-                    subtopic={subtopic}
-                    onDelete={() => handleDeleteSubtopic(subtopic.id)}
-                    onEdit={() => setEditingSubtopic(subtopic)}
-               />
-           ))}
-           {subtopics.length === 0 && <p className="text-sm text-muted-foreground py-2">No subtopics yet.</p>}
-        </div>
+        <Droppable droppableId={chapter.id} type="subtopic">
+           {(provided, snapshot) => (
+             <div 
+                ref={provided.innerRef} 
+                {...provided.droppableProps}
+                className={cn(
+                    "space-y-2 pl-4 border-l-2 rounded-md",
+                    snapshot.isDraggingOver ? "bg-primary/10 border-primary" : "border-transparent"
+                )}
+             >
+                {subtopics.sort((a,b) => a.order - b.order).map((subtopic, index) => (
+                     <Draggable key={subtopic.id} draggableId={subtopic.id} index={index}>
+                        {(provided) => (
+                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                <StudySubtopicItem 
+                                    subtopic={subtopic}
+                                    onDelete={() => handleDeleteSubtopic(subtopic.id)}
+                                    onEdit={() => setEditingSubtopic(subtopic)}
+                                />
+                             </div>
+                        )}
+                    </Draggable>
+                ))}
+                {provided.placeholder}
+                {subtopics.length === 0 && <p className="text-sm text-muted-foreground py-2">No subtopics yet.</p>}
+             </div>
+           )}
+        </Droppable>
       </div>
       
       <AddStudyChapterDialog 

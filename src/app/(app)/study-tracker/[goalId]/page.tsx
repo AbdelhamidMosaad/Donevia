@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
-import { doc, onSnapshot, collection, query, where, orderBy, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AddStudyChapterDialog } from '@/components/study-tracker/add-study-chapter-dialog';
 import { StudyChapterItem } from '@/components/study-tracker/study-chapter-item';
 import { useDebouncedCallback } from 'use-debounce';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 export default function StudyGoalDetailPage() {
   const { user, loading } = useAuth();
@@ -128,6 +129,71 @@ export default function StudyGoalDetailPage() {
   }
   
   const totalTime = (goal?.timeSpentSeconds || 0) + timeElapsed;
+  
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, type } = result;
+
+    if (!destination || !user) return;
+
+    if (destination.droppableId === source.droppableId && destination.index === source.index) {
+        return;
+    }
+
+    if (type === 'chapter') {
+        const reorderedChapters = Array.from(chapters);
+        const [movedItem] = reorderedChapters.splice(source.index, 1);
+        reorderedChapters.splice(destination.index, 0, movedItem);
+        setChapters(reorderedChapters);
+
+        const batch = writeBatch(db);
+        reorderedChapters.forEach((chapter, index) => {
+            const chapterRef = doc(db, 'users', user.uid, 'studyChapters', chapter.id);
+            batch.update(chapterRef, { order: index });
+        });
+        await batch.commit();
+        toast({ title: 'Chapters reordered.' });
+    }
+
+    if (type === 'subtopic') {
+        const sourceChapterId = source.droppableId;
+        const destChapterId = destination.droppableId;
+        
+        const sourceSubtopics = subtopics.filter(s => s.chapterId === sourceChapterId).sort((a,b)=> a.order-b.order);
+        const [movedSubtopic] = sourceSubtopics.splice(source.index, 1);
+        
+        const batch = writeBatch(db);
+        
+        // If moved within the same chapter
+        if (sourceChapterId === destChapterId) {
+            sourceSubtopics.splice(destination.index, 0, movedSubtopic);
+            sourceSubtopics.forEach((subtopic, index) => {
+                const subtopicRef = doc(db, 'users', user.uid, 'studySubtopics', subtopic.id);
+                batch.update(subtopicRef, { order: index });
+            });
+        } else {
+            // Moved to a different chapter
+            const destSubtopics = subtopics.filter(s => s.chapterId === destChapterId).sort((a,b)=> a.order-b.order);
+            destSubtopics.splice(destination.index, 0, movedSubtopic);
+            
+            // Update order for source chapter
+            sourceSubtopics.forEach((subtopic, index) => {
+                const subtopicRef = doc(db, 'users', user.uid, 'studySubtopics', subtopic.id);
+                batch.update(subtopicRef, { order: index });
+            });
+            
+            // Update moved item's chapterId and order, and update order for destination chapter
+            const movedSubtopicRef = doc(db, 'users', user.uid, 'studySubtopics', movedSubtopic.id);
+            batch.update(movedSubtopicRef, { chapterId: destChapterId });
+             destSubtopics.forEach((subtopic, index) => {
+                const subtopicRef = doc(db, 'users', user.uid, 'studySubtopics', subtopic.id);
+                batch.update(subtopicRef, { order: index });
+            });
+        }
+        
+        await batch.commit();
+        toast({ title: 'Subtopics reordered.' });
+    }
+  };
 
   if (loading || !user || !goal) {
     return <div className="flex items-center justify-center h-full"><p>Loading goal...</p></div>;
@@ -196,15 +262,27 @@ export default function StudyGoalDetailPage() {
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
                 {chapters.length > 0 ? (
-                    <div className="space-y-4">
-                        {chapters.map(chapter => (
-                            <StudyChapterItem 
-                                key={chapter.id} 
-                                chapter={chapter} 
-                                subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
-                            />
-                        ))}
-                    </div>
+                    <DragDropContext onDragEnd={onDragEnd}>
+                        <Droppable droppableId="chapters-droppable" type="chapter">
+                           {(provided) => (
+                             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                                {chapters.map((chapter, index) => (
+                                     <Draggable key={chapter.id} draggableId={chapter.id} index={index}>
+                                        {(provided) => (
+                                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                                <StudyChapterItem 
+                                                    chapter={chapter} 
+                                                    subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
+                                                />
+                                            </div>
+                                        )}
+                                     </Draggable>
+                                ))}
+                                {provided.placeholder}
+                            </div>
+                           )}
+                        </Droppable>
+                    </DragDropContext>
                 ) : (
                     <p className="text-center text-muted-foreground py-8">No chapters yet. Add one to get started!</p>
                 )}
