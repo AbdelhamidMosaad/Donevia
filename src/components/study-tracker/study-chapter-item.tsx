@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { StudyChapter, StudySubtopic } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { deleteStudyChapter, deleteStudySubtopic } from '@/lib/study-tracker';
@@ -32,7 +32,7 @@ import { StudySubtopicItem } from './study-subtopic-item';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import moment from 'moment';
-
+import { Progress } from '../ui/progress';
 
 interface StudyChapterItemProps {
   chapter: StudyChapter;
@@ -69,12 +69,18 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
         toast({ variant: "destructive", title: "Error deleting subtopic" });
     }
   }
+  
+  const progressPercentage = useMemo(() => {
+    if (subtopics.length === 0) return 0;
+    const completedCount = subtopics.filter(s => s.isCompleted).length;
+    return (completedCount / subtopics.length) * 100;
+  }, [subtopics]);
 
   return (
     <>
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed} className="p-4 rounded-lg bg-muted/50 border">
         <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
                  <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="flex items-center gap-2 pl-1 pr-2">
@@ -82,6 +88,10 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
                         <h3 className="font-bold text-lg">{chapter.title}</h3>
                     </Button>
                 </CollapsibleTrigger>
+                 <div className="flex-1 max-w-[200px] hidden md:block">
+                     <Progress value={progressPercentage} className="h-2" />
+                     <p className="text-xs text-muted-foreground">{subtopics.filter(s => s.isCompleted).length}/{subtopics.length} subtopics</p>
+                 </div>
                 {chapter.dueDate && (
                   <div className="flex items-center text-xs text-muted-foreground gap-1">
                     <Calendar className="h-3 w-3" />
