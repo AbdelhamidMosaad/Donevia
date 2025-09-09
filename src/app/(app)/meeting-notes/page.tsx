@@ -19,27 +19,14 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { MeetingNoteCard } from '@/components/meeting-notes/meeting-note-card';
 import { deleteMeetingNote } from '@/lib/meeting-notes';
-
-const defaultNoteContent = {
-  type: 'doc',
-  content: [
-    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agenda' }] },
-    { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph' }] }] },
-    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Discussion Points' }] },
-    { type: 'paragraph' },
-    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Decisions' }] },
-    { type: 'paragraph' },
-    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Action Items' }] },
-    { type: 'taskList', content: [{ type: 'taskItem', attrs: { isChecked: false }, content: [{ type: 'paragraph' }] }] },
-  ],
-};
-
+import { NewMeetingNoteDialog } from '@/components/meeting-notes/new-meeting-note-dialog';
 
 export default function MeetingNotesDashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [meetingNotes, setMeetingNotes] = useState<MeetingNote[]>([]);
+  const [isNewNoteDialogOpen, setIsNewNoteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,34 +49,6 @@ export default function MeetingNotesDashboardPage() {
       return () => unsubscribe();
     }
   }, [user]);
-
-  const handleAddNote = async () => {
-    if (!user) return;
-    try {
-      const docRef = await addDoc(collection(db, 'users', user.uid, 'meetingNotes'), {
-        title: 'Untitled Meeting',
-        date: Timestamp.now(),
-        attendees: [],
-        agenda: [],
-        notes: defaultNoteContent,
-        ownerId: user.uid,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
-      toast({
-        title: '✓ Meeting Note Created',
-        description: `"Untitled Meeting" has been created.`,
-      });
-      router.push(`/meeting-notes/${docRef.id}`);
-    } catch (e) {
-      console.error('Error adding meeting note: ', e);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to create meeting note. Please try again.',
-      });
-    }
-  };
 
   const handleDeleteNote = async (noteId: string) => {
     if (!user) return;
@@ -118,7 +77,7 @@ export default function MeetingNotesDashboardPage() {
           <p className="text-muted-foreground">Capture and organize your meeting minutes.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={handleAddNote}>
+          <Button onClick={() => setIsNewNoteDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New Meeting Note
           </Button>
@@ -144,6 +103,7 @@ export default function MeetingNotesDashboardPage() {
           ))}
         </div>
       )}
+      <NewMeetingNoteDialog open={isNewNoteDialogOpen} onOpenChange={setIsNewNoteDialogOpen} />
     </div>
   );
 }
