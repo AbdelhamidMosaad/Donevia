@@ -9,17 +9,22 @@ import {
   writeBatch,
   query,
   where,
-  getDocs
+  getDocs,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Deck, FlashcardToolCard } from './types';
 
 
 // --- Decks ---
-export const addDeck = async (userId: string, deckData: Omit<Deck, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const addDeck = async (userId: string, deckData: Omit<Deck, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'isPublic' | 'editors' | 'viewers'>) => {
   const decksRef = collection(db, 'users', userId, 'flashcardDecks');
   return await addDoc(decksRef, {
     ...deckData,
+    ownerId: userId,
+    isPublic: false,
+    editors: [],
+    viewers: [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -83,3 +88,56 @@ export const deleteCard = async (userId: string, deckId: string, cardId: string)
 
     return await batch.commit();
 };
+
+// --- Sharing & Public Decks ---
+export const publishDeck = async (deck: Deck) => {
+    const publicDeckRef = doc(db, 'publicDecks', deck.id);
+    const { ownerId, name, description, createdAt } = deck;
+    await setDoc(publicDeckRef, {
+        ownerId,
+        name,
+        description,
+        sourceDeckId: deck.id,
+        sourceUserId: deck.ownerId,
+        createdAt,
+        updatedAt: serverTimestamp(),
+    });
+
+    const userDeckRef = doc(db, 'users', deck.ownerId, 'flashcardDecks', deck.id);
+    await updateDoc(userDeckRef, { isPublic: true });
+}
+
+export const unpublishDeck = async (deck: Deck) => {
+    const publicDeckRef = doc(db, 'publicDecks', deck.id);
+    await deleteDoc(publicDeckRef);
+
+    const userDeckRef = doc(db, 'users', deck.ownerId, 'flashcardDecks', deck.id);
+    await updateDoc(userDeckRef, { isPublic: false });
+}
+
+export const importPublicDeck = async (userId: string, publicDeckId: string) => {
+    const publicDeckRef = doc(db, 'publicDecks', publicDeckId);
+    const publicDeckSnap = await getDoc(publicDeckRef);
+
+    if (!publicDeckSnap.exists()) {
+        throw new Error("Public deck not found");
+    }
+    const publicDeckData = publicDeckSnap.data();
+
+    const newUserDeckRef = await addDeck(userId, {
+        name: publicDeckData.name,
+        description: publicDeckData.description,
+    });
+    
+    const sourceCardsQuery = query(collection(db, 'users', publicDeckData.sourceUserId, 'flashcardDecks', publicDeckData.sourceDeckId, 'cards'));
+    const cardsSnapshot = await getDocs(sourceCardsQuery);
+    
+    const batch = writeBatch(db);
+    cardsSnapshot.forEach(cardDoc => {
+        const newCardRef = doc(collection(db, 'users', userId, 'flashcardDecks', newUserDeckRef.id, 'cards'));
+        batch.set(newCardRef, cardDoc.data());
+    });
+
+    await batch.commit();
+    return newUserDeckRef.id;
+}

@@ -404,6 +404,10 @@ export type Deck = {
     id: string;
     name: string;
     description?: string;
+    ownerId: string;
+    isPublic: boolean;
+    editors: string[];
+    viewers: string[];
     createdAt: Timestamp;
     updatedAt: Timestamp;
 };
