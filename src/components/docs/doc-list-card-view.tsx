@@ -106,7 +106,7 @@ export function DocListCardView({ docs, folders, onDelete, onMove }: DocListCard
                     </CardTitle>
                   )}
                   <CardDescription className="mt-1">
-                    {document.updatedAt ? `Updated on ${document.updatedAt.toDate().toLocaleDateString()}` : 'Just now'}
+                    {document.updatedAt && typeof document.updatedAt.toDate === 'function' ? `Updated on ${document.updatedAt.toDate().toLocaleDateString()}` : 'Just now'}
                   </CardDescription>
                 </div>
                 <div className="absolute top-2 right-2">

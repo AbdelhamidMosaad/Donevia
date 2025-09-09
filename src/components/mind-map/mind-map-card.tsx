@@ -107,7 +107,7 @@ export function MindMapCard({ mindMap, onDelete }: MindMapCardProps) {
               </CardTitle>
             )}
             <CardDescription className="mt-1">
-              {mindMap.updatedAt
+              {mindMap.updatedAt && typeof mindMap.updatedAt.toDate === 'function'
                 ? `Updated on ${mindMap.updatedAt.toDate().toLocaleDateString()}`
                 : 'Just now'}
             </CardDescription>

@@ -112,7 +112,7 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
                 )}
               </TableCell>
               <TableCell>{document.createdAt?.toDate().toLocaleDateString()}</TableCell>
-              <TableCell>{document.updatedAt?.toDate().toLocaleDateString()}</TableCell>
+              <TableCell>{document.updatedAt && typeof document.updatedAt.toDate === 'function' ? document.updatedAt.toDate().toLocaleDateString() : 'Just now'}</TableCell>
               <TableCell>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -107,7 +107,7 @@ export function WhiteboardCard({ whiteboard, onDelete }: WhiteboardCardProps) {
               </CardTitle>
             )}
             <CardDescription className="mt-1">
-              {whiteboard.updatedAt
+              {whiteboard.updatedAt && typeof whiteboard.updatedAt.toDate === 'function'
                 ? `Updated on ${whiteboard.updatedAt.toDate().toLocaleDateString()}`
                 : 'Just now'}
             </CardDescription>
