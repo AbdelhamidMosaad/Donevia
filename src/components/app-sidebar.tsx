@@ -51,7 +51,8 @@ const defaultMenuItems = [
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
     { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
     { href: '/habits', icon: <Repeat className="text-teal-500" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
-    { href: '/goals', icon: <Target className="text-red-500" />, label: 'Study Tracker', tooltip: 'Study Tracker', id: 'goals' },
+    { href: '/goals', icon: <Target className="text-red-500" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
+    { href: '/study-tracker', icon: <GraduationCap className="text-lime-500" />, label: 'Study Tracker', tooltip: 'Study Tracker', id: 'study-tracker' },
     { href: '/flashcards', icon: <Layers className="text-indigo-500" />, label: 'Flashcards', tooltip: 'Flashcards', id: 'flashcards' },
     { href: '/notes', icon: <FileText className="text-orange-500" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
     { href: '/bookmarks', icon: <Bookmark className="text-blue-500" />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
@@ -108,6 +109,9 @@ export function AppSidebar() {
     }
     if (href === '/goals') {
         return pathname.startsWith('/goals');
+    }
+    if (href === '/study-tracker') {
+        return pathname.startsWith('/study-tracker');
     }
     return pathname.startsWith(href);
   };

@@ -430,3 +430,21 @@ export type FlashcardProgress = {
     dueDate: string; // ISO string
     lastReviewedAt: string | null; // ISO string
 };
+
+/** Study Tracker */
+export type StudyGoal = {
+    id: string;
+    title: string;
+    description?: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+}
+
+export type StudyMilestone = {
+    id: string;
+    goalId: string;
+    title: string;
+    isCompleted: boolean;
+    order: number;
+    createdAt: Timestamp;
+}
