@@ -7,14 +7,14 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { WelcomeScreen } from './welcome-screen';
+import { WelcomeScreen } from '@/components/welcome-screen';
 import { TaskReminderProvider } from '@/hooks/use-task-reminders';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { PomodoroProvider } from '@/hooks/use-pomodoro';
 import { StudyReminderProvider } from '@/hooks/use-study-reminders';
 
-export function MainLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
