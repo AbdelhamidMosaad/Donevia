@@ -461,7 +461,6 @@ export type StudyGoal = {
     description?: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
-    timeSpentSeconds?: number;
     dueDate?: Timestamp | null;
 }
 
@@ -491,4 +490,15 @@ export type StudySubtopic = {
     createdAt: Timestamp;
     notes?: string;
     resources?: StudySubtopicResource[];
+    timeSpentSeconds?: number;
+}
+
+export type StudySession = {
+    id: string;
+    goalId: string;
+    chapterId: string;
+    subtopicId: string;
+    startTime: Timestamp;
+    endTime: Timestamp;
+    durationSeconds: number;
 }

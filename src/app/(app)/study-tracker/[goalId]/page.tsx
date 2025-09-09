@@ -10,14 +10,15 @@ import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Play, Pause, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { AddStudyChapterDialog } from '@/components/study-tracker/add-study-chapter-dialog';
 import { StudyChapterItem } from '@/components/study-tracker/study-chapter-item';
 import { useDebouncedCallback } from 'use-debounce';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { logStudySession } from '@/lib/study-tracker';
+
 
 export default function StudyGoalDetailPage() {
   const { user, loading } = useAuth();
@@ -31,8 +32,10 @@ export default function StudyGoalDetailPage() {
   const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
   const [isEditGoalOpen, setIsEditGoalOpen] = useState(false);
   const [isAddChapterOpen, setIsAddChapterOpen] = useState(false);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [timeElapsed, setTimeElapsed] = useState(0);
+  
+  const [activeTimer, setActiveTimer] = useState<{subtopicId: string, startTime: number} | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -69,26 +72,39 @@ export default function StudyGoalDetailPage() {
     }
   }, [user, goalId, router]);
 
-  const saveTime = useDebouncedCallback(async (newTime) => {
-    if(!user || !goal) return;
-    const goalRef = doc(db, 'users', user.uid, 'studyGoals', goalId);
-    await updateDoc(goalRef, { timeSpentSeconds: (goal.timeSpentSeconds || 0) + newTime });
-    setTimeElapsed(0);
-  }, 5000); // Save every 5 seconds
 
+  // Timer logic
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-    if(isTimerActive) {
+    if (activeTimer) {
       interval = setInterval(() => {
-        setTimeElapsed(prev => prev + 1);
+        setElapsedTime(Date.now() - activeTimer.startTime);
       }, 1000);
-      saveTime(timeElapsed);
     }
     return () => {
-        if (interval) clearInterval(interval);
-        if (timeElapsed > 0) saveTime(timeElapsed);
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTimer]);
+  
+  const handleToggleTimer = (subtopicId: string) => {
+    if (activeTimer?.subtopicId === subtopicId) {
+      // Stop timer
+      if (user) {
+        logStudySession(user.uid, subtopicId, Math.floor(elapsedTime / 1000));
+      }
+      setActiveTimer(null);
+      setElapsedTime(0);
+    } else {
+      // Stop any other active timer before starting a new one
+      if (activeTimer && user) {
+        logStudySession(user.uid, activeTimer.subtopicId, Math.floor(elapsedTime / 1000));
+      }
+      // Start new timer
+      setActiveTimer({ subtopicId, startTime: Date.now() });
+      setElapsedTime(0);
     }
-  }, [isTimerActive, timeElapsed, saveTime]);
+  };
+
 
   const progressPercentage = useMemo(() => {
     if (subtopics.length === 0) return 0;
@@ -97,6 +113,10 @@ export default function StudyGoalDetailPage() {
   }, [subtopics]);
   
   const flagPosition = `${progressPercentage}%`;
+  
+  const totalTimeSpent = useMemo(() => {
+      return subtopics.reduce((acc, s) => acc + (s.timeSpentSeconds || 0), 0);
+  }, [subtopics]);
 
   const handleShareProgress = () => {
     if (!goal || subtopics.length === 0) return;
@@ -120,7 +140,7 @@ export default function StudyGoalDetailPage() {
     navigator.clipboard.writeText(progressText);
     toast({ title: "Progress copied to clipboard!" });
   };
-
+  
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -128,7 +148,6 @@ export default function StudyGoalDetailPage() {
     return `${hours > 0 ? `${hours}h ` : ''}${minutes > 0 ? `${minutes}m ` : ''}${seconds}s`;
   }
   
-  const totalTime = (goal?.timeSpentSeconds || 0) + timeElapsed;
   
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, type } = result;
@@ -235,18 +254,15 @@ export default function StudyGoalDetailPage() {
         <Card>
              <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                    <span>Study Timer</span>
-                    <span className="text-2xl font-mono font-bold">{formatTime(totalTime)}</span>
+                    <span>Total Time Studied</span>
+                    <span className="text-2xl font-mono font-bold">{formatTime(totalTimeSpent)}</span>
                 </CardTitle>
-                <CardDescription>Track your study sessions for this goal.</CardDescription>
+                <CardDescription>Aggregate study time for this goal.</CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-center gap-4">
-                <Button onClick={() => setIsTimerActive(!isTimerActive)} size="lg">
-                    {isTimerActive ? <><Pause className="mr-2 h-5 w-5"/>Pause</> : <><Play className="mr-2 h-5 w-5"/>Start</>}
-                </Button>
-                <Button onClick={() => setTimeElapsed(0)} variant="outline" size="lg" disabled={isTimerActive}>
-                    <RotateCcw className="mr-2 h-5 w-5"/>Reset
-                </Button>
+            <CardContent>
+                 <div className="text-center text-muted-foreground italic text-sm">
+                    {activeTimer ? `Timer running for subtopic... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a subtopic to track your time."}
+                 </div>
             </CardContent>
         </Card>
       </div>
@@ -274,6 +290,8 @@ export default function StudyGoalDetailPage() {
                                                     chapter={chapter} 
                                                     subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
                                                     chaptersCount={chapters.length}
+                                                    activeTimer={activeTimer}
+                                                    onToggleTimer={handleToggleTimer}
                                                 />
                                             </div>
                                         )}

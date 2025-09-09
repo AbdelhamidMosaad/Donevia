@@ -38,9 +38,11 @@ interface StudyChapterItemProps {
   chapter: StudyChapter;
   subtopics: StudySubtopic[];
   chaptersCount: number;
+  activeTimer: { subtopicId: string; startTime: number } | null;
+  onToggleTimer: (subtopicId: string) => void;
 }
 
-export function StudyChapterItem({ chapter, subtopics, chaptersCount }: StudyChapterItemProps) {
+export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTimer, onToggleTimer }: StudyChapterItemProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
@@ -138,6 +140,8 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount }: StudyCha
                                         subtopic={subtopic}
                                         onDelete={() => handleDeleteSubtopic(subtopic.id)}
                                         onEdit={() => setEditingSubtopic(subtopic)}
+                                        isTimerActive={activeTimer?.subtopicId === subtopic.id}
+                                        onToggleTimer={() => onToggleTimer(subtopic.id)}
                                     />
                                 </div>
                             )}

@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { toggleStudySubtopicCompletion } from '@/lib/study-tracker';
 import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
-import { MoreHorizontal, Edit, Trash2, Link, FileText, GripVertical } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Link, FileText, GripVertical, Play, Pause } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -35,12 +35,27 @@ interface StudySubtopicItemProps {
   subtopic: StudySubtopic;
   onDelete: () => void;
   onEdit: () => void;
+  onToggleTimer: () => void;
+  isTimerActive: boolean;
 }
+
+const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return [h, m, s]
+        .map(v => v < 10 ? '0' + v : v)
+        .filter((v, i) => v !== '00' || i > 0)
+        .join(':');
+}
+
 
 export function StudySubtopicItem({
   subtopic,
   onDelete,
   onEdit,
+  onToggleTimer,
+  isTimerActive,
 }: StudySubtopicItemProps) {
   const { user } = useAuth();
 
@@ -88,7 +103,15 @@ export function StudySubtopicItem({
                     {subtopic.title}
                   </label>
             </CollapsibleTrigger>
+            {subtopic.timeSpentSeconds && subtopic.timeSpentSeconds > 0 ? (
+                 <p className="text-xs text-muted-foreground">{formatTime(subtopic.timeSpentSeconds)} studied</p>
+            ) : null}
           </div>
+          
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onToggleTimer}>
+              {isTimerActive ? <Pause className="h-4 w-4 text-primary" /> : <Play className="h-4 w-4" />}
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

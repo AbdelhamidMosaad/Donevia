@@ -1,10 +1,10 @@
 
 'use client';
 
-import type { StudyGoal, StudyProfile } from '@/lib/types';
+import type { StudyGoal, StudyProfile, StudySession } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Lightbulb, PlusSquare, Trash2, Flame } from 'lucide-react';
+import { Lightbulb, PlusSquare, Trash2, Flame, BarChart, Clock } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,9 +17,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import moment from 'moment';
 
 interface InsightsDashboardProps {
   goals: StudyGoal[];
@@ -30,42 +31,43 @@ interface InsightsDashboardProps {
 function formatTime(totalSeconds: number): string {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
     
     const parts = [];
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
-    if (seconds > 0 || (hours === 0 && minutes === 0)) parts.push(`${seconds}s`);
 
-    return parts.join(' ') || '0s';
+    return parts.join(' ') || '0m';
 }
 
 export function InsightsDashboard({ goals, onAddSample, onCleanup }: InsightsDashboardProps) {
   const { user } = useAuth();
-  const [studyProfile, setStudyProfile] = useState<StudyProfile | null>(null);
+  const [sessions, setSessions] = useState<StudySession[]>([]);
 
   useEffect(() => {
     if (user) {
-        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-        const unsubscribe = onSnapshot(settingsRef, (doc) => {
-            if (doc.exists() && doc.data().studyProfile) {
-                setStudyProfile(doc.data().studyProfile);
-            } else {
-                setStudyProfile({ currentStreak: 0, longestStreak: 0, lastStudyDay: '', level: 1, experiencePoints: 0, earnedBadges: [] });
-            }
+        const sessionsRef = collection(db, 'users', user.uid, 'studySessions');
+        const unsubscribe = onSnapshot(sessionsRef, (snapshot) => {
+            setSessions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySession)))
         });
         return () => unsubscribe();
     }
   }, [user]);
 
   const totalGoals = goals.length;
-  const totalStudyTime = goals.reduce((acc, goal) => acc + (goal.timeSpentSeconds || 0), 0);
+  
+  const weeklyStudyTime = useMemo(() => {
+      const oneWeekAgo = moment().subtract(7, 'days').startOf('day');
+      const weeklySessions = sessions.filter(s => moment(s.date.toDate()).isAfter(oneWeekAgo));
+      return weeklySessions.reduce((acc, session) => acc + session.durationSeconds, 0);
+  }, [sessions]);
+
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 col-span-full lg:col-span-1">
         <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Total Goals</CardTitle>
+                 <BarChart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{totalGoals}</div>
@@ -73,10 +75,11 @@ export function InsightsDashboard({ goals, onAddSample, onCleanup }: InsightsDas
         </Card>
         <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Study Time</CardTitle>
+                <CardTitle className="text-sm font-medium">This Week</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{formatTime(totalStudyTime)}</div>
+                <div className="text-2xl font-bold">{formatTime(weeklyStudyTime)}</div>
             </CardContent>
         </Card>
         <Card className="flex flex-col justify-center">

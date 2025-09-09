@@ -12,6 +12,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  increment,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { StudyGoal, StudyChapter, StudySubtopic, StudyProfile } from './types';
@@ -110,6 +111,30 @@ export const deleteStudySubtopic = async (userId: string, subtopicId: string) =>
 };
 
 
+// --- Time Tracking ---
+export const logStudySession = async (userId: string, subtopicId: string, durationSeconds: number) => {
+    if (durationSeconds <= 0) return;
+
+    const batch = writeBatch(db);
+    
+    // Log the individual session
+    const sessionRef = doc(collection(db, 'users', userId, 'studySessions'));
+    batch.set(sessionRef, {
+        subtopicId,
+        durationSeconds,
+        date: serverTimestamp(),
+    });
+
+    // Increment the total time on the subtopic
+    const subtopicRef = doc(db, 'users', userId, 'studySubtopics', subtopicId);
+    batch.update(subtopicRef, {
+        timeSpentSeconds: increment(durationSeconds)
+    });
+    
+    await batch.commit();
+}
+
+
 // --- Advanced Operations ---
 
 export const logStudyActivity = async (userId: string) => {
@@ -149,7 +174,6 @@ export const addSampleStudyGoal = async (userId: string) => {
     batch.set(goalRef, {
         title: 'Learn React',
         description: 'Master the fundamentals of React for web development.',
-        timeSpentSeconds: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     });
@@ -177,6 +201,7 @@ export const addSampleStudyGoal = async (userId: string) => {
                 title: subtopicTitle,
                 isCompleted: false,
                 order: i,
+                timeSpentSeconds: 0,
                 createdAt: serverTimestamp(),
             });
         }
