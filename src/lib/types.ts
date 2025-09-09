@@ -230,6 +230,7 @@ export type Doc = {
     updatedAt: Timestamp;
     folderId?: string | null;
     backgroundColor?: string;
+    margin?: 'small' | 'medium' | 'large';
 };
 
 export type DocFolder = {

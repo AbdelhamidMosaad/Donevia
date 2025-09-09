@@ -77,6 +77,7 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
       title: updatedDoc.title,
       content: updatedDoc.content,
       backgroundColor: updatedDoc.backgroundColor,
+      margin: updatedDoc.margin,
       updatedAt: serverTimestamp(),
     };
     
@@ -152,6 +153,12 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
     setDocData(updatedDoc);
     debouncedSave(updatedDoc);
   }
+  
+  const handleMarginChange = (margin: 'small' | 'medium' | 'large') => {
+    const updatedDoc = { ...docData, margin };
+    setDocData(updatedDoc);
+    debouncedSave(updatedDoc);
+  };
 
   const toggleFullscreen = useCallback(() => {
     const elem = editorContainerRef.current;
@@ -188,6 +195,12 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
   if (!editor) {
     return null;
   }
+  
+  const marginClasses = {
+      small: 'py-8',
+      medium: 'py-16',
+      large: 'py-24',
+  };
 
   return (
     <div ref={editorContainerRef} className="flex-1 flex flex-col h-full overflow-y-hidden bg-background">
@@ -196,6 +209,8 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
                 editor={editor} 
                 backgroundColor={docData.backgroundColor || '#FFFFFF'}
                 onBackgroundColorChange={handleBackgroundColorChange}
+                margin={docData.margin || 'medium'}
+                onMarginChange={handleMarginChange}
               />
              <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-muted-foreground">
                 {saveStatus === 'saving' && <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>}
@@ -211,7 +226,10 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
           onClick={() => editor.commands.focus()}
           style={{ backgroundColor: docData.backgroundColor || '#FFFFFF' }}
         >
-            <div className="max-w-4xl mx-auto my-8 bg-transparent">
+            <div className={cn(
+                "max-w-4xl mx-auto bg-transparent",
+                marginClasses[docData.margin || 'medium']
+            )}>
               <EditorContent editor={editor} />
             </div>
         </div>

@@ -7,7 +7,7 @@ import {
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
   Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive,
-  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets, MessageSquareQuote
+  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets, MessageSquareQuote, AlignVerticalSpaceAround
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -27,6 +27,8 @@ interface EditorToolbarProps {
   editor: Editor;
   onBackgroundColorChange: (color: string) => void;
   backgroundColor: string;
+  margin: 'small' | 'medium' | 'large';
+  onMarginChange: (margin: 'small' | 'medium' | 'large') => void;
 }
 
 const ToolbarButton = ({
@@ -81,7 +83,7 @@ const ToolbarButton = ({
 
 const paperColors = ['#FFFFFF', '#FDF6E3', '#F5F5F5', '#E8F5E9', '#E3F2FD'];
 
-export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor, margin, onMarginChange }: EditorToolbarProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -284,6 +286,18 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                 <DropdownMenuItem onSelect={() => editor.commands.transform('uppercase')}>UPPERCASE</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.commands.transform('lowercase')}>lowercase</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.commands.transform('capitalize')}>Capitalize</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
+                  <AlignVerticalSpaceAround className="h-4 w-4 mr-2" /> Page Margins
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => onMarginChange('small')}>Small</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onMarginChange('medium')}>Medium</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onMarginChange('large')}>Large</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
