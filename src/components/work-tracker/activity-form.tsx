@@ -69,6 +69,7 @@ export function ActivityForm({ settings, onAddNewItem }: ActivityFormProps) {
     try {
         await addDoc(collection(db, 'users', user.uid, 'workActivities'), {
             ...data,
+            ownerId: user.uid,
             date: Timestamp.fromDate(new Date(data.date)),
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),

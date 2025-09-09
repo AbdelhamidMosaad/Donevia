@@ -1,3 +1,4 @@
+
 import {
   collection,
   addDoc,
@@ -9,10 +10,11 @@ import {
 import { db } from './firebase';
 import type { Bookmark } from './types';
 
-export const addBookmark = async (userId: string, bookmarkData: Omit<Bookmark, 'id' | 'createdAt'>) => {
+export const addBookmark = async (userId: string, bookmarkData: Omit<Bookmark, 'id' | 'createdAt' | 'ownerId'>) => {
   const bookmarksRef = collection(db, 'users', userId, 'bookmarks');
   return await addDoc(bookmarksRef, {
     ...bookmarkData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
   });
 };

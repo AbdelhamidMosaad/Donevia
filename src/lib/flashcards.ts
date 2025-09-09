@@ -58,11 +58,12 @@ export const deleteDeck = async (userId: string, deckId: string) => {
 
 
 // --- Cards ---
-export const addCard = async (userId: string, deckId: string, cardData: Omit<FlashcardToolCard, 'id' | 'createdAt' | 'updatedAt' | 'deckId'>) => {
+export const addCard = async (userId: string, deckId: string, cardData: Omit<FlashcardToolCard, 'id' | 'createdAt' | 'updatedAt' | 'deckId' | 'ownerId'>) => {
   const cardsRef = collection(db, 'users', userId, 'flashcardDecks', deckId, 'cards');
   return await addDoc(cardsRef, {
     ...cardData,
     deckId,
+    ownerId: userId,
     correct: 0,
     wrong: 0,
     createdAt: serverTimestamp(),
@@ -78,6 +79,7 @@ export const addCardsToDeck = async (userId: string, deckId: string, cards: Omit
         batch.set(newCardRef, {
             ...cardData,
             deckId,
+            ownerId: userId,
             correct: 0,
             wrong: 0,
             createdAt: serverTimestamp(),

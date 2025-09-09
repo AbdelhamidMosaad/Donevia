@@ -16,10 +16,11 @@ import { db } from './firebase';
 import type { Habit } from './types';
 
 // --- Habits ---
-export const addHabit = async (userId: string, habitData: Omit<Habit, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const addHabit = async (userId: string, habitData: Omit<Habit, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => {
   const habitsRef = collection(db, 'users', userId, 'habits');
   return await addDoc(habitsRef, {
     ...habitData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -57,6 +58,7 @@ export const toggleHabitCompletion = async (userId: string, habitId: string, dat
         return await addDoc(completionsRef, {
             habitId,
             date, // Storing date as 'YYYY-MM-DD' string
+            ownerId: userId,
             createdAt: serverTimestamp(),
         });
     } else {

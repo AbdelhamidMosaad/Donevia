@@ -7,6 +7,7 @@ export const addTask = async (userId: string, taskData: Omit<Task, 'id' | 'creat
     const tasksRef = collection(db, 'users', userId, 'tasks');
     return await addDoc(tasksRef, {
         ...taskData,
+        ownerId: userId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
     });

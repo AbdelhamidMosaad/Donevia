@@ -20,10 +20,11 @@ import moment from 'moment';
 import { checkAndAwardBadges } from './gamification';
 
 // --- Goals ---
-export const addStudyGoal = async (userId: string, goalData: Omit<StudyGoal, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const addStudyGoal = async (userId: string, goalData: Omit<StudyGoal, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => {
   const goalsRef = collection(db, 'users', userId, 'studyGoals');
   return await addDoc(goalsRef, {
     ...goalData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -56,10 +57,11 @@ export const deleteStudyGoal = async (userId: string, goalId: string) => {
 
 
 // --- Chapters ---
-export const addStudyChapter = async (userId: string, chapterData: Omit<StudyChapter, 'id' | 'createdAt'>) => {
+export const addStudyChapter = async (userId: string, chapterData: Omit<StudyChapter, 'id' | 'createdAt' | 'ownerId'>) => {
   const chaptersRef = collection(db, 'users', userId, 'studyChapters');
   return await addDoc(chaptersRef, {
     ...chapterData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
   });
 };
@@ -83,10 +85,11 @@ export const deleteStudyChapter = async (userId: string, chapterId: string) => {
 
 
 // --- Subtopics ---
-export const addStudySubtopic = async (userId: string, subtopicData: Omit<StudySubtopic, 'id' | 'createdAt'>) => {
+export const addStudySubtopic = async (userId: string, subtopicData: Omit<StudySubtopic, 'id' | 'createdAt' | 'ownerId'>) => {
   const subtopicsRef = collection(db, 'users', userId, 'studySubtopics');
   return await addDoc(subtopicsRef, {
     ...subtopicData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
   });
 };
@@ -121,6 +124,7 @@ export const logStudySession = async (userId: string, subtopicId: string, durati
     const sessionRef = doc(collection(db, 'users', userId, 'studySessions'));
     batch.set(sessionRef, {
         subtopicId,
+        ownerId: userId,
         durationSeconds,
         date: serverTimestamp(),
     });
@@ -174,6 +178,7 @@ export const addSampleStudyGoal = async (userId: string) => {
     batch.set(goalRef, {
         title: 'Learn React',
         description: 'Master the fundamentals of React for web development.',
+        ownerId: userId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     });
@@ -190,6 +195,7 @@ export const addSampleStudyGoal = async (userId: string) => {
             goalId: goalRef.id,
             title: chapterData.title,
             order: chapterData.order,
+            ownerId: userId,
             createdAt: serverTimestamp(),
         });
 
@@ -201,6 +207,7 @@ export const addSampleStudyGoal = async (userId: string) => {
                 title: subtopicTitle,
                 isCompleted: false,
                 order: i,
+                ownerId: userId,
                 timeSpentSeconds: 0,
                 createdAt: serverTimestamp(),
             });

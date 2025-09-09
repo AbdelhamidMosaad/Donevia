@@ -10,10 +10,11 @@ import {
 import { db } from './firebase';
 import type { ClientRequest } from './types';
 
-export const addRequest = async (userId: string, requestData: Partial<Omit<ClientRequest, 'id' | 'createdAt' | 'updatedAt'>>) => {
+export const addRequest = async (userId: string, requestData: Partial<Omit<ClientRequest, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>>) => {
   const requestsRef = collection(db, 'users', userId, 'clientRequests');
   return await addDoc(requestsRef, {
     ...requestData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

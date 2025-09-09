@@ -66,6 +66,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                 priority: 'Medium',
                 dueDate: Timestamp.now(), // Default due date
                 tags: [],
+                ownerId: user.uid,
                 color: getRandomColor(),
             });
             // Immediately reset for the next task

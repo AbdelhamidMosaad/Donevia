@@ -103,6 +103,7 @@ export default function TaskListsPage() {
     try {
       const docRef = await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
         name: 'Untitled List',
+        ownerId: user.uid,
         createdAt: Timestamp.now(),
       });
       toast({

@@ -21,6 +21,7 @@ export const addIdea = async (userId: string, content: string, color: string) =>
   return await addDoc(ideasRef, {
     content,
     color,
+    ownerId: userId,
     priority: 'Medium',
     tags: [],
     createdAt: serverTimestamp(),

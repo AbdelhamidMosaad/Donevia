@@ -15,10 +15,11 @@ import { db } from './firebase';
 import type { Goal, Milestone, ProgressUpdate } from './types';
 
 // --- Goals ---
-export const addGoal = async (userId: string, goalData: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const addGoal = async (userId: string, goalData: Omit<Goal, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => {
   const goalsRef = collection(db, 'users', userId, 'goals');
   return await addDoc(goalsRef, {
     ...goalData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -54,10 +55,11 @@ export const deleteGoal = async (userId: string, goalId: string) => {
 
 
 // --- Milestones ---
-export const addMilestone = async (userId: string, milestoneData: Omit<Milestone, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const addMilestone = async (userId: string, milestoneData: Omit<Milestone, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => {
   const milestonesRef = collection(db, 'users', userId, 'milestones');
   return await addDoc(milestonesRef, {
     ...milestoneData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -83,10 +85,11 @@ export const deleteMilestone = async (userId: string, milestoneId: string) => {
 
 
 // --- Progress Updates ---
-export const addProgressUpdate = async (userId: string, progressData: Omit<ProgressUpdate, 'id' | 'createdAt'>) => {
+export const addProgressUpdate = async (userId: string, progressData: Omit<ProgressUpdate, 'id' | 'createdAt' | 'ownerId'>) => {
   const progressUpdatesRef = collection(db, 'users', userId, 'progressUpdates');
   return await addDoc(progressUpdatesRef, {
     ...progressData,
+    ownerId: userId,
     createdAt: serverTimestamp(),
   });
 };

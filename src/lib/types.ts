@@ -33,6 +33,7 @@ export const TaskSchema = z.object({
     tags: z.array(z.string()),
     createdAt: FirebaseTimestampSchema.optional(),
     listId: z.string(),
+    ownerId: z.string(),
     reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
     color: z.string().optional(),
 });
@@ -42,6 +43,7 @@ export type Task = z.infer<typeof TaskSchema>;
 export type TaskList = {
     id: string;
     name: string;
+    ownerId: string;
     createdAt: Timestamp;
     stages?: Stage[];
 };
@@ -61,6 +63,7 @@ export type StickyNote = {
     textColor: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    ownerId: string;
     priority: 'High' | 'Medium' | 'Low';
     position?: { x: number; y: number };
     gridPosition?: { col: number; row: number };
@@ -75,6 +78,7 @@ export type Bookmark = {
     description?: string;
     category: BookmarkCategory;
     createdAt: Timestamp;
+    ownerId: string;
     color?: string;
 };
 
@@ -121,6 +125,7 @@ export type Client = {
   phone?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  ownerId: string;
   customFields: CustomField[];
   quotations: Quotation[];
   invoices: Invoice[];
@@ -144,6 +149,7 @@ export type ClientRequest = {
   title: string;
   clientId: string;
   stage: ClientRequestStage;
+  ownerId: string;
   value?: number;
   lossReason?: LossReason | null;
   quoteAmount?: number;
@@ -245,6 +251,7 @@ export type BrainstormingIdea = {
     tags?: string[];
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    ownerId: string;
     order: number;
 }
 
@@ -342,6 +349,7 @@ export type Goal = {
     status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    ownerId: string;
 };
 
 export type Milestone = {
@@ -353,6 +361,7 @@ export type Milestone = {
     isCompleted: boolean;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    ownerId: string;
 };
 
 export type ProgressUpdate = {
@@ -361,6 +370,7 @@ export type ProgressUpdate = {
     milestoneId?: string | null;
     text: string;
     createdAt: Timestamp;
+    ownerId: string;
 };
 
 /** Work Activity Tracker */
@@ -379,6 +389,7 @@ export type WorkActivity = {
     notes?: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    ownerId: string;
 };
 
 export type WorkTrackerSettingItem = {
@@ -400,6 +411,7 @@ export type Habit = {
     name: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    ownerId: string;
 };
 
 export type HabitCompletion = {
@@ -407,6 +419,7 @@ export type HabitCompletion = {
     habitId: string;
     date: string; // YYYY-MM-DD
     createdAt: Timestamp;
+    ownerId: string;
 };
 
 /** Recap Feature */
@@ -489,6 +502,7 @@ export type FlashcardToolCard = {
     wrong?: number;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    ownerId: string;
 };
 
 export type FlashcardProgress = {
@@ -509,6 +523,7 @@ export type StudyGoal = {
     tags?: string[];
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    ownerId: string;
     dueDate?: Timestamp | null;
 }
 
@@ -518,6 +533,7 @@ export type StudyChapter = {
     title: string;
     order: number;
     createdAt: Timestamp;
+    ownerId: string;
     dueDate?: Timestamp | null;
     reminder?: 'none' | 'on-due-date' | '1-day' | '2-days' | '1-week';
     difficulty?: StudyDifficulty;
@@ -537,6 +553,7 @@ export type StudySubtopic = {
     isCompleted: boolean;
     order: number;
     createdAt: Timestamp;
+    ownerId: string;
     notes?: string;
     resources?: StudySubtopicResource[];
     timeSpentSeconds?: number;
@@ -548,4 +565,5 @@ export type StudySession = {
     subtopicId: string;
     date: Timestamp;
     durationSeconds: number;
+    ownerId: string;
 }

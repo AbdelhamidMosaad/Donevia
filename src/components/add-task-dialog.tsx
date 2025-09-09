@@ -162,6 +162,7 @@ export function AddTaskDialog({
         color,
         tags: task?.tags || [],
         listId,
+        ownerId: user.uid,
         ...(isEditMode ? {} : { createdAt: serverTimestamp() }),
         updatedAt: serverTimestamp(),
     };
