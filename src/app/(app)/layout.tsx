@@ -19,7 +19,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -37,7 +36,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               setSidebarOpen(data.sidebarOpen);
             }
         }
-        setSettingsLoaded(true);
       });
     }
   }, [user]);
@@ -51,7 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
 
-  if (loading || !user || !settingsLoaded) {
+  if (loading || !user) {
     return <WelcomeScreen />;
   }
 
