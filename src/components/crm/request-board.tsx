@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -111,6 +110,7 @@ export function RequestBoard() {
             title: 'New Deal',
             stage: stages[0].id,
             clientId: '',
+            ownerId: user.uid,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         });
