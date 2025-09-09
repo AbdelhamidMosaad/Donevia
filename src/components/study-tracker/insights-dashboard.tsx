@@ -75,35 +75,38 @@ export function InsightsDashboard({ goals, subtopics, sessions, onAddSample, onC
 
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 col-span-full">
+    <div className="grid gap-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Goals</CardTitle>
+                    <BarChart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{totalGoals}</div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">This Week</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{formatTime(weeklyStudyTime)}</div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Avg. Subtopic Time</CardTitle>
+                    <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">~{averageSubtopicTime} min</div>
+                </CardContent>
+            </Card>
+        </div>
+       
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Goals</CardTitle>
-                 <BarChart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{totalGoals}</div>
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">This Week</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{formatTime(weeklyStudyTime)}</div>
-            </CardContent>
-        </Card>
-         <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Subtopic Time</CardTitle>
-                <Lightbulb className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                 <div className="text-2xl font-bold">~{averageSubtopicTime} min</div>
-            </CardContent>
-        </Card>
-        <Card className="md:col-span-2">
             <CardHeader>
                 <CardTitle>Progress per Goal</CardTitle>
                 <CardDescription>Completion percentage for each of your study goals.</CardDescription>
@@ -129,7 +132,7 @@ export function InsightsDashboard({ goals, subtopics, sessions, onAddSample, onC
                 </ChartContainer>
             </CardContent>
         </Card>
-        <Card className="flex flex-col justify-center">
+        <Card>
             <CardHeader>
                  <CardTitle>Utilities</CardTitle>
                  <CardDescription>Extra actions for managing your study tracker.</CardDescription>

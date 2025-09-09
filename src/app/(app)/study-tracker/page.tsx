@@ -143,15 +143,17 @@ export default function StudyTrackerPage() {
         </div>
       </div>
       
-      <div className="grid lg:grid-cols-[1fr_350px] gap-6">
-        <InsightsDashboard 
-            goals={goals} 
-            subtopics={subtopics} 
-            sessions={sessions}
-            onAddSample={handleAddSample} 
-            onCleanup={handleCleanup} 
-        />
-        <div className="lg:col-start-2 lg:row-start-1">
+      <div className="grid lg:grid-cols-[1fr_auto] gap-6">
+          <div className="flex flex-col gap-6">
+            <InsightsDashboard 
+                goals={goals} 
+                subtopics={subtopics} 
+                sessions={sessions}
+                onAddSample={handleAddSample} 
+                onCleanup={handleCleanup} 
+            />
+          </div>
+        <div className="w-full lg:w-[350px]">
           <GamificationProfile />
         </div>
       </div>
