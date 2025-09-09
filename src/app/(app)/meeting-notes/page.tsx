@@ -20,6 +20,21 @@ import { useToast } from '@/hooks/use-toast';
 import { MeetingNoteCard } from '@/components/meeting-notes/meeting-note-card';
 import { deleteMeetingNote } from '@/lib/meeting-notes';
 
+const defaultNoteContent = {
+  type: 'doc',
+  content: [
+    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agenda' }] },
+    { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph' }] }] },
+    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Discussion Points' }] },
+    { type: 'paragraph' },
+    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Decisions' }] },
+    { type: 'paragraph' },
+    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Action Items' }] },
+    { type: 'taskList', content: [{ type: 'taskItem', attrs: { isChecked: false }, content: [{ type: 'paragraph' }] }] },
+  ],
+};
+
+
 export default function MeetingNotesDashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -56,7 +71,7 @@ export default function MeetingNotesDashboardPage() {
         date: Timestamp.now(),
         attendees: [],
         agenda: [],
-        notes: { type: 'doc', content: [{ type: 'paragraph' }] },
+        notes: defaultNoteContent,
         ownerId: user.uid,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
