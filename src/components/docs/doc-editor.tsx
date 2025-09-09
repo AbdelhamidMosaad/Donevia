@@ -115,7 +115,10 @@ export function DocEditor({ doc: initialDoc }: DocEditorProps) {
           appendTo: () => editorContainerRef.current,
         },
       }),
-      TipTapImage,
+      TipTapImage.configure({
+        inline: true,
+        allowBase64: true,
+      }),
       TextStyle,
       FontFamily,
       FontSize,
