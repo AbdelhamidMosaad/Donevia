@@ -152,6 +152,35 @@ export type ClientRequest = {
   updatedAt: Timestamp;
 };
 
+/** Meeting Notes */
+export type Attendee = {
+    id: string;
+    name: string;
+    email: string;
+};
+
+export type AgendaItem = {
+    id: string;
+    topic: string;
+    presenter: string;
+    time: number; // in minutes
+    isCompleted: boolean;
+};
+
+export type MeetingNote = {
+    id: string;
+    title: string;
+    date: Timestamp;
+    attendees: Attendee[];
+    agenda: AgendaItem[];
+    notes: any; // TipTap JSON content
+    summary?: string;
+    actionItems?: any[]; // For future use
+    ownerId: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+};
+
 /** Gamification */
 export type BadgeId = 
     | 'subtopic-master-1' | 'subtopic-master-10' | 'subtopic-master-50' | 'subtopic-master-100'

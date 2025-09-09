@@ -36,6 +36,7 @@ import {
   BookOpen,
   Layers,
   Globe,
+  ClipboardSignature,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -54,6 +55,7 @@ const defaultMenuItems = [
     { href: '/goals', icon: <Target className="text-red-500" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
     { href: '/study-tracker', icon: <GraduationCap className="text-lime-500" />, label: 'Study Tracker', tooltip: 'Study Tracker', id: 'study-tracker' },
     { href: '/flashcards', icon: <Layers className="text-indigo-500" />, label: 'Flashcards', tooltip: 'Flashcards', id: 'flashcards' },
+    { href: '/meeting-notes', icon: <ClipboardSignature className="text-cyan-500" />, label: 'Meeting Notes', tooltip: 'Meeting Notes', id: 'meeting-notes' },
     { href: '/notes', icon: <FileText className="text-orange-500" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
     { href: '/bookmarks', icon: <Bookmark className="text-blue-500" />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
     { href: '/work-tracker', icon: <Briefcase className="text-amber-500" />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
