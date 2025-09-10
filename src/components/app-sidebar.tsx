@@ -37,6 +37,7 @@ import {
   Layers,
   Globe,
   ClipboardSignature,
+  CalendarDays,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -49,6 +50,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 
 const defaultMenuItems = [
     { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
+    { href: '/planner', icon: <CalendarDays className="text-green-500" />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
     { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
     { href: '/habits', icon: <Repeat className="text-teal-500" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },

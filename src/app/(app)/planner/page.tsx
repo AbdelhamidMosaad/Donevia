@@ -1,0 +1,169 @@
+
+'use client';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { PlannerEvent, PlannerCategory } from '@/lib/types';
+import { Calendar as BigCalendar, momentLocalizer, Views, EventProps, ToolbarProps } from 'react-big-calendar';
+import moment from 'moment';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { CalendarDays, PlusCircle, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { EventDialog } from '@/components/planner/event-dialog';
+import { CategoryManager } from '@/components/planner/category-manager';
+
+const localizer = momentLocalizer(moment);
+
+const CustomToolbar = (toolbar: ToolbarProps) => {
+  const goToBack = () => toolbar.onNavigate('PREV');
+  const goToNext = () => toolbar.onNavigate('NEXT');
+  const goToCurrent = () => toolbar.onNavigate('TODAY');
+  const label = () => moment(toolbar.date).format('MMMM YYYY');
+
+  return (
+    <div className="flex items-center justify-between p-4 bg-card rounded-t-lg border-b">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" onClick={goToCurrent}>Today</Button>
+        <Button variant="ghost" size="icon" onClick={goToBack}><ChevronLeft className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={goToNext}><ChevronRight className="h-4 w-4" /></Button>
+        <h2 className="text-xl font-headline">{label()}</h2>
+      </div>
+       <div className="hidden md:flex items-center gap-2">
+        {(['month', 'week', 'day', 'agenda'] as const).map(view => (
+          <Button
+            key={view}
+            variant={toolbar.view === view ? 'secondary' : 'ghost'}
+            onClick={() => toolbar.onView(view)}
+            className="capitalize"
+          >
+            {view}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default function PlannerPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [events, setEvents] = useState<PlannerEvent[]>([]);
+  const [categories, setCategories] = useState<PlannerCategory[]>([]);
+  
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Partial<PlannerEvent> | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+        router.push('/');
+        return;
+    }
+    
+    const eventsQuery = query(collection(db, 'users', user.uid, 'plannerEvents'));
+    const unsubscribeEvents = onSnapshot(eventsQuery, snapshot => {
+        setEvents(snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            start: doc.data().start.toDate(),
+            end: doc.data().end.toDate()
+        } as PlannerEvent)));
+    });
+
+    const categoriesQuery = query(collection(db, 'users', user.uid, 'plannerCategories'));
+    const unsubscribeCategories = onSnapshot(categoriesQuery, snapshot => {
+        setCategories(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PlannerCategory)));
+    });
+
+    return () => {
+        unsubscribeEvents();
+        unsubscribeCategories();
+    };
+  }, [user, router]);
+
+  const handleSelectSlot = useCallback(({ start, end }: { start: Date, end: Date }) => {
+    setSelectedEvent({ start, end, allDay: true });
+    setIsEventDialogOpen(true);
+  }, []);
+
+  const handleSelectEvent = (event: PlannerEvent) => {
+    setSelectedEvent(event);
+    setIsEventDialogOpen(true);
+  };
+  
+  const handleEventDrop = async ({ event, start, end }: { event: any, start: any, end: any }) => {
+    if (!user) return;
+    const eventRef = doc(db, 'users', user.uid, 'plannerEvents', event.id);
+    await updateDoc(eventRef, { start, end });
+  };
+  
+  const eventStyleGetter = (event: PlannerEvent) => {
+    const category = categories.find(c => c.id === event.categoryId);
+    const backgroundColor = category ? category.color : '#3174ad';
+    return {
+      style: {
+        backgroundColor,
+        borderRadius: '5px',
+        opacity: 0.8,
+        color: 'white',
+        border: '0px',
+        display: 'block'
+      }
+    };
+  };
+
+  return (
+    <div className="flex flex-col h-full gap-6">
+       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+            <CalendarDays className="h-8 w-8 text-primary"/>
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Planner</h1>
+                <p className="text-muted-foreground">Organize your time, events, and tasks.</p>
+            </div>
+        </div>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)}>
+                <Settings className="mr-2 h-4 w-4" /> Manage Categories
+            </Button>
+            <Button onClick={() => handleSelectSlot({ start: new Date(), end: new Date() })}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Event
+            </Button>
+        </div>
+      </div>
+
+       <div className="h-[calc(100vh-220px)] bg-card rounded-lg border">
+            <BigCalendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: '100%' }}
+                selectable
+                onSelectSlot={handleSelectSlot}
+                onSelectEvent={handleSelectEvent}
+                onEventDrop={handleEventDrop}
+                eventPropGetter={eventStyleGetter}
+                components={{ toolbar: CustomToolbar }}
+            />
+        </div>
+
+        <EventDialog 
+            isOpen={isEventDialogOpen}
+            onOpenChange={setIsEventDialogOpen}
+            event={selectedEvent}
+            categories={categories}
+        />
+        <CategoryManager
+            isOpen={isCategoryManagerOpen}
+            onOpenChange={setIsCategoryManagerOpen}
+            categories={categories}
+        />
+    </div>
+  );
+}

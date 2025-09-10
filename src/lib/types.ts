@@ -570,3 +570,23 @@ export type StudySession = {
     durationSeconds: number;
     ownerId: string;
 }
+
+/** Planner */
+export type PlannerCategory = {
+    id: string;
+    name: string;
+    color: string;
+    ownerId: string;
+}
+
+export type PlannerEvent = {
+    id: string;
+    title: string;
+    description?: string;
+    start: Date;
+    end: Date;
+    allDay: boolean;
+    categoryId?: string;
+    ownerId: string;
+    taskId?: string; // Link to a task in the Task Management tool
+};
