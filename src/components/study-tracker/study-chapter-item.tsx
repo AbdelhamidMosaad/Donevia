@@ -48,7 +48,7 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
   const [isAddSubtopicOpen, setIsAddSubtopicOpen] = useState(false);
   const [editingSubtopic, setEditingSubtopic] = useState<StudySubtopic | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   const handleDeleteChapter = async () => {
     if (!user) return;
@@ -78,13 +78,13 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
 
   return (
     <>
-      <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed} className="p-4 rounded-lg bg-muted/50 border">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="p-4 rounded-lg bg-muted/50 border">
         <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
                  <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="flex items-center gap-2 pl-1 pr-2">
-                        <ChevronRight className={cn("h-4 w-4 transition-transform", !isCollapsed && "rotate-90")}/>
+                        <ChevronRight className={cn("h-4 w-4 transition-transform", isOpen && "rotate-90")}/>
                         <h3 className="font-bold text-lg">{chapter.title}</h3>
                     </Button>
                 </CollapsibleTrigger>
