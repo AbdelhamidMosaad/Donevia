@@ -242,6 +242,7 @@ export interface UserSettings {
     notesView?: 'board' | 'canvas';
     meetingNotesView?: 'card' | 'list';
     studyTrackerView?: 'card' | 'list';
+    bookmarksView?: 'card' | 'list';
     listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
     tableColumns?: { [listId: string]: string[] };
     sidebarOrder?: string[];
@@ -603,3 +604,5 @@ export type PlannerEvent = {
     attachments: Attachment[];
     reminder: 'none' | '5m' | '15m' | '30m' | '1h' | '1d';
 };
+
+    

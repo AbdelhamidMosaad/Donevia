@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Bookmark as BookmarkIcon, Search, FolderPlus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Bookmark as BookmarkIcon, Search, FolderPlus, MoreHorizontal, Edit, Trash2, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Bookmark } from '@/lib/types';
@@ -12,9 +12,11 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { deleteBookmark } from '@/lib/bookmarks';
 import { AddBookmarkDialog } from '@/components/bookmarks/add-bookmark-dialog';
-import { BookmarkCard } from '@/components/bookmarks/bookmark-card';
+import { BookmarkCardView } from '@/components/bookmarks/bookmark-card-view';
+import { BookmarkListView } from '@/components/bookmarks/bookmark-list-view';
 import { Input } from '@/components/ui/input';
 import { useDebouncedCallback } from 'use-debounce';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,11 +26,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
+type View = 'card' | 'list';
 const DEFAULT_CATEGORIES = ['work', 'personal', 'education', 'entertainment', 'shopping', 'other'];
 
 export default function BookmarksPage() {
@@ -37,6 +39,7 @@ export default function BookmarksPage() {
   const { toast } = useToast();
   
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [view, setView] = useState<View>('card');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,6 +62,27 @@ export default function BookmarksPage() {
   }, 300);
 
   useEffect(() => {
+    if (user) {
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        getDoc(settingsRef).then(docSnap => {
+            if (docSnap.exists() && docSnap.data().bookmarksView) {
+                setView(docSnap.data().bookmarksView);
+            }
+        });
+    }
+  }, [user]);
+
+  const handleViewChange = (newView: View) => {
+    if (newView) {
+        setView(newView);
+        if (user) {
+            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+            setDoc(settingsRef, { bookmarksView: newView }, { merge: true });
+        }
+    }
+  };
+
+  useEffect(() => {
     if (!loading && !user) {
       router.push('/');
     }
@@ -72,10 +96,10 @@ export default function BookmarksPage() {
         setBookmarks(bookmarksData);
       });
 
-      const settingsRef = doc(db, 'users', user.uid, 'profile', 'bookmarkSettings');
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
       const unsubscribeSettings = onSnapshot(settingsRef, (docSnap) => {
-          if (docSnap.exists()) {
-              setCustomCategories(docSnap.data().categories || []);
+          if (docSnap.exists() && docSnap.data().bookmarkSettings) {
+              setCustomCategories(docSnap.data().bookmarkSettings.categories || []);
           }
       });
       
@@ -102,9 +126,9 @@ export default function BookmarksPage() {
     }
 
     const newCategories = [...customCategories, lowerCaseCategory];
-    const settingsRef = doc(db, 'users', user.uid, 'profile', 'bookmarkSettings');
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
     try {
-        await setDoc(settingsRef, { categories: newCategories }, { merge: true });
+        await setDoc(settingsRef, { bookmarkSettings: { categories: newCategories } }, { merge: true });
         toast({ title: 'Category Added', description: `"${newCategory}" has been added.`});
         setIsAddCategoryOpen(false);
         setNewCategory('');
@@ -128,12 +152,12 @@ export default function BookmarksPage() {
     }
 
     const batch = writeBatch(db);
-    // 1. Update settings
-    const settingsRef = doc(db, 'users', user.uid, 'profile', 'bookmarkSettings');
+    
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
     const newCategories = customCategories.map(c => c === categoryToRename ? lowerCaseNewCategory : c);
-    batch.update(settingsRef, { categories: newCategories });
+    
+    batch.set(settingsRef, { bookmarkSettings: { categories: newCategories } }, { merge: true });
 
-    // 2. Update bookmarks
     const bookmarksToUpdateQuery = query(collection(db, 'users', user.uid, 'bookmarks'), where('category', '==', categoryToRename));
     const querySnapshot = await getDocs(bookmarksToUpdateQuery);
     querySnapshot.forEach(doc => {
@@ -157,12 +181,11 @@ export default function BookmarksPage() {
     if (!user || !categoryToDelete) return;
 
     const batch = writeBatch(db);
-    // 1. Update settings
-    const settingsRef = doc(db, 'users', user.uid, 'profile', 'bookmarkSettings');
-    const newCategories = customCategories.filter(c => c !== categoryToDelete);
-    batch.update(settingsRef, { categories: newCategories });
     
-    // 2. Reassign bookmarks to 'other' category
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+    const newCategories = customCategories.filter(c => c !== categoryToDelete);
+    batch.set(settingsRef, { bookmarkSettings: { categories: newCategories } }, { merge: true });
+    
     const bookmarksToUpdateQuery = query(collection(db, 'users', user.uid, 'bookmarks'), where('category', '==', categoryToDelete));
     const querySnapshot = await getDocs(bookmarksToUpdateQuery);
     querySnapshot.forEach(doc => {
@@ -228,10 +251,20 @@ export default function BookmarksPage() {
           <h1 className="text-3xl font-bold font-headline">Bookmark Manager</h1>
           <p className="text-muted-foreground">Organize and access your favorite websites with ease.</p>
         </div>
-        <Button onClick={handleOpenAddDialog}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Bookmark
-        </Button>
+        <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="View toggle">
+              <ToggleGroupItem value="card" aria-label="Card view">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button onClick={handleOpenAddDialog}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Bookmark
+            </Button>
+        </div>
       </div>
 
       <div className="mb-6 space-y-4">
@@ -266,7 +299,7 @@ export default function BookmarksPage() {
                                 variant={activeCategory === category ? 'default' : 'outline'}
                                 className="capitalize pr-2"
                             >
-                                <span onClick={() => setActiveCategory(category)} className="px-2 py-1 -ml-2 mr-1">{category}</span>
+                                <span onClick={(e) => { e.stopPropagation(); setActiveCategory(category) }} className="px-2 py-1 -ml-2 mr-1">{category}</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -301,16 +334,19 @@ export default function BookmarksPage() {
           <p className="text-muted-foreground">Try adjusting your search or category filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredBookmarks.map(bookmark => (
-            <BookmarkCard
-              key={bookmark.id}
-              bookmark={bookmark}
-              onEdit={(focusColor) => handleEditBookmark(bookmark, focusColor)}
-              onDelete={() => handleDeleteBookmark(bookmark.id)}
+        view === 'card' ? (
+            <BookmarkCardView 
+                bookmarks={filteredBookmarks}
+                onEdit={handleEditBookmark}
+                onDelete={handleDeleteBookmark}
             />
-          ))}
-        </div>
+        ) : (
+            <BookmarkListView 
+                bookmarks={filteredBookmarks}
+                onEdit={handleEditBookmark}
+                onDelete={handleDeleteBookmark}
+            />
+        )
       )}
 
       {/* Dialogs */}
