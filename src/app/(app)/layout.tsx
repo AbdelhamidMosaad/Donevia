@@ -19,6 +19,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarVariant, setSidebarVariant] = useState<UserSettings['sidebarVariant']>('sidebar');
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -29,14 +31,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (user) {
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-      getDoc(settingsRef).then(docSnap => {
+      const unsubscribe = onSnapshot(settingsRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data() as UserSettings;
             if (data.sidebarOpen !== undefined) {
               setSidebarOpen(data.sidebarOpen);
             }
+            if (data.sidebarVariant) {
+                setSidebarVariant(data.sidebarVariant);
+            }
         }
       });
+      return () => unsubscribe();
     }
   }, [user]);
 
@@ -58,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <StudyReminderProvider>
         <PomodoroProvider>
           <SidebarProvider defaultOpen={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
-          <AppSidebar />
+          <AppSidebar variant={sidebarVariant} />
           <SidebarInset>
               <div className="flex flex-col h-screen">
               <AppHeader />

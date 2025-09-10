@@ -67,7 +67,7 @@ const defaultMenuItems = [
     { href: '/pomodoro', icon: <Timer className="text-rose-500" />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ variant }: { variant?: UserSettings['sidebarVariant'] }) {
   const pathname = usePathname();
   const { user } = useAuth();
   const [menuItems, setMenuItems] = React.useState(defaultMenuItems);
@@ -133,7 +133,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant={variant}>
       <SidebarRail />
       <SidebarHeader className="p-3 justify-center">
         {/* SidebarTrigger (if needed) can go here */}

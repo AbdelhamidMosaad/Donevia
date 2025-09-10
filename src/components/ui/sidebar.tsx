@@ -249,6 +249,7 @@ const Sidebar = React.forwardRef<
         <div
           className={cn(
             "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
+            "group-data-[variant=floating]:opacity-0 group-data-[variant=floating]:-translate-x-full group-data-[variant=floating]:hover:opacity-100 group-data-[variant=floating]:hover:translate-x-0 group-data-[variant=floating]:data-[state=expanded]:opacity-100 group-data-[variant=floating]:data-[state=expanded]:translate-x-0",
             "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]",
             // Adjust the padding for floating and inset variants.
             variant === "floating" || variant === "inset"
@@ -314,6 +315,7 @@ const SidebarRail = React.forwardRef<
       className={cn(
         "absolute top-1/2 z-20 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-foreground shadow-sm transition-all ease-linear hover:bg-muted group-data-[side=left]:-right-3 md:flex",
         "group-data-[collapsible=offcanvas]:hidden",
+        "group-data-[variant=floating]:hidden",
         className
       )}
       {...props}
@@ -335,6 +337,7 @@ const SidebarInset = React.forwardRef<
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background",
         "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
+        "peer-data-[variant=floating]:[--sidebar-gap-size:1rem] md:peer-data-[variant=floating]:ml-[--sidebar-gap-size] peer-data-[state=expanded]:peer-data-[variant=floating]:ml-[--sidebar-width]",
         className
       )}
       {...props}
