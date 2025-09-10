@@ -397,6 +397,7 @@ const SidebarContent = React.forwardRef<
       data-sidebar="content"
       className={cn(
         "flex min-h-0 flex-1 flex-col",
+        !open && "justify-center",
         className
       )}
     >
