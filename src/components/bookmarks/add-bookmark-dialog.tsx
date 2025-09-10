@@ -21,6 +21,7 @@ import { addBookmark, updateBookmark } from '@/lib/bookmarks';
 import { cn } from '@/lib/utils';
 import { Check, Loader2 } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
+import { deleteField } from 'firebase/firestore';
 
 interface AddBookmarkDialogProps {
   bookmark?: Bookmark | null;
@@ -155,12 +156,12 @@ export function AddBookmarkDialog({
             }
        } else {
             // Logic for auto-saving an existing bookmark
-            const bookmarkData = {
+            const bookmarkData: Partial<Bookmark> = {
                 title,
                 url: formatUrl(url),
                 description,
                 category,
-                color: color === '#FFFFFF' ? undefined : color,
+                color: color === '#FFFFFF' ? deleteField() as any : color,
             };
             debouncedSave(bookmarkData);
        }
