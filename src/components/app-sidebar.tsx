@@ -138,16 +138,16 @@ export function AppSidebar() {
                         return (
                              <Draggable key={item.id} draggableId={item.id} index={index}>
                                 {(provided) => (
-                                    <SidebarMenuItem ref={provided.innerRef} {...provided.draggableProps}>
+                                    <SidebarMenuItem ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                                         <SidebarMenuButton
                                             asChild
                                             isActive={isActive(item.href)}
                                             tooltip={item.tooltip}
                                         >
                                             <Link href={item.href || '#'} className="flex items-center w-full">
-                                                {open && <div {...provided.dragHandleProps} className="p-1">
+                                                <div className={cn("p-1", !open && "hidden")}>
                                                     <GripVertical className="h-4 w-4 text-muted-foreground"/>
-                                                </div>}
+                                                </div>
                                                 {item.icon}
                                                 {open && <span className="flex-1">{item.label}</span>}
                                             </Link>
