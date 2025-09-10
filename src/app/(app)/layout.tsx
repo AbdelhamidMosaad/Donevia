@@ -20,7 +20,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, settings } = useAuth();
   const router = useRouter();
   
-  const [sidebarOpen, setSidebarOpen] = useState(settings?.sidebarOpen ?? true);
+  // Set the initial state to true (expanded) if no setting is found.
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -29,7 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
   
   useEffect(() => {
-    // Sync sidebar open state with settings from AuthProvider
+    // Sync sidebar open state with settings from AuthProvider once they are loaded
     if (settings?.sidebarOpen !== undefined) {
       setSidebarOpen(settings.sidebarOpen);
     }
