@@ -47,6 +47,7 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { UserSettings } from '@/lib/types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { DoneviaLogo } from './logo';
 
 const defaultMenuItems = [
     { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
