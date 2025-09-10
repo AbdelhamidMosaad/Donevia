@@ -234,7 +234,7 @@ export interface UserSettings {
         | 'playfair-display'
         | 'jetbrains-mono'
         | 'bahnschrift';
-    sidebarVariant?: 'sidebar' | 'floating' | 'inset';
+    sidebarVariant: 'sidebar';
     sidebarOpen: boolean;
     notificationSound: boolean;
     taskListsView?: 'card' | 'list';

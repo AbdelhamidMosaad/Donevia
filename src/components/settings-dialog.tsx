@@ -291,27 +291,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                         <CardDescription>Customize the behavior of the main sidebar.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="space-y-2">
-                                <Label>Sidebar Style</Label>
-                                <RadioGroup 
-                                    value={settings.sidebarVariant || 'sidebar'}
-                                    onValueChange={(value: 'sidebar' | 'floating' | 'inset') => savePreferences({ sidebarVariant: value })}
-                                >
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="sidebar" id="sidebar-default" />
-                                        <Label htmlFor="sidebar-default">Default</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="floating" id="sidebar-floating" />
-                                        <Label htmlFor="sidebar-floating">Floating</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="inset" id="sidebar-inset" />
-                                        <Label htmlFor="sidebar-inset">Inset</Label>
-                                    </div>
-                                </RadioGroup>
-                            </div>
-                            <div className="flex items-center justify-between pt-4 border-t">
+                            <div className="flex items-center justify-between">
                                 <Label htmlFor="sidebar-switch">Open by Default</Label>
                                 <Switch
                                     id="sidebar-switch"

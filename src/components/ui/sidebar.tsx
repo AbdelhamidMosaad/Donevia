@@ -138,7 +138,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+              "group/sidebar-wrapper flex min-h-svh w-full",
               className
             )}
             ref={ref}
@@ -157,7 +157,7 @@ const Sidebar = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
     side?: "left" | "right"
-    variant?: "sidebar" | "floating" | "inset"
+    variant?: "sidebar"
   }
 >(
   (
@@ -217,22 +217,20 @@ const Sidebar = React.forwardRef<
             "duration-200 relative h-svh w-0 bg-transparent transition-[width] ease-linear",
             "group-data-[state=open]:w-[--sidebar-width]",
             "group-data-[side=right]:hidden",
-            variant === "inset" && "group-data-[state=open]:w-[calc(var(--sidebar-width)_+_theme(spacing.4))]",
           )}
         />
         <div
           className={cn(
             "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right] ease-linear md:flex",
-            "group-data-[variant=floating]:opacity-0 group-data-[variant=floating]:-translate-x-full group-data-[variant=floating]:data-[state=open]:opacity-100 group-data-[variant=floating]:data-[state=open]:translate-x-0",
             "left-[calc(var(--sidebar-width)*-1)] group-data-[state=open]:left-0",
-            variant === "floating" || variant === "inset" ? "p-2" : "group-data-[side=left]:border-r group-data-[side=right]:border-l",
+            "group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
           {...props}
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col bg-sidebar"
           >
             {children}
           </div>
@@ -286,7 +284,6 @@ const SidebarRail = React.forwardRef<
       title="Toggle Sidebar"
       className={cn(
         "absolute top-1/2 z-20 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-foreground shadow-sm transition-all ease-linear hover:bg-muted group-data-[side=left]:-right-3 md:flex",
-        "group-data-[variant=floating]:hidden",
         className
       )}
       {...props}
@@ -307,10 +304,7 @@ const SidebarInset = React.forwardRef<
       ref={ref}
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background",
-        "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
-        "peer-data-[variant=floating]:[--sidebar-gap-size:1rem] md:peer-data-[variant=floating]:ml-[--sidebar-gap-size]",
         "md:peer-data-[state=open]:ml-[--sidebar-width]",
-        "md:peer-data-[variant=inset]:peer-data-[state=open]:ml-[calc(var(--sidebar-width)_+_theme(spacing.4))]",
         "transition-[margin-left] duration-200 ease-linear",
         className
       )}
