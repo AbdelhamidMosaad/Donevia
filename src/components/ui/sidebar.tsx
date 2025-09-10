@@ -400,7 +400,7 @@ const SidebarContent = React.forwardRef<
         className
       )}
     >
-        <div className={cn("p-2", !open && "px-1")} {...props} />
+        <div className={cn("p-2", !open && "px-2")} {...props} />
     </ScrollArea>
   )
 })
@@ -560,7 +560,7 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), !open && "justify-center p-0 w-10", className)}
+        className={cn(sidebarMenuButtonVariants({ variant, size }), !open && "justify-center p-0 w-10 h-10", className)}
         {...props}
       >
         {buttonContent}
