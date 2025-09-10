@@ -3,11 +3,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Bookmark as BookmarkIcon, Search, FolderPlus } from 'lucide-react';
+import { PlusCircle, Bookmark as BookmarkIcon, Search, FolderPlus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Bookmark } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, writeBatch, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { deleteBookmark } from '@/lib/bookmarks';
@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Label } from '@/components/ui/label';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 const DEFAULT_CATEGORIES = ['work', 'personal', 'education', 'entertainment', 'shopping', 'other'];
 
@@ -41,7 +42,16 @@ export default function BookmarksPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [customCategories, setCustomCategories] = useState<string[]>([]);
+  
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newCategory, setNewCategory] = useState('');
+  
+  const [isRenameCategoryOpen, setIsRenameCategoryOpen] = useState(false);
+  const [categoryToRename, setCategoryToRename] = useState<string | null>(null);
+  const [renamedCategory, setRenamedCategory] = useState('');
+  
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+
   const [focusColorPicker, setFocusColorPicker] = useState(false);
 
   const debouncedSearch = useDebouncedCallback((value) => {
@@ -76,6 +86,12 @@ export default function BookmarksPage() {
     }
   }, [user]);
 
+  const allCategories = useMemo(() => {
+    const combined = [...DEFAULT_CATEGORIES, ...customCategories];
+    return ['all', ...Array.from(new Set(combined))];
+  }, [customCategories]);
+
+  // --- Category Management ---
   const handleAddNewCategory = async () => {
     if (!user || !newCategory.trim()) return;
     const lowerCaseCategory = newCategory.trim().toLowerCase();
@@ -90,12 +106,83 @@ export default function BookmarksPage() {
     try {
         await setDoc(settingsRef, { categories: newCategories }, { merge: true });
         toast({ title: 'Category Added', description: `"${newCategory}" has been added.`});
+        setIsAddCategoryOpen(false);
         setNewCategory('');
     } catch(e) {
         toast({ variant: 'destructive', title: 'Error adding category' });
     }
-  }
+  };
 
+  const handleRenameCategory = async () => {
+    if (!user || !categoryToRename || !renamedCategory.trim()) return;
+    
+    const lowerCaseNewCategory = renamedCategory.trim().toLowerCase();
+    if(lowerCaseNewCategory === categoryToRename) {
+        setIsRenameCategoryOpen(false);
+        return;
+    }
+
+    if(allCategories.includes(lowerCaseNewCategory)) {
+        toast({ variant: 'destructive', title: 'Category already exists' });
+        return;
+    }
+
+    const batch = writeBatch(db);
+    // 1. Update settings
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'bookmarkSettings');
+    const newCategories = customCategories.map(c => c === categoryToRename ? lowerCaseNewCategory : c);
+    batch.update(settingsRef, { categories: newCategories });
+
+    // 2. Update bookmarks
+    const bookmarksToUpdateQuery = query(collection(db, 'users', user.uid, 'bookmarks'), where('category', '==', categoryToRename));
+    const querySnapshot = await getDocs(bookmarksToUpdateQuery);
+    querySnapshot.forEach(doc => {
+        batch.update(doc.ref, { category: lowerCaseNewCategory });
+    });
+    
+    try {
+        await batch.commit();
+        toast({ title: "Category Renamed", description: `"${categoryToRename}" is now "${lowerCaseNewCategory}".`});
+        if(activeCategory === categoryToRename) {
+            setActiveCategory(lowerCaseNewCategory);
+        }
+        setIsRenameCategoryOpen(false);
+        setCategoryToRename(null);
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error renaming category.' });
+    }
+  };
+  
+  const handleDeleteCategory = async () => {
+    if (!user || !categoryToDelete) return;
+
+    const batch = writeBatch(db);
+    // 1. Update settings
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'bookmarkSettings');
+    const newCategories = customCategories.filter(c => c !== categoryToDelete);
+    batch.update(settingsRef, { categories: newCategories });
+    
+    // 2. Reassign bookmarks to 'other' category
+    const bookmarksToUpdateQuery = query(collection(db, 'users', user.uid, 'bookmarks'), where('category', '==', categoryToDelete));
+    const querySnapshot = await getDocs(bookmarksToUpdateQuery);
+    querySnapshot.forEach(doc => {
+        batch.update(doc.ref, { category: 'other' });
+    });
+
+    try {
+        await batch.commit();
+        toast({ title: 'Category Deleted', description: `Bookmarks from "${categoryToDelete}" were moved to "other".` });
+         if(activeCategory === categoryToDelete) {
+            setActiveCategory('other');
+        }
+        setCategoryToDelete(null);
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error deleting category.' });
+    }
+  };
+
+
+  // --- Bookmark Management ---
   const handleDeleteBookmark = async (bookmarkId: string) => {
     if (!user) return;
     try {
@@ -118,11 +205,6 @@ export default function BookmarksPage() {
     setFocusColorPicker(false);
     setIsAddDialogOpen(true);
   }
-
-  const allCategories = useMemo(() => {
-    const combined = [...DEFAULT_CATEGORIES, ...customCategories];
-    return ['all', ...Array.from(new Set(combined))];
-  }, [customCategories]);
 
   const filteredBookmarks = useMemo(() => {
     return bookmarks.filter(bookmark => {
@@ -163,42 +245,47 @@ export default function BookmarksPage() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {allCategories.map(category => (
-            <Button
-              key={category}
-              variant={activeCategory === category ? 'default' : 'outline'}
-              onClick={() => setActiveCategory(category)}
-              className="capitalize"
-            >
-              {category}
+          {allCategories.map(category => {
+              const isCustom = !DEFAULT_CATEGORIES.includes(category) && category !== 'all';
+              const button = (
+                <Button
+                  key={category}
+                  variant={activeCategory === category ? 'default' : 'outline'}
+                  onClick={() => setActiveCategory(category)}
+                  className="capitalize"
+                >
+                  {category}
+                </Button>
+              );
+
+              if (isCustom) {
+                return (
+                    <DropdownMenu key={category}>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant={activeCategory === category ? 'default' : 'outline'}
+                                className="capitalize pr-2"
+                            >
+                                <span onClick={() => setActiveCategory(category)} className="px-2 py-1 -ml-2 mr-1">{category}</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => {setCategoryToRename(category); setRenamedCategory(category); setIsRenameCategoryOpen(true);}}>
+                               <Edit className="mr-2 h-4 w-4" /> Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setCategoryToDelete(category)} className="text-destructive focus:text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                );
+              }
+              return button;
+          })}
+           <Button variant="ghost" size="sm" onClick={() => setIsAddCategoryOpen(true)}>
+                <FolderPlus className="mr-2 h-4 w-4" /> New Category
             </Button>
-          ))}
-           <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                        <FolderPlus className="mr-2 h-4 w-4" /> New Category
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Add New Category</AlertDialogTitle>
-                        <AlertDialogDescription>Enter a name for your new bookmark category.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="new-category-name" className="sr-only">Category Name</Label>
-                        <Input
-                            id="new-category-name"
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                            placeholder="e.g. Design Inspiration"
-                        />
-                    </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setNewCategory('')}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleAddNewCategory} disabled={!newCategory.trim()}>Add</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
       </div>
 
@@ -226,6 +313,7 @@ export default function BookmarksPage() {
         </div>
       )}
 
+      {/* Dialogs */}
       <AddBookmarkDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
@@ -233,6 +321,66 @@ export default function BookmarksPage() {
         categories={allCategories.filter(c => c !== 'all')}
         focusColorPicker={focusColorPicker}
       />
+      
+       <AlertDialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Add New Category</AlertDialogTitle>
+                    <AlertDialogDescription>Enter a name for your new bookmark category.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="new-category-name" className="sr-only">Category Name</Label>
+                    <Input
+                        id="new-category-name"
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        placeholder="e.g. Design Inspiration"
+                    />
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setNewCategory('')}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleAddNewCategory} disabled={!newCategory.trim()}>Add</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={isRenameCategoryOpen} onOpenChange={setIsRenameCategoryOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Rename Category</AlertDialogTitle>
+                    <AlertDialogDescription>Enter a new name for the category "{categoryToRename}".</AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="rename-category-name" className="sr-only">New Name</Label>
+                    <Input
+                        id="rename-category-name"
+                        value={renamedCategory}
+                        onChange={(e) => setRenamedCategory(e.target.value)}
+                    />
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRenameCategory} disabled={!renamedCategory.trim()}>Rename</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        
+        <AlertDialog open={!!categoryToDelete} onOpenChange={() => setCategoryToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will delete the category "{categoryToDelete}". Bookmarks using this category will be moved to "other".
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }
+
+    
