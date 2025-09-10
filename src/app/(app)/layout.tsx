@@ -9,20 +9,18 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { WelcomeScreen } from '@/components/welcome-screen';
 import { TaskReminderProvider } from '@/hooks/use-task-reminders';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { PomodoroProvider } from '@/hooks/use-pomodoro';
 import { StudyReminderProvider } from '@/hooks/use-study-reminders';
-import { UserSettings } from '@/lib/types';
 import { PlannerReminderProvider } from '@/hooks/use-planner-reminders';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, settings } = useAuth();
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarVariant, setSidebarVariant] = useState<UserSettings['sidebarVariant']>('sidebar');
-
+  
+  const [sidebarOpen, setSidebarOpen] = useState(settings?.sidebarOpen ?? true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -31,22 +29,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
   
   useEffect(() => {
-    if (user) {
-      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-      const unsubscribe = onSnapshot(settingsRef, (docSnap) => {
-        if (docSnap.exists()) {
-            const data = docSnap.data() as UserSettings;
-            if (data.sidebarOpen !== undefined) {
-              setSidebarOpen(data.sidebarOpen);
-            }
-            if (data.sidebarVariant) {
-                setSidebarVariant(data.sidebarVariant);
-            }
-        }
-      });
-      return () => unsubscribe();
+    // Sync sidebar open state with settings from AuthProvider
+    if (settings?.sidebarOpen !== undefined) {
+      setSidebarOpen(settings.sidebarOpen);
     }
-  }, [user]);
+  }, [settings?.sidebarOpen]);
+
 
   const handleSidebarOpenChange = (isOpen: boolean) => {
     setSidebarOpen(isOpen);
@@ -67,7 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <PlannerReminderProvider>
             <PomodoroProvider>
             <SidebarProvider defaultOpen={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
-            <AppSidebar variant={sidebarVariant} />
+            <AppSidebar variant={settings?.sidebarVariant} />
             <SidebarInset>
                 <div className="flex flex-col h-screen">
                 <AppHeader />

@@ -11,6 +11,7 @@ import type { UserSettings } from '@/lib/types';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  settings: Partial<UserSettings>;
 }
 
 const fonts: Record<string, string> = {
@@ -27,12 +28,36 @@ const fonts: Record<string, string> = {
     bahnschrift: 'Bahnschrift, sans-serif',
 };
 
+const defaultSettings: UserSettings = {
+    theme: 'light',
+    font: 'inter',
+    sidebarVariant: 'sidebar',
+    sidebarOpen: true,
+    notificationSound: true,
+    taskListsView: 'card',
+    docsView: 'card',
+    notesView: 'board',
+    studyTrackerView: 'card',
+    listViews: {},
+    tableColumns: {},
+    sidebarOrder: [],
+    studyProfile: {
+        currentStreak: 0,
+        longestStreak: 0,
+        lastStudyDay: '',
+        level: 1,
+        experiencePoints: 0,
+        earnedBadges: [],
+    }
+};
+
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<Partial<UserSettings>>(defaultSettings);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
@@ -59,17 +84,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribeSettings = onSnapshot(settingsRef, (doc) => {
         resetStyling(); // Reset before applying new styles
         if (doc.exists() && doc.data()) {
-            const { theme, font } = doc.data() as Partial<UserSettings>;
+            const userSettings = { ...defaultSettings, ...doc.data() } as UserSettings;
+            setSettings(userSettings);
             
-            body.classList.add(theme || 'light');
+            body.classList.add(userSettings.theme);
             
-            if (font && fonts[font]) {
-              body.style.fontFamily = fonts[font];
+            if (userSettings.font && fonts[userSettings.font]) {
+              body.style.fontFamily = fonts[userSettings.font];
             } else {
               body.style.fontFamily = fonts['inter']; // Default to inter
             }
         } else {
             // No settings doc, apply defaults
+            setSettings(defaultSettings);
             body.classList.add('light');
             body.style.fontFamily = fonts['inter'];
         }
@@ -77,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
         // Not logged in, so clear any theme styles and apply defaults for landing page
         resetStyling();
+        setSettings(defaultSettings);
         body.style.fontFamily = fonts['inter'];
     }
      return () => unsubscribeSettings();
@@ -88,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, settings }}>
       {children}
     </AuthContext.Provider>
   );
