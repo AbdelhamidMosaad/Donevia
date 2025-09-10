@@ -14,6 +14,8 @@ import { db } from '@/lib/firebase';
 import { PomodoroProvider } from '@/hooks/use-pomodoro';
 import { StudyReminderProvider } from '@/hooks/use-study-reminders';
 import { UserSettings } from '@/lib/types';
+import { PlannerReminderProvider } from '@/hooks/use-planner-reminders';
+
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -62,19 +64,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <TaskReminderProvider>
       <StudyReminderProvider>
-        <PomodoroProvider>
-          <SidebarProvider defaultOpen={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
-          <AppSidebar variant={sidebarVariant} />
-          <SidebarInset>
-              <div className="flex flex-col h-screen">
-              <AppHeader />
-              <main className="flex-1 overflow-y-auto p-4 md:p-6">
-                  {children}
-              </main>
-              </div>
-          </SidebarInset>
-          </SidebarProvider>
-        </PomodoroProvider>
+        <PlannerReminderProvider>
+            <PomodoroProvider>
+            <SidebarProvider defaultOpen={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
+            <AppSidebar variant={sidebarVariant} />
+            <SidebarInset>
+                <div className="flex flex-col h-screen">
+                <AppHeader />
+                <main className="flex-1 overflow-y-auto p-4 md:p-6">
+                    {children}
+                </main>
+                </div>
+            </SidebarInset>
+            </SidebarProvider>
+            </PomodoroProvider>
+        </PlannerReminderProvider>
       </StudyReminderProvider>
     </TaskReminderProvider>
   );

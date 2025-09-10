@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { PlannerEvent, PlannerCategory } from '@/lib/types';
 import { Calendar as BigCalendar, momentLocalizer, Views, EventProps, ToolbarProps } from 'react-big-calendar';
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { EventDialog } from '@/components/planner/event-dialog';
 import { CategoryManager } from '@/components/planner/category-manager';
+import { usePlannerReminders } from '@/hooks/use-planner-reminders';
 
 const localizer = momentLocalizer(moment);
 
@@ -58,6 +59,32 @@ export default function PlannerPage() {
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Partial<PlannerEvent> | null>(null);
 
+  // Initialize reminder hook
+  usePlannerReminders(events);
+
+
+  const expandedEvents = useMemo(() => {
+    const allEvents: PlannerEvent[] = [];
+    events.forEach(event => {
+      if (event.recurring && event.recurring !== 'none' && event.recurringEndDate) {
+        let current = moment(event.start);
+        const endRecur = moment(event.recurringEndDate);
+        
+        while(current.isBefore(endRecur)) {
+           allEvents.push({
+             ...event,
+             start: current.toDate(),
+             end: moment(event.end).add(current.diff(moment(event.start), 'days'), 'days').toDate(),
+           });
+           current.add(1, event.recurring === 'daily' ? 'days' : event.recurring === 'weekly' ? 'weeks' : 'months');
+        }
+      } else {
+        allEvents.push(event);
+      }
+    });
+    return allEvents;
+  }, [events]);
+
   useEffect(() => {
     if (!user) {
         router.push('/');
@@ -66,12 +93,16 @@ export default function PlannerPage() {
     
     const eventsQuery = query(collection(db, 'users', user.uid, 'plannerEvents'));
     const unsubscribeEvents = onSnapshot(eventsQuery, snapshot => {
-        setEvents(snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            start: doc.data().start.toDate(),
-            end: doc.data().end.toDate()
-        } as PlannerEvent)));
+        setEvents(snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                start: data.start.toDate(),
+                end: data.end.toDate(),
+                recurringEndDate: data.recurringEndDate ? data.recurringEndDate.toDate() : null
+            } as PlannerEvent
+        }));
     });
 
     const categoriesQuery = query(collection(db, 'users', user.uid, 'plannerCategories'));
@@ -86,7 +117,7 @@ export default function PlannerPage() {
   }, [user, router]);
 
   const handleSelectSlot = useCallback(({ start, end }: { start: Date, end: Date }) => {
-    setSelectedEvent({ start, end, allDay: true });
+    setSelectedEvent({ start, end, allDay: false });
     setIsEventDialogOpen(true);
   }, []);
 
@@ -140,7 +171,7 @@ export default function PlannerPage() {
        <div className="h-[calc(100vh-220px)] bg-card rounded-lg border">
             <BigCalendar
                 localizer={localizer}
-                events={events}
+                events={expandedEvents}
                 startAccessor="start"
                 endAccessor="end"
                 style={{ height: '100%' }}

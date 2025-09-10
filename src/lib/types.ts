@@ -597,7 +597,9 @@ export type PlannerEvent = {
     allDay: boolean;
     categoryId?: string;
     ownerId: string;
-    taskId?: string; // Link to a task in the Task Management tool
-    recurring?: 'daily' | 'weekly' | 'monthly';
-    recurringEndDate?: Date;
+    taskId?: string;
+    recurring?: 'daily' | 'weekly' | 'monthly' | 'none';
+    recurringEndDate?: Date | null;
+    attachments: Attachment[];
+    reminder: 'none' | '5m' | '15m' | '30m' | '1h' | '1d';
 };
