@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import type { PlannerEvent, PlannerCategory } from '@/lib/types';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, onSnapshot } from 'firebase/firestore';
+import type { PlannerEvent, PlannerCategory, Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,6 +27,17 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<PlannerEvent>>({});
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    if(user) {
+        const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'));
+        const unsubscribe = onSnapshot(tasksQuery, snapshot => {
+            setTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
+        });
+        return () => unsubscribe();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (event) {
@@ -87,7 +98,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{formData.id ? 'Edit Event' : 'Create Event'}</DialogTitle>
           <DialogDescription>Fill in the details for your event.</DialogDescription>
@@ -104,7 +115,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
             onChange={(e) => handleChange('description', e.target.value)}
           />
           <div className="flex items-center space-x-2">
-            <Checkbox id="all-day" checked={formData.allDay} onCheckedChange={(checked) => handleChange('allDay', checked)} />
+            <Checkbox id="all-day" checked={!!formData.allDay} onCheckedChange={(checked) => handleChange('allDay', checked)} />
             <Label htmlFor="all-day">All-day event</Label>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -148,6 +159,20 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
                                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }}/>
                                 {cat.name}
                             </div>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </div>
+           <div>
+            <Label>Link to Task</Label>
+            <Select value={formData.taskId} onValueChange={(value) => handleChange('taskId', value)}>
+                <SelectTrigger><SelectValue placeholder="Select a task to link" /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {tasks.map(task => (
+                        <SelectItem key={task.id} value={task.id}>
+                           {task.title}
                         </SelectItem>
                     ))}
                 </SelectContent>

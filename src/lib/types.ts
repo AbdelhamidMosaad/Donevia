@@ -22,6 +22,14 @@ const FirebaseTimestampSchema = z.custom<Timestamp>(
   "Invalid Timestamp"
 );
 
+export const SubtaskSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    isCompleted: z.boolean(),
+    dueDate: FirebaseTimestampSchema.optional().nullable(),
+});
+export type Subtask = z.infer<typeof SubtaskSchema>;
+
 export const TaskSchema = z.object({
     id: z.string(),
     title: z.string(),
@@ -36,6 +44,7 @@ export const TaskSchema = z.object({
     ownerId: z.string(),
     reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
     color: z.string().optional(),
+    subtasks: z.array(SubtaskSchema).optional(),
 });
 export type Task = z.infer<typeof TaskSchema>;
 
@@ -589,4 +598,6 @@ export type PlannerEvent = {
     categoryId?: string;
     ownerId: string;
     taskId?: string; // Link to a task in the Task Management tool
+    recurring?: 'daily' | 'weekly' | 'monthly';
+    recurringEndDate?: Date;
 };

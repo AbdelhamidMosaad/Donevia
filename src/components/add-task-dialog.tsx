@@ -21,8 +21,11 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, doc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import moment from 'moment';
-import type { Task, Stage } from '@/lib/types';
+import type { Task, Stage, Subtask } from '@/lib/types';
 import { DialogTrigger } from './ui/dialog';
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+import { Checkbox } from './ui/checkbox';
 
 interface AddTaskDialogProps {
   children?: ReactNode;
@@ -50,9 +53,7 @@ const cardColors = [
     '#FAE8FF', // fuchsia-100
 ];
 
-
 const getRandomColor = () => cardColors[Math.floor(Math.random() * cardColors.length)];
-
 
 export function AddTaskDialog({
   children,
@@ -82,6 +83,8 @@ export function AddTaskDialog({
   const [status, setStatus] = useState<Task['status'] | undefined>();
   const [reminder, setReminder] = useState<Task['reminder']>('none');
   const [color, setColor] = useState<string | undefined>(task?.color);
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   const resetForm = () => {
     setTitle('');
@@ -91,6 +94,7 @@ export function AddTaskDialog({
     setPriority('Medium');
     setReminder('none');
     setColor(getRandomColor());
+    setSubtasks([]);
     if (stages.length > 0) {
       setStatus(stages[0].id);
     } else {
@@ -126,6 +130,7 @@ export function AddTaskDialog({
         setStatus(task.status);
         setReminder(task.reminder || 'none');
         setColor(task.color);
+        setSubtasks(task.subtasks || []);
       } else {
         resetForm();
       }
@@ -133,6 +138,20 @@ export function AddTaskDialog({
       resetForm();
     }
   }, [open, task, isEditMode, stages, defaultDueDate]);
+
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return;
+    setSubtasks([...subtasks, { id: uuidv4(), title: newSubtaskTitle.trim(), isCompleted: false, dueDate: null }]);
+    setNewSubtaskTitle('');
+  };
+
+  const handleSubtaskChange = (subtaskId: string, field: keyof Subtask, value: any) => {
+    setSubtasks(subtasks.map(st => st.id === subtaskId ? { ...st, [field]: value } : st));
+  };
+
+  const handleDeleteSubtask = (subtaskId: string) => {
+    setSubtasks(subtasks.filter(st => st.id !== subtaskId));
+  }
 
 
   const handleSave = async (andAddNew: boolean = false) => {
@@ -160,6 +179,7 @@ export function AddTaskDialog({
         status,
         reminder,
         color,
+        subtasks,
         tags: task?.tags || [],
         listId,
         ownerId: user.uid,
@@ -215,6 +235,42 @@ export function AddTaskDialog({
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="description" className="text-right pt-2">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label className="text-right pt-2">Subtasks</Label>
+            <div className="col-span-3 space-y-2">
+                {subtasks.map(st => (
+                    <div key={st.id} className="flex items-center gap-2">
+                        <Checkbox 
+                            checked={st.isCompleted} 
+                            onCheckedChange={(checked) => handleSubtaskChange(st.id, 'isCompleted', checked)}
+                        />
+                        <Input 
+                            value={st.title} 
+                            onChange={(e) => handleSubtaskChange(st.id, 'title', e.target.value)}
+                            className="h-8 flex-1"
+                        />
+                         <Input 
+                            type="date"
+                            value={st.dueDate ? moment(st.dueDate.toDate()).format('YYYY-MM-DD') : ''}
+                            onChange={(e) => handleSubtaskChange(st.id, 'dueDate', e.target.value ? Timestamp.fromDate(new Date(e.target.value)) : null)}
+                            className="h-8 w-auto"
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteSubtask(st.id)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+                <div className="flex items-center gap-2">
+                    <Input 
+                        placeholder="Add new subtask..."
+                        value={newSubtaskTitle}
+                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
+                    />
+                    <Button onClick={handleAddSubtask}><PlusCircle className="mr-2 h-4 w-4" /> Add</Button>
+                </div>
+            </div>
           </div>
            <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="reflection" className="text-right pt-2">Reflection</Label>
