@@ -48,7 +48,7 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
   const [isAddSubtopicOpen, setIsAddSubtopicOpen] = useState(false);
   const [editingSubtopic, setEditingSubtopic] = useState<StudySubtopic | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleDeleteChapter = async () => {
     if (!user) return;
