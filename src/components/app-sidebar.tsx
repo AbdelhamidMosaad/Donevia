@@ -45,7 +45,7 @@ import { DoneviaLogo } from './logo';
 import { cn } from '@/lib/utils';
 
 const defaultMenuItems = [
-    { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500 ml-1" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
+    { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500 ml-2" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
     { href: '/planner', icon: <CalendarDays className="text-green-500" />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
     { href: '/crm', icon: <Briefcase className="text-amber-500" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
