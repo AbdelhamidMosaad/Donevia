@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { DoneviaLogo } from "../logo"
+import { ScrollArea } from "./scroll-area"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -413,15 +414,16 @@ const SidebarContent = React.forwardRef<
   React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
   return (
-    <div
+    <ScrollArea
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto p-2 group-data-[collapsible=icon]:items-center",
+        "flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:items-center",
         className
       )}
-      {...props}
-    />
+    >
+        <div className="p-2" {...props} />
+    </ScrollArea>
   )
 })
 SidebarContent.displayName = "SidebarContent"
@@ -619,7 +621,7 @@ const SidebarMenuAction = React.forwardRef<
       ref={ref}
       data-sidebar="menu-action"
       className={cn(
-        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
@@ -703,7 +705,7 @@ const SidebarMenuSub = React.forwardRef<
     ref={ref}
     data-sidebar="menu-sub"
     className={cn(
-      "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border pl-4",
+      "mx-3.5 flex min-w-0 -translate-x-px flex-col gap-1 border-l border-sidebar-border pl-4",
       "group-data-[collapsible=icon]:hidden",
       className
     )}
