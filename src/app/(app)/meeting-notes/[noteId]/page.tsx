@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -44,7 +43,13 @@ export default function MeetingNotePage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col gap-4">
+       <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => router.push('/meeting-notes')}>
+                <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-xl font-semibold truncate">{noteData.title}</h1>
+        </div>
        <MeetingNotesEditor note={noteData} />
     </div>
   );
