@@ -49,6 +49,15 @@ export function AppHeader() {
     dismissOverdueTask(task.id);
     router.push(`/dashboard/list/${task.listId}`);
   };
+  
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      const query = formData.get('search') as string;
+      if (query.trim()) {
+          router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+      }
+  }
 
 
   return (
@@ -67,13 +76,14 @@ export function AppHeader() {
       </div>
       <div className="w-full flex-1">
         {isClient && (
-          <form>
+          <form onSubmit={handleSearch}>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
+                name="search"
                 placeholder="Search everywhere..."
-                className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/2"
               />
             </div>
           </form>
