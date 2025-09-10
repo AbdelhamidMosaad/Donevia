@@ -30,9 +30,9 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
     >
         <Link href={bookmark.url} target="_blank" rel="noopener noreferrer" className="flex flex-col flex-1">
             <CardHeader className="flex-row items-start justify-between pb-2">
-                <div>
-                <CardTitle className="font-headline text-lg group-hover:underline leading-tight line-clamp-2">{bookmark.title}</CardTitle>
-                <CardDescription className="text-xs pt-1 truncate">{bookmark.url}</CardDescription>
+                <div className="overflow-hidden">
+                <CardTitle className="font-headline text-lg group-hover:underline leading-tight break-words">{bookmark.title}</CardTitle>
+                <CardDescription className="text-xs pt-1 break-words">{bookmark.url}</CardDescription>
                 </div>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
