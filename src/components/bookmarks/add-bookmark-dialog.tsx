@@ -7,8 +7,10 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,7 +50,7 @@ export function AddBookmarkDialog({
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
 
-  const isEditMode = !!currentBookmark;
+  const isEditMode = !!bookmark;
 
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
@@ -67,8 +69,7 @@ export function AddBookmarkDialog({
 
   useEffect(() => {
     if (open) {
-      setCurrentBookmark(bookmark);
-      if (bookmark) {
+      if (isEditMode && bookmark) {
         setTitle(bookmark.title);
         setUrl(bookmark.url);
         setDescription(bookmark.description || '');
@@ -82,16 +83,14 @@ export function AddBookmarkDialog({
         setCategory(categories[0] as BookmarkCategory || 'other');
       }
       setSaveStatus('idle');
-      isInitialMount.current = true;
       
       if (focusColorPicker && colorPickerRef.current) {
         setTimeout(() => colorPickerRef.current?.focus(), 100);
       }
     } else {
-        // Reset form when dialog is closed
         resetForm();
     }
-  }, [open, bookmark, categories, focusColorPicker]);
+  }, [open, bookmark, categories, focusColorPicker, isEditMode]);
   
   const formatUrl = (inputUrl: string) => {
     if (!inputUrl) return '';
@@ -101,10 +100,43 @@ export function AddBookmarkDialog({
     return inputUrl;
   };
 
-  const createAndSetBookmark = async (newUrl: string) => {
+ const handleSave = async () => {
+    if (!user || !bookmark) return;
+
+    setSaveStatus('saving');
+    const bookmarkData: Partial<Bookmark> = {
+      title,
+      url: formatUrl(url),
+      description,
+      category,
+      color: color === '#FFFFFF' ? undefined : color,
+    };
+    
+    const payload: { [key: string]: any } = {};
+    Object.keys(bookmarkData).forEach((key) => {
+        const value = bookmarkData[key as keyof typeof bookmarkData];
+        if (value !== undefined) {
+            payload[key] = value;
+        } else {
+            payload[key] = deleteField(); // Safely remove field if undefined
+        }
+    });
+
+    try {
+      await updateBookmark(user.uid, bookmark.id, payload);
+      toast({ title: 'Bookmark updated successfully!' });
+      onOpenChange(false);
+    } catch (e) {
+      console.error("Error updating bookmark:", e);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update bookmark.' });
+    } finally {
+      setSaveStatus('idle');
+    }
+  };
+
+  const createAndSetBookmark = useDebouncedCallback(async (newUrl: string) => {
     if (!user || isEditMode) return;
     
-    console.log('Attempting to create bookmark for URL:', newUrl);
     setSaveStatus('saving');
     const bookmarkData = {
       title: 'New Bookmark',
@@ -115,73 +147,40 @@ export function AddBookmarkDialog({
     
     try {
       const newDocRef = await addBookmark(user.uid, bookmarkData);
-      const newBookmark: Bookmark = { ...bookmarkData, id: newDocRef.id, createdAt: new Date() as any };
-      setCurrentBookmark(newBookmark);
-      setSaveStatus('saved');
-      toast({ title: 'Bookmark created!', description: 'You can now edit the details.'});
+      const newBookmarkData = { ...bookmarkData, id: newDocRef.id, createdAt: new Date() as any };
+      // Manually set form state as we are now in an edit-like mode
+      setTitle(newBookmarkData.title);
+      setUrl(newBookmarkData.url);
+      setCategory(newBookmarkData.category);
+      setDescription('');
+      setColor(undefined);
+
+      // This is now an edit session for the new bookmark
+      onOpenChange(false); // Close current dialog
+      setTimeout(() => {
+          // Re-open with the new bookmark data in edit mode
+          // This feels a bit clunky, but it's a way to transition from create to edit
+          // A better solution would involve a parent component managing this state change.
+          // For now, let's just create it and the user can re-open to edit.
+           toast({ title: 'Bookmark created!', description: 'You can now edit the details.'});
+      }, 100)
+
     } catch (e) {
       console.error("Error creating bookmark:", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to create bookmark.' });
       setSaveStatus('idle');
     }
-  };
-  
-  const debouncedSave = useDebouncedCallback(async (dataToSave) => {
-    if (!user || !isEditMode || !currentBookmark) return;
-    
-    // Create a safe payload by filtering out undefined values
-    const payload: { [key: string]: any } = {};
-    for (const key in dataToSave) {
-        const value = dataToSave[key as keyof typeof dataToSave];
-        if (value !== undefined) {
-            payload[key] = value;
-        }
-    }
-
-    // Only save if there's something to update
-    if (Object.keys(payload).length === 0) {
-        setSaveStatus('idle');
-        return;
-    }
-
-    console.log('Auto-saving bookmark:', currentBookmark.id);
-    setSaveStatus('saving');
-    try {
-        await updateBookmark(user.uid, currentBookmark.id, payload);
-        setSaveStatus('saved');
-    } catch (e) {
-        console.error("Error auto-saving bookmark:", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save bookmark.' });
-        setSaveStatus('idle');
-    }
   }, 1000);
 
+
   useEffect(() => {
-    if (isInitialMount.current && open) {
-        isInitialMount.current = false;
-        return;
+    if (open && !isEditMode) {
+      const formattedUrl = formatUrl(url);
+      if (formattedUrl && url.includes('.')) {
+        createAndSetBookmark(url);
+      }
     }
-    
-    if (open) {
-       if (!isEditMode) {
-            // Logic for creating a new bookmark automatically
-            const formattedUrl = formatUrl(url);
-            if (formattedUrl && url.includes('.')) { // Simple validation for a URL
-                createAndSetBookmark(url);
-            }
-       } else {
-            // Logic for auto-saving an existing bookmark
-            const bookmarkData = {
-                title,
-                url: formatUrl(url),
-                description,
-                category,
-                color: color === '#FFFFFF' ? undefined : color,
-            };
-            debouncedSave(bookmarkData);
-       }
-    }
-  }, [title, url, description, category, color, open]);
+  }, [url, open, isEditMode, createAndSetBookmark]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -190,7 +189,7 @@ export function AddBookmarkDialog({
           <div>
             <DialogTitle>{isEditMode ? 'Edit Bookmark' : 'Add New Bookmark'}</DialogTitle>
             <DialogDescription>
-                {isEditMode ? 'Changes are saved automatically.' : 'Start by entering a URL below.'}
+                {isEditMode ? 'Update the details for your bookmark.' : 'Start by entering a URL below.'}
             </DialogDescription>
           </div>
            {saveStatus === 'saving' && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Saving...</div>}
@@ -199,7 +198,7 @@ export function AddBookmarkDialog({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="url" className="text-right">URL</Label>
-            <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} className="col-span-3" placeholder="https://example.com" />
+            <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} className="col-span-3" placeholder="https://example.com" disabled={isEditMode} />
           </div>
            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">Title</Label>
@@ -238,6 +237,17 @@ export function AddBookmarkDialog({
              </div>
           </div>
         </div>
+        {isEditMode && (
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleSave} disabled={saveStatus === 'saving'}>
+              {saveStatus === 'saving' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
