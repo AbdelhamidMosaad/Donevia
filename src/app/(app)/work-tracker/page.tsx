@@ -13,7 +13,7 @@ import { ActivityForm } from '@/components/work-tracker/activity-form';
 import { ActivityTable } from '@/components/work-tracker/activity-table';
 import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { WorkTrackerSettings } from '@/components/work-tracker/tracker-settings';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
@@ -125,26 +125,34 @@ export default function WorkTrackerPage() {
                 <p className="text-muted-foreground">Log and manage your daily work activities, appointments, and tasks.</p>
             </div>
         </div>
-        <div className="flex items-center gap-2">
-            <WorkTrackerSettings settings={settings} />
-            <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
-              <ToggleGroupItem value="table" aria-label="Table view">
-                <List className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                <Calendar className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
-        </div>
+         <WorkTrackerSettings settings={settings} />
       </div>
 
       <Card>
         <ActivityForm settings={settings} onAddNewItem={handleAddNewSettingItem} />
       </Card>
-
-      <div className="flex-1">
-        {view === 'table' ? <ActivityTable activities={activities} settings={settings} /> : <ActivityCalendar activities={activities} />}
-      </div>
+      
+      <Card className="flex-1 flex flex-col min-h-0">
+          <CardHeader>
+              <div className="flex items-center justify-between">
+                  <div>
+                      <CardTitle>Recorded Activities</CardTitle>
+                      <CardDescription>View your logged activities in a table or calendar format.</CardDescription>
+                  </div>
+                  <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
+                    <ToggleGroupItem value="table" aria-label="Table view">
+                      <List className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="calendar" aria-label="Calendar view">
+                      <Calendar className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+              </div>
+          </CardHeader>
+          <CardContent className="flex-1">
+            {view === 'table' ? <ActivityTable activities={activities} settings={settings} /> : <ActivityCalendar activities={activities} />}
+          </CardContent>
+      </Card>
     </div>
   );
 }
