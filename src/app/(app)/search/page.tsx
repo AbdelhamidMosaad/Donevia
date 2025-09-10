@@ -9,8 +9,7 @@ import { collection, query, where, getDocs, or } from 'firebase/firestore';
 import type { Task, Doc, Client, StickyNote } from '@/lib/types';
 import { Loader2, Search as SearchIcon } from 'lucide-react';
 import Link from 'next/link';
-import { capitalCase } from 'change-case-all';
-
+import { useToast } from '@/hooks/use-toast';
 
 type SearchResult = 
     | { type: 'task', data: Task & { matchField: string } }
@@ -22,6 +21,7 @@ function SearchResultsComponent() {
     const { user, loading: authLoading } = useAuth();
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { toast } = useToast();
     const queryTerm = searchParams.get('q');
 
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -39,81 +39,76 @@ function SearchResultsComponent() {
             setIsLoading(true);
             setResults([]);
             const allResults: SearchResult[] = [];
-            const qLower = queryTerm.toLowerCase();
-            const qCapital = capitalCase(queryTerm);
+            const resultIds = new Set<string>(); // To prevent duplicates
             
             try {
-                // To do a case-insensitive search, we query for both lowercase and capitalized versions.
-                // Firestore doesn't support true case-insensitive queries natively.
-                const searchTerms = Array.from(new Set([qLower, qCapital]));
+                const searchTerms = Array.from(new Set([queryTerm.toLowerCase(), queryTerm.toUpperCase(), queryTerm]));
 
-                // Tasks: Search title and description
-                const tasksRef = collection(db, 'users', user.uid, 'tasks');
                 for (const term of searchTerms) {
-                    const tasksTitleQuery = query(tasksRef, where('title', '>=', term), where('title', '<=', term + '\uf8ff'));
-                    const tasksDescQuery = query(tasksRef, where('description', '>=', term), where('description', '<=', term + '\uf8ff'));
-                    const [tasksTitleSnap, tasksDescSnap] = await Promise.all([getDocs(tasksTitleQuery), getDocs(tasksDescQuery)]);
+                    const endTerm = term + '\uf8ff';
+
+                    // Tasks: Search title and description
+                    const tasksRef = collection(db, 'users', user.uid, 'tasks');
+                    const tasksTitleQuery = query(tasksRef, where('title', '>=', term), where('title', '<=', endTerm));
+                    const tasksDescQuery = query(tasksRef, where('description', '>=', term), where('description', '<=', endTerm));
+                    
+                    const [tasksTitleSnap, tasksDescSnap] = await Promise.all([
+                        getDocs(tasksTitleQuery),
+                        getDocs(tasksDescQuery),
+                    ]);
 
                     tasksTitleSnap.forEach(doc => {
-                        if (!allResults.some(r => r.data.id === doc.id)) {
+                        if (!resultIds.has(doc.id)) {
                             allResults.push({ type: 'task', data: { id: doc.id, ...doc.data(), matchField: 'title' } as Task & { matchField: string }});
+                            resultIds.add(doc.id);
                         }
                     });
                      tasksDescSnap.forEach(doc => {
-                        if (!allResults.some(r => r.data.id === doc.id)) {
+                        if (!resultIds.has(doc.id)) {
                            allResults.push({ type: 'task', data: { id: doc.id, ...doc.data(), matchField: 'description' } as Task & { matchField: string }});
+                           resultIds.add(doc.id);
                         }
                     });
-                }
                 
-                // Docs: Search title
-                const docsRef = collection(db, 'users', user.uid, 'docs');
-                 for (const term of searchTerms) {
-                    const docsQuery = query(docsRef, where('title', '>=', term), where('title', '<=', term + '\uf8ff'));
+                    // Docs: Search title
+                    const docsRef = collection(db, 'users', user.uid, 'docs');
+                    const docsQuery = query(docsRef, where('title', '>=', term), where('title', '<=', endTerm));
                     const docsSnap = await getDocs(docsQuery);
                     docsSnap.forEach(doc => {
-                        if (!allResults.some(r => r.data.id === doc.id)) {
+                        if (!resultIds.has(doc.id)) {
                             allResults.push({ type: 'doc', data: { id: doc.id, ...doc.data(), matchField: 'title' } as Doc & { matchField: string }});
+                            resultIds.add(doc.id);
                         }
                     });
+
+                    // Clients: Search name, company, email
+                    const clientsRef = collection(db, 'users', user.uid, 'clients');
+                    const clientNameQuery = query(clientsRef, where('name', '>=', term), where('name', '<=', endTerm));
+                    const clientCompanyQuery = query(clientsRef, where('company', '>=', term), where('company', '<=', endTerm));
+                    const clientEmailQuery = query(clientsRef, where('email', '>=', term), where('email', '<=', endTerm));
+                    
+                    const [clientNameSnap, clientCompanySnap, clientEmailSnap] = await Promise.all([
+                        getDocs(clientNameQuery),
+                        getDocs(clientCompanyQuery),
+                        getDocs(clientEmailQuery),
+                    ]);
+                    
+                    clientNameSnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'client', data: { id: doc.id, ...doc.data(), matchField: 'name' } as Client & { matchField: string }}); }});
+                    clientCompanySnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'client', data: { id: doc.id, ...doc.data(), matchField: 'company' } as Client & { matchField: string }}); }});
+                    clientEmailSnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'client', data: { id: doc.id, ...doc.data(), matchField: 'email' } as Client & { matchField: string }}); }});
+
+                    // Sticky Notes: Search title and text
+                    const notesRef = collection(db, 'users', user.uid, 'stickyNotes');
+                    const notesTitleQuery = query(notesRef, where('title', '>=', term), where('title', '<=', endTerm));
+                    const notesTextQuery = query(notesRef, where('text', '>=', term), where('text', '<=', endTerm));
+                    const [notesTitleSnap, notesTextSnap] = await Promise.all([
+                        getDocs(notesTitleQuery),
+                        getDocs(notesTextQuery),
+                    ]);
+
+                    notesTitleSnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'note', data: { id: doc.id, ...doc.data(), matchField: 'title' } as StickyNote & { matchField: string }}); }});
+                    notesTextSnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'note', data: { id: doc.id, ...doc.data(), matchField: 'text' } as StickyNote & { matchField: string }}); }});
                 }
-
-                // Clients: Search name, company, email
-                 const clientsRef = collection(db, 'users', user.uid, 'clients');
-                 for (const term of searchTerms) {
-                    const clientsQuery = query(clientsRef, or(
-                        where('name', '>=', term),
-                        where('name', '<=', term + '\uf8ff'),
-                        where('company', '>=', term),
-                        where('company', '<=', term + '\uf8ff'),
-                        where('email', '>=', term),
-                        where('email', '<=', term + '\uf8ff')
-                    ));
-                     const clientsSnap = await getDocs(clientsQuery);
-                     clientsSnap.forEach(doc => {
-                         if (!allResults.some(r => r.data.id === doc.id)) {
-                            allResults.push({ type: 'client', data: { id: doc.id, ...doc.data(), matchField: 'details' } as Client & { matchField: string }});
-                         }
-                    });
-                 }
-
-                // Sticky Notes: Search title and text
-                 const notesRef = collection(db, 'users', user.uid, 'stickyNotes');
-                 for (const term of searchTerms) {
-                    const notesQuery = query(notesRef, or(
-                       where('title', '>=', term),
-                       where('title', '<=', term + '\uf8ff'),
-                       where('text', '>=', term),
-                       where('text', '<=', term + '\uf8ff')
-                    ));
-                    const notesSnap = await getDocs(notesQuery);
-                    notesSnap.forEach(doc => {
-                        if (!allResults.some(r => r.data.id === doc.id)) {
-                           allResults.push({ type: 'note', data: { id: doc.id, ...doc.data(), matchField: 'content' } as StickyNote & { matchField: string }});
-                        }
-                    });
-                 }
-
 
                 setResults(allResults);
 
@@ -126,7 +121,7 @@ function SearchResultsComponent() {
         };
 
         performSearch();
-    }, [queryTerm, user, authLoading, router]);
+    }, [queryTerm, user, authLoading, router, toast]);
 
     const getResultLink = (result: SearchResult) => {
         switch (result.type) {
@@ -177,7 +172,7 @@ function SearchResultsComponent() {
                         <li key={`${result.type}-${result.data.id}-${index}`}>
                             <Link href={getResultLink(result)} className="block p-4 border rounded-lg hover:bg-muted transition-colors">
                                 <div className="flex items-center justify-between">
-                                    <p className="font-semibold text-primary">{result.data.title}</p>
+                                    <p className="font-semibold text-primary">{result.data.title || (result.data as Client).name}</p>
                                     <span className="text-xs font-mono uppercase text-muted-foreground bg-secondary px-2 py-1 rounded-full">{result.type}</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1 truncate">{getResultDescription(result)}</p>
