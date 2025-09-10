@@ -129,10 +129,25 @@ export function AddBookmarkDialog({
   const debouncedSave = useDebouncedCallback(async (dataToSave) => {
     if (!user || !isEditMode || !currentBookmark) return;
     
+    // Create a safe payload by filtering out undefined values
+    const payload: { [key: string]: any } = {};
+    for (const key in dataToSave) {
+        const value = dataToSave[key as keyof typeof dataToSave];
+        if (value !== undefined) {
+            payload[key] = value;
+        }
+    }
+
+    // Only save if there's something to update
+    if (Object.keys(payload).length === 0) {
+        setSaveStatus('idle');
+        return;
+    }
+
     console.log('Auto-saving bookmark:', currentBookmark.id);
     setSaveStatus('saving');
     try {
-        await updateBookmark(user.uid, currentBookmark.id, dataToSave);
+        await updateBookmark(user.uid, currentBookmark.id, payload);
         setSaveStatus('saved');
     } catch (e) {
         console.error("Error auto-saving bookmark:", e);
@@ -156,12 +171,12 @@ export function AddBookmarkDialog({
             }
        } else {
             // Logic for auto-saving an existing bookmark
-            const bookmarkData: Partial<Bookmark> = {
+            const bookmarkData = {
                 title,
                 url: formatUrl(url),
                 description,
                 category,
-                color: color === '#FFFFFF' ? deleteField() as any : color,
+                color: color === '#FFFFFF' ? undefined : color,
             };
             debouncedSave(bookmarkData);
        }
