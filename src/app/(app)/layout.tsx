@@ -55,7 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <PlannerReminderProvider>
             <PomodoroProvider>
             <SidebarProvider defaultOpen={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
-            <AppSidebar variant={settings?.sidebarVariant} />
+            <AppSidebar />
             <SidebarInset>
                 <div className="flex flex-col h-screen">
                 <AppHeader />

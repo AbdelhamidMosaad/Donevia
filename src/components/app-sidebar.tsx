@@ -69,36 +69,27 @@ const defaultMenuItems = [
     { href: '/pomodoro', icon: <Timer className="text-rose-500" />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
 ];
 
-export function AppSidebar({ variant }: { variant?: UserSettings['sidebarVariant'] }) {
+export function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const [menuItems, setMenuItems] = React.useState(defaultMenuItems);
 
   React.useEffect(() => {
     if (user) {
-        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-        const unsubscribe = onSnapshot(settingsRef, (doc) => {
-            if (doc.exists()) {
-                const settings = doc.data() as UserSettings;
-                if (settings.sidebarOrder && settings.sidebarOrder.length > 0) {
-                    const orderedItems = settings.sidebarOrder.map(id => 
-                        defaultMenuItems.find(item => item.id === id)
-                    ).filter(Boolean) as typeof defaultMenuItems;
-                    
-                    const newItems = defaultMenuItems.filter(defaultItem => 
-                        !orderedItems.some(orderedItem => orderedItem.id === defaultItem.id)
-                    );
-                    setMenuItems([...orderedItems, ...newItems]);
-                } else {
-                     setMenuItems(defaultMenuItems);
-                }
-            } else {
-                setMenuItems(defaultMenuItems);
-            }
-        });
-        return () => unsubscribe();
+        if (settings.sidebarOrder && settings.sidebarOrder.length > 0) {
+            const orderedItems = settings.sidebarOrder.map(id => 
+                defaultMenuItems.find(item => item.id === id)
+            ).filter(Boolean) as typeof defaultMenuItems;
+            
+            const newItems = defaultMenuItems.filter(defaultItem => 
+                !orderedItems.some(orderedItem => orderedItem.id === defaultItem.id)
+            );
+            setMenuItems([...orderedItems, ...newItems]);
+        } else {
+             setMenuItems(defaultMenuItems);
+        }
     }
-  }, [user]);
+  }, [user, settings.sidebarOrder]);
 
   const isActive = (href?: string) => {
     if (!href) return false;
@@ -135,7 +126,7 @@ export function AppSidebar({ variant }: { variant?: UserSettings['sidebarVariant
   }
 
   return (
-    <Sidebar collapsible="icon" variant={variant}>
+    <Sidebar collapsible="icon" variant={settings?.sidebarVariant}>
       <SidebarRail />
       <SidebarHeader className="p-3 justify-center">
         {/* SidebarTrigger (if needed) can go here */}
