@@ -13,18 +13,29 @@ interface PlannerReminderContextType {}
 
 const PlannerReminderContext = createContext<PlannerReminderContextType | undefined>(undefined);
 
-export function usePlannerReminders() {
+// A hook to be used by the Planner page to trigger checks
+export function useEventReminders(events: PlannerEvent[]) {
     const context = useContext(PlannerReminderContext);
     if (!context) {
-        throw new Error('usePlannerReminders must be used within a PlannerReminderProvider');
+        throw new Error('useEventReminders must be used within a PlannerReminderProvider');
     }
-    return context;
+    
+    // The actual logic is now inside the provider, so this hook just signals usage
+    // and passes the events to the provider's checking mechanism.
+    const { checkReminders } = context as { checkReminders: (events: PlannerEvent[]) => void };
+    useEffect(() => {
+        const intervalId = setInterval(() => checkReminders(events), 60000); // Check every minute
+        checkReminders(events); // Initial check
+        return () => clearInterval(intervalId);
+    }, [events, checkReminders]);
 }
+
 
 export function PlannerReminderProvider({ children }: { children: ReactNode }) {
     const { toast } = useToast();
     const { user } = useAuth();
     const [settings, setSettings] = useState<Partial<UserSettings>>({ notificationSound: true });
+    const remindedEvents = useRef(new Set<string>());
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
      useEffect(() => {
@@ -62,10 +73,9 @@ export function PlannerReminderProvider({ children }: { children: ReactNode }) {
     };
     
     const checkReminders = useCallback((events: PlannerEvent[]) => {
-        const remindedEvents = new Set<string>();
         const now = moment();
         events.forEach(event => {
-            if (!event.reminder || event.reminder === 'none' || remindedEvents.has(event.id)) {
+            if (!event.reminder || event.reminder === 'none' || remindedEvents.current.has(event.id)) {
                 return;
             }
 
@@ -80,7 +90,7 @@ export function PlannerReminderProvider({ children }: { children: ReactNode }) {
                 case '1d': reminderTime = startTime.clone().subtract(1, 'day'); break;
             }
 
-            if (reminderTime && now.isAfter(reminderTime) && now.isBefore(startTime)) {
+            if (reminderTime && now.isSame(reminderTime, 'minute')) { // Check if it's the exact minute
                 if (settings.notificationSound) {
                     audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
                 }
@@ -89,10 +99,13 @@ export function PlannerReminderProvider({ children }: { children: ReactNode }) {
                     title: `Reminder: ${event.title}`,
                     description: `Starts in ${startTime.fromNow(true)}.`,
                 });
-                remindedEvents.add(event.id);
+                remindedEvents.current.add(event.id);
+                 // The reminder for this specific event time has fired.
+                // A more complex system would handle recurring events by calculating the next reminder time.
+                // For simplicity, we just mark this one as done.
             }
         });
-    }, [settings.notificationSound, toast, showBrowserNotification]);
+    }, [settings.notificationSound, toast]);
 
 
     const value = {
@@ -106,12 +119,11 @@ export function PlannerReminderProvider({ children }: { children: ReactNode }) {
     );
 }
 
-// A hook to use inside the component that has the events
-export const useEventReminders = (events: PlannerEvent[]) => {
-    const { checkReminders } = usePlannerReminders();
-    useEffect(() => {
-        const intervalId = setInterval(() => checkReminders(events), 60000); // Check every minute
-        checkReminders(events); // Initial check
-        return () => clearInterval(intervalId);
-    }, [events, checkReminders]);
-};
+// A simple hook to get the context - no logic here
+export function usePlannerReminders() {
+    const context = useContext(PlannerReminderContext);
+    if (!context) {
+        throw new Error('usePlannerReminders must be used within a PlannerReminderProvider');
+    }
+    return context;
+}

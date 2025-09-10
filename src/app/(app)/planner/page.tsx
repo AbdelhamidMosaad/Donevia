@@ -34,16 +34,19 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
         <h2 className="text-xl font-headline">{label()}</h2>
       </div>
        <div className="hidden md:flex items-center gap-2">
-        {(['month', 'week', 'day', 'agenda'] as const).map(view => (
-          <Button
-            key={view}
-            variant={toolbar.view === view ? 'secondary' : 'ghost'}
-            onClick={() => toolbar.onView(view)}
-            className="capitalize"
-          >
-            {view}
-          </Button>
-        ))}
+        {(Object.keys(Views) as Array<keyof typeof Views>).map((key) => {
+            const view = Views[key];
+            return (
+                <Button
+                    key={view}
+                    variant={toolbar.view === view ? 'secondary' : 'ghost'}
+                    onClick={() => toolbar.onView(view)}
+                    className="capitalize"
+                >
+                    {view}
+                </Button>
+            );
+        })}
       </div>
     </div>
   );
@@ -58,9 +61,10 @@ export default function PlannerPage() {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Partial<PlannerEvent> | null>(null);
+  const [currentView, setCurrentView] = useState<any>(Views.MONTH);
 
   // Initialize reminder hook
-  usePlannerReminders(events);
+  useEventReminders(events);
 
 
   const expandedEvents = useMemo(() => {
@@ -181,6 +185,8 @@ export default function PlannerPage() {
                 onEventDrop={handleEventDrop}
                 eventPropGetter={eventStyleGetter}
                 components={{ toolbar: CustomToolbar }}
+                view={currentView}
+                onView={(view) => setCurrentView(view)}
             />
         </div>
 
