@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { WelcomeScreen } from '@/components/welcome-screen';
 import { TaskReminderProvider } from '@/hooks/use-task-reminders';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { PomodoroProvider } from '@/hooks/use-pomodoro';
 import { StudyReminderProvider } from '@/hooks/use-study-reminders';

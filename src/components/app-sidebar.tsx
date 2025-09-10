@@ -126,10 +126,11 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" variant={settings?.sidebarVariant}>
+    <Sidebar variant={settings?.sidebarVariant}>
       <SidebarRail />
-      <SidebarHeader className="p-3 justify-center">
-        {/* SidebarTrigger (if needed) can go here */}
+      <SidebarHeader>
+        <DoneviaLogo className="size-6 shrink-0" />
+        <span className="text-lg font-semibold font-headline">Donevia</span>
       </SidebarHeader>
       <SidebarContent>
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -144,14 +145,14 @@ export function AppSidebar() {
                                         <SidebarMenuButton
                                             asChild
                                             isActive={isActive(item.href)}
-                                            tooltip={{ children: item.tooltip }}
+                                            tooltip={item.tooltip}
                                         >
                                             <Link href={item.href || '#'} className="flex items-center w-full">
-                                                <div {...provided.dragHandleProps} className="group-data-[collapsible=icon]:hidden mr-2 p-1">
+                                                <div {...provided.dragHandleProps} className="p-1">
                                                     <GripVertical className="h-4 w-4 text-muted-foreground"/>
                                                 </div>
                                                 {item.icon}
-                                                <span className="group-data-[collapsible=icon]:hidden flex-1">{item.label}</span>
+                                                <span className="flex-1">{item.label}</span>
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
@@ -169,17 +170,17 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SettingsDialog>
-              <SidebarMenuButton tooltip={{ children: 'Settings' }}>
+              <SidebarMenuButton tooltip="Settings">
                 <Settings />
-                <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                <span>Settings</span>
               </SidebarMenuButton>
             </SettingsDialog>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={{ children: 'Help' }}>
+            <SidebarMenuButton asChild tooltip="Help">
               <Link href="/help">
                 <HelpCircle />
-                <span className="group-data-[collapsible=icon]:hidden">Help</span>
+                <span>Help</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
