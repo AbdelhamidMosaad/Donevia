@@ -397,7 +397,7 @@ const SidebarContent = React.forwardRef<
       data-sidebar="content"
       className={cn(
         "flex min-h-0 flex-1 flex-col",
-        !open && "justify-center",
+        !open && "items-center justify-center",
         className
       )}
     >
@@ -561,7 +561,7 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), !open && "justify-center p-0 w-full", className)}
+        className={cn(sidebarMenuButtonVariants({ variant, size }), !open && "w-full justify-center p-0", className)}
         {...props}
       >
         {buttonContent}
