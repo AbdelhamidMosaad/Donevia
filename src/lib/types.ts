@@ -230,6 +230,7 @@ export interface UserSettings {
     taskListsView?: 'card' | 'list';
     docsView?: 'card' | 'list';
     notesView?: 'board' | 'canvas';
+    meetingNotesView?: 'card' | 'list';
     studyTrackerView?: 'card' | 'list';
     listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
     tableColumns?: { [listId: string]: string[] };

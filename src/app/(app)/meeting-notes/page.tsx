@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ClipboardSignature } from 'lucide-react';
+import { PlusCircle, ClipboardSignature, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { MeetingNote } from '@/lib/types';
@@ -11,15 +11,20 @@ import {
   collection,
   onSnapshot,
   query,
-  addDoc,
-  Timestamp,
   orderBy,
+  doc,
+  getDoc,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { MeetingNoteCard } from '@/components/meeting-notes/meeting-note-card';
 import { deleteMeetingNote } from '@/lib/meeting-notes';
 import { NewMeetingNoteDialog } from '@/components/meeting-notes/new-meeting-note-dialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { MeetingNoteCardView } from '@/components/meeting-notes/meeting-note-card-view';
+import { MeetingNoteListView } from '@/components/meeting-notes/meeting-note-list-view';
+
+type View = 'card' | 'list';
 
 export default function MeetingNotesDashboardPage() {
   const { user, loading } = useAuth();
@@ -27,12 +32,25 @@ export default function MeetingNotesDashboardPage() {
   const { toast } = useToast();
   const [meetingNotes, setMeetingNotes] = useState<MeetingNote[]>([]);
   const [isNewNoteDialogOpen, setIsNewNoteDialogOpen] = useState(false);
+  const [view, setView] = useState<View>('card');
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
     }
   }, [user, loading, router]);
+  
+  useEffect(() => {
+    if (user) {
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      getDoc(settingsRef).then(docSnap => {
+        if (docSnap.exists() && docSnap.data().meetingNotesView) {
+          setView(docSnap.data().meetingNotesView);
+        }
+      });
+    }
+  }, [user]);
+
 
   useEffect(() => {
     if (user) {
@@ -49,6 +67,16 @@ export default function MeetingNotesDashboardPage() {
       return () => unsubscribe();
     }
   }, [user]);
+  
+  const handleViewChange = (newView: View) => {
+    if (newView) {
+        setView(newView);
+        if (user) {
+            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+            setDoc(settingsRef, { meetingNotesView: newView }, { merge: true });
+        }
+    }
+  }
 
   const handleDeleteNote = async (noteId: string) => {
     if (!user) return;
@@ -77,32 +105,29 @@ export default function MeetingNotesDashboardPage() {
           <p className="text-muted-foreground">Capture and organize your meeting minutes.</p>
         </div>
         <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="View toggle">
+              <ToggleGroupItem value="card" aria-label="Card view">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
           <Button onClick={() => setIsNewNoteDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New Meeting Note
           </Button>
         </div>
       </div>
+      
+      <div className="flex-1">
+        {view === 'card' ? (
+          <MeetingNoteCardView notes={meetingNotes} onDelete={handleDeleteNote} />
+        ) : (
+          <MeetingNoteListView notes={meetingNotes} onDelete={handleDeleteNote} />
+        )}
+      </div>
 
-      {meetingNotes.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
-          <ClipboardSignature className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-semibold font-headline">No Meeting Notes Yet</h3>
-          <p className="text-muted-foreground">
-            Click "New Meeting Note" to create your first one.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {meetingNotes.map((note) => (
-            <MeetingNoteCard
-              key={note.id}
-              note={note}
-              onDelete={() => handleDeleteNote(note.id)}
-            />
-          ))}
-        </div>
-      )}
       <NewMeetingNoteDialog open={isNewNoteDialogOpen} onOpenChange={setIsNewNoteDialogOpen} />
     </div>
   );
