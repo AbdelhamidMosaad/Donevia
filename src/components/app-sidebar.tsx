@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarRail,
-  SidebarSeparator,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import {
   FileText,
@@ -25,17 +25,12 @@ import {
   Timer,
   Target,
   Repeat,
-  BarChart3,
-  Sparkles,
   GripVertical,
   GraduationCap,
   Bookmark,
   Briefcase,
   BrainCircuit,
-  Users,
-  BookOpen,
   Layers,
-  Globe,
   ClipboardSignature,
   CalendarDays,
 } from 'lucide-react';
@@ -43,11 +38,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SettingsDialog } from './settings-dialog';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { UserSettings } from '@/lib/types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { DoneviaLogo } from './logo';
+import { cn } from '@/lib/utils';
 
 const defaultMenuItems = [
     { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
@@ -73,6 +68,7 @@ const defaultMenuItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, settings } = useAuth();
+  const { open } = useSidebar();
   const [menuItems, setMenuItems] = React.useState(defaultMenuItems);
 
   React.useEffect(() => {
@@ -95,7 +91,7 @@ export function AppSidebar() {
   const isActive = (href?: string) => {
     if (!href) return false;
     if (href === '/dashboard') {
-      return pathname === '/dashboard' || pathname.startsWith('/dashboard/list');
+      return pathname === '/dashboard' || pathname.startsWith('/dashboard/lists');
     }
      if (href === '/crm') {
       return pathname === '/crm' || pathname.startsWith('/crm/');
@@ -131,7 +127,7 @@ export function AppSidebar() {
       <SidebarRail />
       <SidebarHeader>
         <DoneviaLogo className="size-6 shrink-0" />
-        <span className="text-lg font-semibold font-headline">Donevia</span>
+        <span className={cn("text-lg font-semibold font-headline", !open && "hidden")}>Donevia</span>
       </SidebarHeader>
       <SidebarContent>
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -149,11 +145,11 @@ export function AppSidebar() {
                                             tooltip={item.tooltip}
                                         >
                                             <Link href={item.href || '#'} className="flex items-center w-full">
-                                                <div {...provided.dragHandleProps} className="p-1">
+                                                {open && <div {...provided.dragHandleProps} className="p-1">
                                                     <GripVertical className="h-4 w-4 text-muted-foreground"/>
-                                                </div>
+                                                </div>}
                                                 {item.icon}
-                                                <span className="flex-1">{item.label}</span>
+                                                {open && <span className="flex-1">{item.label}</span>}
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
@@ -173,7 +169,7 @@ export function AppSidebar() {
             <SettingsDialog>
               <SidebarMenuButton tooltip="Settings">
                 <Settings />
-                <span>Settings</span>
+                {open && <span>Settings</span>}
               </SidebarMenuButton>
             </SettingsDialog>
           </SidebarMenuItem>
@@ -181,7 +177,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild tooltip="Help">
               <Link href="/help">
                 <HelpCircle />
-                <span>Help</span>
+                {open && <span>Help</span>}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
