@@ -191,7 +191,7 @@ const Sidebar = React.forwardRef<
           >
              <SheetHeader className="p-4 border-b">
                 <div className="flex items-center gap-2">
-                    <DoneviaLogo className="h-6 w-6" />
+                    
                     <SheetTitle>Donevia</SheetTitle>
                 </div>
                 <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
@@ -400,7 +400,7 @@ const SidebarContent = React.forwardRef<
         className
       )}
     >
-        <div className={cn("p-2", !open && "px-2")} {...props} />
+        <div className={cn("p-2", !open && "px-0")} {...props} />
     </ScrollArea>
   )
 })
