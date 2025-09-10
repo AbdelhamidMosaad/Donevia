@@ -153,12 +153,25 @@ const SidebarProvider = React.forwardRef<
 )
 SidebarProvider.displayName = "SidebarProvider"
 
+const sidebarVariants = cva("group peer hidden md:block", {
+  variants: {
+    variant: {
+      sidebar: "",
+    },
+    side: {
+      left: "",
+      right: "",
+    },
+  },
+  defaultVariants: {
+    variant: "sidebar",
+    side: "left",
+  },
+})
+
 const Sidebar = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    side?: "left" | "right"
-    variant?: "sidebar"
-  }
+  React.ComponentProps<"div"> & VariantProps<typeof sidebarVariants>
 >(
   (
     {
@@ -205,8 +218,8 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground"
-        data-state={open ? 'open' : 'closed'}
+        className={cn(sidebarVariants({ variant, side }), className)}
+        data-state={open ? "open" : "closed"}
         data-variant={variant}
         data-side={side}
       >
@@ -215,14 +228,15 @@ const Sidebar = React.forwardRef<
           aria-hidden="true"
           className={cn(
             "duration-200 relative h-svh bg-transparent transition-[width] ease-linear",
-             open ? "w-[--sidebar-width]" : "w-0",
-            "group-data-[side=right]:hidden",
+            variant === "sidebar" && open ? "w-[--sidebar-width]" : "w-0",
+            "group-data-[side=right]:hidden"
           )}
         />
         <div
           className={cn(
             "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right] ease-linear md:flex",
-            "left-[calc(var(--sidebar-width)*-1)] group-data-[state=open]:left-0",
+            variant === "sidebar" &&
+              "left-[calc(var(--sidebar-width)*-1)] group-data-[state=open]:left-0",
             "group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
