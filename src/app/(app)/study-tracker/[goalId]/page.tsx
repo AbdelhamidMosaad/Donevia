@@ -4,23 +4,23 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
-import { doc, onSnapshot, collection, query, where, orderBy, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Lightbulb, BookOpen, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { AddStudyChapterDialog } from '@/components/study-tracker/add-study-chapter-dialog';
 import { StudyChapterItem } from '@/components/study-tracker/study-chapter-item';
-import { useDebouncedCallback } from 'use-debounce';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { logStudySession } from '@/lib/study-tracker';
 import moment from 'moment';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/use-window-size';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 export default function StudyGoalDetailPage() {
@@ -309,41 +309,8 @@ export default function StudyGoalDetailPage() {
             <Button variant="outline" onClick={() => setIsEditGoalOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit Goal</Button>
         </div>
       </div>
-
-       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle>Progress Track</CardTitle>
-                <CardDescription>{subtopics.filter(s => s.isCompleted).length} of {subtopics.length} subtopics completed</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="relative h-10">
-                    <div className="absolute bottom-2 left-0 right-0 h-2 bg-red-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-400" style={{ width: `${progressPercentage}%` }}></div>
-                    </div>
-                    <div className="absolute top-0 transition-all duration-500 ease-out" style={{ left: `calc(${flagPosition} - 12px)` }}>
-                        <Flag className="h-6 w-6 text-primary" />
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-        <Card>
-             <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                    <span>Total Time Studied</span>
-                    <span className="text-2xl font-mono font-bold">{formatTime(totalTimeSpent)}</span>
-                </CardTitle>
-                <CardDescription>Aggregate study time for this goal.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <div className="text-center text-muted-foreground italic text-sm">
-                    {activeTimer ? `Timer running for subtopic... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a subtopic to track your time."}
-                 </div>
-            </CardContent>
-        </Card>
-      </div>
-
-      {adaptivePlan && (
+      
+       {adaptivePlan && (
         <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
             <CardContent className="p-4 flex items-center gap-4">
                 <Lightbulb className="h-6 w-6 text-blue-500" />
@@ -352,46 +319,88 @@ export default function StudyGoalDetailPage() {
         </Card>
       )}
 
-
-        <Card className="flex flex-col flex-1 min-h-0">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                  <CardTitle>Content Breakdown</CardTitle>
-                  <CardDescription>Organize your study material into chapters and subtopics.</CardDescription>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => setIsAddChapterOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Chapter</Button>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto">
-                {chapters.length > 0 ? (
-                    <DragDropContext onDragEnd={onDragEnd}>
-                        <Droppable droppableId="chapters-droppable" type="chapter">
-                           {(provided) => (
-                             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-                                {chapters.map((chapter, index) => (
-                                     <Draggable key={chapter.id} draggableId={chapter.id} index={index}>
-                                        {(provided) => (
-                                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                                <StudyChapterItem 
-                                                    chapter={chapter} 
-                                                    subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
-                                                    chaptersCount={chapters.length}
-                                                    activeTimer={activeTimer}
-                                                    onToggleTimer={handleToggleTimer}
-                                                />
-                                            </div>
-                                        )}
-                                     </Draggable>
-                                ))}
-                                {provided.placeholder}
+       <Tabs defaultValue="plan" className="flex-1 flex flex-col min-h-0">
+        <TabsList>
+          <TabsTrigger value="plan"><BookOpen className="mr-2 h-4 w-4" /> Study Plan</TabsTrigger>
+          <TabsTrigger value="overview"><BarChart3 className="mr-2 h-4 w-4" /> Progress Overview</TabsTrigger>
+        </TabsList>
+        <TabsContent value="plan" className="flex-1 mt-4">
+            <Card className="flex flex-col flex-1 min-h-0">
+                <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Content Breakdown</CardTitle>
+                    <CardDescription>Organize your study material into chapters and subtopics.</CardDescription>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setIsAddChapterOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Chapter</Button>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto">
+                    {chapters.length > 0 ? (
+                        <DragDropContext onDragEnd={onDragEnd}>
+                            <Droppable droppableId="chapters-droppable" type="chapter">
+                            {(provided) => (
+                                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                                    {chapters.map((chapter, index) => (
+                                        <Draggable key={chapter.id} draggableId={chapter.id} index={index}>
+                                            {(provided) => (
+                                                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                                    <StudyChapterItem 
+                                                        chapter={chapter} 
+                                                        subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
+                                                        chaptersCount={chapters.length}
+                                                        activeTimer={activeTimer}
+                                                        onToggleTimer={handleToggleTimer}
+                                                    />
+                                                </div>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                </div>
+                            )}
+                            </Droppable>
+                        </DragDropContext>
+                    ) : (
+                        <p className="text-center text-muted-foreground py-8">No chapters yet. Add one to get started!</p>
+                    )}
+                </CardContent>
+            </Card>
+        </TabsContent>
+         <TabsContent value="overview" className="flex-1 mt-4">
+           <div className="grid md:grid-cols-2 gap-6">
+                <Card className="md:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Progress Track</CardTitle>
+                        <CardDescription>{subtopics.filter(s => s.isCompleted).length} of {subtopics.length} subtopics completed</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="relative h-10">
+                            <div className="absolute bottom-2 left-0 right-0 h-2 bg-red-200 rounded-full overflow-hidden">
+                                <div className="h-full bg-green-400" style={{ width: `${progressPercentage}%` }}></div>
                             </div>
-                           )}
-                        </Droppable>
-                    </DragDropContext>
-                ) : (
-                    <p className="text-center text-muted-foreground py-8">No chapters yet. Add one to get started!</p>
-                )}
-            </CardContent>
-        </Card>
+                            <div className="absolute top-0 transition-all duration-500 ease-out" style={{ left: `calc(${flagPosition} - 12px)` }}>
+                                <Flag className="h-6 w-6 text-primary" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <span>Total Time Studied</span>
+                            <span className="text-2xl font-mono font-bold">{formatTime(totalTimeSpent)}</span>
+                        </CardTitle>
+                        <CardDescription>Aggregate study time for this goal.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-center text-muted-foreground italic text-sm">
+                            {activeTimer ? `Timer running for subtopic... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a subtopic to track your time."}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </TabsContent>
+      </Tabs>
+
 
        <AddStudyGoalDialog goal={goal} open={isEditGoalOpen} onOpenChange={setIsEditGoalOpen} />
        <AddStudyChapterDialog goalId={goalId} open={isAddChapterOpen} onOpenChange={setIsAddChapterOpen} chaptersCount={chapters.length}/>
