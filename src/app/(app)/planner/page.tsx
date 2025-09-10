@@ -19,6 +19,8 @@ import { useEventReminders } from '@/hooks/use-planner-reminders';
 
 const localizer = momentLocalizer(moment);
 
+const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA];
+
 const CustomToolbar = (toolbar: ToolbarProps) => {
   const goToBack = () => toolbar.onNavigate('PREV');
   const goToNext = () => toolbar.onNavigate('NEXT');
@@ -34,7 +36,7 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
         <h2 className="text-xl font-headline">{label()}</h2>
       </div>
        <div className="hidden md:flex items-center gap-2">
-        {(Object.values(Views) as (typeof Views[keyof typeof Views])[]).map((view) => {
+        {standardViews.map((view) => {
             return (
                 <Button
                     key={view}
