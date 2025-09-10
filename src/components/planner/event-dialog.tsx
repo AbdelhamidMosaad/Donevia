@@ -65,7 +65,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
         toast({ variant: 'destructive', title: "Title is required" });
         return;
     }
-    const eventData = { ...formData };
+    const eventData = { ...formData, taskId: formData.taskId || null };
 
     try {
         if(eventData.id) {
@@ -166,10 +166,10 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
           </div>
            <div>
             <Label>Link to Task</Label>
-            <Select value={formData.taskId} onValueChange={(value) => handleChange('taskId', value)}>
+            <Select value={formData.taskId} onValueChange={(value) => handleChange('taskId', value === 'none' ? undefined : value)}>
                 <SelectTrigger><SelectValue placeholder="Select a task to link" /></SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {tasks.map(task => (
                         <SelectItem key={task.id} value={task.id}>
                            {task.title}
