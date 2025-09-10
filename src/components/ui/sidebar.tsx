@@ -214,8 +214,8 @@ const Sidebar = React.forwardRef<
         <div
           aria-hidden="true"
           className={cn(
-            "duration-200 relative h-svh w-0 bg-transparent transition-[width] ease-linear",
-            "group-data-[state=open]:w-[--sidebar-width]",
+            "duration-200 relative h-svh bg-transparent transition-[width] ease-linear",
+             open ? "w-[--sidebar-width]" : "w-0",
             "group-data-[side=right]:hidden",
           )}
         />
@@ -299,13 +299,14 @@ const SidebarInset = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"main">
 >(({ className, ...props }, ref) => {
+  const { open } = useSidebar();
   return (
     <main
       ref={ref}
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background",
-        "md:peer-data-[state=open]:ml-[--sidebar-width]",
         "transition-[margin-left] duration-200 ease-linear",
+        open ? "md:ml-[--sidebar-width]" : "md:ml-0",
         className
       )}
       {...props}
