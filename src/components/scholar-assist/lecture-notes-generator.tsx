@@ -8,14 +8,19 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyMaterialRequest, StudyMaterialResponse } from '@/ai/flows/learning-tool-flow';
 import { Button } from '../ui/button';
-import { Loader2, Copy, Download } from 'lucide-react';
+import { Loader2, Copy, Download, Save } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { addDoc as addFirestoreDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 export function LectureNotesGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [result, setResult] = useState<StudyMaterialResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingToDocs, setIsSavingToDocs] = useState(false);
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -84,6 +89,49 @@ export function LectureNotesGenerator() {
     toast({ title: '✓ Download started' });
   };
 
+  const handleSaveToDocs = async () => {
+    if (!user || !result || !result.notesContent) {
+      toast({ variant: 'destructive', title: 'Could not save document.' });
+      return;
+    }
+
+    setIsSavingToDocs(true);
+
+    // Convert plain text to TipTap JSON format
+    const contentJSON = {
+      type: 'doc',
+      content: result.notesContent.split('\n').map(paragraph => ({
+        type: 'paragraph',
+        content: paragraph ? [{ type: 'text', text: paragraph }] : [],
+      })),
+    };
+    
+    try {
+      const docRef = await addFirestoreDoc(collection(db, 'users', user.uid, 'docs'), {
+        title: result.title,
+        content: contentJSON,
+        ownerId: user.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        folderId: null,
+      });
+      toast({
+        title: '✓ Saved to Docs',
+        description: `"${result.title}" has been created.`,
+      });
+      router.push(`/docs/${docRef.id}`);
+    } catch (e) {
+      console.error("Error saving document: ", e);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save document. Please try again.',
+      });
+    } finally {
+      setIsSavingToDocs(false);
+    }
+  }
+
   const renderContent = () => {
     if (isLoading) {
         return (
@@ -110,8 +158,12 @@ export function LectureNotesGenerator() {
                 </CardContent>
                 <CardFooter className="flex-wrap justify-end gap-2">
                     <Button variant="outline" onClick={handleReset}>Generate New Notes</Button>
-                    <Button onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
-                    <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
+                    <Button onClick={handleSaveToDocs} disabled={isSavingToDocs}>
+                        {isSavingToDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {isSavingToDocs ? 'Saving...' : 'Save to Docs'}
+                    </Button>
+                    <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
+                    <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
                 </CardFooter>
             </Card>
         )
