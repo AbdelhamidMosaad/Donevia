@@ -62,7 +62,7 @@ export function DoneviaLogo({ className }: { className?: string }) {
           />
         </filter>
         <clipPath id="clip0_1_2">
-          <rect width="24" height="24" rx="4" fill="white" />
+          <rect width="24" height="24" rx="6" fill="white" />
         </clipPath>
       </defs>
     </svg>

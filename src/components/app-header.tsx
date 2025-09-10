@@ -63,11 +63,11 @@ export function AppHeader() {
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
       <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={toggleSidebar}>
-          <DoneviaLogo className="size-5 shrink-0" />
+          <DoneviaLogo className="size-6 shrink-0" />
       </Button>
       <div className="hidden items-center gap-4 md:flex">
         <Link href="/dashboard" className="items-center gap-2 flex">
-          <DoneviaLogo className="size-6 shrink-0" />
+          <DoneviaLogo className="size-8 shrink-0" />
           <div className="flex flex-col">
             <span className="text-lg font-semibold font-headline leading-none">Donevia</span>
             <span className="text-xs text-muted-foreground">Get it done, your way.</span>
