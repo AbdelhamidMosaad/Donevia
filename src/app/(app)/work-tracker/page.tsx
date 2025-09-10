@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { collection, onSnapshot, query, orderBy, doc, setDoc, getDoc } from 'fir
 import { db } from '@/lib/firebase';
 import type { WorkActivity, WorkTrackerSettingItem, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Briefcase, List, Calendar, Settings } from 'lucide-react';
+import { Briefcase, List, Calendar, Settings, PlusCircle, FileText } from 'lucide-react';
 import { ActivityForm } from '@/components/work-tracker/activity-form';
 import { ActivityTable } from '@/components/work-tracker/activity-table';
 import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
@@ -17,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { WorkTrackerSettings } from '@/components/work-tracker/tracker-settings';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type View = 'table' | 'calendar';
 const colorPalette = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FED766", "#2AB7CA", "#F0CF65", "#9B59B6", "#3498DB", "#1ABC9C", "#E74C3C"];
@@ -128,31 +128,41 @@ export default function WorkTrackerPage() {
          <WorkTrackerSettings settings={settings} />
       </div>
 
-      <Card>
-        <ActivityForm settings={settings} onAddNewItem={handleAddNewSettingItem} />
-      </Card>
-      
-      <Card className="flex-1 flex flex-col min-h-0">
-          <CardHeader>
-              <div className="flex items-center justify-between">
-                  <div>
-                      <CardTitle>Recorded Activities</CardTitle>
-                      <CardDescription>View your logged activities in a table or calendar format.</CardDescription>
-                  </div>
-                  <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
-                    <ToggleGroupItem value="table" aria-label="Table view">
-                      <List className="h-4 w-4" />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                      <Calendar className="h-4 w-4" />
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-              </div>
-          </CardHeader>
-          <CardContent className="flex-1">
-            {view === 'table' ? <ActivityTable activities={activities} settings={settings} /> : <ActivityCalendar activities={activities} />}
-          </CardContent>
-      </Card>
+       <Tabs defaultValue="log" className="flex-1 flex flex-col min-h-0">
+            <TabsList>
+                <TabsTrigger value="log"><PlusCircle className="mr-2 h-4 w-4"/> Log Activity</TabsTrigger>
+                <TabsTrigger value="records"><FileText className="mr-2 h-4 w-4"/> View Records</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="log" className="flex-1 mt-4">
+                 <Card>
+                    <ActivityForm settings={settings} onAddNewItem={handleAddNewSettingItem} />
+                </Card>
+            </TabsContent>
+            <TabsContent value="records" className="flex-1 flex flex-col min-h-0 mt-4">
+                 <Card className="flex-1 flex flex-col min-h-0">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>Recorded Activities</CardTitle>
+                                <CardDescription>View your logged activities in a table or calendar format.</CardDescription>
+                            </div>
+                            <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
+                                <ToggleGroupItem value="table" aria-label="Table view">
+                                <List className="h-4 w-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="calendar" aria-label="Calendar view">
+                                <Calendar className="h-4 w-4" />
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                        {view === 'table' ? <ActivityTable activities={activities} settings={settings} /> : <ActivityCalendar activities={activities} />}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
     </div>
   );
 }
