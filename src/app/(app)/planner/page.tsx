@@ -63,6 +63,8 @@ export default function PlannerPage() {
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Partial<PlannerEvent> | null>(null);
   const [currentView, setCurrentView] = useState<any>(Views.MONTH);
+  const [currentDate, setCurrentDate] = useState(new Date());
+
 
   // Initialize reminder hook
   useEventReminders(events);
@@ -151,6 +153,8 @@ export default function PlannerPage() {
       }
     };
   };
+  
+  const handleNavigate = useCallback((newDate: Date) => setCurrentDate(newDate), [setCurrentDate]);
 
   return (
     <div className="flex flex-col h-full gap-6">
@@ -188,6 +192,8 @@ export default function PlannerPage() {
                 components={{ toolbar: CustomToolbar }}
                 view={currentView}
                 onView={(view) => setCurrentView(view)}
+                date={currentDate}
+                onNavigate={handleNavigate}
             />
         </div>
 
