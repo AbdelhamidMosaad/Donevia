@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { EventDialog } from '@/components/planner/event-dialog';
 import { CategoryManager } from '@/components/planner/category-manager';
-import { usePlannerReminders } from '@/hooks/use-planner-reminders';
+import { useEventReminders } from '@/hooks/use-planner-reminders';
 
 const localizer = momentLocalizer(moment);
 
@@ -34,8 +34,7 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
         <h2 className="text-xl font-headline">{label()}</h2>
       </div>
        <div className="hidden md:flex items-center gap-2">
-        {(Object.keys(Views) as Array<keyof typeof Views>).map((key) => {
-            const view = Views[key];
+        {(Object.values(Views) as (typeof Views[keyof typeof Views])[]).map((view) => {
             return (
                 <Button
                     key={view}
