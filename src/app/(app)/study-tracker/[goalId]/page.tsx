@@ -110,9 +110,10 @@ export default function StudyGoalDetailPage() {
         }
       });
 
-      const chaptersQuery = query(collection(db, 'users', user.uid, 'studyChapters'), where('goalId', '==', goalId), orderBy('order', 'asc'));
+      const chaptersQuery = query(collection(db, 'users', user.uid, 'studyChapters'), where('goalId', '==', goalId));
       const unsubscribeChapters = onSnapshot(chaptersQuery, (snapshot) => {
-        setChapters(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyChapter)));
+        const chaptersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyChapter));
+        setChapters(chaptersData.sort((a,b) => a.order - b.order));
       });
       
       const subtopicsQuery = query(collection(db, 'users', user.uid, 'studySubtopics'), where('goalId', '==', goalId));
