@@ -126,8 +126,7 @@ export function AppSidebar() {
     <Sidebar variant={settings?.sidebarVariant}>
       <SidebarRail />
       <SidebarHeader>
-        <DoneviaLogo className="size-6 shrink-0" />
-        <span className={cn("text-lg font-semibold font-headline", !open && "hidden")}>Donevia</span>
+        
       </SidebarHeader>
       <SidebarContent>
         <DragDropContext onDragEnd={handleDragEnd}>
