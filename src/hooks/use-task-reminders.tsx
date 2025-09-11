@@ -101,6 +101,18 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
             const unsubscribe = onSnapshot(q, (snapshot) => {
                 const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
                 setTasks(tasksData);
+
+                // Clean up remindedTasks for tasks that no longer exist
+                const currentTaskIds = new Set(tasksData.map(t => t.id));
+                const newRemindedTasks = new Set<string>();
+                remindedTasks.current.forEach(reminderId => {
+                    const taskId = reminderId.split('-')[0];
+                    if (currentTaskIds.has(taskId)) {
+                        newRemindedTasks.add(reminderId);
+                    }
+                });
+                remindedTasks.current = newRemindedTasks;
+                saveRemindedTasksToStorage(remindedTasks.current);
             });
             return () => unsubscribe();
         }
