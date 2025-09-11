@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -18,16 +19,18 @@ export function useGoogleCalendar() {
     const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
 
-    const loadGapi = useCallback(() => {
-        const script = document.createElement('script');
-        script.src = 'https://apis.google.com/js/api.js';
-        script.onload = () => {
-            window.gapi.load('client:auth2', initClient);
-        };
-        document.body.appendChild(script);
-    }, []);
-
     const initClient = useCallback(async () => {
+        if (!CLIENT_ID || !API_KEY) {
+            console.error("Missing Google API Key or Client ID");
+            toast({
+                variant: 'destructive',
+                title: "Google Calendar Not Configured",
+                description: "Please provide NEXT_PUBLIC_GOOGLE_CLIENT_ID and NEXT_PUBLIC_GOOGLE_API_KEY in your environment variables.",
+                duration: 10000,
+            });
+            return;
+        }
+
         try {
             await window.gapi.client.init({
                 apiKey: API_KEY,
@@ -39,9 +42,18 @@ export function useGoogleCalendar() {
             setGoogleAuth(authInstance);
         } catch (error) {
             console.error("Error initializing Google API client", error);
-            toast({ variant: 'destructive', title: "Could not initialize Google Calendar", description: "Please ensure you have a valid API Key and Client ID in your environment variables." });
+            toast({ variant: 'destructive', title: "Could not initialize Google Calendar", description: "Please check the console for more details." });
         }
     }, [toast]);
+    
+    const loadGapi = useCallback(() => {
+        const script = document.createElement('script');
+        script.src = 'https://apis.google.com/js/api.js';
+        script.onload = () => {
+            window.gapi.load('client:auth2', initClient);
+        };
+        document.body.appendChild(script);
+    }, [initClient]);
     
     const listUpcomingEvents = useCallback(async () => {
         if (!googleAuth?.isSignedIn.get()) return;
@@ -67,8 +79,10 @@ export function useGoogleCalendar() {
 
 
     useEffect(() => {
-        loadGapi();
-    }, [loadGapi]);
+        if (user) {
+            loadGapi();
+        }
+    }, [user, loadGapi]);
     
     useEffect(() => {
         if (googleAuth) {
@@ -85,10 +99,15 @@ export function useGoogleCalendar() {
     }, [googleAuth, listUpcomingEvents]);
 
     const handleAuthClick = () => {
-        if (googleAuth?.isSignedIn.get()) {
+        if (!googleAuth) {
+            toast({ variant: 'destructive', title: 'Google API client is not initialized.' });
+            return;
+        }
+
+        if (googleAuth.isSignedIn.get()) {
             googleAuth.signOut();
         } else {
-            googleAuth?.signIn();
+            googleAuth.signIn();
         }
     };
 
