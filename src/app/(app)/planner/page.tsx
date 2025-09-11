@@ -4,19 +4,20 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { PlannerEvent, PlannerCategory, GoogleCalendarEvent } from '@/lib/types';
+import type { PlannerEvent, PlannerCategory, GoogleCalendarEvent, Task } from '@/lib/types';
 import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { CalendarDays, PlusCircle, Settings, Link as LinkIcon } from 'lucide-react';
+import { CalendarDays, PlusCircle, Settings, Link as LinkIcon, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { EventDialog } from '@/components/planner/event-dialog';
 import { CategoryManager } from '@/components/planner/category-manager';
 import { useEventReminders } from '@/hooks/use-planner-reminders';
 import { useGoogleCalendar } from '@/hooks/use-google-calendar';
+import { getDocs } from 'firebase/firestore';
 
 const localizer = momentLocalizer(moment);
 
@@ -66,27 +67,33 @@ export default function PlannerPage() {
   const [currentView, setCurrentView] = useState<any>(Views.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { isSignedIn, googleEvents, handleAuthClick, isSyncing } = useGoogleCalendar();
+  const { isSignedIn, googleEvents, handleAuthClick, isSyncing, listUpcomingEvents } = useGoogleCalendar();
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   // Initialize reminder hook
   useEventReminders(events);
 
-
   const combinedEvents = useMemo(() => {
-    const allEvents: (PlannerEvent | GoogleCalendarEvent)[] = [...events];
-    
-    googleEvents.forEach(gEvent => {
-      allEvents.push({
+    // 1. Map Donevia events to BigCalendar format, adding associated task titles
+    const doneviaEvents = events.map(event => {
+        const linkedTask = tasks.find(t => t.id === event.taskId);
+        return {
+            ...event,
+            title: linkedTask ? `[T] ${event.title}` : event.title,
+        };
+    });
+
+    // 2. Map Google Calendar events
+    const gcalEvents = googleEvents.map(gEvent => ({
         ...gEvent,
         start: new Date(gEvent.start?.dateTime || gEvent.start?.date || ''),
         end: new Date(gEvent.end?.dateTime || gEvent.end?.date || ''),
         title: gEvent.summary,
-        isGoogleEvent: true, // Custom property to identify Google events
-      });
-    });
+        isGoogleEvent: true, // Custom property to identify
+    }));
 
-    return allEvents;
-  }, [events, googleEvents]);
+    return [...doneviaEvents, ...gcalEvents];
+  }, [events, googleEvents, tasks]);
 
   useEffect(() => {
     if (!user) {
@@ -94,6 +101,7 @@ export default function PlannerPage() {
         return;
     }
     
+    // Fetch events from Firestore
     const eventsQuery = query(collection(db, 'users', user.uid, 'plannerEvents'));
     const unsubscribeEvents = onSnapshot(eventsQuery, snapshot => {
         setEvents(snapshot.docs.map(doc => {
@@ -108,16 +116,50 @@ export default function PlannerPage() {
         }));
     });
 
+    // Fetch categories from Firestore
     const categoriesQuery = query(collection(db, 'users', user.uid, 'plannerCategories'));
     const unsubscribeCategories = onSnapshot(categoriesQuery, snapshot => {
         setCategories(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PlannerCategory)));
     });
 
+    // Fetch tasks to link titles
+    const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'));
+    const unsubscribeTasks = onSnapshot(tasksQuery, snapshot => {
+        setTasks(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as Task)));
+    });
+
+
+    // Import tasks with due dates as events
+    const importTasks = async () => {
+        const tasksWithDueDatesQuery = query(collection(db, 'users', user.uid, 'tasks'), where('dueDate', '!=', null));
+        const tasksSnapshot = await getDocs(tasksWithDueDatesQuery);
+        
+        const existingEventTaskIds = new Set(events.map(e => e.taskId));
+        
+        const newEventsFromTasks: Partial<PlannerEvent>[] = [];
+        tasksSnapshot.forEach(doc => {
+            const task = {id: doc.id, ...doc.data()} as Task;
+            if(!existingEventTaskIds.has(task.id)) {
+                newEventsFromTasks.push({
+                    title: task.title,
+                    start: task.dueDate.toDate(),
+                    end: task.dueDate.toDate(),
+                    allDay: true,
+                    taskId: task.id,
+                    ownerId: user.uid,
+                });
+            }
+        });
+    };
+    // Uncomment the line below to enable automatic task import on page load
+    // importTasks();
+
     return () => {
         unsubscribeEvents();
         unsubscribeCategories();
+        unsubscribeTasks();
     };
-  }, [user, router]);
+  }, [user, router, events]);
 
   const handleSelectSlot = useCallback(({ start, end }: { start: Date, end: Date }) => {
     setSelectedEvent({ start, end, allDay: false });
@@ -175,6 +217,11 @@ export default function PlannerPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
+            {isSignedIn && (
+                <Button variant="outline" onClick={listUpcomingEvents} disabled={isSyncing}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} /> Sync
+                </Button>
+            )}
             <Button variant="outline" onClick={handleAuthClick} disabled={isSyncing}>
                 <LinkIcon className="mr-2 h-4 w-4" /> 
                 {isSyncing ? 'Syncing...' : (isSignedIn ? 'Disconnect Calendar' : 'Connect Google Calendar')}

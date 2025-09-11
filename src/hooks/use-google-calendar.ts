@@ -3,13 +3,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './use-auth';
-import type { GoogleCalendarEvent } from '@/lib/types';
+import type { GoogleCalendarEvent, PlannerEvent } from '@/lib/types';
 import { useToast } from './use-toast';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
+const SCOPES = 'https://www.googleapis.com/auth/calendar'; // Changed to full access
 
 declare global {
   interface Window {
@@ -93,7 +93,7 @@ export function useGoogleCalendar() {
         timeMin: (new Date()).toISOString(),
         showDeleted: false,
         singleEvents: true,
-        maxResults: 50,
+        maxResults: 250,
         orderBy: 'startTime'
       });
       
@@ -133,6 +133,59 @@ export function useGoogleCalendar() {
         toast({ title: "Signed out of Google Calendar" });
     }
   };
+  
+  const createGoogleEvent = async (event: Partial<PlannerEvent>) => {
+    if (!window.gapi.client.calendar || !isSignedIn) return null;
+    const gcalEvent = {
+      'summary': event.title,
+      'description': event.description,
+      'start': {
+        'dateTime': event.start?.toISOString(),
+        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      'end': {
+        'dateTime': event.end?.toISOString(),
+        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+    };
+    const request = window.gapi.client.calendar.events.insert({
+      'calendarId': 'primary',
+      'resource': gcalEvent,
+    });
+    const response = await request.execute();
+    return response.result.id;
+  };
+
+  const updateGoogleEvent = async (eventId: string, event: Partial<PlannerEvent>) => {
+    if (!window.gapi.client.calendar || !isSignedIn) return;
+    const gcalEvent = {
+      'summary': event.title,
+      'description': event.description,
+      'start': {
+        'dateTime': event.start?.toISOString(),
+        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      'end': {
+        'dateTime': event.end?.toISOString(),
+        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+    };
+    const request = window.gapi.client.calendar.events.update({
+      'calendarId': 'primary',
+      'eventId': eventId,
+      'resource': gcalEvent,
+    });
+    await request.execute();
+  };
+
+  const deleteGoogleEvent = async (eventId: string) => {
+    if (!window.gapi.client.calendar || !isSignedIn) return;
+    const request = window.gapi.client.calendar.events.delete({
+      'calendarId': 'primary',
+      'eventId': eventId,
+    });
+    await request.execute();
+  };
 
 
   return {
@@ -141,5 +194,9 @@ export function useGoogleCalendar() {
     handleAuthClick,
     isSyncing,
     isGapiLoaded: isGapiInitialized,
+    createGoogleEvent,
+    updateGoogleEvent,
+    deleteGoogleEvent,
+    listUpcomingEvents,
   };
 }
