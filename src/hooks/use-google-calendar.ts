@@ -31,57 +31,52 @@ export function useGoogleCalendar() {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   const gapiInit = useCallback(() => {
-    if (gapiInited) {
-        if (window.gapi.client.calendar) {
-            setIsGapiInitialized(true);
-        } else {
-             window.gapi.client.init({
-                apiKey: API_KEY,
-                discoveryDocs: DISCOVERY_DOCS,
-            }).then(() => {
-                setIsGapiInitialized(true);
-            }).catch((e:any) => console.error("Error init gapi client", e));
+    window.gapi.client.init({
+      apiKey: API_KEY,
+      discoveryDocs: DISCOVERY_DOCS,
+    }).then(() => {
+        setIsGapiInitialized(true);
+        // Check if user is already signed in
+        const token = window.gapi.client.getToken();
+        if (token) {
+            setIsSignedIn(true);
+            listUpcomingEvents();
         }
-        return;
-    }
-    gapiInited = true;
-    window.gapi.load('client', () => {
-        window.gapi.client.init({
-            apiKey: API_KEY,
-            discoveryDocs: DISCOVERY_DOCS,
-        }).then(() => {
-            setIsGapiInitialized(true);
-        }).catch((e:any) => console.error("Error init gapi client", e));
-    });
+    }).catch((e:any) => console.error("Error init gapi client", e));
   }, []);
 
   const gisInit = useCallback(() => {
-      if (gisInited || !CLIENT_ID) {
+      if (!CLIENT_ID) {
           return;
       }
-      gisInited = true;
-      const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          callback: '', // defined later
-      });
-      setTokenClient(client);
+      setTokenClient(
+        window.google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: '', // defined later
+        })
+      );
   }, []);
 
   useEffect(() => {
-      const gapiScript = document.createElement('script');
-      gapiScript.src = 'https://apis.google.com/js/api.js';
-      gapiScript.async = true;
-      gapiScript.defer = true;
-      gapiScript.onload = gapiInit;
-      document.body.appendChild(gapiScript);
+    const gapiScript = document.createElement('script');
+    gapiScript.src = 'https://apis.google.com/js/api.js';
+    gapiScript.async = true;
+    gapiScript.defer = true;
+    gapiScript.onload = () => window.gapi.load('client', gapiInit);
+    document.body.appendChild(gapiScript);
 
-      const gisScript = document.createElement('script');
-      gisScript.src = 'https://accounts.google.com/gsi/client';
-      gisScript.async = true;
-      gisScript.defer = true;
-      gisScript.onload = gisInit;
-      document.body.appendChild(gisScript);
+    const gisScript = document.createElement('script');
+    gisScript.src = 'https://accounts.google.com/gsi/client';
+    gisScript.async = true;
+    gisScript.defer = true;
+    gisScript.onload = gisInit;
+    document.body.appendChild(gisScript);
+
+    return () => {
+        document.body.removeChild(gapiScript);
+        document.body.removeChild(gisScript);
+    }
   }, [gapiInit, gisInit]);
 
 
@@ -105,11 +100,22 @@ export function useGoogleCalendar() {
       }
     } catch (error) {
       console.error("Error fetching Google Calendar events:", error);
-      toast({ 
-        variant: 'destructive', 
-        title: "Failed to sync calendar",
-        description: "Please ensure you're signed in and have calendar access."
-      });
+      const err = error as any;
+      if (err.result?.error?.code === 401 || err.result?.error?.code === 403) {
+          // Token might have expired or been revoked, prompt for sign-in again.
+          setIsSignedIn(false);
+          toast({ 
+            variant: 'destructive', 
+            title: "Authentication needed",
+            description: "Please connect to Google Calendar again."
+          });
+      } else {
+         toast({ 
+            variant: 'destructive', 
+            title: "Failed to sync calendar",
+            description: "Could not retrieve calendar events."
+          });
+      }
     } finally {
       setIsSyncing(false);
     }
@@ -120,6 +126,7 @@ export function useGoogleCalendar() {
     if (!tokenClient) return;
 
     if (window.gapi.client.getToken() === null) {
+        // Prompt the user to select a Google Account and ask for consent to share their data
         tokenClient.callback = async (resp: any) => {
             if (resp.error !== undefined) {
               throw(resp);
@@ -129,10 +136,13 @@ export function useGoogleCalendar() {
         };
         tokenClient.requestAccessToken({prompt: 'consent'});
     } else {
-        window.gapi.client.setToken(null);
-        setIsSignedIn(false);
-        setGoogleEvents([]);
-        toast({ title: "Signed out of Google Calendar" });
+        // User is already signed in, so sign them out
+        window.google.accounts.oauth2.revoke(window.gapi.client.getToken().access_token, () => {
+            window.gapi.client.setToken(null);
+            setIsSignedIn(false);
+            setGoogleEvents([]);
+            toast({ title: "Signed out of Google Calendar" });
+        });
     }
   };
   
