@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,8 +15,11 @@ const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 declare global {
   interface Window {
     gapi: any;
+    google: any;
   }
 }
+
+let gapiLoaded = false;
 
 export function useGoogleCalendar() {
   const { user } = useAuth();
@@ -23,7 +27,7 @@ export function useGoogleCalendar() {
   const [googleAuth, setGoogleAuth] = useState<any>(null);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [gapiLoaded, setGapiLoaded] = useState(false);
+  const [isGapiInitialized, setIsGapiInitialized] = useState(false);
 
   const initClient = useCallback(async () => {
     if (!CLIENT_ID || !API_KEY) {
@@ -31,14 +35,13 @@ export function useGoogleCalendar() {
       toast({
         variant: 'destructive',
         title: "Google Calendar Not Configured",
-        description: "Please provide NEXT_PUBLIC_GOOGLE_CLIENT_ID and NEXT_PUBLIC_GOOGLE_API_KEY in your environment variables.",
+        description: "Please provide the correct environment variables.",
         duration: 10000,
       });
       return;
     }
 
     try {
-      // First load the client
       await window.gapi.client.init({
         apiKey: API_KEY,
         clientId: CLIENT_ID,
@@ -46,46 +49,44 @@ export function useGoogleCalendar() {
         scope: SCOPES,
       });
       
-      // Then initialize auth2
-      await window.gapi.auth2.init({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-      });
-      
       const authInstance = window.gapi.auth2.getAuthInstance();
       setGoogleAuth(authInstance);
-      setGapiLoaded(true);
+      setIsGapiInitialized(true);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error initializing Google API client", error);
+      let description = "Please check your Google Cloud Console configuration, especially the 'Authorized JavaScript origins'.";
+      if (error.details) {
+        description = `Details: ${error.details}`;
+      }
       toast({ 
         variant: 'destructive', 
         title: "Could not initialize Google Calendar", 
-        description: "Please check your Google Cloud Console configuration, especially the 'Authorized JavaScript origins'." 
+        description: description,
+        duration: 10000
       });
     }
   }, [toast]);
 
-  const loadGapi = useCallback(() => {
-    // Check if gapi is already loaded
-    if (window.gapi) {
-      initClient();
+  const loadGapiScript = useCallback(() => {
+    if (gapiLoaded) {
       return;
     }
-
+    
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
     script.async = true;
     script.defer = true;
     script.onload = () => {
       window.gapi.load('client:auth2', initClient);
+      gapiLoaded = true;
     };
     script.onerror = () => {
       console.error("Failed to load Google API script");
       toast({
         variant: 'destructive',
-        title: "Failed to load Google Calendar",
-        description: "Could not load required Google API scripts. Check your network connection."
+        title: "Failed to load Google Calendar script",
+        description: "Check your network connection and ad-blockers."
       });
     };
     document.body.appendChild(script);
@@ -122,13 +123,13 @@ export function useGoogleCalendar() {
   }, [googleAuth, toast]);
 
   useEffect(() => {
-    if (user && !gapiLoaded) {
-      loadGapi();
+    if (user) {
+      loadGapiScript();
     }
-  }, [user, gapiLoaded, loadGapi]);
+  }, [user, loadGapiScript]);
 
   useEffect(() => {
-    if (googleAuth) {
+    if (isGapiInitialized && googleAuth) {
       const updateSigninStatus = (isSignedIn: boolean) => {
         if (isSignedIn) {
           listUpcomingEvents();
@@ -139,15 +140,8 @@ export function useGoogleCalendar() {
       
       googleAuth.isSignedIn.listen(updateSigninStatus);
       updateSigninStatus(googleAuth.isSignedIn.get());
-      
-      // Cleanup listener
-      return () => {
-        if (googleAuth.isSignedIn?.listen) {
-          googleAuth.isSignedIn.listen(() => {});
-        }
-      };
     }
-  }, [googleAuth, listUpcomingEvents]);
+  }, [isGapiInitialized, googleAuth, listUpcomingEvents]);
 
   const handleAuthClick = () => {
     if (!googleAuth) {
@@ -180,6 +174,6 @@ export function useGoogleCalendar() {
     googleEvents,
     handleAuthClick,
     isSyncing,
-    isGapiLoaded: gapiLoaded
+    isGapiLoaded: isGapiInitialized
   };
 }
