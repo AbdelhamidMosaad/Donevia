@@ -25,6 +25,18 @@ export function useTaskReminders() {
     return context;
 }
 
+const getRemindedTasksFromStorage = (): Set<string> => {
+    if (typeof window === 'undefined') return new Set();
+    const stored = localStorage.getItem('remindedTasks');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+};
+
+const saveRemindedTasksToStorage = (remindedSet: Set<string>) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('remindedTasks', JSON.stringify(Array.from(remindedSet)));
+};
+
+
 export function TaskReminderProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -32,7 +44,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     const [stages, setStages] = useState<Stage[]>([]);
     const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
     const [settings, setSettings] = useState<Partial<UserSettings>>({ notificationSound: true });
-    const remindedTasks = useRef(new Set<string>());
+    const remindedTasks = useRef<Set<string>>(getRemindedTasksFromStorage());
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
@@ -144,15 +156,18 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
                     newOverdueTasks.push(task);
                 }
 
+                // Reminder key combines task ID and due date to handle recurring tasks in the future
+                const reminderId = `${task.id}-${dueDate.format('YYYYMMDD')}`;
+
                 // Check for reminders
-                if (task.reminder && task.reminder !== 'none' && !isDone && !remindedTasks.current.has(task.id)) {
+                if (task.reminder && task.reminder !== 'none' && !isDone && !remindedTasks.current.has(reminderId)) {
                     const [amount, unit] = task.reminder.endsWith('m') 
                         ? [parseInt(task.reminder), 'minutes'] 
                         : [parseInt(task.reminder), 'hours'];
 
                     const reminderTime = dueDate.clone().subtract(amount, unit as moment.unitOfTime.DurationConstructor);
 
-                    if (now.isAfter(reminderTime) && now.isBefore(dueDate)) {
+                    if (now.isSame(reminderTime, 'minute')) {
                         if (settings.notificationSound) {
                             audioRef.current?.play().catch(e => console.log("Audio play failed:", e));
                         }
@@ -171,7 +186,8 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
                                 </Button>
                             )
                         });
-                        remindedTasks.current.add(task.id);
+                        remindedTasks.current.add(reminderId);
+                        saveRemindedTasksToStorage(remindedTasks.current);
                     }
                 }
             });
@@ -197,3 +213,4 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
         </TaskReminderContext.Provider>
     );
 }
+
