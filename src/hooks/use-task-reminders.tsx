@@ -158,8 +158,14 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
         const checkTasks = () => {
             const now = moment();
             const newOverdueTasks: Task[] = [];
+            const taskMap = new Map(tasks.map(t => [t.id, t]));
             
             tasks.forEach(task => {
+                // Ensure task still exists in the latest state before processing
+                if (!taskMap.has(task.id)) {
+                    return; 
+                }
+
                 const dueDate = moment(task.dueDate.toDate());
                 const isDone = doneStageIds.includes(task.status);
                 
@@ -225,4 +231,3 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
         </TaskReminderContext.Provider>
     );
 }
-
