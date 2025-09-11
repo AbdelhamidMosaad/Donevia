@@ -1,4 +1,3 @@
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -605,4 +604,24 @@ export type PlannerEvent = {
     recurringEndDate?: Date | null;
     attachments: Attachment[];
     reminder: 'none' | '5m' | '15m' | '30m' | '1h' | '1d';
+};
+
+/** Google Calendar */
+export type GoogleCalendarEvent = {
+    id: string;
+    summary: string;
+    description?: string;
+    start: {
+        dateTime?: string;
+        date?: string;
+        timeZone?: string;
+    };
+    end: {
+        dateTime?: string;
+        date?: string;
+        timeZone?: string;
+    };
+    htmlLink: string;
+    isGoogleEvent?: boolean;
+    [key: string]: any;
 };
