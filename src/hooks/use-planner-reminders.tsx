@@ -6,8 +6,8 @@ import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import type { PlannerEvent, UserSettings } from '@/lib/types';
-import { useToast } from './use-toast';
 import moment from 'moment';
+import { useReminderDialog } from './use-reminder-dialog';
 
 interface PlannerReminderContextType {}
 
@@ -32,7 +32,7 @@ export function useEventReminders(events: PlannerEvent[]) {
 
 
 export function PlannerReminderProvider({ children }: { children: ReactNode }) {
-    const { toast } = useToast();
+    const { showReminder } = useReminderDialog();
     const { user } = useAuth();
     const [settings, setSettings] = useState<Partial<UserSettings>>({ notificationSound: true });
     const remindedEvents = useRef(new Set<string>());
@@ -95,9 +95,9 @@ export function PlannerReminderProvider({ children }: { children: ReactNode }) {
                     audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
                 }
                 showBrowserNotification(event);
-                toast({
+                showReminder({
                     title: `Reminder: ${event.title}`,
-                    description: `Starts in ${startTime.fromNow(true)}.`,
+                    description: `Starts ${startTime.fromNow()}.`,
                 });
                 remindedEvents.current.add(event.id);
                  // The reminder for this specific event time has fired.
@@ -105,7 +105,7 @@ export function PlannerReminderProvider({ children }: { children: ReactNode }) {
                 // For simplicity, we just mark this one as done.
             }
         });
-    }, [settings.notificationSound, toast]);
+    }, [settings.notificationSound, showReminder]);
 
 
     const value = {
