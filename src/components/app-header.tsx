@@ -14,7 +14,7 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Search, Settings, LogOut, Bell, CheckCircle } from 'lucide-react';
+import { Search, Settings, LogOut, Bell, CheckCircle, Trash2 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useAuth } from '@/hooks/use-auth';
@@ -46,9 +46,13 @@ export function AppHeader() {
   };
   
   const handleNotificationClick = (task: Task) => {
-    dismissOverdueTask(task.id);
-    router.push(`/dashboard/list/${task.listId}`);
+    router.push(`/dashboard/lists/${task.listId}`);
   };
+
+  const handleDismissNotification = (e: React.MouseEvent, taskId: string) => {
+      e.stopPropagation();
+      dismissOverdueTask(taskId);
+  }
   
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -107,13 +111,16 @@ export function AppHeader() {
             <DropdownMenuGroup>
             {overdueTasks.length > 0 ? (
               overdueTasks.map(task => (
-                  <DropdownMenuItem key={task.id} className="cursor-pointer" onSelect={() => handleNotificationClick(task)}>
+                  <DropdownMenuItem key={task.id} className="cursor-pointer flex justify-between items-center" onSelect={() => handleNotificationClick(task)}>
                     <div className="flex flex-col">
                         <span className="font-semibold">{task.title}</span>
                         <span className="text-xs text-muted-foreground">
                             Due {moment(task.dueDate.toDate()).fromNow()}
                         </span>
                     </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => handleDismissNotification(e, task.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </DropdownMenuItem>
               ))
             ) : (
