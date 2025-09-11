@@ -8,8 +8,8 @@ import { useToast } from './use-toast';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/calendar';
+const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+const SCOPES = "https://www.googleapis.com/auth/calendar";
 
 declare global {
   interface Window {
@@ -18,8 +18,8 @@ declare global {
   }
 }
 
-let gapiLoaded = false;
-let gisLoaded = false;
+let gapiInited = false;
+let gisInited = false;
 
 export function useGoogleCalendar() {
   const { user } = useAuth();
@@ -30,57 +30,59 @@ export function useGoogleCalendar() {
   const [isGapiInitialized, setIsGapiInitialized] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
 
-  const loadGapiScript = useCallback(() => {
-    if (gapiLoaded) return;
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      window.gapi.load('client', async () => {
-        if (!API_KEY) {
-            console.error("Missing Google API Key");
-            return;
+  const gapiInit = useCallback(() => {
+    if (gapiInited) {
+        if (window.gapi.client.calendar) {
+            setIsGapiInitialized(true);
+        } else {
+             window.gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: DISCOVERY_DOCS,
+            }).then(() => {
+                setIsGapiInitialized(true);
+            }).catch((e:any) => console.error("Error init gapi client", e));
         }
-        await window.gapi.client.init({
-          apiKey: API_KEY,
-          discoveryDocs: [DISCOVERY_DOC],
-        });
-        setIsGapiInitialized(true);
-      });
-    };
-    document.body.appendChild(script);
-    gapiLoaded = true;
+        return;
+    }
+    gapiInited = true;
+    window.gapi.load('client', () => {
+        window.gapi.client.init({
+            apiKey: API_KEY,
+            discoveryDocs: DISCOVERY_DOCS,
+        }).then(() => {
+            setIsGapiInitialized(true);
+        }).catch((e:any) => console.error("Error init gapi client", e));
+    });
   }, []);
 
-  const loadGisScript = useCallback(() => {
-    if (gisLoaded) return;
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-        if (!CLIENT_ID) {
-            console.error("Missing Google Client ID");
-            return;
-        }
-        const client = window.google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: '', // defined later
-        });
-        setTokenClient(client);
-    };
-    document.body.appendChild(script);
-    gisLoaded = true;
+  const gisInit = useCallback(() => {
+      if (gisInited || !CLIENT_ID) {
+          return;
+      }
+      gisInited = true;
+      const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: '', // defined later
+      });
+      setTokenClient(client);
   }, []);
 
   useEffect(() => {
-    if (user) {
-      loadGapiScript();
-      loadGisScript();
-    }
-  }, [user, loadGapiScript, loadGisScript]);
+      const gapiScript = document.createElement('script');
+      gapiScript.src = 'https://apis.google.com/js/api.js';
+      gapiScript.async = true;
+      gapiScript.defer = true;
+      gapiScript.onload = gapiInit;
+      document.body.appendChild(gapiScript);
+
+      const gisScript = document.createElement('script');
+      gisScript.src = 'https://accounts.google.com/gsi/client';
+      gisScript.async = true;
+      gisScript.defer = true;
+      gisScript.onload = gisInit;
+      document.body.appendChild(gisScript);
+  }, [gapiInit, gisInit]);
 
 
   const listUpcomingEvents = useCallback(async () => {
@@ -152,7 +154,7 @@ export function useGoogleCalendar() {
       'calendarId': 'primary',
       'resource': gcalEvent,
     });
-    const response = await request.execute();
+    const response = await request;
     return response.result.id;
   };
 
@@ -175,7 +177,7 @@ export function useGoogleCalendar() {
       'eventId': eventId,
       'resource': gcalEvent,
     });
-    await request.execute();
+    await request;
   };
 
   const deleteGoogleEvent = async (eventId: string) => {
@@ -184,7 +186,7 @@ export function useGoogleCalendar() {
       'calendarId': 'primary',
       'eventId': eventId,
     });
-    await request.execute();
+    await request;
   };
 
 
