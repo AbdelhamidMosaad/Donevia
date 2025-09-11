@@ -177,7 +177,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       setDataLoading(true);
-      const taskQuery = query(collection(db, 'users', user.uid, 'tasks'));
+      const taskQuery = query(collection(db, 'users', user.uid, 'tasks'), where('deleted', '!=', true));
       const unsubscribeTasks = onSnapshot(taskQuery, (snapshot) => {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(tasksData);

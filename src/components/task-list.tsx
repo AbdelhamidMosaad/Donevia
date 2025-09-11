@@ -33,7 +33,7 @@ export function TaskList({ listId }: TaskListProps) {
         }
       });
 
-      let q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), orderBy(sortBy, 'desc'));
+      let q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), where('deleted', '!=', true), orderBy(sortBy, 'desc'));
       
       const unsubscribeTasks = onSnapshot(q, (snapshot) => {
         let tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));

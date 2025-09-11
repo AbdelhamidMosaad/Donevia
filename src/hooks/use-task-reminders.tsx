@@ -97,7 +97,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (user) {
             const tasksRef = collection(db, 'users', user.uid, 'tasks');
-            const q = query(tasksRef);
+            const q = query(tasksRef, where('deleted', '!=', true));
             const unsubscribe = onSnapshot(q, (snapshot) => {
                 const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
                 setTasks(tasksData);
@@ -154,11 +154,11 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     // Check for overdue tasks and reminders
     useEffect(() => {
         const doneStageIds = getDoneStageIds();
+        const taskMap = new Map(tasks.map(t => [t.id, t]));
 
         const checkTasks = () => {
             const now = moment();
             const newOverdueTasks: Task[] = [];
-            const taskMap = new Map(tasks.map(t => [t.id, t]));
             
             tasks.forEach(task => {
                 // Ensure task still exists in the latest state before processing

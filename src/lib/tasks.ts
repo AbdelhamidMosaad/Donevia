@@ -9,7 +9,8 @@ export const addTask = async (userId: string, taskData: Omit<Task, 'id' | 'creat
         ...taskData,
         ownerId: userId,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        deleted: false, // Set initial deleted status
     });
 };
 
@@ -23,5 +24,9 @@ export const updateTask = async (userId: string, taskId: string, taskData: Parti
 
 export const deleteTask = async (userId: string, taskId: string) => {
     const taskRef = doc(db, 'users', userId, 'tasks', taskId);
-    return await deleteDoc(taskRef);
+    // Soft delete by updating a 'deleted' flag
+    return await updateDoc(taskRef, {
+        deleted: true,
+        deletedAt: serverTimestamp()
+    });
 };

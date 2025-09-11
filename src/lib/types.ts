@@ -45,6 +45,8 @@ export const TaskSchema = z.object({
     reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
     color: z.string().optional(),
     subtasks: z.array(SubtaskSchema).optional(),
+    deleted: z.boolean().optional(),
+    deletedAt: FirebaseTimestampSchema.optional(),
 });
 export type Task = z.infer<typeof TaskSchema>;
 
@@ -604,5 +606,3 @@ export type PlannerEvent = {
     attachments: Attachment[];
     reminder: 'none' | '5m' | '15m' | '30m' | '1h' | '1d';
 };
-
-    

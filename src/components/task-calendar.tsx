@@ -107,7 +107,7 @@ export function TaskCalendar({ listId }: TaskCalendarProps) {
 
   useEffect(() => {
     if (user && listId) {
-      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId));
+      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), where('deleted', '!=', true));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(tasksData);
