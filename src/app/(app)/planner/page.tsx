@@ -66,7 +66,7 @@ export default function PlannerPage() {
   const [currentView, setCurrentView] = useState<any>(Views.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { googleAuth, googleEvents, handleAuthClick, isSyncing } = useGoogleCalendar();
+  const { isSignedIn, googleEvents, handleAuthClick, isSyncing } = useGoogleCalendar();
 
   // Initialize reminder hook
   useEventReminders(events);
@@ -177,7 +177,7 @@ export default function PlannerPage() {
         <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleAuthClick} disabled={isSyncing}>
                 <LinkIcon className="mr-2 h-4 w-4" /> 
-                {isSyncing ? 'Syncing...' : (googleAuth && googleAuth.isSignedIn.get() ? 'Disconnect Calendar' : 'Connect Google Calendar')}
+                {isSyncing ? 'Syncing...' : (isSignedIn ? 'Disconnect Calendar' : 'Connect Google Calendar')}
             </Button>
             <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)}>
                 <Settings className="mr-2 h-4 w-4" /> Manage Categories

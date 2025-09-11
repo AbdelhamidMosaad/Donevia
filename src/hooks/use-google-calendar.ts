@@ -11,7 +11,6 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
-// Add type declarations for gapi
 declare global {
   interface Window {
     gapi: any;
@@ -20,80 +19,72 @@ declare global {
 }
 
 let gapiLoaded = false;
+let gisLoaded = false;
 
 export function useGoogleCalendar() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [googleAuth, setGoogleAuth] = useState<any>(null);
+  const [tokenClient, setTokenClient] = useState<any>(null);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isGapiInitialized, setIsGapiInitialized] = useState(false);
-
-  const initClient = useCallback(async () => {
-    if (!CLIENT_ID || !API_KEY) {
-      console.error("Missing Google API Key or Client ID");
-      toast({
-        variant: 'destructive',
-        title: "Google Calendar Not Configured",
-        description: "Please provide the correct environment variables.",
-        duration: 10000,
-      });
-      return;
-    }
-
-    try {
-      await window.gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        discoveryDocs: [DISCOVERY_DOC],
-        scope: SCOPES,
-      });
-      
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      setGoogleAuth(authInstance);
-      setIsGapiInitialized(true);
-      
-    } catch (error: any) {
-      console.error("Error initializing Google API client", error);
-      let description = "Please check your Google Cloud Console configuration, especially the 'Authorized JavaScript origins'.";
-      if (error.details) {
-        description = `Details: ${error.details}`;
-      }
-      toast({ 
-        variant: 'destructive', 
-        title: "Could not initialize Google Calendar", 
-        description: description,
-        duration: 10000
-      });
-    }
-  }, [toast]);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   const loadGapiScript = useCallback(() => {
-    if (gapiLoaded) {
-      return;
-    }
-    
+    if (gapiLoaded) return;
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      window.gapi.load('client:auth2', initClient);
-      gapiLoaded = true;
-    };
-    script.onerror = () => {
-      console.error("Failed to load Google API script");
-      toast({
-        variant: 'destructive',
-        title: "Failed to load Google Calendar script",
-        description: "Check your network connection and ad-blockers."
+      window.gapi.load('client', async () => {
+        if (!API_KEY) {
+            console.error("Missing Google API Key");
+            return;
+        }
+        await window.gapi.client.init({
+          apiKey: API_KEY,
+          discoveryDocs: [DISCOVERY_DOC],
+        });
+        setIsGapiInitialized(true);
       });
     };
     document.body.appendChild(script);
-  }, [initClient, toast]);
+    gapiLoaded = true;
+  }, []);
+
+  const loadGisScript = useCallback(() => {
+    if (gisLoaded) return;
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+        if (!CLIENT_ID) {
+            console.error("Missing Google Client ID");
+            return;
+        }
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: '', // defined later
+        });
+        setTokenClient(client);
+    };
+    document.body.appendChild(script);
+    gisLoaded = true;
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadGapiScript();
+      loadGisScript();
+    }
+  }, [user, loadGapiScript, loadGisScript]);
+
 
   const listUpcomingEvents = useCallback(async () => {
-    if (!googleAuth?.isSignedIn?.get()) return;
+    if (!window.gapi.client.calendar) return;
     
     setIsSyncing(true);
     try {
@@ -120,60 +111,35 @@ export function useGoogleCalendar() {
     } finally {
       setIsSyncing(false);
     }
-  }, [googleAuth, toast]);
-
-  useEffect(() => {
-    if (user) {
-      loadGapiScript();
-    }
-  }, [user, loadGapiScript]);
-
-  useEffect(() => {
-    if (isGapiInitialized && googleAuth) {
-      const updateSigninStatus = (isSignedIn: boolean) => {
-        if (isSignedIn) {
-          listUpcomingEvents();
-        } else {
-          setGoogleEvents([]);
-        }
-      };
-      
-      googleAuth.isSignedIn.listen(updateSigninStatus);
-      updateSigninStatus(googleAuth.isSignedIn.get());
-    }
-  }, [isGapiInitialized, googleAuth, listUpcomingEvents]);
+  }, [toast]);
+  
 
   const handleAuthClick = () => {
-    if (!googleAuth) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Google API client is not initialized.' 
-      });
-      return;
-    }
+    if (!tokenClient) return;
 
-    try {
-      if (googleAuth.isSignedIn.get()) {
-        googleAuth.signOut();
+    if (window.gapi.client.getToken() === null) {
+        tokenClient.callback = async (resp: any) => {
+            if (resp.error !== undefined) {
+              throw(resp);
+            }
+            setIsSignedIn(true);
+            await listUpcomingEvents();
+        };
+        tokenClient.requestAccessToken({prompt: 'consent'});
+    } else {
+        window.gapi.client.setToken(null);
+        setIsSignedIn(false);
+        setGoogleEvents([]);
         toast({ title: "Signed out of Google Calendar" });
-      } else {
-        googleAuth.signIn();
-      }
-    } catch (error) {
-      console.error("Auth error:", error);
-      toast({
-        variant: 'destructive',
-        title: "Authentication failed",
-        description: "Could not complete Google sign-in. Please try again."
-      });
     }
   };
 
+
   return {
-    googleAuth,
+    isSignedIn,
     googleEvents,
     handleAuthClick,
     isSyncing,
-    isGapiLoaded: isGapiInitialized
+    isGapiLoaded: isGapiInitialized,
   };
 }
