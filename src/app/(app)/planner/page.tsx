@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { PlannerEvent, PlannerCategory, GoogleCalendarEvent } from '@/lib/types';
 import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps } from 'react-big-calendar';
@@ -176,7 +177,7 @@ export default function PlannerPage() {
         <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleAuthClick} disabled={isSyncing}>
                 <LinkIcon className="mr-2 h-4 w-4" /> 
-                {isSyncing ? 'Syncing...' : (googleAuth.isSignedIn ? 'Disconnect Calendar' : 'Connect Google Calendar')}
+                {isSyncing ? 'Syncing...' : (googleAuth && googleAuth.isSignedIn.get() ? 'Disconnect Calendar' : 'Connect Google Calendar')}
             </Button>
             <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)}>
                 <Settings className="mr-2 h-4 w-4" /> Manage Categories
