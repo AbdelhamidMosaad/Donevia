@@ -37,12 +37,13 @@ export function useGoogleCalendar() {
                 clientId: CLIENT_ID,
                 discoveryDocs: [DISCOVERY_DOC],
                 scope: SCOPES,
+                plugin_name: 'Donevia' // Added for more robust initialization
             });
             const authInstance = window.gapi.auth2.getAuthInstance();
             setGoogleAuth(authInstance);
         } catch (error) {
             console.error("Error initializing Google API client", error);
-            toast({ variant: 'destructive', title: "Could not initialize Google Calendar", description: "Please check the console for more details." });
+            toast({ variant: 'destructive', title: "Could not initialize Google Calendar", description: "Please check your Google Cloud Console configuration, especially the 'Authorized JavaScript origins'." });
         }
     }, [toast]);
     
