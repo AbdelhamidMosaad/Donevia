@@ -95,6 +95,11 @@ const generateStudyMaterialFlow = ai.defineFlow(
     if (input.generationType === 'notes' && typeof output.notesContent !== 'string') {
         output.notesContent = JSON.stringify(output.notesContent, null, 2);
     }
+    // Ensure the response has the correct materialType.
+    if (!output.materialType) {
+        output.materialType = input.generationType;
+    }
+    
     return output;
   }
 );

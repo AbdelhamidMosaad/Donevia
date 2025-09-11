@@ -1,7 +1,8 @@
 
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
-import { generateFlashcards } from '@/ai/flows/generate-flashcards-flow';
+import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
+import type { StudyMaterialRequest } from '@/ai/flows/learning-tool-flow';
 
 export async function POST(request: Request) {
   try {
@@ -17,9 +18,20 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Missing sourceText field.' }, { status: 400 });
     }
 
-    const result = await generateFlashcards({ sourceText: body.sourceText });
+    const requestPayload: StudyMaterialRequest = {
+        sourceText: body.sourceText,
+        generationType: 'flashcards',
+        flashcardsOptions: {
+            numCards: body.numCards || 10,
+            style: body.style || 'basic',
+        }
+    };
 
-    return NextResponse.json(result, { status: 200 });
+    const result = await generateStudyMaterial(requestPayload);
+
+    // Adapt the response to the format expected by the frontend component.
+    // The component expects a `cards` property, but the unified flow returns `flashcardContent`.
+    return NextResponse.json({ cards: result.flashcardContent }, { status: 200 });
 
   } catch (error) {
     console.error('Error in AI flashcard generation API:', error);
