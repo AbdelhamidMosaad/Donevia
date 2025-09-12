@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, TrendingUp, Book, BarChart3, List, Eye, Shield } from 'lucide-react';
+import { PlusCircle, TrendingUp, Book, BarChart3, List, Eye, Shield, Calculator } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Trade, TradingStrategy, WatchlistItem } from '@/lib/types';
@@ -17,6 +17,7 @@ import { StrategyList } from '@/components/trading-tracker/strategy-list';
 import { AnalyticsDashboard } from '@/components/trading-tracker/analytics-dashboard';
 import { Watchlist } from '@/components/trading-tracker/watchlist';
 import { RiskManagementDashboard } from '@/components/trading-tracker/risk-management-dashboard';
+import { StockAverageCalculator } from '@/components/trading-tracker/stock-average-calculator';
 
 export default function TradingTrackerPage() {
   const { user, loading } = useAuth();
@@ -96,6 +97,7 @@ export default function TradingTrackerPage() {
                 <TabsTrigger value="strategies"><Book className="mr-2 h-4 w-4"/> Playbook</TabsTrigger>
                 <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/> Analytics</TabsTrigger>
                 <TabsTrigger value="risk"><Shield className="mr-2 h-4 w-4"/> Risk</TabsTrigger>
+                <TabsTrigger value="calculator"><Calculator className="mr-2 h-4 w-4"/> Average Calculator</TabsTrigger>
             </TabsList>
             
             <TabsContent value="records" className="flex-1 mt-4">
@@ -127,6 +129,10 @@ export default function TradingTrackerPage() {
 
             <TabsContent value="risk" className="flex-1 mt-4">
                <RiskManagementDashboard />
+            </TabsContent>
+            
+            <TabsContent value="calculator" className="flex-1 mt-4">
+                <StockAverageCalculator />
             </TabsContent>
         </Tabs>
 
