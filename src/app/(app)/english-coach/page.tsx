@@ -1,6 +1,7 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { GrammarCoach } from '@/components/english-coach/grammar-coach';
 import { Languages } from 'lucide-react';
 
 export default function EnglishCoachPage() {
@@ -16,7 +17,7 @@ export default function EnglishCoachPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="grammar" className="flex-1 flex flex-col">
+      <Tabs defaultValue="grammar" className="flex-1 flex flex-col min-h-0">
         <TabsList>
           <TabsTrigger value="grammar">
             Grammar Coach
@@ -24,10 +25,7 @@ export default function EnglishCoachPage() {
         </TabsList>
 
         <TabsContent value="grammar" className="flex-1 mt-4">
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-                <h3 className="text-xl font-semibold font-headline">Grammar Coach</h3>
-                <p className="text-muted-foreground">The UI for the grammar coach will be implemented in the next step.</p>
-            </div>
+           <GrammarCoach />
         </TabsContent>
       </Tabs>
     </div>
