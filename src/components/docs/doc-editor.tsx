@@ -191,33 +191,41 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
 
   const handleExportPDF = async () => {
     if (!editor) return;
-    const contentHtml = editor.getHTML();
-    
-    // Create a hidden element to render the HTML for PDF generation
-    const printElement = document.createElement('div');
-    printElement.className = 'prose prose-black'; // Apply same styling as editor
-    printElement.innerHTML = contentHtml;
-    printElement.style.position = 'absolute';
-    printElement.style.left = '-9999px';
-    printElement.style.width = '700px'; // A4-ish width
-    document.body.appendChild(printElement);
 
-
+    const editorElement = editor.view.dom;
     const pdf = new jsPDF({
       orientation: 'p',
       unit: 'pt',
-      format: 'a4'
+      format: 'a4',
     });
+    
+    // Temporarily apply print-friendly styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+      body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .prose {
+        color: #000 !important; /* Ensure text is black for PDF */
+      }
+      .dark .prose {
+        --tw-prose-body: #000;
+        --tw-prose-headings: #000;
+        --tw-prose-bold: #000;
+      }
+    `;
+    document.head.appendChild(style);
 
-    pdf.html(printElement, {
+    pdf.html(editorElement, {
       callback: function (doc) {
         doc.save(`${docData.title}.pdf`);
-        document.body.removeChild(printElement); // Clean up the element
+        document.head.removeChild(style); // Clean up the styles
       },
       x: 40,
       y: 40,
-      width: 515, // A4 width - margins
-      windowWidth: 700,
+      width: 515, // A4 width (595) - margins (40*2)
+      windowWidth: editorElement.scrollWidth,
     });
   };
 
