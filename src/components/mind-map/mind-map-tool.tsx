@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -50,7 +49,6 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import jsPDF from 'jspdf';
 
 
 const colorPalette = ['#4361ee', '#ef476f', '#06d6a0', '#ffd166', '#9d4edd', '#000000'];
@@ -552,19 +550,7 @@ export function MindMapTool() {
   };
   
   const handleExportPDF = () => {
-    const exportCanvas = createExportCanvas();
-    if (!exportCanvas) return;
-
-    const imgData = exportCanvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-        orientation: exportCanvas.width > exportCanvas.height ? 'landscape' : 'portrait',
-        unit: 'px',
-        format: [exportCanvas.width, exportCanvas.height]
-    });
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, exportCanvas.width, exportCanvas.height);
-    pdf.save(`${mapName || 'mind-map'}.pdf`);
-    toast({ title: "Export Successful", description: "Your mind map is being downloaded as a PDF." });
+    toast({ variant: 'destructive', title: 'PDF Export is currently unavailable.'});
   };
 
    const handleSettingChange = async (setting: Partial<MindMapType>) => {

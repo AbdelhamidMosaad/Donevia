@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,8 +13,6 @@ import { Button } from '../ui/button';
 import { Trash2, UserPlus, ListPlus, Download, FileText } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { v4 as uuidv4 } from 'uuid';
-import jsPDF from 'jspdf';
-import { JSDOM } from 'jsdom';
 
 
 interface MeetingNotesEditorProps {
@@ -81,58 +78,7 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
   }
   
    const handleExportPDF = () => {
-    if (!editorInstance) {
-        toast({ variant: 'destructive', title: 'Editor not ready for export.'});
-        return;
-    }
-
-    const docContent = editorInstance.getHTML();
-    
-    // Create a new jsPDF instance
-    const pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'pt',
-      format: 'a4'
-    });
-
-    // --- Header ---
-    pdf.setFontSize(22);
-    pdf.text(note.title, 40, 60);
-
-    pdf.setFontSize(12);
-    pdf.text(`Date: ${moment(note.date.toDate()).format('MMMM Do, YYYY')}`, 40, 80);
-
-    // --- Attendees ---
-    pdf.setFontSize(14);
-    pdf.text('Attendees', 40, 120);
-    pdf.setFontSize(10);
-    note.attendees.forEach((attendee, index) => {
-      pdf.text(`- ${attendee.name} (${attendee.email})`, 50, 135 + (index * 15));
-    });
-
-    const lastAttendeeY = 135 + (note.attendees.length * 15);
-    
-    // --- Agenda ---
-    pdf.setFontSize(14);
-    pdf.text('Agenda', 40, lastAttendeeY + 30);
-    pdf.setFontSize(10);
-    note.agenda.forEach((item, index) => {
-        pdf.text(`- ${item.topic} (${item.presenter}, ${item.time} mins)`, 50, lastAttendeeY + 45 + (index * 15));
-    });
-
-    const lastAgendaY = lastAttendeeY + 45 + (note.agenda.length * 15);
-
-    // --- Notes Content from Editor ---
-    pdf.html(docContent, {
-        x: 40,
-        y: lastAgendaY + 20,
-        width: 515, // A4 width is ~595pts, with 40pt margins
-        windowWidth: 515,
-        callback: function(doc) {
-            doc.save(`${note.title.replace(/ /g, '_')}_meeting_notes.pdf`);
-            toast({title: "Exporting PDF..."});
-        }
-    });
+    toast({ variant: 'destructive', title: 'PDF Export is currently unavailable.'});
   };
 
 
