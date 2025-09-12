@@ -319,7 +319,7 @@ export default function HelpPage() {
             </CardHeader>
             <CardContent>
                  <Button asChild>
-                    <a href="mailto:contact@donevia.com?subject=Donevia Feedback">
+                    <a href="mailto:abdelhamid.mosaad@gmail.com?subject=Donevia Feedback">
                         Send an Email
                     </a>
                 </Button>
