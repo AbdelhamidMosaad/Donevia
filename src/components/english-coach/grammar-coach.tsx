@@ -4,14 +4,36 @@ import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Sparkles, Check, X, FileText, Download, ArrowRight } from 'lucide-react';
+import { Loader2, Sparkles, Check, X, FileText, Download, ArrowRight, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import type { GrammarCorrectionResponse } from '@/ai/flows/grammar-coach-flow';
+
+// Define the structure of a LanguageTool match
+interface LanguageToolMatch {
+  message: string;
+  shortMessage: string;
+  replacements: { value: string }[];
+  offset: number;
+  length: number;
+  context: {
+    text: string;
+    offset: number;
+    length: number;
+  };
+  rule: {
+    id: string;
+    description: string;
+    issueType: string;
+    category: {
+      id: string;
+      name: string;
+    };
+  };
+}
 
 export function GrammarCoach() {
   const [inputText, setInputText] = useState('');
-  const [result, setResult] = useState<GrammarCorrectionResponse | null>(null);
+  const [matches, setMatches] = useState<LanguageToolMatch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -27,7 +49,7 @@ export function GrammarCoach() {
     }
 
     setIsLoading(true);
-    setResult(null);
+    setMatches([]);
 
     try {
       const response = await fetch('/api/english-coach/check-grammar', {
@@ -44,8 +66,8 @@ export function GrammarCoach() {
         throw new Error(errorData.error || 'Failed to check grammar.');
       }
 
-      const data: GrammarCorrectionResponse = await response.json();
-      setResult(data);
+      const data = await response.json();
+      setMatches(data.matches);
     } catch (error) {
       console.error('Grammar check failed:', error);
       toast({
@@ -57,19 +79,21 @@ export function GrammarCoach() {
       setIsLoading(false);
     }
   };
-  
-  const handleExport = (format: 'pdf' | 'word') => {
-      toast({
-          title: 'Coming Soon!',
-          description: `Export to ${format} will be available in a future update.`
-      })
-  }
 
-  const handleSave = () => {
-       toast({
-          title: 'Coming Soon!',
-          description: `Saving your sessions will be available in a future update.`
-      })
+  const getHighlightedText = (text: string, matches: LanguageToolMatch[]) => {
+      let lastIndex = 0;
+      const parts: (string | JSX.Element)[] = [];
+      matches.forEach((match, i) => {
+          parts.push(text.substring(lastIndex, match.offset));
+          parts.push(
+              <span key={i} className="bg-yellow-200 dark:bg-yellow-800/70 rounded-md px-1">
+                  {text.substring(match.offset, match.offset + match.length)}
+              </span>
+          );
+          lastIndex = match.offset + match.length;
+      });
+      parts.push(text.substring(lastIndex));
+      return <p className="whitespace-pre-wrap leading-relaxed">{parts}</p>;
   }
 
   return (
@@ -97,8 +121,8 @@ export function GrammarCoach() {
 
       <Card className="flex flex-col">
         <CardHeader>
-          <CardTitle>AI Feedback</CardTitle>
-          <CardDescription>Review the AI's suggestions and corrections for your text.</CardDescription>
+          <CardTitle>Analysis & Suggestions</CardTitle>
+          <CardDescription>Review the suggestions to improve your text.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto">
           {isLoading ? (
@@ -106,30 +130,33 @@ export function GrammarCoach() {
               <Loader2 className="mr-2 h-6 w-6 animate-spin" />
               <span>AI is analyzing your text...</span>
             </div>
-          ) : result ? (
+          ) : matches.length > 0 ? (
             <div className="space-y-6">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                    <h3 className="font-bold mb-2">Highlighted Text:</h3>
+                    {getHighlightedText(inputText, matches)}
+                </div>
                  <div>
-                    <h3 className="font-bold text-lg mb-2">Error Breakdown:</h3>
-                    {result.errors.map((error, index) => (
+                    <h3 className="font-bold text-lg mb-2">Suggestions:</h3>
+                    {matches.map((match, index) => (
                         <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
-                            <div className="flex items-center gap-4 text-destructive">
-                                <X className="h-5 w-5 shrink-0"/>
-                                <p className="line-through">{error.original}</p>
+                             <p className="text-sm text-muted-foreground font-semibold">{match.rule.category.name}</p>
+                             <p className="font-semibold mb-2">{match.message}</p>
+                           
+                           <div className="flex items-center gap-4 text-destructive text-sm">
+                                <X className="h-4 w-4 shrink-0"/>
+                                <p className="line-through">...{match.context.text}...</p>
                             </div>
-                            <div className="flex items-center gap-4 text-green-600 mt-2">
-                                <Check className="h-5 w-5 shrink-0"/>
-                                <p>{error.correction}</p>
-                            </div>
-                            <div className="mt-2 pl-9 text-sm text-muted-foreground">
-                                <p>{error.explanation}</p>
-                            </div>
+
+                            {match.replacements.length > 0 && (
+                                <div className="flex items-center gap-4 text-green-600 mt-2 text-sm">
+                                    <Check className="h-4 w-4 shrink-0"/>
+                                    <p>Suggestion: <span className="font-semibold">{match.replacements[0].value}</span></p>
+                                </div>
+                            )}
                         </div>
                     ))}
                  </div>
-              <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                <h3 className="font-bold text-lg">Final Polished Version:</h3>
-                <p className="mt-2 text-primary/90">{result.corrected_text}</p>
-              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -137,13 +164,6 @@ export function GrammarCoach() {
             </div>
           )}
         </CardContent>
-        {result && (
-            <CardFooter className="justify-end gap-2">
-                <Button variant="outline" onClick={handleSave}><FileText className="mr-2 h-4 w-4" /> Save</Button>
-                <Button variant="outline" onClick={() => handleExport('word')}><Download className="mr-2 h-4 w-4" /> Export as Word</Button>
-                <Button variant="outline" onClick={() => handleExport('pdf')}><Download className="mr-2 h-4 w-4" /> Export as PDF</Button>
-            </CardFooter>
-        )}
       </Card>
     </div>
   );
