@@ -17,10 +17,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { Trade } from '@/lib/types';
+import type { Trade, TradingStrategy } from '@/lib/types';
 import { addTrade, updateTrade } from '@/lib/trading-tracker';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import moment from 'moment';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface AddTradeDialogProps {
   trade?: Trade | null;
@@ -36,6 +38,7 @@ export function AddTradeDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
 
   const isEditMode = !!trade;
 
@@ -48,7 +51,18 @@ export function AddTradeDialog({
   const [fees, setFees] = useState(0);
   const [notes, setNotes] = useState('');
   const [chartUrl, setChartUrl] = useState('');
+  const [strategyId, setStrategyId] = useState<string | undefined>();
   
+  useEffect(() => {
+    if(user) {
+      const q = query(collection(db, 'users', user.uid, 'tradingStrategies'), orderBy('createdAt', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        setStrategies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TradingStrategy)));
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
   const resetForm = () => {
     setSymbol('');
     setEntryPrice(0);
@@ -59,6 +73,7 @@ export function AddTradeDialog({
     setFees(0);
     setNotes('');
     setChartUrl('');
+    setStrategyId(undefined);
   };
 
   useEffect(() => {
@@ -73,6 +88,7 @@ export function AddTradeDialog({
         setFees(trade.fees);
         setNotes(trade.notes || '');
         setChartUrl(trade.chartUrl || '');
+        setStrategyId(trade.strategyId);
       } else {
         resetForm();
       }
@@ -100,6 +116,7 @@ export function AddTradeDialog({
         notes,
         chartUrl,
         profitOrLoss: pnl,
+        strategyId,
     };
 
     try {
@@ -159,9 +176,23 @@ export function AddTradeDialog({
                 <Input id="exit-price" type="number" value={exitPrice} onChange={(e) => setExitPrice(parseFloat(e.target.value) || 0)} />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="fees">Fees</Label>
-            <Input id="fees" type="number" value={fees} onChange={(e) => setFees(parseFloat(e.target.value) || 0)} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="fees">Fees</Label>
+                <Input id="fees" type="number" value={fees} onChange={(e) => setFees(parseFloat(e.target.value) || 0)} />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="strategy">Strategy</Label>
+                <Select value={strategyId} onValueChange={setStrategyId}>
+                    <SelectTrigger><SelectValue placeholder="Select a strategy"/></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {strategies.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
           </div>
            <div className="space-y-2">
             <Label htmlFor="chartUrl">Chart URL</Label>

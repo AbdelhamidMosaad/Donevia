@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, TrendingUp } from 'lucide-react';
+import { PlusCircle, TrendingUp, Book } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Trade } from '@/lib/types';
@@ -63,6 +64,10 @@ export default function TradingTrackerPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => router.push('/trading-tracker/strategies')}>
+              <Book className="mr-2 h-4 w-4" />
+              Strategy Playbook
+            </Button>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Trade
@@ -79,3 +84,6 @@ export default function TradingTrackerPage() {
     </div>
   );
 }
+
+
+    

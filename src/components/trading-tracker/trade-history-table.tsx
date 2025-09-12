@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Edit, Trash2, LineChart } from 'lucide-react';
-import type { Trade } from '@/lib/types';
+import type { Trade, TradingStrategy } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -35,6 +35,8 @@ import {
 import moment from 'moment';
 import { cn } from '@/lib/utils';
 import { AddTradeDialog } from './add-trade-dialog';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface TradeHistoryTableProps {
   trades: Trade[];
@@ -45,7 +47,21 @@ export function TradeHistoryTable({ trades, onDeleteTrade }: TradeHistoryTablePr
   const { user } = useAuth();
   const { toast } = useToast();
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+  const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
 
+  useEffect(() => {
+    if(user) {
+      const q = query(collection(db, 'users', user.uid, 'tradingStrategies'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        setStrategies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TradingStrategy)));
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  const strategyMap = useMemo(() => {
+    return new Map(strategies.map(s => [s.id, s.name]));
+  }, [strategies]);
 
   return (
     <>
@@ -54,6 +70,7 @@ export function TradeHistoryTable({ trades, onDeleteTrade }: TradeHistoryTablePr
           <TableHeader>
             <TableRow>
               <TableHead>Symbol</TableHead>
+              <TableHead>Strategy</TableHead>
               <TableHead>Entry Date</TableHead>
               <TableHead>Entry Price</TableHead>
               <TableHead>Exit Price</TableHead>
@@ -67,6 +84,7 @@ export function TradeHistoryTable({ trades, onDeleteTrade }: TradeHistoryTablePr
             {trades.map((trade) => (
               <TableRow key={trade.id}>
                 <TableCell className="font-medium">{trade.symbol}</TableCell>
+                <TableCell>{trade.strategyId ? strategyMap.get(trade.strategyId) : '-'}</TableCell>
                 <TableCell>{moment(trade.entryDate.toDate()).format('YYYY-MM-DD HH:mm')}</TableCell>
                 <TableCell>${trade.entryPrice.toFixed(2)}</TableCell>
                 <TableCell>${trade.exitPrice.toFixed(2)}</TableCell>
