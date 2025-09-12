@@ -632,6 +632,12 @@ export type GoogleCalendarEvent = {
 };
 
 /** Trading Tracker */
+export type TradeNote = {
+  id: string;
+  date: Timestamp;
+  text: string;
+};
+
 export type Trade = {
   id: string;
   symbol: string;
@@ -642,7 +648,7 @@ export type Trade = {
   quantity: number;
   fees: number;
   profitOrLoss: number;
-  notes?: string;
+  notes?: TradeNote[];
   chartUrl?: string;
   strategyId?: string;
   attachments?: Attachment[];

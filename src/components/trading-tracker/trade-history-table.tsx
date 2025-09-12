@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, LineChart, FileDown } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, LineChart, FileDown, StickyNote } from 'lucide-react';
 import type { Trade, TradingStrategy } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 import { Input } from '../ui/input';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 
 interface TradeHistoryTableProps {
@@ -129,7 +130,7 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
         'Exit Price': t.exitPrice,
         Quantity: t.quantity,
         'P/L': t.profitOrLoss.toFixed(2),
-        Notes: t.notes
+        Notes: t.notes?.map(n => `${moment(n.date.toDate()).format('YYYY-MM-DD')}: ${n.text}`).join(' | ') || ''
     }));
     
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -230,6 +231,7 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
         </Card>
       
         <div className="border rounded-lg">
+            <TooltipProvider>
             <Table>
             <TableHeader>
                 <TableRow>
@@ -240,6 +242,7 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
                 <TableHead>Exit Price</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>P/L</TableHead>
+                <TableHead>Notes</TableHead>
                 <TableHead>Chart</TableHead>
                 <TableHead>Actions</TableHead>
                 </TableRow>
@@ -255,6 +258,19 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
                     <TableCell>{trade.quantity}</TableCell>
                     <TableCell className={cn(trade.profitOrLoss >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {currencySymbol}{trade.profitOrLoss.toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                        {trade.notes && trade.notes.length > 0 && (
+                             <Tooltip>
+                                <TooltipTrigger>
+                                    <StickyNote className="h-4 w-4 cursor-pointer"/>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="font-bold">{moment(trade.notes[trade.notes.length - 1].date.toDate()).format('YYYY-MM-DD')}</p>
+                                    <p>{trade.notes[trade.notes.length - 1].text}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
                     </TableCell>
                     <TableCell>
                     {trade.chartUrl && (
@@ -300,6 +316,7 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
                 ))}
             </TableBody>
             </Table>
+            </TooltipProvider>
             {filteredTrades.length === 0 && <p className="text-center text-muted-foreground p-8">No trades recorded for the selected filters.</p>}
         </div>
       </div>

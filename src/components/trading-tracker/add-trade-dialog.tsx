@@ -17,12 +17,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { Trade, TradingStrategy } from '@/lib/types';
+import type { Trade, TradingStrategy, TradeNote } from '@/lib/types';
 import { addTrade, updateTrade } from '@/lib/trading-tracker';
 import { Timestamp, collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import moment from 'moment';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { v4 as uuidv4 } from 'uuid';
+import { Plus, Trash2 } from 'lucide-react';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface AddTradeDialogProps {
   trade?: Trade | null;
@@ -60,7 +63,8 @@ export function AddTradeDialog({
   const [entryDate, setEntryDate] = useState(new Date());
   const [exitDate, setExitDate] = useState(new Date());
   const [fees, setFees] = useState(0);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState<TradeNote[]>([]);
+  const [newNoteText, setNewNoteText] = useState('');
   const [chartUrl, setChartUrl] = useState('');
   const [strategyId, setStrategyId] = useState<string | undefined>();
 
@@ -72,7 +76,8 @@ export function AddTradeDialog({
     setEntryDate(new Date());
     setExitDate(new Date());
     setFees(0);
-    setNotes('');
+    setNotes([]);
+    setNewNoteText('');
     setChartUrl('');
     setStrategyId(undefined);
   };
@@ -87,7 +92,7 @@ export function AddTradeDialog({
         setEntryDate(trade.entryDate.toDate());
         setExitDate(trade.exitDate.toDate());
         setFees(trade.fees);
-        setNotes(trade.notes || '');
+        setNotes(trade.notes || []);
         setChartUrl(trade.chartUrl || '');
         setStrategyId(trade.strategyId);
       } else {
@@ -136,6 +141,22 @@ export function AddTradeDialog({
       setIsSaving(false);
     }
   };
+
+  const handleAddNote = () => {
+    if (!newNoteText.trim()) return;
+    const newNote: TradeNote = {
+      id: uuidv4(),
+      date: Timestamp.now(),
+      text: newNoteText.trim(),
+    };
+    setNotes([...notes, newNote]);
+    setNewNoteText('');
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    setNotes(notes.filter(n => n.id !== noteId));
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -200,8 +221,31 @@ export function AddTradeDialog({
             <Input id="chartUrl" value={chartUrl} onChange={(e) => setChartUrl(e.target.value)} placeholder="https://www.tradingview.com/chart/..."/>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes & Rationale</Label>
-            <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Why did you take this trade? How did it go?"/>
+            <Label>Notes & Rationale</Label>
+            <ScrollArea className="h-32 w-full rounded-md border p-2">
+                {notes.map(note => (
+                    <div key={note.id} className="text-sm p-1.5 rounded-md hover:bg-muted flex justify-between items-start">
+                        <div>
+                            <p className="font-semibold">{moment(note.date.toDate()).format('YYYY-MM-DD HH:mm')}</p>
+                            <p className="whitespace-pre-wrap">{note.text}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleDeleteNote(note.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive"/>
+                        </Button>
+                    </div>
+                ))}
+            </ScrollArea>
+             <div className="flex items-center gap-2">
+                <Textarea 
+                  value={newNoteText}
+                  onChange={(e) => setNewNoteText(e.target.value)}
+                  placeholder="Add a new note..."
+                  className="min-h-[60px]"
+                />
+                <Button onClick={handleAddNote} size="icon" className="shrink-0">
+                    <Plus className="h-4 w-4"/>
+                </Button>
+             </div>
           </div>
         </div>
         <DialogFooter>
