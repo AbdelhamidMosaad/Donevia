@@ -59,6 +59,8 @@ export function AddTradeDialog({
   const [symbol, setSymbol] = useState('');
   const [entryPrice, setEntryPrice] = useState(0);
   const [exitPrice, setExitPrice] = useState(0);
+  const [stopLoss, setStopLoss] = useState<number | undefined>();
+  const [takeProfit, setTakeProfit] = useState<number | undefined>();
   const [quantity, setQuantity] = useState(0);
   const [entryDate, setEntryDate] = useState(new Date());
   const [exitDate, setExitDate] = useState(new Date());
@@ -72,6 +74,8 @@ export function AddTradeDialog({
     setSymbol('');
     setEntryPrice(0);
     setExitPrice(0);
+    setStopLoss(undefined);
+    setTakeProfit(undefined);
     setQuantity(0);
     setEntryDate(new Date());
     setExitDate(new Date());
@@ -88,6 +92,8 @@ export function AddTradeDialog({
         setSymbol(trade.symbol);
         setEntryPrice(trade.entryPrice);
         setExitPrice(trade.exitPrice);
+        setStopLoss(trade.stopLoss);
+        setTakeProfit(trade.takeProfit);
         setQuantity(trade.quantity);
         setEntryDate(trade.entryDate.toDate());
         setExitDate(trade.exitDate.toDate());
@@ -115,6 +121,8 @@ export function AddTradeDialog({
         symbol,
         entryPrice,
         exitPrice,
+        stopLoss,
+        takeProfit,
         quantity,
         entryDate: Timestamp.fromDate(entryDate),
         exitDate: Timestamp.fromDate(exitDate),
@@ -196,6 +204,16 @@ export function AddTradeDialog({
             <div className="space-y-2">
                 <Label htmlFor="exit-price">Exit Price ({currencySymbol})</Label>
                 <Input id="exit-price" type="number" value={exitPrice} onChange={(e) => setExitPrice(parseFloat(e.target.value) || 0)} />
+            </div>
+          </div>
+           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="stop-loss">Stop Loss ({currencySymbol})</Label>
+                <Input id="stop-loss" type="number" value={stopLoss || ''} onChange={(e) => setStopLoss(e.target.value ? parseFloat(e.target.value) : undefined)} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="take-profit">Take Profit ({currencySymbol})</Label>
+                <Input id="take-profit" type="number" value={takeProfit || ''} onChange={(e) => setTakeProfit(e.target.value ? parseFloat(e.target.value) : undefined)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

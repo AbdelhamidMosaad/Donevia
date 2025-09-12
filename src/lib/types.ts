@@ -644,6 +644,8 @@ export type Trade = {
   symbol: string;
   entryPrice: number;
   exitPrice: number;
+  stopLoss?: number;
+  takeProfit?: number;
   entryDate: Timestamp;
   exitDate: Timestamp;
   quantity: number;
