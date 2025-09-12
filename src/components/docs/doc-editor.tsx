@@ -36,6 +36,7 @@ import { Callout } from '@/lib/tiptap/callout';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 interface DocEditorProps {
@@ -70,6 +71,8 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const editorContentRef = useRef<HTMLDivElement>(null);
+
 
   const debouncedSave = useDebouncedCallback(async (updatedDoc: Doc) => {
     if (!user) return;
@@ -190,36 +193,59 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
   }, [toast]);
 
   const handleExportPDF = async () => {
-    if (!editor) return;
+    if (!editor || !editorContentRef.current) {
+        toast({ variant: 'destructive', title: 'Editor content not available for export.'});
+        return;
+    }
 
-    const editorContentHtml = editor.getHTML();
+    toast({title: "Generating PDF...", description: "This may take a moment."});
     
-    // Create a temporary, off-screen div to render the content with styles
-    const printContainer = document.createElement('div');
-    printContainer.style.position = 'absolute';
-    printContainer.style.left = '-9999px';
-    printContainer.style.width = '800px'; // A standard page width
-    printContainer.innerHTML = `<div class="prose prose-sm">${editorContentHtml}</div>`;
-    document.body.appendChild(printContainer);
+    const editorNode = editorContentRef.current.querySelector('.ProseMirror') as HTMLElement;
+    if (!editorNode) {
+        toast({ variant: 'destructive', title: 'Could not find editor content.'});
+        return;
+    }
+    
+    try {
+        const canvas = await html2canvas(editorNode, {
+            scale: 2, // Increase resolution
+            useCORS: true,
+            backgroundColor: docData.backgroundColor || '#ffffff',
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'px',
+            format: 'a4',
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        
+        const ratio = imgWidth / imgHeight;
+        let finalImgWidth = pdfWidth;
+        let finalImgHeight = pdfWidth / ratio;
+        
+        if (finalImgHeight > pdfHeight) {
+            finalImgHeight = pdfHeight;
+            finalImgWidth = pdfHeight * ratio;
+        }
 
-    const pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'pt',
-      format: 'a4',
-    });
-    
-    pdf.html(printContainer, {
-      callback: function (doc) {
-        doc.save(`${docData.title}.pdf`);
-        document.body.removeChild(printContainer); // Clean up
-        toast({title: "Exporting PDF..."});
-      },
-      x: 40,
-      y: 40,
-      width: 515, // A4 width (595pt) - margins
-      windowWidth: 800,
-    });
+        const x = (pdfWidth - finalImgWidth) / 2;
+        
+        pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
+        pdf.save(`${docData.title}.pdf`);
+        toast({title: "Export Successful", description: "Your document is downloading."});
+
+    } catch (error) {
+        console.error("PDF Export failed:", error);
+        toast({variant: 'destructive', title: 'PDF Export Failed', description: 'Could not generate PDF.'});
+    }
   };
+
 
   const handleExportWord = () => {
     if (!editor) return;
@@ -305,7 +331,9 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
           onClick={() => editor.commands.focus()}
           style={{ backgroundColor: docData.backgroundColor || '#FFFFFF' }}
         >
-            <div className={cn(
+            <div 
+              ref={editorContentRef}
+              className={cn(
                 "bg-transparent transition-all",
                 marginClasses[docData.margin || 'medium'],
                 !docData.fullWidth ? "max-w-4xl mx-auto" : "px-4 md:px-8"

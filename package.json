@@ -73,6 +73,7 @@
     "genkit": "^1.14.1",
     "googleapis": "^142.0.0",
     "html-to-md": "^0.8.2",
+    "html2canvas": "^1.4.1",
     "jsdom": "^24.1.0",
     "jspdf": "^2.5.1",
     "jotai": "^2.9.0",
