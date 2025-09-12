@@ -191,14 +191,17 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
 
   const handleExportPDF = async () => {
     if (!editor) return;
-    const { JSDOM } = await import('jsdom');
     const contentHtml = editor.getHTML();
     
-    // Sanitize HTML
-    const dom = new JSDOM(contentHtml);
-    const document = dom.window.document;
-    // Remove scripts and other potentially harmful elements
-    document.querySelectorAll('script, link, style').forEach(el => el.remove());
+    // Create a hidden element to render the HTML for PDF generation
+    const printElement = document.createElement('div');
+    printElement.className = 'prose prose-black'; // Apply same styling as editor
+    printElement.innerHTML = contentHtml;
+    printElement.style.position = 'absolute';
+    printElement.style.left = '-9999px';
+    printElement.style.width = '700px'; // A4-ish width
+    document.body.appendChild(printElement);
+
 
     const pdf = new jsPDF({
       orientation: 'p',
@@ -206,14 +209,15 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
       format: 'a4'
     });
 
-    pdf.html(document.body, {
+    pdf.html(printElement, {
       callback: function (doc) {
         doc.save(`${docData.title}.pdf`);
+        document.body.removeChild(printElement); // Clean up the element
       },
-      x: 10,
-      y: 10,
-      width: 575, // A4 width - margins
-      windowWidth: document.body.scrollWidth,
+      x: 40,
+      y: 40,
+      width: 515, // A4 width - margins
+      windowWidth: 700,
     });
   };
 
