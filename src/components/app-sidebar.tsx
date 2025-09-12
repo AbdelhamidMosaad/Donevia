@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -33,6 +32,7 @@ import {
   Layers,
   ClipboardSignature,
   CalendarDays,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -56,6 +56,7 @@ const defaultMenuItems = [
     { href: '/meeting-notes', icon: <ClipboardSignature className="text-cyan-500 ml-2" />, label: 'Meeting Notes', tooltip: 'Meeting Notes', id: 'meeting-notes' },
     { href: '/notes', icon: <FileText className="text-orange-500 ml-2" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
     { href: '/bookmarks', icon: <Bookmark className="text-blue-500 ml-2" />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
+    { href: '/trading-tracker', icon: <TrendingUp className="text-emerald-500 ml-2" />, label: 'Trading Tracker', tooltip: 'Trading Tracker', id: 'trading-tracker' },
     { href: '/work-tracker', icon: <Briefcase className="text-amber-500 ml-2" />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
     { href: '/brainstorming', icon: <BrainCircuit className="text-violet-500 ml-2" />, label: 'Brainstorming', tooltip: 'Brainstorming', id: 'brainstorming' },
     { href: '/whiteboard', icon: <PenSquare className="text-indigo-500 ml-2" />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },

@@ -626,3 +626,30 @@ export type GoogleCalendarEvent = {
     isGoogleEvent?: boolean;
     [key: string]: any;
 };
+
+/** Trading Tracker */
+export type Trade = {
+  id: string;
+  symbol: string;
+  entryPrice: number;
+  exitPrice: number;
+  entryDate: Timestamp;
+  exitDate: Timestamp;
+  quantity: number;
+  fees: number;
+  profitOrLoss: number;
+  notes?: string;
+  strategyId?: string;
+  attachments?: Attachment[];
+  ownerId: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
+export type TradingStrategy = {
+    id: string;
+    name: string;
+    description: string;
+    ownerId: string;
+    createdAt: Timestamp;
+}
