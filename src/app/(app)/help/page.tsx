@@ -3,8 +3,9 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { HelpCircle, LayoutDashboard, Kanban, BarChart3, Sparkles, Briefcase, Repeat, Target, FileText, Bookmark, BrainCircuit, PenSquare, GitBranch, FileSignature, GraduationCap, Timer, Layers } from "lucide-react";
+import { HelpCircle, LayoutDashboard, Kanban, BarChart3, Sparkles, Briefcase, Repeat, Target, FileText, Bookmark, BrainCircuit, PenSquare, GitBranch, FileSignature, GraduationCap, Timer, Layers, Mail } from "lucide-react";
 import Image from 'next/image';
+import { Button } from "@/components/ui/button";
 
 const features = [
     {
@@ -309,6 +310,19 @@ export default function HelpPage() {
                         </AccordionItem>
                     ))}
                 </Accordion>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Mail /> Contact & Feedback</CardTitle>
+                <CardDescription>Have a question, suggestion, or encountered a bug? We'd love to hear from you.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Button asChild>
+                    <a href="mailto:contact@donevia.com?subject=Donevia Feedback">
+                        Send an Email
+                    </a>
+                </Button>
             </CardContent>
         </Card>
     </div>
