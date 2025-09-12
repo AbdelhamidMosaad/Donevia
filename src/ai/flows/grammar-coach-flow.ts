@@ -35,12 +35,16 @@ const grammarCoachPrompt = ai.definePrompt({
   output: { schema: GrammarCorrectionResponseSchema },
   prompt: `
     You are an expert English grammar and style coach.
-    Analyze the following text.
-    Return a JSON object with two keys:
-    1. "corrected_text": The fully corrected and polished version of the entire text.
-    2. "errors": An array of objects, where each object details a specific error. Each error object should have three keys: "original" (the incorrect phrase), "correction" (the suggested fix), and "explanation" (why it was wrong).
+    Your task is to analyze the provided text and return a JSON object.
 
-    Analyze this text:
+    The JSON object must have two keys:
+    1.  "corrected_text": A string containing the fully corrected and polished version of the entire text.
+    2.  "errors": An array of objects. Each object must detail a specific error and have three keys:
+        - "original": The exact incorrect word or phrase.
+        - "correction": The suggested fix.
+        - "explanation": A brief, clear explanation of the mistake and correction.
+
+    Analyze the following text:
     ---
     {{{text}}}
     ---
