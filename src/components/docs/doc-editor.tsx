@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import { EditorToolbar } from './editor-toolbar';
 import { slashCommands } from './slash-commands';
-import { Loader2, Maximize, Minimize } from 'lucide-react';
+import { Loader2, Maximize, Minimize, Download } from 'lucide-react';
 import { Image as TipTapImage } from '@tiptap/extension-image';
 import { FontSize } from '@/lib/tiptap/font-size';
 import TextStyle from '@tiptap/extension-text-style';
@@ -34,6 +34,9 @@ import { TextTransform } from '@/lib/tiptap/text-transform';
 import { cn } from '@/lib/utils';
 import { Callout } from '@/lib/tiptap/callout';
 import { Button } from '../ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import jsPDF from 'jspdf';
+import { JSDOM } from 'jsdom';
 
 
 interface DocEditorProps {
@@ -187,6 +190,49 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
     }
   }, [toast]);
 
+  const handleExportPDF = () => {
+    if (!editor) return;
+    const contentHtml = editor.getHTML();
+    
+    // Sanitize HTML
+    const dom = new JSDOM(contentHtml);
+    const document = dom.window.document;
+    // Remove scripts and other potentially harmful elements
+    document.querySelectorAll('script, link, style').forEach(el => el.remove());
+
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'pt',
+      format: 'a4'
+    });
+
+    pdf.html(document.body, {
+      callback: function (doc) {
+        doc.save(`${docData.title}.pdf`);
+      },
+      x: 10,
+      y: 10,
+      width: 575, // A4 width - margins
+      windowWidth: document.body.scrollWidth,
+    });
+  };
+
+  const handleExportWord = () => {
+    if (!editor) return;
+    
+    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word Document</title></head><body>";
+    const footer = "</body></html>";
+    const sourceHTML = header + editor.getHTML() + footer;
+
+    const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+    const fileDownload = document.createElement("a");
+    document.body.appendChild(fileDownload);
+    fileDownload.href = source;
+    fileDownload.download = `${docData.title}.doc`;
+    fileDownload.click();
+    document.body.removeChild(fileDownload);
+  };
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -231,6 +277,19 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
              <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-muted-foreground">
                 {saveStatus === 'saving' && <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>}
                 {saveStatus === 'saved' && <span>Saved</span>}
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                     <Button variant="ghost" size="icon">
+                        <Download className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={handleExportPDF}>Export as PDF</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={handleExportWord}>Export as Word (.doc)</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
                     {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
                 </Button>
