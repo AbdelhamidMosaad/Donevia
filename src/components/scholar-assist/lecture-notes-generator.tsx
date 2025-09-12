@@ -205,8 +205,8 @@ export function LectureNotesGenerator() {
                     <CardDescription>Your AI-generated notes are ready.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1">
-                    <ScrollArea className="h-full border rounded-md p-4 bg-muted/50">
-                       <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ScrollArea className="h-full border rounded-md p-4 bg-white">
+                       <div className="prose prose-sm prose-black max-w-none">
                             {typeof result.notesContent === 'string' ? (
                                 <div className="whitespace-pre-wrap font-sans">{result.notesContent}</div>
                             ) : (
