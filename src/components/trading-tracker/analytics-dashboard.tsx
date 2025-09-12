@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -8,13 +9,12 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
-import { ChartContainer, ChartTooltipContent } from '../ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { TrendingUp, TrendingDown, Ratio } from 'lucide-react';
 
 interface AnalyticsDashboardProps {
