@@ -17,12 +17,12 @@ export const GrammarCorrectionInputSchema = z.object({
 export type GrammarCorrectionInput = z.infer<typeof GrammarCorrectionInputSchema>;
 
 export const GrammarCorrectionResponseSchema = z.object({
-  analysis: z.array(z.object({
-    original: z.string().describe("The original sentence or phrase from the user's text."),
-    issues: z.array(z.string()).describe("A list of specific grammatical or stylistic issues found in the original phrase."),
-    correction: z.string().describe("The corrected version of the sentence or phrase."),
-  })).describe("An array of analyses for each segment of the original text."),
-  finalPolishedVersion: z.string().describe("The fully corrected and polished version of the entire text."),
+  corrected_text: z.string().describe("The fully corrected and polished version of the entire text."),
+  errors: z.array(z.object({
+      original: z.string().describe("The original incorrect word or phrase."),
+      correction: z.string().describe("The suggested correct word or phrase."),
+      explanation: z.string().describe("A brief explanation of the grammatical error and the correction.")
+  })).describe("An array of specific errors found in the text."),
 });
 export type GrammarCorrectionResponse = z.infer<typeof GrammarCorrectionResponseSchema>;
 
@@ -35,10 +35,12 @@ const grammarCoachPrompt = ai.definePrompt({
   output: { schema: GrammarCorrectionResponseSchema },
   prompt: `
     You are an expert English grammar and style coach.
-    Analyze the user's text. For each sentence or logical phrase, provide the original text, a list of specific issues, and the corrected version.
-    After analyzing all parts, provide a final, polished version of the entire text.
+    Analyze the following text.
+    Return a JSON object with two keys:
+    1. "corrected_text": The fully corrected and polished version of the entire text.
+    2. "errors": An array of objects, where each object details a specific error. Each error object should have three keys: "original" (the incorrect phrase), "correction" (the suggested fix), and "explanation" (why it was wrong).
 
-    Analyze the following text:
+    Analyze this text:
     ---
     {{{text}}}
     ---

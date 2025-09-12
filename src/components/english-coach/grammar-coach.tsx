@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Sparkles, Check, X, FileText, Download } from 'lucide-react';
+import { Loader2, Sparkles, Check, X, FileText, Download, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import type { GrammarCorrectionResponse } from '@/ai/flows/grammar-coach-flow';
@@ -109,33 +108,27 @@ export function GrammarCoach() {
             </div>
           ) : result ? (
             <div className="space-y-6">
-              {result.analysis.map((item, index) => (
-                <div key={index} className="space-y-2">
-                  <div>
-                    <h4 className="font-semibold">Original:</h4>
-                    <p className="text-muted-foreground italic">"{item.original}"</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">Issues:</h4>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {item.issues.map((issue, i) => (
-                        <li key={i} className="text-sm text-destructive/80 flex items-start gap-2">
-                          <X className="h-4 w-4 mt-0.5 shrink-0" /> {issue}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                   <div>
-                    <h4 className="font-semibold">Correction:</h4>
-                     <p className="text-sm text-green-700 dark:text-green-400 flex items-start gap-2">
-                       <Check className="h-4 w-4 mt-0.5 shrink-0"/> {item.correction}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                 <div>
+                    <h3 className="font-bold text-lg mb-2">Error Breakdown:</h3>
+                    {result.errors.map((error, index) => (
+                        <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
+                            <div className="flex items-center gap-4 text-destructive">
+                                <X className="h-5 w-5 shrink-0"/>
+                                <p className="line-through">{error.original}</p>
+                            </div>
+                            <div className="flex items-center gap-4 text-green-600 mt-2">
+                                <Check className="h-5 w-5 shrink-0"/>
+                                <p>{error.correction}</p>
+                            </div>
+                            <div className="mt-2 pl-9 text-sm text-muted-foreground">
+                                <p>{error.explanation}</p>
+                            </div>
+                        </div>
+                    ))}
+                 </div>
               <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
                 <h3 className="font-bold text-lg">Final Polished Version:</h3>
-                <p className="mt-2 text-primary/90">{result.finalPolishedVersion}</p>
+                <p className="mt-2 text-primary/90">{result.corrected_text}</p>
               </div>
             </div>
           ) : (
