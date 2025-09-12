@@ -129,7 +129,7 @@ body {
   }
 
   .theme-sunset {
-      --background: 20 100% 98%;
+      --background: 20 100% 80%;
       --foreground: 20 30% 25%;
       --card: 20 100% 100%;
       --card-foreground: 20 30% 25%;
@@ -141,7 +141,7 @@ body {
       --secondary-foreground: 20 30% 25%;
       --muted: 20 100% 92%;
       --muted-foreground: 20 20% 55%;
-      --accent: 20 100% 80%;
+      --accent: 20 100% 98%;
       --accent-foreground: 20 30% 15%;
       --destructive: 0 70% 50%;
       --destructive-foreground: 0 0% 100%;
@@ -173,7 +173,7 @@ body {
   }
 
   .theme-jade {
-    --background: 158 30% 97%;
+    --background: 158 40% 80%;
     --foreground: 158 25% 25%;
     --card: 158 30% 100%;
     --card-foreground: 158 25% 25%;
@@ -185,7 +185,7 @@ body {
     --secondary-foreground: 158 25% 25%;
     --muted: 158 30% 90%;
     --muted-foreground: 158 20% 55%;
-    --accent: 158 40% 80%;
+    --accent: 158 30% 97%;
     --accent-foreground: 158 25% 15%;
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -217,7 +217,7 @@ body {
   }
 
   .theme-sky {
-    --background: 195 40% 96%;
+    --background: 195 40% 85%;
     --foreground: 195 30% 25%;
     --card: 195 40% 100%;
     --card-foreground: 195 30% 25%;
@@ -229,7 +229,7 @@ body {
     --secondary-foreground: 195 30% 25%;
     --muted: 195 40% 90%;
     --muted-foreground: 195 25% 55%;
-    --accent: 195 40% 85%;
+    --accent: 195 40% 96%;
     --accent-foreground: 195 30% 10%;
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -261,7 +261,7 @@ body {
   }
 
   .theme-sage {
-    --background: 161 10% 98%;
+    --background: 161 10% 85%;
     --foreground: 161 10% 25%;
     --card: 161 10% 100%;
     --card-foreground: 161 10% 25%;
@@ -273,7 +273,7 @@ body {
     --secondary-foreground: 161 10% 25%;
     --muted: 161 10% 92%;
     --muted-foreground: 161 8% 55%;
-    --accent: 161 10% 85%;
+    --accent: 161 10% 98%;
     --accent-foreground: 161 10% 15%;
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
