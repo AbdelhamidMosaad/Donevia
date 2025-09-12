@@ -66,22 +66,50 @@ export function LectureNotesGenerator() {
   const handleReset = () => {
       setResult(null);
   }
+
+  const convertNotesToText = () => {
+    if (!result?.notesContent) return '';
+    
+    let text = `${result.title}\n\n`;
+
+    if (typeof result.notesContent === 'string') {
+      return text + result.notesContent;
+    }
+
+    // Handle structured notes object
+    text += `${result.notesContent.introduction}\n\n`;
+    result.notesContent.sections.forEach(section => {
+        text += `## ${section.heading}\n\n`;
+        section.content.forEach(point => text += `- ${point}\n`);
+        
+        if (section.subsections) {
+            section.subsections.forEach(subsection => {
+                text += `\n### ${subsection.subheading}\n`;
+                subsection.content.forEach(subPoint => text += `  - ${subPoint}\n`);
+            });
+        }
+        text += '\n';
+        if (section.addDividerAfter) {
+            text += '---\n\n';
+        }
+    });
+
+    return text;
+  }
   
   const handleCopy = () => {
-    if (!result?.notesContent) return;
-    const fullText = `${result.title}\n\n${result.notesContent}`;
+    const fullText = convertNotesToText();
     navigator.clipboard.writeText(fullText);
     toast({ title: '✓ Copied to clipboard!' });
   };
   
   const handleDownload = () => {
-    if (!result?.notesContent) return;
-    const fullText = `${result.title}\n\n${result.notesContent}`;
+    const fullText = convertNotesToText();
     const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${result.title.replace(/ /g, '_')}.txt`;
+    link.download = `${result?.title.replace(/ /g, '_') || 'notes'}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -97,14 +125,41 @@ export function LectureNotesGenerator() {
 
     setIsSavingToDocs(true);
 
-    // Convert plain text to TipTap JSON format
-    const contentJSON = {
-      type: 'doc',
-      content: result.notesContent.split('\n').map(paragraph => ({
-        type: 'paragraph',
-        content: paragraph ? [{ type: 'text', text: paragraph }] : [],
-      })),
-    };
+    let contentJSON;
+    if (typeof result.notesContent === 'string') {
+        contentJSON = {
+            type: 'doc',
+            content: result.notesContent.split('\n').map(paragraph => ({
+                type: 'paragraph',
+                content: paragraph ? [{ type: 'text', text: paragraph }] : [],
+            })),
+        };
+    } else {
+        const tiptapContent = result.notesContent.sections.flatMap(section => {
+            const sectionContent: any[] = [
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: section.heading }] },
+                ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `- ${point}` }] }))
+            ];
+            if (section.subsections) {
+                section.subsections.forEach(sub => {
+                    sectionContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: sub.subheading }] });
+                    sectionContent.push(...sub.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `  - ${point}` }] })));
+                });
+            }
+            if (section.addDividerAfter) {
+                sectionContent.push({ type: 'horizontalRule' });
+            }
+            return sectionContent;
+        });
+        
+        contentJSON = {
+            type: 'doc',
+            content: [
+                { type: 'paragraph', content: [{ type: 'text', text: result.notesContent.introduction }] },
+                ...tiptapContent
+            ]
+        };
+    }
     
     try {
       const docRef = await addFirestoreDoc(collection(db, 'users', user.uid, 'docs'), {
@@ -151,8 +206,31 @@ export function LectureNotesGenerator() {
                 </CardHeader>
                 <CardContent className="flex-1">
                     <ScrollArea className="h-full border rounded-md p-4 bg-muted/50">
-                        <div className="whitespace-pre-wrap font-sans">
-                            {result.notesContent}
+                       <div className="prose prose-sm dark:prose-invert max-w-none">
+                            {typeof result.notesContent === 'string' ? (
+                                <div className="whitespace-pre-wrap font-sans">{result.notesContent}</div>
+                            ) : (
+                                <>
+                                    <p>{result.notesContent.introduction}</p>
+                                    {result.notesContent.sections.map((section, index) => (
+                                        <div key={index}>
+                                            <h2>{section.heading}</h2>
+                                            <ul>
+                                                {section.content.map((point, i) => <li key={i}>{point}</li>)}
+                                            </ul>
+                                            {section.subsections && section.subsections.map((sub, subIndex) => (
+                                                <div key={subIndex} className="ml-4">
+                                                    <h3>{sub.subheading}</h3>
+                                                    <ul>
+                                                        {sub.content.map((subPoint, j) => <li key={j}>{subPoint}</li>)}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                            {section.addDividerAfter && <hr />}
+                                        </div>
+                                    ))}
+                                </>
+                            )}
                         </div>
                     </ScrollArea>
                 </CardContent>
