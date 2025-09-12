@@ -28,17 +28,18 @@ interface AddTradeDialogProps {
   trade?: Trade | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  strategies: TradingStrategy[];
 }
 
 export function AddTradeDialog({
   trade,
   isOpen,
   onOpenChange,
+  strategies
 }: AddTradeDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
 
   const isEditMode = !!trade;
 
@@ -52,16 +53,6 @@ export function AddTradeDialog({
   const [notes, setNotes] = useState('');
   const [chartUrl, setChartUrl] = useState('');
   const [strategyId, setStrategyId] = useState<string | undefined>();
-  
-  useEffect(() => {
-    if(user) {
-      const q = query(collection(db, 'users', user.uid, 'tradingStrategies'), orderBy('createdAt', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        setStrategies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TradingStrategy)));
-      });
-      return () => unsubscribe();
-    }
-  }, [user]);
 
   const resetForm = () => {
     setSymbol('');
@@ -217,5 +208,3 @@ export function AddTradeDialog({
     </Dialog>
   );
 }
-
-    

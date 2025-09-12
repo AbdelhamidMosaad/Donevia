@@ -40,24 +40,14 @@ import { db } from '@/lib/firebase';
 
 interface TradeHistoryTableProps {
   trades: Trade[];
+  strategies: TradingStrategy[];
   onDeleteTrade: (tradeId: string) => void;
 }
 
-export function TradeHistoryTable({ trades, onDeleteTrade }: TradeHistoryTableProps) {
+export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHistoryTableProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
-  const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
-
-  useEffect(() => {
-    if(user) {
-      const q = query(collection(db, 'users', user.uid, 'tradingStrategies'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        setStrategies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TradingStrategy)));
-      });
-      return () => unsubscribe();
-    }
-  }, [user]);
 
   const strategyMap = useMemo(() => {
     return new Map(strategies.map(s => [s.id, s.name]));
@@ -143,10 +133,9 @@ export function TradeHistoryTable({ trades, onDeleteTrade }: TradeHistoryTablePr
             isOpen={!!editingTrade}
             onOpenChange={(open) => !open && setEditingTrade(null)}
             trade={editingTrade}
+            strategies={strategies}
         />
       )}
     </>
   );
 }
-
-    

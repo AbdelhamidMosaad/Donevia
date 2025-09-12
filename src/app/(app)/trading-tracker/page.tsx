@@ -3,16 +3,18 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, TrendingUp, Book } from 'lucide-react';
+import { PlusCircle, TrendingUp, Book, BarChart3, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import type { Trade } from '@/lib/types';
+import type { Trade, TradingStrategy } from '@/lib/types';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TradeHistoryTable } from '@/components/trading-tracker/trade-history-table';
 import { AddTradeDialog } from '@/components/trading-tracker/add-trade-dialog';
 import { deleteTrade } from '@/lib/trading-tracker';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StrategyList } from '@/components/trading-tracker/strategy-list';
 
 export default function TradingTrackerPage() {
   const { user, loading } = useAuth();
@@ -20,7 +22,8 @@ export default function TradingTrackerPage() {
   const { toast } = useToast();
   
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
+  const [isAddTradeDialogOpen, setIsAddTradeDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -30,12 +33,22 @@ export default function TradingTrackerPage() {
 
   useEffect(() => {
     if (user) {
-      const q = query(collection(db, 'users', user.uid, 'trades'), orderBy('entryDate', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const tradesQuery = query(collection(db, 'users', user.uid, 'trades'), orderBy('entryDate', 'desc'));
+      const unsubscribeTrades = onSnapshot(tradesQuery, (snapshot) => {
         const tradesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Trade));
         setTrades(tradesData);
       });
-      return () => unsubscribe();
+      
+      const strategiesQuery = query(collection(db, 'users', user.uid, 'tradingStrategies'), orderBy('createdAt', 'desc'));
+      const unsubscribeStrategies = onSnapshot(strategiesQuery, (snapshot) => {
+        const strategiesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TradingStrategy));
+        setStrategies(strategiesData);
+      });
+      
+      return () => {
+        unsubscribeTrades();
+        unsubscribeStrategies();
+      };
     }
   }, [user]);
   
@@ -63,27 +76,41 @@ export default function TradingTrackerPage() {
                 <p className="text-muted-foreground">Record, analyze, and improve your trading performance.</p>
             </div>
         </div>
-        <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => router.push('/trading-tracker/strategies')}>
-              <Book className="mr-2 h-4 w-4" />
-              Strategy Playbook
-            </Button>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Trade
-            </Button>
-        </div>
       </div>
       
-      <TradeHistoryTable trades={trades} onDeleteTrade={handleDeleteTrade} />
+      <Tabs defaultValue="records" className="flex-1 flex flex-col min-h-0">
+            <TabsList>
+                <TabsTrigger value="records"><List className="mr-2 h-4 w-4"/> Records</TabsTrigger>
+                <TabsTrigger value="strategies"><Book className="mr-2 h-4 w-4"/> Playbook</TabsTrigger>
+                <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/> Analytics</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="records" className="flex-1 mt-4">
+                <div className="flex justify-end mb-4">
+                    <Button onClick={() => setIsAddTradeDialogOpen(true)}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      New Trade
+                    </Button>
+                </div>
+                <TradeHistoryTable trades={trades} strategies={strategies} onDeleteTrade={handleDeleteTrade} />
+            </TabsContent>
+
+            <TabsContent value="strategies" className="flex-1 mt-4">
+                 <StrategyList strategies={strategies} />
+            </TabsContent>
+
+            <TabsContent value="analytics" className="flex-1 mt-4">
+               <div className="flex h-full items-center justify-center">
+                    <p className="text-muted-foreground">Analytics dashboard coming soon!</p>
+                </div>
+            </TabsContent>
+        </Tabs>
 
       <AddTradeDialog
-        isOpen={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
+        isOpen={isAddTradeDialogOpen}
+        onOpenChange={setIsAddTradeDialogOpen}
+        strategies={strategies}
       />
     </div>
   );
 }
-
-
-    

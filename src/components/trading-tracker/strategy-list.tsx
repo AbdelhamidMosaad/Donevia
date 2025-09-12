@@ -7,37 +7,19 @@ import { PlusCircle, Book, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { TradingStrategy } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { deleteStrategy } from '@/lib/trading-tracker';
 import { StrategyDialog } from '@/components/trading-tracker/strategy-dialog';
 import { StrategyCard } from '@/components/trading-tracker/strategy-card';
 
-export default function TradingStrategiesPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+interface StrategyListProps {
+  strategies: TradingStrategy[];
+}
+
+export function StrategyList({ strategies }: StrategyListProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
-  
-  const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
-
-  useEffect(() => {
-    if (user) {
-      const q = query(collection(db, 'users', user.uid, 'tradingStrategies'), orderBy('createdAt', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const strategiesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TradingStrategy));
-        setStrategies(strategiesData);
-      });
-      return () => unsubscribe();
-    }
-  }, [user]);
 
   const handleDeleteStrategy = async (strategyId: string) => {
     if (!user) return;
@@ -49,25 +31,9 @@ export default function TradingStrategiesPage() {
     }
   };
 
-  if (loading || !user) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.push('/trading-tracker')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-4">
-                <Book className="h-8 w-8 text-primary"/>
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Strategy Playbook</h1>
-                    <p className="text-muted-foreground">Define and manage your personal trading strategies.</p>
-                </div>
-            </div>
-        </div>
+    <>
+      <div className="flex justify-end mb-4">
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           New Strategy
@@ -96,8 +62,6 @@ export default function TradingStrategiesPage() {
         isOpen={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
       />
-    </div>
+    </>
   );
 }
-
-    
