@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -639,6 +640,7 @@ export type Trade = {
   fees: number;
   profitOrLoss: number;
   notes?: string;
+  chartUrl?: string;
   strategyId?: string;
   attachments?: Attachment[];
   ownerId: string;
@@ -653,3 +655,5 @@ export type TradingStrategy = {
     ownerId: string;
     createdAt: Timestamp;
 }
+
+    

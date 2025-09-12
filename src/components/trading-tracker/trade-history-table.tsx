@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, LineChart } from 'lucide-react';
 import type { Trade } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -58,6 +59,7 @@ export function TradeHistoryTable({ trades, onDeleteTrade }: TradeHistoryTablePr
               <TableHead>Exit Price</TableHead>
               <TableHead>Quantity</TableHead>
               <TableHead>P/L</TableHead>
+              <TableHead>Chart</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -71,6 +73,15 @@ export function TradeHistoryTable({ trades, onDeleteTrade }: TradeHistoryTablePr
                 <TableCell>{trade.quantity}</TableCell>
                 <TableCell className={cn(trade.profitOrLoss >= 0 ? 'text-green-600' : 'text-destructive')}>
                     {trade.profitOrLoss.toFixed(2)}
+                </TableCell>
+                 <TableCell>
+                  {trade.chartUrl && (
+                    <a href={trade.chartUrl} target="_blank" rel="noopener noreferrer">
+                      <Button variant="ghost" size="icon">
+                        <LineChart className="h-4 w-4 text-blue-500" />
+                      </Button>
+                    </a>
+                  )}
                 </TableCell>
                 <TableCell>
                     <DropdownMenu>
@@ -119,3 +130,5 @@ export function TradeHistoryTable({ trades, onDeleteTrade }: TradeHistoryTablePr
     </>
   );
 }
+
+    

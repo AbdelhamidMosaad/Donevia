@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -46,6 +47,7 @@ export function AddTradeDialog({
   const [exitDate, setExitDate] = useState(new Date());
   const [fees, setFees] = useState(0);
   const [notes, setNotes] = useState('');
+  const [chartUrl, setChartUrl] = useState('');
   
   const resetForm = () => {
     setSymbol('');
@@ -56,6 +58,7 @@ export function AddTradeDialog({
     setExitDate(new Date());
     setFees(0);
     setNotes('');
+    setChartUrl('');
   };
 
   useEffect(() => {
@@ -69,6 +72,7 @@ export function AddTradeDialog({
         setExitDate(trade.exitDate.toDate());
         setFees(trade.fees);
         setNotes(trade.notes || '');
+        setChartUrl(trade.chartUrl || '');
       } else {
         resetForm();
       }
@@ -94,6 +98,7 @@ export function AddTradeDialog({
         exitDate: Timestamp.fromDate(exitDate),
         fees,
         notes,
+        chartUrl,
         profitOrLoss: pnl,
     };
 
@@ -158,6 +163,10 @@ export function AddTradeDialog({
             <Label htmlFor="fees">Fees</Label>
             <Input id="fees" type="number" value={fees} onChange={(e) => setFees(parseFloat(e.target.value) || 0)} />
           </div>
+           <div className="space-y-2">
+            <Label htmlFor="chartUrl">Chart URL</Label>
+            <Input id="chartUrl" value={chartUrl} onChange={(e) => setChartUrl(e.target.value)} placeholder="https://www.tradingview.com/chart/..."/>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Notes & Rationale</Label>
             <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Why did you take this trade? How did it go?"/>
@@ -177,3 +186,5 @@ export function AddTradeDialog({
     </Dialog>
   );
 }
+
+    
