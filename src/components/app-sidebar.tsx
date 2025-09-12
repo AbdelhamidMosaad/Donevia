@@ -33,6 +33,7 @@ import {
   ClipboardSignature,
   CalendarDays,
   TrendingUp,
+  Languages,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -58,6 +59,7 @@ const defaultMenuItems = [
     { href: '/bookmarks', icon: <Bookmark className="text-blue-500 ml-2" />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
     { href: '/trading-tracker', icon: <TrendingUp className="text-emerald-500 ml-2" />, label: 'Trading Tracker', tooltip: 'Trading Tracker', id: 'trading-tracker' },
     { href: '/work-tracker', icon: <Briefcase className="text-amber-500 ml-2" />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
+    { href: '/english-coach', icon: <Languages className="text-red-500 ml-2" />, label: 'English Coach', tooltip: 'English Coach', id: 'english-coach' },
     { href: '/brainstorming', icon: <BrainCircuit className="text-violet-500 ml-2" />, label: 'Brainstorming', tooltip: 'Brainstorming', id: 'brainstorming' },
     { href: '/whiteboard', icon: <PenSquare className="text-indigo-500 ml-2" />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
     { href: '/mind-map', icon: <GitBranch className="text-pink-500 ml-2" />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },

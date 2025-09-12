@@ -258,6 +258,7 @@ export interface UserSettings {
     crmSettings?: CrmSettings;
     studyProfile?: StudyProfile;
     currency?: Currency;
+    englishCoachProfile?: EnglishCoachProfile;
 }
 
 /** Brainstorming */
