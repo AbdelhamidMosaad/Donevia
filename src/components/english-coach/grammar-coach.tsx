@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Loader2, Sparkles, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { GrammarlyEditorPlugin } from '@grammarly/editor-sdk-react';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Label } from '../ui/label';
 
@@ -35,17 +34,26 @@ interface LanguageToolMatch {
   };
 }
 
-type Mode = 'languagetool' | 'grammarly';
+interface GingerSuggestion {
+    Text: string;
+    CorrectedText: string;
+    Suggestions: {
+        Text: string;
+        CorrectedText: string;
+        Definition: string;
+    }[];
+}
+
+type Mode = 'languagetool' | 'ginger';
 
 export function GrammarCoach() {
   const [inputText, setInputText] = useState('');
-  const [matches, setMatches] = useState<LanguageToolMatch[]>([]);
+  const [ltMatches, setLtMatches] = useState<LanguageToolMatch[]>([]);
+  const [gingerResult, setGingerResult] = useState<GingerSuggestion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const [mode, setMode] = useState<Mode>('languagetool');
-  const GRAMMARLY_CLIENT_ID = process.env.NEXT_PUBLIC_GRAMMARLY_CLIENT_ID || 'YOUR_CLIENT_ID_HERE';
-
 
   const handleCheckGrammar = async () => {
     if (!inputText.trim()) {
@@ -58,7 +66,8 @@ export function GrammarCoach() {
     }
 
     setIsLoading(true);
-    setMatches([]);
+    setLtMatches([]);
+    setGingerResult(null);
 
     try {
       const response = await fetch('/api/english-coach/check-grammar', {
@@ -67,7 +76,7 @@ export function GrammarCoach() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${await user.getIdToken()}`,
         },
-        body: JSON.stringify({ text: inputText }),
+        body: JSON.stringify({ text: inputText, mode }),
       });
 
       if (!response.ok) {
@@ -76,7 +85,12 @@ export function GrammarCoach() {
       }
 
       const data = await response.json();
-      setMatches(data.matches);
+      if(mode === 'languagetool') {
+          setLtMatches(data.matches);
+      } else {
+          setGingerResult(data);
+      }
+      
     } catch (error) {
       console.error('Grammar check failed:', error);
       toast({
@@ -105,15 +119,64 @@ export function GrammarCoach() {
       return <p className="whitespace-pre-wrap leading-relaxed">{parts}</p>;
   }
 
-  const InputEditor = () => (
-     <Textarea
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        placeholder="Type or paste your text here..."
-        className="flex-1 text-base"
-        rows={15}
-      />
-  )
+  const renderLanguageToolResults = () => (
+    <div className="space-y-6">
+        <div className="p-4 bg-muted/50 rounded-lg">
+            <h3 className="font-bold mb-2">Highlighted Text:</h3>
+            {getHighlightedText(inputText, ltMatches)}
+        </div>
+            <div>
+            <h3 className="font-bold text-lg mb-2">Suggestions:</h3>
+            {ltMatches.map((match, index) => (
+                <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
+                        <p className="text-sm text-muted-foreground font-semibold">{match.rule.category.name}</p>
+                        <p className="font-semibold mb-2">{match.message}</p>
+                    
+                    <div className="flex items-center gap-4 text-destructive text-sm">
+                        <X className="h-4 w-4 shrink-0"/>
+                        <p className="line-through">...{match.context.text}...</p>
+                    </div>
+
+                    {match.replacements.length > 0 && (
+                        <div className="flex items-center gap-4 text-green-600 mt-2 text-sm">
+                            <Check className="h-4 w-4 shrink-0"/>
+                            <p>Suggestion: <span className="font-semibold">{match.replacements[0].value}</span></p>
+                        </div>
+                    )}
+                </div>
+            ))}
+            </div>
+    </div>
+  );
+  
+  const renderGingerResults = () => (
+    <div className="space-y-6">
+        <div className="p-4 bg-muted/50 rounded-lg">
+             <h3 className="font-bold text-lg mb-2">Corrected Text:</h3>
+             <p className="text-lg text-primary">{gingerResult?.CorrectedText}</p>
+        </div>
+        <div>
+            <h3 className="font-bold text-lg mb-2">Corrections:</h3>
+            {gingerResult?.Suggestions.map((suggestion, index) => (
+                 <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
+                    <div className="flex items-center gap-4 text-destructive text-sm">
+                        <X className="h-4 w-4 shrink-0"/>
+                        <p className="line-through">{suggestion.Text}</p>
+                    </div>
+                    <div className="flex items-center gap-4 text-green-600 mt-2 text-sm">
+                        <Check className="h-4 w-4 shrink-0"/>
+                        <p>{suggestion.CorrectedText}</p>
+                    </div>
+                     {suggestion.Definition && (
+                         <div className="mt-2 pl-9 text-sm text-muted-foreground">
+                            <p>{suggestion.Definition}</p>
+                        </div>
+                     )}
+                 </div>
+            ))}
+        </div>
+    </div>
+  );
 
   return (
     <div className="grid md:grid-cols-2 gap-6 h-full">
@@ -126,28 +189,26 @@ export function GrammarCoach() {
                     <Label htmlFor="mode-toggle">Mode</Label>
                     <ToggleGroup id="mode-toggle" type="single" value={mode} onValueChange={(value: Mode) => value && setMode(value)} size="sm">
                         <ToggleGroupItem value="languagetool">LanguageTool</ToggleGroupItem>
-                        <ToggleGroupItem value="grammarly">Grammarly</ToggleGroupItem>
+                        <ToggleGroupItem value="ginger">Ginger</ToggleGroupItem>
                     </ToggleGroup>
                 </div>
             </div>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col">
-           {mode === 'grammarly' ? (
-                <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
-                  <InputEditor />
-                </GrammarlyEditorPlugin>
-              ) : (
-                <InputEditor />
-            )}
+          <Textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Type or paste your text here..."
+            className="flex-1 text-base"
+            rows={15}
+          />
         </CardContent>
-         {mode === 'languagetool' && (
-            <CardFooter>
-            <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                {isLoading ? 'Analyzing...' : 'Check with LanguageTool'}
-            </Button>
-            </CardFooter>
-        )}
+        <CardFooter>
+          <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {isLoading ? 'Analyzing...' : `Check with ${mode === 'ginger' ? 'Ginger' : 'LanguageTool'}`}
+          </Button>
+        </CardFooter>
       </Card>
 
       <Card className="flex flex-col">
@@ -156,46 +217,18 @@ export function GrammarCoach() {
           <CardDescription>Review the suggestions to improve your text.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto">
-          {mode === 'grammarly' ? (
-             <div className="flex items-center justify-center h-full text-muted-foreground">
-                <p>Grammarly suggestions will appear directly in the text editor.</p>
-            </div>
-          ) : isLoading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               <Loader2 className="mr-2 h-6 w-6 animate-spin" />
               <span>AI is analyzing your text...</span>
             </div>
-          ) : matches.length > 0 ? (
-            <div className="space-y-6">
-                <div className="p-4 bg-muted/50 rounded-lg">
-                    <h3 className="font-bold mb-2">Highlighted Text:</h3>
-                    {getHighlightedText(inputText, matches)}
-                </div>
-                 <div>
-                    <h3 className="font-bold text-lg mb-2">Suggestions:</h3>
-                    {matches.map((match, index) => (
-                        <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
-                             <p className="text-sm text-muted-foreground font-semibold">{match.rule.category.name}</p>
-                             <p className="font-semibold mb-2">{match.message}</p>
-                           
-                           <div className="flex items-center gap-4 text-destructive text-sm">
-                                <X className="h-4 w-4 shrink-0"/>
-                                <p className="line-through">...{match.context.text}...</p>
-                            </div>
-
-                            {match.replacements.length > 0 && (
-                                <div className="flex items-center gap-4 text-green-600 mt-2 text-sm">
-                                    <Check className="h-4 w-4 shrink-0"/>
-                                    <p>Suggestion: <span className="font-semibold">{match.replacements[0].value}</span></p>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                 </div>
-            </div>
+          ) : (mode === 'languagetool' && ltMatches.length > 0) ? (
+            renderLanguageToolResults()
+          ) : (mode === 'ginger' && gingerResult) ? (
+            renderGingerResults()
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>Your LanguageTool feedback will appear here.</p>
+              <p>Your feedback will appear here.</p>
             </div>
           )}
         </CardContent>
