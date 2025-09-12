@@ -1,10 +1,9 @@
-
 'use client';
 import type { Doc, DocFolder } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileSignature, MoreHorizontal, Edit, Trash2, Move, Folder as FolderIcon } from 'lucide-react';
 import { Button } from '../ui/button';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '../ui/dropdown-menu';
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '../ui/input';
 import { useAuth } from '@/hooks/use-auth';

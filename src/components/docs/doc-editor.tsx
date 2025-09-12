@@ -36,7 +36,6 @@ import { Callout } from '@/lib/tiptap/callout';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import jsPDF from 'jspdf';
-import { JSDOM } from 'jsdom';
 
 
 interface DocEditorProps {
@@ -190,8 +189,9 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
     }
   }, [toast]);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!editor) return;
+    const { JSDOM } = await import('jsdom');
     const contentHtml = editor.getHTML();
     
     // Sanitize HTML
