@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -11,42 +10,39 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, LineChart, FileDown, StickyNote } from 'lucide-react';
-import type { Trade, TradingStrategy } from '@/lib/types';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Trash2, FileDown, StickyNote, LineChart } from 'lucide-react';
+import moment from 'moment';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
-import {
-    AlertDialog,
-    AlertDialogTrigger,
-    AlertDialogContent,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogAction,
-    AlertDialogCancel
-} from '../ui/alert-dialog';
-import moment from 'moment';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import * as XLSX from 'xlsx';
+import { Label } from '../ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { MoreHorizontal, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddTradeDialog } from './add-trade-dialog';
-import * as XLSX from 'xlsx';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Label } from '../ui/label';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
-import { Input } from '../ui/input';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import type { Trade, TradingStrategy } from '@/lib/types';
 
 
 interface TradeHistoryTableProps {
   trades: Trade[];
   strategies: TradingStrategy[];
   onDeleteTrade: (tradeId: string) => void;
+  onFilteredTradesChange: (filteredTrades: Trade[]) => void;
 }
 
 const currencySymbols: Record<string, string> = {
@@ -57,7 +53,7 @@ const currencySymbols: Record<string, string> = {
     EGP: 'E£',
 };
 
-export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHistoryTableProps) {
+export function TradeHistoryTable({ trades, strategies, onDeleteTrade, onFilteredTradesChange }: TradeHistoryTableProps) {
   const { user, settings } = useAuth();
   const { toast } = useToast();
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
@@ -104,6 +100,10 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
     });
   }, [trades, dateFilterType, filterMonth, filterYear, filterStartDate, filterEndDate, filterStrategy, filterOutcome, filterSymbol]);
 
+  useEffect(() => {
+    onFilteredTradesChange(filteredTrades);
+  }, [filteredTrades, onFilteredTradesChange]);
+
   const resetFilters = () => {
       setDateFilterType('all');
       setFilterMonth(moment().format('M'));
@@ -146,7 +146,7 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
       <div className="space-y-4">
         <Card>
             <CardHeader><CardTitle>Filters & Export</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
                 <div className="flex flex-col space-y-1.5">
                     <Label>Date Filter</Label>
                     <Select value={dateFilterType} onValueChange={(v: 'all' | 'month' | 'period') => setDateFilterType(v)}>
@@ -248,7 +248,8 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {filteredTrades.map((trade) => (
+                {filteredTrades.length > 0 ? (
+                    filteredTrades.map((trade) => (
                 <TableRow key={trade.id}>
                     <TableCell className="font-medium">{trade.symbol}</TableCell>
                     <TableCell>{trade.strategyId ? strategyMap.get(trade.strategyId) : '-'}</TableCell>
@@ -313,11 +314,17 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
                         </DropdownMenu>
                     </TableCell>
                 </TableRow>
-                ))}
+                ))
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={12} className="h-24 text-center">
+                            No trades recorded for the selected filters.
+                        </TableCell>
+                    </TableRow>
+                )}
             </TableBody>
             </Table>
             </TooltipProvider>
-            {filteredTrades.length === 0 && <p className="text-center text-muted-foreground p-8">No trades recorded for the selected filters.</p>}
         </div>
       </div>
       {editingTrade && (

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,6 +14,7 @@ import { deleteTrade } from '@/lib/trading-tracker';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategyList } from '@/components/trading-tracker/strategy-list';
+import { AnalyticsDashboard } from '@/components/trading-tracker/analytics-dashboard';
 
 export default function TradingTrackerPage() {
   const { user, loading } = useAuth();
@@ -24,6 +24,7 @@ export default function TradingTrackerPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
   const [isAddTradeDialogOpen, setIsAddTradeDialogOpen] = useState(false);
+  const [filteredTrades, setFilteredTrades] = useState<Trade[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -92,7 +93,12 @@ export default function TradingTrackerPage() {
                       New Trade
                     </Button>
                 </div>
-                <TradeHistoryTable trades={trades} strategies={strategies} onDeleteTrade={handleDeleteTrade} />
+                <TradeHistoryTable 
+                    trades={trades} 
+                    strategies={strategies} 
+                    onDeleteTrade={handleDeleteTrade}
+                    onFilteredTradesChange={setFilteredTrades}
+                />
             </TabsContent>
 
             <TabsContent value="strategies" className="flex-1 mt-4">
@@ -100,9 +106,7 @@ export default function TradingTrackerPage() {
             </TabsContent>
 
             <TabsContent value="analytics" className="flex-1 mt-4">
-               <div className="flex h-full items-center justify-center">
-                    <p className="text-muted-foreground">Analytics dashboard coming soon!</p>
-                </div>
+               <AnalyticsDashboard trades={filteredTrades} />
             </TabsContent>
         </Tabs>
 
