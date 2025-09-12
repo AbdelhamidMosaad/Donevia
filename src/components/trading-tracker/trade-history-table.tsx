@@ -61,6 +61,7 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
   const [filterEndDate, setFilterEndDate] = useState<string>('');
   const [filterStrategy, setFilterStrategy] = useState('all');
   const [filterOutcome, setFilterOutcome] = useState('all');
+  const [filterSymbol, setFilterSymbol] = useState('');
 
 
   const strategyMap = useMemo(() => {
@@ -86,10 +87,12 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
         if (filterStrategy !== 'all' && trade.strategyId !== filterStrategy) return false;
         if (filterOutcome === 'win' && trade.profitOrLoss <= 0) return false;
         if (filterOutcome === 'loss' && trade.profitOrLoss > 0) return false;
+        if (filterSymbol && !trade.symbol.toUpperCase().includes(filterSymbol.toUpperCase())) return false;
+
 
         return true;
     });
-  }, [trades, dateFilterType, filterMonth, filterYear, filterStartDate, filterEndDate, filterStrategy, filterOutcome]);
+  }, [trades, dateFilterType, filterMonth, filterYear, filterStartDate, filterEndDate, filterStrategy, filterOutcome, filterSymbol]);
 
   const resetFilters = () => {
       setDateFilterType('all');
@@ -99,6 +102,7 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
       setFilterEndDate('');
       setFilterStrategy('all');
       setFilterOutcome('all');
+      setFilterSymbol('');
   };
   
    const availableYears = useMemo(() => {
@@ -132,7 +136,7 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
       <div className="space-y-4">
         <Card>
             <CardHeader><CardTitle>Filters & Export</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div className="flex flex-col space-y-1.5">
                     <Label>Date Filter</Label>
                     <Select value={dateFilterType} onValueChange={(v: 'all' | 'month' | 'period') => setDateFilterType(v)}>
@@ -180,6 +184,14 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
                         </div>
                     </>
                 )}
+                 <div className="flex flex-col space-y-1.5">
+                    <Label>Symbol</Label>
+                    <Input 
+                        placeholder="e.g. AAPL"
+                        value={filterSymbol}
+                        onChange={(e) => setFilterSymbol(e.target.value)}
+                    />
+                </div>
                  <div className="flex flex-col space-y-1.5">
                     <Label>Strategy</Label>
                     <Select value={filterStrategy} onValueChange={setFilterStrategy}>
