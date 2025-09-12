@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, TrendingUp, Book, BarChart3, List } from 'lucide-react';
+import { PlusCircle, TrendingUp, Book, BarChart3, List, Eye } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import type { Trade, TradingStrategy } from '@/lib/types';
+import type { Trade, TradingStrategy, WatchlistItem } from '@/lib/types';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TradeHistoryTable } from '@/components/trading-tracker/trade-history-table';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategyList } from '@/components/trading-tracker/strategy-list';
 import { AnalyticsDashboard } from '@/components/trading-tracker/analytics-dashboard';
+import { Watchlist } from '@/components/trading-tracker/watchlist';
 
 export default function TradingTrackerPage() {
   const { user, loading } = useAuth();
@@ -23,6 +24,7 @@ export default function TradingTrackerPage() {
   
   const [trades, setTrades] = useState<Trade[]>([]);
   const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
+  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
   const [isAddTradeDialogOpen, setIsAddTradeDialogOpen] = useState(false);
   const [filteredTrades, setFilteredTrades] = useState<Trade[]>([]);
 
@@ -45,10 +47,17 @@ export default function TradingTrackerPage() {
         const strategiesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TradingStrategy));
         setStrategies(strategiesData);
       });
+
+      const watchlistQuery = query(collection(db, 'users', user.uid, 'watchlistItems'), orderBy('createdAt', 'desc'));
+      const unsubscribeWatchlist = onSnapshot(watchlistQuery, (snapshot) => {
+        const watchlistData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WatchlistItem));
+        setWatchlistItems(watchlistData);
+      });
       
       return () => {
         unsubscribeTrades();
         unsubscribeStrategies();
+        unsubscribeWatchlist();
       };
     }
   }, [user]);
@@ -82,6 +91,7 @@ export default function TradingTrackerPage() {
       <Tabs defaultValue="records" className="flex-1 flex flex-col min-h-0">
             <TabsList>
                 <TabsTrigger value="records"><List className="mr-2 h-4 w-4"/> Records</TabsTrigger>
+                <TabsTrigger value="watchlist"><Eye className="mr-2 h-4 w-4"/> Watchlist</TabsTrigger>
                 <TabsTrigger value="strategies"><Book className="mr-2 h-4 w-4"/> Playbook</TabsTrigger>
                 <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/> Analytics</TabsTrigger>
             </TabsList>
@@ -99,6 +109,10 @@ export default function TradingTrackerPage() {
                     onDeleteTrade={handleDeleteTrade}
                     onFilteredTradesChange={setFilteredTrades}
                 />
+            </TabsContent>
+
+            <TabsContent value="watchlist" className="flex-1 mt-4">
+                <Watchlist items={watchlistItems} />
             </TabsContent>
 
             <TabsContent value="strategies" className="flex-1 mt-4">

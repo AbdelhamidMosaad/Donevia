@@ -8,7 +8,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Trade, TradingStrategy } from './types';
+import type { Trade, TradingStrategy, WatchlistItem } from './types';
 
 // --- Trades ---
 export const addTrade = async (userId: string, tradeData: Partial<Omit<Trade, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>>) => {
@@ -55,4 +55,27 @@ export const deleteStrategy = async (userId: string, strategyId: string) => {
   return await deleteDoc(strategyRef);
 };
 
-    
+
+// --- Watchlist ---
+export const addWatchlistItem = async (userId: string, itemData: Partial<Omit<WatchlistItem, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>>) => {
+  const watchlistRef = collection(db, 'users', userId, 'watchlistItems');
+  return await addDoc(watchlistRef, {
+    ...itemData,
+    ownerId: userId,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const updateWatchlistItem = async (userId: string, itemId: string, itemData: Partial<Omit<WatchlistItem, 'id'>>) => {
+  const itemRef = doc(db, 'users', userId, 'watchlistItems', itemId);
+  return await updateDoc(itemRef, {
+    ...itemData,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteWatchlistItem = async (userId: string, itemId: string) => {
+  const itemRef = doc(db, 'users', userId, 'watchlistItems', itemId);
+  return await deleteDoc(itemRef);
+};

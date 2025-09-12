@@ -664,3 +664,14 @@ export type TradingStrategy = {
     ownerId: string;
     createdAt: Timestamp;
 }
+
+export type WatchlistItem = {
+    id: string;
+    symbol: string;
+    notes?: string;
+    status: 'Watching' | 'Entered' | 'Archived';
+    reminderDate?: Timestamp | null;
+    ownerId: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+}
