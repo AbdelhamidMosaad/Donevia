@@ -137,7 +137,7 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
     editorProps: {
       attributes: {
         id: 'editor',
-        class: 'prose prose-black dark:prose-invert max-w-full focus:outline-none p-4 md:p-8',
+        class: 'prose prose-sm prose-black dark:prose-invert max-w-full focus:outline-none p-4 md:p-8',
       },
     },
     onUpdate: ({ editor }) => {
@@ -192,40 +192,32 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
   const handleExportPDF = async () => {
     if (!editor) return;
 
-    const editorElement = editor.view.dom;
+    const editorContentHtml = editor.getHTML();
+    
+    // Create a temporary, off-screen div to render the content with styles
+    const printContainer = document.createElement('div');
+    printContainer.style.position = 'absolute';
+    printContainer.style.left = '-9999px';
+    printContainer.style.width = '800px'; // A standard page width
+    printContainer.innerHTML = `<div class="prose prose-sm">${editorContentHtml}</div>`;
+    document.body.appendChild(printContainer);
+
     const pdf = new jsPDF({
       orientation: 'p',
       unit: 'pt',
       format: 'a4',
     });
     
-    // Temporarily apply print-friendly styles
-    const style = document.createElement('style');
-    style.innerHTML = `
-      body {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      .prose {
-        color: #000 !important; /* Ensure text is black for PDF */
-      }
-      .dark .prose {
-        --tw-prose-body: #000;
-        --tw-prose-headings: #000;
-        --tw-prose-bold: #000;
-      }
-    `;
-    document.head.appendChild(style);
-
-    pdf.html(editorElement, {
+    pdf.html(printContainer, {
       callback: function (doc) {
         doc.save(`${docData.title}.pdf`);
-        document.head.removeChild(style); // Clean up the styles
+        document.body.removeChild(printContainer); // Clean up
+        toast({title: "Exporting PDF..."});
       },
       x: 40,
       y: 40,
-      width: 515, // A4 width (595) - margins (40*2)
-      windowWidth: editorElement.scrollWidth,
+      width: 515, // A4 width (595pt) - margins
+      windowWidth: 800,
     });
   };
 
