@@ -19,15 +19,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import moment from 'moment';
 import { Badge } from '../ui/badge';
 import { AddInvoiceDialog } from './add-invoice-dialog';
+import { useAuth } from '@/hooks/use-auth';
 
 interface InvoiceListProps {
   allInvoices: (Invoice & { clientName?: string })[];
   clients: Client[];
 }
 
+const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    EGP: 'E£',
+};
+
 export function InvoiceList({ allInvoices, clients }: InvoiceListProps) {
+  const { settings } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  const currencySymbol = currencySymbols[settings.currency || 'USD'] || '$';
 
   const filteredInvoices = useMemo(() => {
     if (!searchQuery) return allInvoices;
@@ -97,7 +109,7 @@ export function InvoiceList({ allInvoices, clients }: InvoiceListProps) {
                           <TableRow key={invoice.id}>
                               <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                               <TableCell>{invoice.clientName || 'N/A'}</TableCell>
-                              <TableCell>${invoice.amount.toFixed(2)}</TableCell>
+                              <TableCell>{currencySymbol}{invoice.amount.toFixed(2)}</TableCell>
                               <TableCell>
                                   <Badge variant={invoice.status === 'Paid' ? 'default' : 'secondary'} className={invoice.status === 'Paid' ? 'bg-green-600' : invoice.status === 'Overdue' ? 'bg-destructive' : ''}>
                                       {invoice.status}

@@ -48,8 +48,16 @@ interface TradeHistoryTableProps {
   onDeleteTrade: (tradeId: string) => void;
 }
 
+const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    EGP: 'E£',
+};
+
 export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHistoryTableProps) {
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const { toast } = useToast();
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   
@@ -62,7 +70,8 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
   const [filterStrategy, setFilterStrategy] = useState('all');
   const [filterOutcome, setFilterOutcome] = useState('all');
   const [filterSymbol, setFilterSymbol] = useState('');
-
+  
+  const currencySymbol = currencySymbols[settings.currency || 'USD'] || '$';
 
   const strategyMap = useMemo(() => {
     return new Map(strategies.map(s => [s.id, s.name]));
@@ -241,11 +250,11 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade }: TradeHi
                     <TableCell className="font-medium">{trade.symbol}</TableCell>
                     <TableCell>{trade.strategyId ? strategyMap.get(trade.strategyId) : '-'}</TableCell>
                     <TableCell>{moment(trade.entryDate.toDate()).format('YYYY-MM-DD HH:mm')}</TableCell>
-                    <TableCell>${trade.entryPrice.toFixed(2)}</TableCell>
-                    <TableCell>${trade.exitPrice.toFixed(2)}</TableCell>
+                    <TableCell>{currencySymbol}{trade.entryPrice.toFixed(2)}</TableCell>
+                    <TableCell>{currencySymbol}{trade.exitPrice.toFixed(2)}</TableCell>
                     <TableCell>{trade.quantity}</TableCell>
                     <TableCell className={cn(trade.profitOrLoss >= 0 ? 'text-green-600' : 'text-destructive')}>
-                        {trade.profitOrLoss.toFixed(2)}
+                        {currencySymbol}{trade.profitOrLoss.toFixed(2)}
                     </TableCell>
                     <TableCell>
                     {trade.chartUrl && (

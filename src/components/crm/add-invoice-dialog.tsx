@@ -29,10 +29,20 @@ interface AddInvoiceDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    EGP: 'E£',
+};
+
 export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDialogProps) {
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  
+  const currencySymbol = currencySymbols[settings.currency || 'USD'] || '$';
 
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -129,7 +139,7 @@ export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDial
             <Input id="invoiceNumber" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="col-span-3" />
           </div>
            <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="amount" className="text-right">Amount ($)</Label>
+            <Label htmlFor="amount" className="text-right">Amount ({currencySymbol})</Label>
             <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

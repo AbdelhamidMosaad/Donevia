@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -26,14 +27,23 @@ interface RequestDialogProps {
 }
 
 const lossReasons = ['Price', 'Timing', 'Competition', 'Features', 'Other'];
+const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    EGP: 'E£',
+};
 
 export function RequestDialog({ request, clients, isOpen, onOpenChange }: RequestDialogProps) {
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState(request);
   const [stages, setStages] = useState<PipelineStage[]>([]);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
+
+  const currencySymbol = currencySymbols[settings.currency || 'USD'] || '$';
 
   useEffect(() => {
     // This effect runs when the dialog is opened or the request prop changes.
@@ -118,7 +128,7 @@ export function RequestDialog({ request, clients, isOpen, onOpenChange }: Reques
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="value" className="text-right">Value ($)</Label>
+            <Label htmlFor="value" className="text-right">Value ({currencySymbol})</Label>
             <Input id="value" type="number" value={formData.value || ''} onChange={(e) => handleChange('value', parseFloat(e.target.value) || 0)} className="col-span-3" />
           </div>
            <div className="grid grid-cols-4 items-center gap-4">

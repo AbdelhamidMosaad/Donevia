@@ -22,13 +22,21 @@ import { getAuth } from 'firebase/auth';
 
 type DocumentType = 'quotation' | 'invoice';
 
+const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    EGP: 'E£',
+};
+
 interface QuoteInvoiceManagerProps {
   type: DocumentType;
   client: Client;
 }
 
 export function QuoteInvoiceManager({ type, client }: QuoteInvoiceManagerProps) {
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const { toast } = useToast();
   const [items, setItems] = useState<(Quotation | Invoice)[]>(client[type === 'quotation' ? 'quotations' : 'invoices'] || []);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -36,6 +44,7 @@ export function QuoteInvoiceManager({ type, client }: QuoteInvoiceManagerProps) 
   
   const title = type === 'quotation' ? 'Quotations' : 'Invoices';
   const itemTitle = type === 'quotation' ? 'Quotation' : 'Invoice';
+  const currencySymbol = currencySymbols[settings.currency || 'USD'] || '$';
 
   const handleSave = async (updatedItems: (Quotation | Invoice)[]) => {
     if (!user) return;
@@ -108,7 +117,7 @@ export function QuoteInvoiceManager({ type, client }: QuoteInvoiceManagerProps) 
             {items.map(item => (
               <TableRow key={item.id}>
                 <TableCell>{'quoteNumber' in item ? item.quoteNumber : item.invoiceNumber}</TableCell>
-                <TableCell>${item.amount.toFixed(2)}</TableCell>
+                <TableCell>{currencySymbol}{item.amount.toFixed(2)}</TableCell>
                 <TableCell>{item.status}</TableCell>
                 <TableCell>{'dueDate' in item ? `Due: ${moment(item.dueDate.toDate()).format('YYYY-MM-DD')}`: `Created: ${moment(item.createdAt.toDate()).format('YYYY-MM-DD')}`}</TableCell>
                 <TableCell>{item.attachments.length}</TableCell>
@@ -148,6 +157,9 @@ function EditDialog({ isOpen, onOpenChange, item, type, client, onSave }: any) {
   const [formData, setFormData] = useState(item);
   const [files, setFiles] = useState<File[]>([]);
   const { toast } = useToast();
+  const { settings } = useAuth();
+  
+  const currencySymbol = currencySymbols[settings.currency || 'USD'] || '$';
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: acceptedFiles => setFiles(prev => [...prev, ...acceptedFiles]),
@@ -216,7 +228,7 @@ function EditDialog({ isOpen, onOpenChange, item, type, client, onSave }: any) {
             <Input className="col-span-3" value={'quoteNumber' in formData ? formData.quoteNumber : formData.invoiceNumber} onChange={(e) => setFormData({...formData, [type === 'quotation' ? 'quoteNumber' : 'invoiceNumber']: e.target.value})} />
           </div>
            <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Amount</Label>
+            <Label className="text-right">Amount ({currencySymbol})</Label>
             <Input className="col-span-3" type="number" value={formData.amount} onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value) || 0})} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

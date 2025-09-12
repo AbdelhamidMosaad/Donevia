@@ -7,6 +7,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieCha
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import moment from 'moment';
+import { useAuth } from '@/hooks/use-auth';
 
 interface AnalyticsDashboardProps {
   requests: ClientRequest[];
@@ -14,7 +15,17 @@ interface AnalyticsDashboardProps {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
+const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    EGP: 'E£',
+};
+
 export function AnalyticsDashboard({ requests }: AnalyticsDashboardProps) {
+  const { settings } = useAuth();
+  const currencySymbol = currencySymbols[settings.currency || 'USD'] || '$';
 
   const totalDeals = requests.length;
   const wonDeals = useMemo(() => requests.filter(r => r.stage === 'win'), [requests]);
@@ -57,11 +68,11 @@ export function AnalyticsDashboard({ requests }: AnalyticsDashboardProps) {
             </Card>
              <Card>
                 <CardHeader><CardTitle>Total Value Won</CardTitle></CardHeader>
-                <CardContent><p className="text-4xl font-bold">${totalValueWon.toLocaleString()}</p></CardContent>
+                <CardContent><p className="text-4xl font-bold">{currencySymbol}{totalValueWon.toLocaleString()}</p></CardContent>
             </Card>
              <Card>
                 <CardHeader><CardTitle>Avg. Deal Size</CardTitle></CardHeader>
-                <CardContent><p className="text-4xl font-bold">${averageDealSize.toLocaleString()}</p></CardContent>
+                <CardContent><p className="text-4xl font-bold">{currencySymbol}{averageDealSize.toLocaleString()}</p></CardContent>
             </Card>
         </div>
 

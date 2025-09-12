@@ -221,6 +221,8 @@ export type StudyProfile = {
     earnedBadges: BadgeId[];
 };
 
+export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'EGP';
+
 /** User Settings */
 export interface UserSettings {
     theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-sunset' | 'theme-mint' | 'theme-jade' | 'theme-periwinkle' | 'theme-sky' | 'theme-orchid' | 'theme-sage' | 'theme-coral';
@@ -254,6 +256,7 @@ export interface UserSettings {
     workTrackerSettings?: WorkTrackerSettings;
     crmSettings?: CrmSettings;
     studyProfile?: StudyProfile;
+    currency?: Currency;
 }
 
 /** Brainstorming */
@@ -655,7 +658,3 @@ export type TradingStrategy = {
     ownerId: string;
     createdAt: Timestamp;
 }
-
-    
-
-    

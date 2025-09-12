@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Moon, Palette, Type, Check, Bell, PanelLeft, User, Database, RefreshCcw } from 'lucide-react';
+import { Sun, Moon, Palette, Type, Check, Bell, PanelLeft, User, Database, RefreshCcw, Landmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { NotificationSettings } from './notification-settings';
 import { Switch } from './ui/switch';
-import type { UserSettings } from '@/lib/types';
+import type { UserSettings, Currency } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Button } from './ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -63,6 +63,14 @@ const fonts: { name: Font; label: string; variable: string }[] = [
     { name: 'bahnschrift', label: 'Bahnschrift', variable: 'Bahnschrift, sans-serif' },
 ];
 
+const currencies: { value: Currency; label: string }[] = [
+    { value: 'USD', label: 'USD - US Dollar' },
+    { value: 'EUR', label: 'EUR - Euro' },
+    { value: 'GBP', label: 'GBP - British Pound' },
+    { value: 'JPY', label: 'JPY - Japanese Yen' },
+    { value: 'EGP', label: 'EGP - Egyptian Pound' },
+];
+
 const fontVariables: Record<Font, string> = fonts.reduce((acc, font) => {
     acc[font.name] = font.variable;
     return acc;
@@ -81,6 +89,7 @@ const defaultSettings: UserSettings = {
     listViews: {},
     tableColumns: {},
     sidebarOrder: [],
+    currency: 'USD',
     studyProfile: {
         currentStreak: 0,
         longestStreak: 0,
@@ -278,6 +287,29 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                                     {fonts.map(font => (
                                         <SelectItem key={font.name} value={font.name}>
                                             <span style={{ fontFamily: font.variable }}>{font.label}</span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Landmark /> Currency</CardTitle>
+                        <CardDescription>Choose the default currency for financial values.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                        <div className="w-full max-w-sm">
+                            <Label htmlFor="currency-select">Currency</Label>
+                            <Select value={settings.currency} onValueChange={(v: Currency) => savePreferences({ currency: v })}>
+                                <SelectTrigger id="currency-select">
+                                    <SelectValue placeholder="Select a currency" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {currencies.map(c => (
+                                        <SelectItem key={c.value} value={c.value}>
+                                            {c.label}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

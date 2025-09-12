@@ -31,15 +31,25 @@ interface AddTradeDialogProps {
   strategies: TradingStrategy[];
 }
 
+const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    EGP: 'E£',
+};
+
 export function AddTradeDialog({
   trade,
   isOpen,
   onOpenChange,
   strategies
 }: AddTradeDialogProps) {
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+
+  const currencySymbol = currencySymbols[settings.currency || 'USD'] || '$';
 
   const isEditMode = !!trade;
 
@@ -153,7 +163,7 @@ export function AddTradeDialog({
                 <Input id="entry-date" type="datetime-local" value={moment(entryDate).format('YYYY-MM-DDTHH:mm')} onChange={(e) => setEntryDate(new Date(e.target.value))} />
             </div>
              <div className="space-y-2">
-                <Label htmlFor="entry-price">Entry Price</Label>
+                <Label htmlFor="entry-price">Entry Price ({currencySymbol})</Label>
                 <Input id="entry-price" type="number" value={entryPrice} onChange={(e) => setEntryPrice(parseFloat(e.target.value) || 0)} />
             </div>
           </div>
@@ -163,13 +173,13 @@ export function AddTradeDialog({
                 <Input id="exit-date" type="datetime-local" value={moment(exitDate).format('YYYY-MM-DDTHH:mm')} onChange={(e) => setExitDate(new Date(e.target.value))} />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="exit-price">Exit Price</Label>
+                <Label htmlFor="exit-price">Exit Price ({currencySymbol})</Label>
                 <Input id="exit-price" type="number" value={exitPrice} onChange={(e) => setExitPrice(parseFloat(e.target.value) || 0)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-                <Label htmlFor="fees">Fees</Label>
+                <Label htmlFor="fees">Fees ({currencySymbol})</Label>
                 <Input id="fees" type="number" value={fees} onChange={(e) => setFees(parseFloat(e.target.value) || 0)} />
             </div>
              <div className="space-y-2">
