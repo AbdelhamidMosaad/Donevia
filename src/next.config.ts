@@ -49,6 +49,10 @@ const nextConfig: NextConfig = {
 
 const isDev = process.env.NODE_ENV === 'development';
 
+if (isDev) {
+    nextConfig.reactStrictMode = false;
+}
+
 // Only wrap with PWA config in production.
 const config = isDev ? nextConfig : withPWA(nextConfig);
 

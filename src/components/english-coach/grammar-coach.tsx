@@ -1,12 +1,16 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Sparkles, Check, X, FileText, Download, ArrowRight, Lightbulb } from 'lucide-react';
+import { Loader2, Sparkles, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { GrammarlyEditorPlugin } from '@grammarly/editor-sdk-react';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { Label } from '../ui/label';
 
 // Define the structure of a LanguageTool match
 interface LanguageToolMatch {
@@ -31,12 +35,17 @@ interface LanguageToolMatch {
   };
 }
 
+type Mode = 'languagetool' | 'grammarly';
+
 export function GrammarCoach() {
   const [inputText, setInputText] = useState('');
   const [matches, setMatches] = useState<LanguageToolMatch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [mode, setMode] = useState<Mode>('languagetool');
+  const GRAMMARLY_CLIENT_ID = process.env.NEXT_PUBLIC_GRAMMARLY_CLIENT_ID || 'YOUR_CLIENT_ID_HERE';
+
 
   const handleCheckGrammar = async () => {
     if (!inputText.trim()) {
@@ -96,27 +105,49 @@ export function GrammarCoach() {
       return <p className="whitespace-pre-wrap leading-relaxed">{parts}</p>;
   }
 
+  const InputEditor = () => (
+     <Textarea
+        value={inputText}
+        onChange={(e) => setInputText(e.target.value)}
+        placeholder="Type or paste your text here..."
+        className="flex-1 text-base"
+        rows={15}
+      />
+  )
+
   return (
     <div className="grid md:grid-cols-2 gap-6 h-full">
       <Card className="flex flex-col">
         <CardHeader>
           <CardTitle>Input Text</CardTitle>
-          <CardDescription>Enter the text you want to have reviewed.</CardDescription>
+           <div className="flex justify-between items-center">
+              <CardDescription>Enter the text you want to have reviewed.</CardDescription>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="mode-toggle">Mode</Label>
+                    <ToggleGroup id="mode-toggle" type="single" value={mode} onValueChange={(value: Mode) => value && setMode(value)} size="sm">
+                        <ToggleGroupItem value="languagetool">LanguageTool</ToggleGroupItem>
+                        <ToggleGroupItem value="grammarly">Grammarly</ToggleGroupItem>
+                    </ToggleGroup>
+                </div>
+            </div>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col">
-          <Textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type or paste your text here..."
-            className="flex-1 text-base"
-          />
+           {mode === 'grammarly' ? (
+                <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
+                  <InputEditor />
+                </GrammarlyEditorPlugin>
+              ) : (
+                <InputEditor />
+            )}
         </CardContent>
-        <CardFooter>
-          <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {isLoading ? 'Analyzing...' : 'Check Grammar'}
-          </Button>
-        </CardFooter>
+         {mode === 'languagetool' && (
+            <CardFooter>
+            <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                {isLoading ? 'Analyzing...' : 'Check with LanguageTool'}
+            </Button>
+            </CardFooter>
+        )}
       </Card>
 
       <Card className="flex flex-col">
@@ -125,7 +156,11 @@ export function GrammarCoach() {
           <CardDescription>Review the suggestions to improve your text.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto">
-          {isLoading ? (
+          {mode === 'grammarly' ? (
+             <div className="flex items-center justify-center h-full text-muted-foreground">
+                <p>Grammarly suggestions will appear directly in the text editor.</p>
+            </div>
+          ) : isLoading ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               <Loader2 className="mr-2 h-6 w-6 animate-spin" />
               <span>AI is analyzing your text...</span>
@@ -160,7 +195,7 @@ export function GrammarCoach() {
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>Your grammar feedback will appear here.</p>
+              <p>Your LanguageTool feedback will appear here.</p>
             </div>
           )}
         </CardContent>
