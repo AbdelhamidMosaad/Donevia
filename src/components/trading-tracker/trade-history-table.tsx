@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -128,6 +129,8 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade, onFiltere
         'Entry Date': moment(t.entryDate.toDate()).format('YYYY-MM-DD HH:mm'),
         'Entry Price': t.entryPrice,
         'Exit Price': t.exitPrice,
+        'Stop Loss': t.stopLoss,
+        'Take Profit': t.takeProfit,
         Quantity: t.quantity,
         'P/L': t.profitOrLoss.toFixed(2),
         Notes: t.notes?.map(n => `${moment(n.date.toDate()).format('YYYY-MM-DD')}: ${n.text}`).join(' | ') || ''
@@ -240,6 +243,8 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade, onFiltere
                 <TableHead>Entry Date</TableHead>
                 <TableHead>Entry Price</TableHead>
                 <TableHead>Exit Price</TableHead>
+                <TableHead>Stop Loss</TableHead>
+                <TableHead>Take Profit</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>P/L</TableHead>
                 <TableHead>Notes</TableHead>
@@ -256,6 +261,8 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade, onFiltere
                     <TableCell>{moment(trade.entryDate.toDate()).format('YYYY-MM-DD HH:mm')}</TableCell>
                     <TableCell>{currencySymbol}{trade.entryPrice.toFixed(2)}</TableCell>
                     <TableCell>{currencySymbol}{trade.exitPrice.toFixed(2)}</TableCell>
+                    <TableCell>{trade.stopLoss ? `${currencySymbol}${trade.stopLoss.toFixed(2)}` : '-'}</TableCell>
+                    <TableCell>{trade.takeProfit ? `${currencySymbol}${trade.takeProfit.toFixed(2)}` : '-'}</TableCell>
                     <TableCell>{trade.quantity}</TableCell>
                     <TableCell className={cn(trade.profitOrLoss >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {currencySymbol}{trade.profitOrLoss.toFixed(2)}
