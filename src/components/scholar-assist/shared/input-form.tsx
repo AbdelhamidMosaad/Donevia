@@ -93,7 +93,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                 <FormItem className="flex-1 flex flex-col">
                   <FormLabel>Text Content</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Paste your document, article, or notes here..." className="flex-1 resize-y" {...field} />
+                    <Textarea placeholder="Paste your document, article, or notes here..." className="flex-1 resize-y text-foreground" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
