@@ -35,8 +35,6 @@ import { cn } from '@/lib/utils';
 import { Callout } from '@/lib/tiptap/callout';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 
 interface DocEditorProps {
@@ -71,7 +69,6 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
-  const editorContentRef = useRef<HTMLDivElement>(null);
 
 
   const debouncedSave = useDebouncedCallback(async (updatedDoc: Doc) => {
@@ -192,61 +189,6 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
     }
   }, [toast]);
 
-  const handleExportPDF = async () => {
-    if (!editor || !editorContentRef.current) {
-        toast({ variant: 'destructive', title: 'Editor content not available for export.'});
-        return;
-    }
-
-    toast({title: "Generating PDF...", description: "This may take a moment."});
-    
-    const editorNode = editorContentRef.current.querySelector('.ProseMirror') as HTMLElement;
-    if (!editorNode) {
-        toast({ variant: 'destructive', title: 'Could not find editor content.'});
-        return;
-    }
-    
-    try {
-        const canvas = await html2canvas(editorNode, {
-            scale: 2, // Increase resolution
-            useCORS: true,
-            backgroundColor: docData.backgroundColor || '#ffffff',
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: 'a4',
-        });
-        
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        
-        const ratio = imgWidth / imgHeight;
-        let finalImgWidth = pdfWidth;
-        let finalImgHeight = pdfWidth / ratio;
-        
-        if (finalImgHeight > pdfHeight) {
-            finalImgHeight = pdfHeight;
-            finalImgWidth = pdfHeight * ratio;
-        }
-
-        const x = (pdfWidth - finalImgWidth) / 2;
-        
-        pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
-        pdf.save(`${docData.title}.pdf`);
-        toast({title: "Export Successful", description: "Your document is downloading."});
-
-    } catch (error) {
-        console.error("PDF Export failed:", error);
-        toast({variant: 'destructive', title: 'PDF Export Failed', description: 'Could not generate PDF.'});
-    }
-  };
-
-
   const handleExportWord = () => {
     if (!editor) return;
     
@@ -315,7 +257,6 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onSelect={handleExportPDF}>Export as PDF</DropdownMenuItem>
                     <DropdownMenuItem onSelect={handleExportWord}>Export as Word (.doc)</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -332,7 +273,6 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
           style={{ backgroundColor: docData.backgroundColor || '#FFFFFF' }}
         >
             <div 
-              ref={editorContentRef}
               className={cn(
                 "bg-transparent transition-all",
                 marginClasses[docData.margin || 'medium'],
