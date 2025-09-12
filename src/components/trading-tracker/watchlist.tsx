@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { WatchlistItem } from '@/lib/types';
 import { Button } from '../ui/button';
 import { PlusCircle, Eye } from 'lucide-react';
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { deleteWatchlistItem } from '@/lib/trading-tracker';
 import { AddWatchlistItemDialog } from './add-watchlist-item-dialog';
 import { WatchlistItemCard } from './watchlist-item-card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 interface WatchlistProps {
@@ -19,7 +21,15 @@ export function Watchlist({ items }: WatchlistProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [priorityFilter, setPriorityFilter] = useState<'all' | 'High' | 'Medium' | 'Low'>('all');
     
+    const filteredItems = useMemo(() => {
+        if (priorityFilter === 'all') {
+            return items;
+        }
+        return items.filter(item => (item.priority || 'Medium') === priorityFilter);
+    }, [items, priorityFilter]);
+
     const handleDelete = async (itemId: string) => {
         if (!user) return;
         try {
@@ -32,7 +42,21 @@ export function Watchlist({ items }: WatchlistProps) {
     
     return (
         <>
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-between items-center mb-4">
+                 <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium">Filter Priority:</label>
+                    <Select value={priorityFilter} onValueChange={(v: any) => setPriorityFilter(v)}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Priorities</SelectItem>
+                            <SelectItem value="High">High</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Low">Low</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
                 <Button onClick={() => setIsAddDialogOpen(true)}>
                     <PlusCircle className="mr-2 h-4 w-4"/>
                     Add to Watchlist
@@ -47,7 +71,7 @@ export function Watchlist({ items }: WatchlistProps) {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {items.map(item => (
+                    {filteredItems.map(item => (
                         <WatchlistItemCard 
                             key={item.id}
                             item={item}

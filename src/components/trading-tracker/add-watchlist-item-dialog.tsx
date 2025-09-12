@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -43,12 +44,14 @@ export function AddWatchlistItemDialog({
   const [notes, setNotes] = useState('');
   const [reminderDate, setReminderDate] = useState<Date | null>(null);
   const [status, setStatus] = useState<WatchlistItem['status']>('Watching');
+  const [priority, setPriority] = useState<WatchlistItem['priority']>('Medium');
 
   const resetForm = () => {
     setSymbol('');
     setNotes('');
     setReminderDate(null);
     setStatus('Watching');
+    setPriority('Medium');
   };
 
   useEffect(() => {
@@ -58,6 +61,7 @@ export function AddWatchlistItemDialog({
         setNotes(item.notes || '');
         setReminderDate(item.reminderDate ? item.reminderDate.toDate() : null);
         setStatus(item.status);
+        setPriority(item.priority || 'Medium');
       } else {
         resetForm();
       }
@@ -76,6 +80,7 @@ export function AddWatchlistItemDialog({
         symbol: symbol.toUpperCase().trim(),
         notes,
         status,
+        priority,
         reminderDate: reminderDate ? Timestamp.fromDate(reminderDate) : null,
     };
 
@@ -106,9 +111,22 @@ export function AddWatchlistItemDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="symbol">Symbol</Label>
-            <Input id="symbol" value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="e.g., AAPL" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="symbol">Symbol</Label>
+                <Input id="symbol" value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="e.g., AAPL" />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={priority} onValueChange={(v: WatchlistItem['priority']) => setPriority(v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>

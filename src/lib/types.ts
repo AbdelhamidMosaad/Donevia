@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -671,6 +672,7 @@ export type WatchlistItem = {
     notes?: string;
     status: 'Watching' | 'Entered' | 'Archived';
     reminderDate?: Timestamp | null;
+    priority?: 'High' | 'Medium' | 'Low';
     ownerId: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
