@@ -13,6 +13,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
 
 function highlightStory(story: string): React.ReactNode {
     const parts = story.split(/(\*\*.*?\*\*)/g);
@@ -29,6 +30,7 @@ export function VocabularyCoach() {
   const [result, setResult] = useState<VocabularyCoachResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSaveToDeckOpen, setIsSaveToDeckOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -123,6 +125,7 @@ export function VocabularyCoach() {
   }
 
   return (
+    <>
     <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle>Vocabulary Coach</CardTitle>
@@ -183,6 +186,7 @@ export function VocabularyCoach() {
              <CardFooter className="justify-end gap-2">
                 <Button variant="outline" onClick={() => setResult(null)}>Generate Another</Button>
                 <Button variant="outline" onClick={handleExportWord}><Download className="mr-2 h-4 w-4"/> Export as Word</Button>
+                <Button variant="outline" onClick={() => setIsSaveToDeckOpen(true)}><Save className="mr-2 h-4 w-4"/> Save to Flashcards</Button>
                 <Button onClick={handleSaveToDocs} disabled={isSaving}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
                     Save to Docs
@@ -190,5 +194,15 @@ export function VocabularyCoach() {
             </CardFooter>
         )}
     </Card>
+    {result && (
+        <SaveToDeckDialog
+            isOpen={isSaveToDeckOpen}
+            onOpenChange={setIsSaveToDeckOpen}
+            cards={result.vocabulary.map(v => ({front: v.word, back: `${v.meaning}\n\nExample: ${v.example}`}))}
+            deckNameSuggestion={`Vocabulary: ${level}`}
+            onSaveComplete={() => setIsSaveToDeckOpen(false)}
+        />
+    )}
+    </>
   );
 }
