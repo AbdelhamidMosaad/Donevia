@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Label } from '../ui/label';
-import type { GrammarCorrectionResponse } from '@/ai/flows/grammar-coach-flow';
+import type { GrammarCorrectionResponse } from '@/lib/types/grammar';
 
 // Define the structure of a LanguageTool match
 interface LanguageToolMatch {
