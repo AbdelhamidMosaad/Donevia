@@ -17,23 +17,26 @@ export default function PomodoroPage() {
     };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center gap-8">
-        <PomodoroTimer />
-        <Card className="w-full max-w-lg">
-            <CardHeader>
-                <div className="mx-auto bg-primary/10 p-4 rounded-full">
-                 <Timer className="h-12 w-12 text-primary" />
-                </div>
-                <CardTitle className="mt-4 font-headline text-2xl">Pomodoro Timer Settings</CardTitle>
-                <CardDescription>Configure your Pomodoro sessions. The timer is always accessible from the top-right of your screen.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <PomodoroSettings onSave={handleSettingsSave} currentSettings={settings}>
-                   <Button>Open Pomodoro Settings</Button>
-                </PomodoroSettings>
-            </CardContent>
-        </Card>
+    <div className="grid md:grid-cols-2 gap-8 items-center justify-center h-full">
+        <div className="flex justify-center">
+            <PomodoroTimer />
+        </div>
+        <div className="flex justify-center">
+            <Card className="w-full max-w-lg text-center">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                     <Timer className="h-12 w-12 text-primary" />
+                    </div>
+                    <CardTitle className="mt-4 font-headline text-2xl">Pomodoro Timer Settings</CardTitle>
+                    <CardDescription>Configure your Pomodoro sessions. The timer is always accessible from the top-right of your screen.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <PomodoroSettings onSave={handleSettingsSave} currentSettings={settings}>
+                       <Button>Open Pomodoro Settings</Button>
+                    </PomodoroSettings>
+                </CardContent>
+            </Card>
+        </div>
     </div>
   );
 }
-
