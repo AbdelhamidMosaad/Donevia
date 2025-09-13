@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,14 +13,28 @@ import { ScrollArea } from '../ui/scroll-area';
 import { addDoc as addFirestoreDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { remark } from 'remark';
+import html from 'remark-html';
+
+async function markdownToHtml(markdown: string) {
+  const result = await remark().use(html).process(markdown);
+  return result.toString();
+}
 
 export function LectureNotesGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [result, setResult] = useState<StudyMaterialResponse | null>(null);
+  const [renderedHtml, setRenderedHtml] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingToDocs, setIsSavingToDocs] = useState(false);
+
+  useEffect(() => {
+    if (result?.notesContent && typeof result.notesContent === 'string') {
+      markdownToHtml(result.notesContent).then(html => setRenderedHtml(html));
+    }
+  }, [result]);
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -30,6 +44,7 @@ export function LectureNotesGenerator() {
 
     setIsLoading(true);
     setResult(null);
+    setRenderedHtml(null);
 
     try {
       const requestPayload: StudyMaterialRequest = {
@@ -65,18 +80,16 @@ export function LectureNotesGenerator() {
   
   const handleReset = () => {
       setResult(null);
+      setRenderedHtml(null);
   }
 
   const convertNotesToText = () => {
     if (!result?.notesContent) return '';
+    if (typeof result.notesContent === 'string') {
+      return `${result.title}\n\n${result.notesContent}`;
+    }
     
     let text = `${result.title}\n\n`;
-
-    if (typeof result.notesContent === 'string') {
-      return text + result.notesContent;
-    }
-
-    // Handle structured notes object
     text += `${result.notesContent.introduction}\n\n`;
     result.notesContent.sections.forEach(section => {
         text += `## ${section.heading}\n\n`;
@@ -204,34 +217,12 @@ export function LectureNotesGenerator() {
                     <CardTitle>{result.title}</CardTitle>
                     <CardDescription>Your AI-generated notes are ready.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1">
-                    <ScrollArea className="h-full border rounded-md p-4 bg-white">
-                       <div className="prose prose-sm prose-black max-w-none">
-                            {typeof result.notesContent === 'string' ? (
-                                <div className="whitespace-pre-wrap font-sans">{result.notesContent}</div>
-                            ) : (
-                                <>
-                                    <p>{result.notesContent.introduction}</p>
-                                    {result.notesContent.sections.map((section, index) => (
-                                        <div key={index}>
-                                            <h2>{section.heading}</h2>
-                                            <ul>
-                                                {section.content.map((point, i) => <li key={i}>{point}</li>)}
-                                            </ul>
-                                            {section.subsections && section.subsections.map((sub, subIndex) => (
-                                                <div key={subIndex} className="ml-4">
-                                                    <h3>{sub.subheading}</h3>
-                                                    <ul>
-                                                        {sub.content.map((subPoint, j) => <li key={j}>{subPoint}</li>)}
-                                                    </ul>
-                                                </div>
-                                            ))}
-                                            {section.addDividerAfter && <hr />}
-                                        </div>
-                                    ))}
-                                </>
-                            )}
-                        </div>
+                <CardContent className="flex-1 min-h-0">
+                    <ScrollArea className="h-full border rounded-md p-4 bg-background">
+                       <div 
+                         className="prose dark:prose-invert max-w-none"
+                         dangerouslySetInnerHTML={{ __html: renderedHtml || ''}}
+                       />
                     </ScrollArea>
                 </CardContent>
                 <CardFooter className="flex-wrap justify-end gap-2">

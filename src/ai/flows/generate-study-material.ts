@@ -18,8 +18,7 @@ const studyMaterialPrompt = ai.definePrompt({
   input: { schema: StudyMaterialRequestSchema },
   output: { schema: StudyMaterialResponseSchema },
   prompt: `
-You are an expert at creating educational materials. Your task is to convert the provided source text into the specified format.
-
+You are a professional academic lecturer. Generate lecture notes for a university-level from the provided text.The notes should be structured, easy to read, and highlight key terms.
 Follow these instructions precisely based on the requested 'generationType'.
 
 ---
@@ -32,10 +31,12 @@ Follow these instructions precisely based on the requested 'generationType'.
 ---
 **NOTES INSTRUCTIONS**
 If the generation type is 'notes', you must follow these instructions:
-1. **Output Format**: Plain text only. Use line breaks for structure. No markdown symbols like # or *.
-2. **Note Style**: The notes must follow the structure requested in 'notesOptions.style'.
+1. **Output Format**: Use Markdown for clear and professional formatting. This includes headings (##), bold text (**text**), and bullet points (-) for lists.
+2. **Note Style**: The notes must follow the structure requested in 'notesOptions.style' and be formatted like professional lecture notes.
 3. **Complexity**: Must match "{{notesOptions.complexity}}".
 4. **Content**: Use only the provided source text. Do not add external content.
+5. **Structure**: The notes should start with a clear, concise title and an introductory summary. Use distinct headings for each major topic covered in the source text. Use bold text to highlight key terms and concepts, and use bullet points to break down complex information into digestible points.
+6. **Tone**: Adopt a tone appropriate for a university-level lecture, making the content easy to understand and follow.
 
 ---
 **QUIZ INSTRUCTIONS**
