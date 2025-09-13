@@ -13,8 +13,10 @@ interface PomodoroContextType {
     isActive: boolean;
     sessionsCompleted: number;
     settings: PomodoroSettingsData;
+    isEndingSoon: boolean;
+    sessionEnded: boolean;
     toggleTimer: () => void;
-    resetTimer: () => void;
+    resetTimer: (switchToWork?: boolean) => void;
     setMode: (newMode: PomodoroMode) => void;
     setSettings: (settings: PomodoroSettingsData) => void;
     saveSettings: (settings: PomodoroSettingsData) => void;
@@ -47,6 +49,8 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         targetEndTime: null,
     });
     const [secondsLeft, setSecondsLeft] = useState(defaultSettings.workMinutes * 60);
+    const [isEndingSoon, setIsEndingSoon] = useState(false);
+    const [sessionEnded, setSessionEnded] = useState(false);
     const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 
     const getTimerDuration = useCallback((mode: PomodoroMode, settings: PomodoroSettingsData) => {
@@ -95,17 +99,23 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         if (state.isActive) {
             interval = setInterval(() => {
                 const remaining = Math.max(0, (state.targetEndTime?.toMillis() ?? 0) - Date.now()) / 1000;
-                setSecondsLeft(Math.round(remaining));
+                const roundedRemaining = Math.round(remaining);
+                setSecondsLeft(roundedRemaining);
+                
+                setIsEndingSoon(roundedRemaining <= 60 && state.mode === 'work');
 
                 if (remaining <= 0) {
+                   setSessionEnded(true);
                    switchMode();
                 }
             }, 1000);
+        } else {
+            setIsEndingSoon(false);
         }
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [state.isActive, state.targetEndTime]);
+    }, [state.isActive, state.targetEndTime, state.mode]);
 
 
     const playNotificationSound = () => {
@@ -124,7 +134,8 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     }, [user]);
 
     const switchMode = useCallback((newMode?: PomodoroMode) => {
-        if (!user || !state.mode || !state.sessionsCompleted) return;
+        if (!user || !state.mode) return;
+        const sessionsCompleted = state.sessionsCompleted ?? 0;
 
         // Play sound and show notification for session completion
         if (state.isActive) {
@@ -134,7 +145,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         }
         
         let nextMode: PomodoroMode;
-        let newSessionsCompleted = state.sessionsCompleted;
+        let newSessionsCompleted = sessionsCompleted;
 
         if (newMode) {
             nextMode = newMode;
@@ -162,10 +173,15 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
             targetEndTime: null 
         });
         setSecondsLeft(newDuration);
+        setSessionEnded(true); // Flag that a session just ended
     }, [state, user, getTimerDuration, updateStateInFirestore]);
 
     const toggleTimer = () => {
         const newIsActive = !state.isActive;
+        if (sessionEnded) {
+            setSessionEnded(false);
+        }
+
         if (newIsActive) {
             // Starting the timer
             const duration = secondsLeft > 0 ? secondsLeft : getTimerDuration(state.mode!, state as PomodoroSettingsData);
@@ -177,10 +193,12 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         }
     };
     
-    const resetTimer = () => {
-        const duration = getTimerDuration(state.mode!, state as PomodoroSettingsData);
+    const resetTimer = (switchToWork = false) => {
+        const resetMode = switchToWork ? 'work' : (state.mode || 'work');
+        const duration = getTimerDuration(resetMode, state as PomodoroSettingsData);
         setSecondsLeft(duration);
-        updateStateInFirestore({ isActive: false, targetEndTime: null });
+        updateStateInFirestore({ mode: resetMode, isActive: false, targetEndTime: null });
+        setSessionEnded(false);
     };
 
     const setModeHandler = (newMode: PomodoroMode) => {
@@ -216,6 +234,8 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         isActive: state.isActive || false,
         sessionsCompleted: state.sessionsCompleted || 0,
         settings: state as PomodoroSettingsData,
+        isEndingSoon,
+        sessionEnded,
         toggleTimer,
         resetTimer,
         setMode: setModeHandler,

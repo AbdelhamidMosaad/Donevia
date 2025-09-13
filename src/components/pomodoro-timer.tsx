@@ -21,6 +21,7 @@ export function PomodoroTimer() {
         settings,
         toggleTimer,
         resetTimer,
+        sessionEnded,
         setMode,
         saveSettings
     } = usePomodoro();
@@ -43,15 +44,22 @@ export function PomodoroTimer() {
         longBreak: '#8040FF' // accent
     }
 
+    const getDisplayText = () => {
+        if (sessionEnded) {
+            return "Done!";
+        }
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    };
+
     return (
         <div className="flex flex-col items-center gap-6 p-8 rounded-2xl bg-card shadow-xl w-full max-w-md">
             <div className="w-64 h-64">
                 <CircularProgressbar
-                    value={percentage}
-                    text={`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`}
+                    value={sessionEnded ? 100 : percentage}
+                    text={getDisplayText()}
                     styles={buildStyles({
                         textColor: 'hsl(var(--foreground))',
-                        pathColor: modeColors[mode],
+                        pathColor: sessionEnded ? '#4ade80' : modeColors[mode],
                         trailColor: 'hsl(var(--muted))',
                         textSize: '20px',
                     })}
@@ -60,9 +68,9 @@ export function PomodoroTimer() {
             <div className="flex items-center gap-4">
                 <Button onClick={toggleTimer} size="lg" className="w-32">
                     {isActive ? <Pause className="mr-2" /> : <Play className="mr-2" />}
-                    {isActive ? 'Pause' : 'Start'}
+                    {sessionEnded ? (mode === 'work' ? 'Start Work' : 'Start Break') : (isActive ? 'Pause' : 'Start')}
                 </Button>
-                <Button onClick={resetTimer} variant="outline" size="lg">
+                <Button onClick={() => resetTimer()} variant="outline" size="lg">
                     <RotateCcw className="mr-2" /> Reset
                 </Button>
                  <PomodoroSettings onSave={saveSettings} currentSettings={settings}>

@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 export function PomodoroHeaderWidget() {
-    const { mode, secondsLeft, isActive, toggleTimer, resetTimer, setMode } = usePomodoro();
+    const { mode, secondsLeft, isActive, toggleTimer, resetTimer, setMode, isEndingSoon, sessionEnded } = usePomodoro();
     const router = useRouter();
 
     const minutes = Math.floor(secondsLeft / 60);
@@ -29,12 +29,27 @@ export function PomodoroHeaderWidget() {
     
     const modeStyle = modeStyles[mode] || 'bg-background';
 
+    const getDisplayText = () => {
+        if (sessionEnded) {
+            return mode === 'work' ? "Start Work" : "Start Break";
+        }
+        if (isEndingSoon) {
+            return "Ending Soon!";
+        }
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    };
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("transition-colors", isActive ? `${modeStyle} animate-pulse` : '')}>
+                <Button variant="outline" size="sm" className={cn(
+                    "transition-colors w-32", 
+                    isActive && !isEndingSoon && `${modeStyle} animate-pulse`,
+                    isEndingSoon && 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-300 animate-bounce',
+                    sessionEnded && 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-300'
+                    )}>
                     <Timer className="mr-2 h-4 w-4" />
-                    {`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`}
+                    {getDisplayText()}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -50,9 +65,9 @@ export function PomodoroHeaderWidget() {
                 <DropdownMenuGroup>
                     <DropdownMenuItem onClick={toggleTimer}>
                         {isActive ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                        <span>{isActive ? 'Pause' : 'Start'}</span>
+                        <span>{sessionEnded ? (mode === 'work' ? 'Start Work' : 'Start Break') : (isActive ? 'Pause' : 'Start')}</span>
                     </DropdownMenuItem>
-                     <DropdownMenuItem onClick={resetTimer}>
+                     <DropdownMenuItem onClick={() => resetTimer()}>
                         <RotateCcw className="mr-2 h-4 w-4" />
                         <span>Reset</span>
                     </DropdownMenuItem>
