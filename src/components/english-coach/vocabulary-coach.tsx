@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -64,7 +65,7 @@ export function VocabularyCoach() {
 
       const data: VocabularyCoachResponse = await response.json();
       setResult(data);
-      // After getting the words, fetch audio for them
+      // After getting the words, fetch audio for them sequentially
       fetchAudioForVocabulary(data.vocabulary);
       
     } catch (error) {
@@ -78,30 +79,30 @@ export function VocabularyCoach() {
     }
   };
 
-  const fetchAudioForVocabulary = (vocabulary: HighlightedWord[]) => {
+  const fetchAudioForVocabulary = async (vocabulary: HighlightedWord[]) => {
     const initialState: Record<string, {loading: boolean, data: string | null}> = {};
     vocabulary.forEach(item => {
       initialState[item.word] = { loading: true, data: null };
     });
     setAudioState(initialState);
     
-    vocabulary.forEach(item => {
-      generateAudio(item.word)
-        .then(audioResult => {
-          setAudioState(prev => ({
-            ...prev,
-            [item.word]: { loading: false, data: audioResult.media }
-          }));
-        })
-        .catch(err => {
-          console.error(`Failed to generate audio for ${item.word}`, err);
-          setAudioState(prev => ({
-            ...prev,
-            [item.word]: { loading: false, data: null }
-          }));
-        });
-    });
+    for (const item of vocabulary) {
+        try {
+            const audioResult = await generateAudio(item.word);
+            setAudioState(prev => ({
+                ...prev,
+                [item.word]: { loading: false, data: audioResult.media }
+            }));
+        } catch (err) {
+            console.error(`Failed to generate audio for ${item.word}`, err);
+            setAudioState(prev => ({
+                ...prev,
+                [item.word]: { loading: false, data: null }
+            }));
+        }
+    }
   };
+
 
   const playAudio = (word: string) => {
     const audioData = audioState[word]?.data;
