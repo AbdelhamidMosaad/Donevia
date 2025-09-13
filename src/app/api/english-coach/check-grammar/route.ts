@@ -1,6 +1,8 @@
 
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
+import { checkGrammarWithAI } from '@/ai/flows/grammar-coach-flow';
+
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +13,7 @@ export async function POST(request: Request) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const userId = decodedToken.uid;
 
-    const body: { text: string; mode: 'languagetool' | 'sapling' } = await request.json();
+    const body: { text: string; mode: 'languagetool' | 'sapling' | 'gemini' } = await request.json();
     
     if (!body.text || body.text.length < 5) {
         return NextResponse.json({ error: 'Text input is required and must be at least 5 characters.' }, { status: 400 });
@@ -19,9 +21,11 @@ export async function POST(request: Request) {
     
     let result;
 
-    if (body.mode === 'sapling') {
-      const SAPLING_API_KEY = process.env.SAPLING_API_KEY || 'YOUR_SAPLING_API_KEY';
-      if (SAPLING_API_KEY === 'YOUR_SAPLING_API_KEY') {
+    if (body.mode === 'gemini') {
+        result = await checkGrammarWithAI({ text: body.text });
+    } else if (body.mode === 'sapling') {
+      const SAPLING_API_KEY = process.env.SAPLING_API_KEY;
+      if (!SAPLING_API_KEY) {
         return NextResponse.json({ error: 'Sapling AI API key not configured.' }, { status: 500 });
       }
 

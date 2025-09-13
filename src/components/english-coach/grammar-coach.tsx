@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Label } from '../ui/label';
+import type { GrammarCorrectionResponse } from '@/ai/flows/grammar-coach-flow';
 
 // Define the structure of a LanguageTool match
 interface LanguageToolMatch {
@@ -30,17 +31,15 @@ interface SaplingEdit {
     general_error_type: string;
 }
 
-type Mode = 'languagetool' | 'sapling';
+type Mode = 'languagetool' | 'sapling' | 'gemini';
 
 export function GrammarCoach() {
   const [inputText, setInputText] = useState('');
-  const [ltMatches, setLtMatches] = useState<LanguageToolMatch[]>([]);
-  const [saplingEdits, setSaplingEdits] = useState<SaplingEdit[]>([]);
-  const [correctedText, setCorrectedText] = useState<string>('');
+  const [result, setResult] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const [mode, setMode] = useState<Mode>('languagetool');
+  const [mode, setMode] = useState<Mode>('gemini');
 
   const handleCheckGrammar = async () => {
     if (!inputText.trim()) {
@@ -53,9 +52,7 @@ export function GrammarCoach() {
     }
 
     setIsLoading(true);
-    setLtMatches([]);
-    setSaplingEdits([]);
-    setCorrectedText('');
+    setResult(null);
 
     try {
       const response = await fetch('/api/english-coach/check-grammar', {
@@ -68,22 +65,24 @@ export function GrammarCoach() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to check grammar.');
+         const errorText = await response.text();
+         console.error('Grammar check failed:', errorText);
+         // Try to parse as JSON, but fall back to text if it fails
+         let errorMessage = 'An unknown error occurred.';
+         try {
+           const errorData = JSON.parse(errorText);
+           errorMessage = errorData.error || errorData.details || 'Failed to check grammar.';
+         } catch (e) {
+           // The error response wasn't JSON. Use the raw text.
+            if (errorText.length < 300) { // Avoid showing huge HTML error pages
+              errorMessage = errorText;
+            }
+         }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      if(mode === 'languagetool') {
-          setLtMatches(data.matches);
-      } else {
-          setSaplingEdits(data.edits);
-          // Reconstruct corrected text from edits for Sapling
-          let newText = inputText;
-          data.edits.slice().reverse().forEach((edit: SaplingEdit) => {
-              newText = newText.slice(0, edit.start) + edit.replacement + newText.slice(edit.end);
-          });
-          setCorrectedText(newText);
-      }
+      setResult(data);
       
     } catch (error) {
       console.error('Grammar check failed:', error);
@@ -97,12 +96,12 @@ export function GrammarCoach() {
     }
   };
 
-  const getHighlightedText = (text: string, matches: any[], isSapling: boolean) => {
+   const getHighlightedText = (text: string, matches: any[], mode: Mode) => {
       let lastIndex = 0;
       const parts: (string | JSX.Element)[] = [];
       matches.forEach((match, i) => {
-          const offset = isSapling ? match.start : match.offset;
-          const length = isSapling ? match.end - match.start : match.length;
+          const offset = mode === 'sapling' ? match.start : match.offset;
+          const length = mode === 'sapling' ? match.end - match.start : match.length;
           parts.push(text.substring(lastIndex, offset));
           parts.push(
               <span key={i} className="bg-yellow-200 dark:bg-yellow-800/70 rounded-md px-1">
@@ -119,11 +118,11 @@ export function GrammarCoach() {
     <div className="space-y-6">
         <div className="p-4 bg-muted/50 rounded-lg">
             <h3 className="font-bold mb-2">Highlighted Text:</h3>
-            {getHighlightedText(inputText, ltMatches, false)}
+            {getHighlightedText(inputText, result.matches, 'languagetool')}
         </div>
         <div>
             <h3 className="font-bold text-lg mb-2">Suggestions:</h3>
-            {ltMatches.map((match, index) => (
+            {result.matches.map((match: LanguageToolMatch, index: number) => (
                 <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
                     <p className="text-sm text-muted-foreground font-semibold">{match.rule.category.name}</p>
                     <p className="font-semibold mb-2">{match.message}</p>
@@ -143,15 +142,21 @@ export function GrammarCoach() {
     </div>
   );
   
-  const renderSaplingResults = () => (
+  const renderSaplingResults = () => {
+    let correctedText = inputText;
+    result.edits.slice().reverse().forEach((edit: SaplingEdit) => {
+        correctedText = correctedText.slice(0, edit.start) + edit.replacement + correctedText.slice(edit.end);
+    });
+
+    return (
     <div className="space-y-6">
-        <div className="p-4 bg-muted/50 rounded-lg">
-             <h3 className="font-bold text-lg mb-2">Corrected Text:</h3>
-             <p className="text-lg text-primary">{correctedText}</p>
+        <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+             <h3 className="font-bold text-lg mb-2">Final Polished Version:</h3>
+             <p className="text-lg text-primary/90">{correctedText}</p>
         </div>
         <div>
             <h3 className="font-bold text-lg mb-2">Corrections:</h3>
-            {saplingEdits.map((edit, index) => (
+            {result.edits.map((edit: SaplingEdit, index: number) => (
                  <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
                     <div className="flex items-center gap-4 text-destructive text-sm">
                         <X className="h-4 w-4 shrink-0"/>
@@ -170,7 +175,55 @@ export function GrammarCoach() {
             ))}
         </div>
     </div>
+  )};
+
+   const renderGeminiResults = () => (
+     <div className="space-y-6">
+        <div>
+            <h3 className="font-bold text-lg mb-2">Error Breakdown:</h3>
+            {result.errors.map((error: any, index: number) => (
+                <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
+                    <div className="flex items-center gap-4 text-destructive">
+                        <X className="h-5 w-5 shrink-0"/>
+                        <p className="line-through">{error.original}</p>
+                    </div>
+                    <div className="flex items-center gap-4 text-green-600 mt-2">
+                        <Check className="h-5 w-5 shrink-0"/>
+                        <p>{error.correction}</p>
+                    </div>
+                    <div className="mt-2 pl-9 text-sm text-muted-foreground">
+                        <p>{error.explanation}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+        <h3 className="font-bold text-lg">Final Polished Version:</h3>
+        <p className="mt-2 text-primary/90">{result.corrected_text}</p>
+      </div>
+    </div>
   );
+
+  const renderResults = () => {
+      if (!result) {
+           return (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <p>Your feedback will appear here.</p>
+            </div>
+          );
+      }
+      switch(mode) {
+          case 'gemini':
+            return result.errors ? renderGeminiResults() : <p className="text-green-600">No errors found!</p>;
+          case 'sapling':
+            return result.edits && result.edits.length > 0 ? renderSaplingResults() : <p className="text-green-600">No errors found!</p>;
+          case 'languagetool':
+             return result.matches && result.matches.length > 0 ? renderLanguageToolResults() : <p className="text-green-600">No errors found!</p>;
+          default:
+            return null;
+      }
+  }
+
 
   return (
     <div className="grid md:grid-cols-2 gap-6 h-full">
@@ -182,6 +235,7 @@ export function GrammarCoach() {
                 <div className="flex items-center gap-2">
                     <Label htmlFor="mode-toggle">Mode</Label>
                     <ToggleGroup id="mode-toggle" type="single" value={mode} onValueChange={(value: Mode) => value && setMode(value)} size="sm">
+                        <ToggleGroupItem value="gemini">Gemini</ToggleGroupItem>
                         <ToggleGroupItem value="languagetool">LanguageTool</ToggleGroupItem>
                         <ToggleGroupItem value="sapling">Sapling</ToggleGroupItem>
                     </ToggleGroup>
@@ -200,15 +254,15 @@ export function GrammarCoach() {
         <CardFooter>
           <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {isLoading ? 'Analyzing...' : `Check with ${mode === 'sapling' ? 'Sapling AI' : 'LanguageTool'}`}
+            {isLoading ? 'Analyzing...' : `Check with ${mode.charAt(0).toUpperCase() + mode.slice(1)}`}
           </Button>
         </CardFooter>
       </Card>
 
       <Card className="flex flex-col">
         <CardHeader>
-          <CardTitle>Analysis & Suggestions</CardTitle>
-          <CardDescription>Review the suggestions to improve your text.</CardDescription>
+          <CardTitle>AI Feedback</CardTitle>
+          <CardDescription>Review the suggestions and corrections for your text.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto">
           {isLoading ? (
@@ -216,14 +270,8 @@ export function GrammarCoach() {
               <Loader2 className="mr-2 h-6 w-6 animate-spin" />
               <span>AI is analyzing your text...</span>
             </div>
-          ) : (mode === 'languagetool' && ltMatches.length > 0) ? (
-            renderLanguageToolResults()
-          ) : (mode === 'sapling' && saplingEdits.length > 0) ? (
-            renderSaplingResults()
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>Your feedback will appear here.</p>
-            </div>
+            renderResults()
           )}
         </CardContent>
       </Card>
