@@ -11,7 +11,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
-import { Volume2, Trash2, Loader2 } from 'lucide-react';
+import { Volume2, Trash2, Loader2, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteUserVocabularyWord, updateUserVocabularyWordLevel } from '@/lib/vocabulary';
 import {
@@ -28,6 +28,7 @@ import {
 import { generateAudio } from '@/ai/flows/tts-flow';
 import { Label } from '../ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
+import * as XLSX from 'xlsx';
 
 type TtsEngine = 'gemini' | 'browser';
 
@@ -114,11 +115,11 @@ export function NewWordsLibrary() {
     } else { // Gemini TTS
         setAudioState(prev => ({...prev, [word]: { loading: true, data: null }}));
         try {
-          const audioResult = await generateAudio(word);
-          if (audioRef.current && audioResult.media) {
-            audioRef.current.src = audioResult.media;
+          const result = await generateAudio(word);
+          if (audioRef.current && result.media) {
+            audioRef.current.src = result.media;
             audioRef.current.play();
-             setAudioState(prev => ({...prev, [word]: { loading: false, data: audioResult.media }}));
+             setAudioState(prev => ({...prev, [word]: { loading: false, data: result.media }}));
           } else {
              throw new Error('Audio generation returned no media.');
           }
@@ -128,6 +129,22 @@ export function NewWordsLibrary() {
         }
     }
   }
+
+  const handleExport = () => {
+    const dataToExport = filteredWords.map(word => ({
+        Word: word.word,
+        Pronunciation: word.pronunciation,
+        Meaning: word.meaning,
+        Example: word.example,
+        'Mastery Level': word.masteryLevel,
+        'Source Level': word.sourceLevel,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Vocabulary");
+    XLSX.writeFile(workbook, "my_vocabulary.xlsx");
+    toast({ title: "Exporting to Excel..." });
+  };
 
   return (
     <Card>
@@ -166,6 +183,7 @@ export function NewWordsLibrary() {
                     </div>
                 )}
             </div>
+             <Button variant="outline" onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export Excel</Button>
         </div>
       </CardHeader>
       <CardContent>
