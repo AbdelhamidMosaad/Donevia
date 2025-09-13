@@ -2,7 +2,8 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GrammarCoach } from '@/components/english-coach/grammar-coach';
-import { Languages } from 'lucide-react';
+import { Languages, BookOpen } from 'lucide-react';
+import { VocabularyCoach } from '@/components/english-coach/vocabulary-coach';
 
 export default function EnglishCoachPage() {
   return (
@@ -22,10 +23,17 @@ export default function EnglishCoachPage() {
           <TabsTrigger value="grammar">
             Grammar Coach
           </TabsTrigger>
+          <TabsTrigger value="vocabulary">
+            <BookOpen className="mr-2 h-4 w-4" />
+            Vocabulary Coach
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="grammar" className="flex-1 mt-4">
            <GrammarCoach />
+        </TabsContent>
+        <TabsContent value="vocabulary" className="flex-1 mt-4">
+            <VocabularyCoach />
         </TabsContent>
       </Tabs>
     </div>
