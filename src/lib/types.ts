@@ -483,6 +483,17 @@ export type EnglishCoachProfile = {
   createdAt: Timestamp;
 };
 
+export type UserVocabularyWord = {
+    id: string;
+    word: string;
+    pronunciation: string;
+    meaning: string;
+    example: string;
+    sourceLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+    ownerId: string;
+    createdAt: Timestamp;
+}
+
 export type Recording = {
   id: string;
   uid: string;

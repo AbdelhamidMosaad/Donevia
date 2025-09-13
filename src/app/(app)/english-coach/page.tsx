@@ -3,10 +3,11 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GrammarCoach } from '@/components/english-coach/grammar-coach';
-import { Languages, BookOpen, Mail, Mic } from 'lucide-react';
+import { Languages, BookOpen, Mail, Mic, MessageSquareQuote } from 'lucide-react';
 import { VocabularyCoach } from '@/components/english-coach/vocabulary-coach';
 import { EmailCoach } from '@/components/english-coach/email-coach';
 import { ShadowingCoach } from '@/components/english-coach/shadowing-coach';
+import { NewWordsLibrary } from '@/components/english-coach/new-words-library';
 
 export default function EnglishCoachPage() {
   return (
@@ -24,11 +25,16 @@ export default function EnglishCoachPage() {
       <Tabs defaultValue="grammar" className="flex-1 flex flex-col min-h-0">
         <TabsList>
           <TabsTrigger value="grammar">
+            <MessageSquareQuote className="mr-2 h-4 w-4" />
             Grammar Coach
           </TabsTrigger>
           <TabsTrigger value="vocabulary">
             <BookOpen className="mr-2 h-4 w-4" />
             Vocabulary Coach
+          </TabsTrigger>
+           <TabsTrigger value="new-words">
+            <BookOpen className="mr-2 h-4 w-4" />
+            New Words
           </TabsTrigger>
            <TabsTrigger value="email">
             <Mail className="mr-2 h-4 w-4" />
@@ -45,6 +51,9 @@ export default function EnglishCoachPage() {
         </TabsContent>
         <TabsContent value="vocabulary" className="flex-1 mt-4">
             <VocabularyCoach />
+        </TabsContent>
+         <TabsContent value="new-words" className="flex-1 mt-4">
+            <NewWordsLibrary />
         </TabsContent>
         <TabsContent value="email" className="flex-1 mt-4">
             <EmailCoach />

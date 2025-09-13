@@ -16,6 +16,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
 import { generateAudio } from '@/ai/flows/tts-flow';
+import { addUserVocabularyWords } from '@/lib/vocabulary';
 
 function highlightStory(story: string): React.ReactNode {
     const parts = story.split(/(\*\*.*?\*\*)/g);
@@ -92,6 +93,10 @@ export function VocabularyCoach() {
 
       const data: VocabularyCoachResponse = await response.json();
       setResult(data);
+      
+      // Auto-save the generated words
+      await addUserVocabularyWords(user.uid, data.vocabulary, level);
+      toast({ title: 'New words saved to your library!' });
       
     } catch (error) {
       toast({
