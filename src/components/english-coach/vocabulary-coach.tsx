@@ -27,6 +27,8 @@ function highlightStory(story: string): React.ReactNode {
     });
 }
 
+type TtsEngine = 'gemini' | 'browser';
+
 export function VocabularyCoach() {
   const [level, setLevel] = useState<VocabularyLevel>('B1');
   const [result, setResult] = useState<VocabularyCoachResponse | null>(null);
@@ -38,6 +40,30 @@ export function VocabularyCoach() {
   const router = useRouter();
 
   const [audioState, setAudioState] = useState<Record<string, {loading: boolean, data: string | null}>>({});
+  const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio();
+      if (window.speechSynthesis) {
+        const getVoices = () => {
+          const availableVoices = window.speechSynthesis.getVoices();
+          const englishVoices = availableVoices.filter(v => v.lang.startsWith('en'));
+          setVoices(englishVoices);
+          if (!selectedVoice && englishVoices.length > 0) {
+            const defaultVoice = englishVoices.find(v => v.default);
+            setSelectedVoice(defaultVoice ? defaultVoice.name : englishVoices[0].name);
+          }
+        };
+        getVoices();
+        window.speechSynthesis.onvoiceschanged = getVoices;
+      }
+    }
+  }, [selectedVoice]);
+
 
   const handleGenerate = async () => {
     if (!user) {
@@ -65,8 +91,6 @@ export function VocabularyCoach() {
 
       const data: VocabularyCoachResponse = await response.json();
       setResult(data);
-      // After getting the words, fetch audio for them sequentially
-      fetchAudioForVocabulary(data.vocabulary);
       
     } catch (error) {
       toast({
@@ -79,38 +103,34 @@ export function VocabularyCoach() {
     }
   };
 
-  const fetchAudioForVocabulary = async (vocabulary: HighlightedWord[]) => {
-    const initialState: Record<string, {loading: boolean, data: string | null}> = {};
-    vocabulary.forEach(item => {
-      initialState[item.word] = { loading: true, data: null };
-    });
-    setAudioState(initialState);
-    
-    for (const item of vocabulary) {
-        try {
-            const audioResult = await generateAudio(item.word);
-            setAudioState(prev => ({
-                ...prev,
-                [item.word]: { loading: false, data: audioResult.media }
-            }));
-            // Add a delay to avoid hitting rate limits
-            await new Promise(resolve => setTimeout(resolve, 1500));
-        } catch (err) {
-            console.error(`Failed to generate audio for ${item.word}`, err);
-            setAudioState(prev => ({
-                ...prev,
-                [item.word]: { loading: false, data: null }
-            }));
-        }
+  const playAudio = async (word: string) => {
+    if (audioState[word]?.data && audioRef.current) {
+      audioRef.current.src = audioState[word]!.data!;
+      audioRef.current.play();
+      return;
     }
-  };
 
-
-  const playAudio = (word: string) => {
-    const audioData = audioState[word]?.data;
-    if (audioData) {
-      const audio = new Audio(audioData);
-      audio.play();
+    if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      const voice = voices.find(v => v.name === selectedVoice);
+      if (voice) {
+        utterance.voice = voice;
+      }
+      window.speechSynthesis.speak(utterance);
+    } else { // Gemini TTS
+      setAudioState(prev => ({ ...prev, [word]: { loading: true, data: null } }));
+      try {
+        const audioResult = await generateAudio(word);
+        setAudioState(prev => ({ ...prev, [word]: { loading: false, data: audioResult.media } }));
+        if (audioRef.current) {
+          audioRef.current.src = audioResult.media;
+          audioRef.current.play();
+        }
+      } catch (err) {
+        console.error(`Failed to generate audio for ${word}`, err);
+        toast({ variant: 'destructive', title: 'Audio Generation Failed' });
+        setAudioState(prev => ({ ...prev, [word]: { loading: false, data: null } }));
+      }
     }
   };
   
@@ -177,7 +197,7 @@ export function VocabularyCoach() {
           {!result ? (
              <div className="flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50 h-full">
                 <div className="max-w-xs mx-auto space-y-4">
-                    <div className="space-y-1">
+                    <div className="space-y-1 text-left">
                         <Label htmlFor="level-select">Select Your Level (CEFR)</Label>
                         <Select value={level} onValueChange={(v: VocabularyLevel) => setLevel(v)}>
                             <SelectTrigger id="level-select"><SelectValue /></SelectTrigger>
@@ -191,6 +211,29 @@ export function VocabularyCoach() {
                             </SelectContent>
                         </Select>
                     </div>
+                    <div className="space-y-1 text-left">
+                        <Label htmlFor="tts-engine-select">Text-to-Speech Engine</Label>
+                        <Select value={ttsEngine} onValueChange={(v: TtsEngine) => setTtsEngine(v)}>
+                            <SelectTrigger id="tts-engine-select"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="gemini">Gemini AI</SelectItem>
+                            <SelectItem value="browser">Browser-based</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {ttsEngine === 'browser' && voices.length > 0 && (
+                        <div className="space-y-1 text-left">
+                            <Label htmlFor="voice-select">Voice</Label>
+                            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                                <SelectTrigger id="voice-select"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {voices.map(v => (
+                                        <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <Button onClick={handleGenerate} disabled={isLoading} className="w-full">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                         {isLoading ? 'Generating...' : 'Generate Story'}
@@ -219,7 +262,7 @@ export function VocabularyCoach() {
                                             size="icon" 
                                             className="h-7 w-7" 
                                             onClick={() => playAudio(item.word)}
-                                            disabled={audioState[item.word]?.loading || !audioState[item.word]?.data}
+                                            disabled={audioState[item.word]?.loading}
                                         >
                                             {audioState[item.word]?.loading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4" />}
                                         </Button>
