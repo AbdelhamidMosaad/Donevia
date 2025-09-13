@@ -93,6 +93,8 @@ export function VocabularyCoach() {
                 ...prev,
                 [item.word]: { loading: false, data: audioResult.media }
             }));
+            // Add a delay to avoid hitting rate limits
+            await new Promise(resolve => setTimeout(resolve, 1500));
         } catch (err) {
             console.error(`Failed to generate audio for ${item.word}`, err);
             setAudioState(prev => ({
