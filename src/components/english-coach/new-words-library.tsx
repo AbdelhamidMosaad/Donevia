@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
@@ -25,6 +25,10 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { generateAudio } from '@/ai/flows/tts-flow';
+import { Label } from '../ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
+
+type TtsEngine = 'gemini' | 'browser';
 
 export function NewWordsLibrary() {
   const { user } = useAuth();
@@ -32,6 +36,29 @@ export function NewWordsLibrary() {
   const [vocabulary, setVocabulary] = useState<UserVocabularyWord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [audioState, setAudioState] = useState<Record<string, { loading: boolean, data: string | null }>>({});
+
+  const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio();
+      if (window.speechSynthesis) {
+        const getVoices = () => {
+          const availableVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+          setVoices(availableVoices);
+          if (!selectedVoice && availableVoices.length > 0) {
+            const defaultVoice = availableVoices.find(v => v.default);
+            setSelectedVoice(defaultVoice ? defaultVoice.name : availableVoices[0].name);
+          }
+        };
+        getVoices();
+        window.speechSynthesis.onvoiceschanged = getVoices;
+      }
+    }
+  }, [selectedVoice]);
 
   useEffect(() => {
     if (!user) return;
@@ -60,18 +87,32 @@ export function NewWordsLibrary() {
   };
 
   const playAudio = async (word: string) => {
-    if (audioState[word]?.data) {
-        new Audio(audioState[word]!.data!).play();
+    if (audioState[word]?.data && audioRef.current) {
+        audioRef.current.src = audioState[word]!.data!;
+        audioRef.current.play();
         return;
     }
-    setAudioState(prev => ({...prev, [word]: { loading: true, data: null }}));
-    try {
-      const audioResult = await generateAudio(word);
-      new Audio(audioResult.media).play();
-      setAudioState(prev => ({...prev, [word]: { loading: false, data: audioResult.media }}));
-    } catch (err) {
-      toast({ variant: 'destructive', title: 'Failed to generate audio' });
-      setAudioState(prev => ({...prev, [word]: { loading: false, data: null }}));
+
+    if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(word);
+        const voice = voices.find(v => v.name === selectedVoice);
+        if (voice) {
+            utterance.voice = voice;
+        }
+        window.speechSynthesis.speak(utterance);
+    } else { // Gemini TTS
+        setAudioState(prev => ({...prev, [word]: { loading: true, data: null }}));
+        try {
+          const audioResult = await generateAudio(word);
+          if (audioRef.current) {
+            audioRef.current.src = audioResult.media;
+            audioRef.current.play();
+          }
+          setAudioState(prev => ({...prev, [word]: { loading: false, data: audioResult.media }}));
+        } catch (err) {
+          toast({ variant: 'destructive', title: 'Failed to generate audio' });
+          setAudioState(prev => ({...prev, [word]: { loading: false, data: null }}));
+        }
     }
   }
 
@@ -80,12 +121,39 @@ export function NewWordsLibrary() {
       <CardHeader>
         <CardTitle>My Vocabulary</CardTitle>
         <CardDescription>A collection of all the new words you've learned.</CardDescription>
-        <Input 
-          placeholder="Search words..."
-          className="max-w-sm"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+        <div className="flex flex-col sm:flex-row gap-4 pt-2">
+            <Input 
+                placeholder="Search words..."
+                className="max-w-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="tts-engine-select" className="text-sm font-medium">TTS Engine</Label>
+                    <Select value={ttsEngine} onValueChange={(v: TtsEngine) => setTtsEngine(v)}>
+                        <SelectTrigger id="tts-engine-select" className="w-[150px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="gemini">Gemini AI</SelectItem>
+                        <SelectItem value="browser">Browser</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                 {ttsEngine === 'browser' && voices.length > 0 && (
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="voice-select" className="text-sm font-medium">Voice</Label>
+                        <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                            <SelectTrigger id="voice-select" className="w-[180px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {voices.map(v => (
+                                    <SelectItem key={v.name} value={v.name}>{v.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+            </div>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
