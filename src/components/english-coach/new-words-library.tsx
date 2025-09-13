@@ -104,11 +104,13 @@ export function NewWordsLibrary() {
         setAudioState(prev => ({...prev, [word]: { loading: true, data: null }}));
         try {
           const audioResult = await generateAudio(word);
-          if (audioRef.current) {
+          if (audioRef.current && audioResult.media) {
             audioRef.current.src = audioResult.media;
             audioRef.current.play();
+             setAudioState(prev => ({...prev, [word]: { loading: false, data: audioResult.media }}));
+          } else {
+             throw new Error('Audio generation returned no media.');
           }
-          setAudioState(prev => ({...prev, [word]: { loading: false, data: audioResult.media }}));
         } catch (err) {
           toast({ variant: 'destructive', title: 'Failed to generate audio' });
           setAudioState(prev => ({...prev, [word]: { loading: false, data: null }}));
