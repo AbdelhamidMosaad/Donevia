@@ -24,6 +24,7 @@ const vocabularyCoachPrompt = ai.definePrompt({
         -   \`word\`: The highlighted word.
         -   \`meaning\`: A simple, clear definition of the word, suitable for a {{level}} learner.
         -   \`example\`: A new, distinct sentence that correctly uses the word in a different context from the story.
+        -   \`pronunciation\`: The phonetic pronunciation of the word (e.g., "/kəˈriəs/").
     4.  **JSON Output**: Ensure your entire output is a single, valid JSON object that strictly adheres to the required format. Do not include any text or formatting outside of the JSON structure.
   `,
 });

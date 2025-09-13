@@ -12,6 +12,7 @@ const HighlightedWordSchema = z.object({
   word: z.string().describe('The vocabulary word that was highlighted in the story.'),
   meaning: z.string().describe('A clear and simple definition of the word.'),
   example: z.string().describe('A new, distinct sentence showing how to use the word.'),
+  pronunciation: z.string().describe('The phonetic pronunciation of the word (e.g., /prəˌnʌnsiˈeɪʃən/).'),
 });
 export type HighlightedWord = z.infer<typeof HighlightedWordSchema>;
 

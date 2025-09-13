@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, Download, Save } from 'lucide-react';
+import { Loader2, Sparkles, Download, Save, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import type { VocabularyCoachResponse, VocabularyLevel } from '@/lib/types/vocabulary';
+import type { VocabularyCoachResponse, VocabularyLevel, HighlightedWord } from '@/lib/types/vocabulary';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
+import { generateAudio } from '@/ai/flows/tts-flow';
 
 function highlightStory(story: string): React.ReactNode {
     const parts = story.split(/(\*\*.*?\*\*)/g);
@@ -35,6 +36,8 @@ export function VocabularyCoach() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const [audioState, setAudioState] = useState<Record<string, {loading: boolean, data: string | null}>>({});
+
   const handleGenerate = async () => {
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in.' });
@@ -43,6 +46,7 @@ export function VocabularyCoach() {
 
     setIsLoading(true);
     setResult(null);
+    setAudioState({});
 
     try {
       const response = await fetch('/api/english-coach/generate-vocabulary', {
@@ -58,8 +62,10 @@ export function VocabularyCoach() {
         throw new Error('Failed to generate vocabulary story.');
       }
 
-      const data = await response.json();
+      const data: VocabularyCoachResponse = await response.json();
       setResult(data);
+      // After getting the words, fetch audio for them
+      fetchAudioForVocabulary(data.vocabulary);
       
     } catch (error) {
       toast({
@@ -71,12 +77,45 @@ export function VocabularyCoach() {
       setIsLoading(false);
     }
   };
+
+  const fetchAudioForVocabulary = (vocabulary: HighlightedWord[]) => {
+    const initialState: Record<string, {loading: boolean, data: string | null}> = {};
+    vocabulary.forEach(item => {
+      initialState[item.word] = { loading: true, data: null };
+    });
+    setAudioState(initialState);
+    
+    vocabulary.forEach(item => {
+      generateAudio(item.word)
+        .then(audioResult => {
+          setAudioState(prev => ({
+            ...prev,
+            [item.word]: { loading: false, data: audioResult.media }
+          }));
+        })
+        .catch(err => {
+          console.error(`Failed to generate audio for ${item.word}`, err);
+          setAudioState(prev => ({
+            ...prev,
+            [item.word]: { loading: false, data: null }
+          }));
+        });
+    });
+  };
+
+  const playAudio = (word: string) => {
+    const audioData = audioState[word]?.data;
+    if (audioData) {
+      const audio = new Audio(audioData);
+      audio.play();
+    }
+  };
   
   const handleExportWord = () => {
     if (!result) return;
     let content = `Story (Level: ${level})\n\n${result.story.replace(/\*\*/g, '')}\n\nVocabulary\n\n`;
     result.vocabulary.forEach(item => {
-        content += `- ${item.word}: ${item.meaning}\n  Example: ${item.example}\n\n`;
+        content += `- ${item.word} (${item.pronunciation}): ${item.meaning}\n  Example: ${item.example}\n\n`;
     });
     
     const blob = new Blob([content], { type: 'application/msword' });
@@ -99,7 +138,7 @@ export function VocabularyCoach() {
               { type: 'paragraph', content: [{ type: 'text', text: result.story.replace(/\*\*/g, '') }] },
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Vocabulary' }] },
               ...result.vocabulary.flatMap(item => [
-                  { type: 'paragraph', content: [{ type: 'text', text: item.word, marks: [{type: 'bold'}] }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: `${item.word} ${item.pronunciation}`, marks: [{type: 'bold'}] }] },
                   { type: 'blockquote', content: [{ type: 'paragraph', content: [{ type: 'text', text: `${item.meaning}\nExample: ${item.example}` }] }] }
               ])
           ]
@@ -169,7 +208,19 @@ export function VocabularyCoach() {
                         <div className="space-y-4">
                             {result.vocabulary.map((item) => (
                                 <div key={item.word}>
-                                    <p className="font-bold text-primary">{item.word}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-bold text-primary">{item.word}</p>
+                                        <p className="text-sm text-muted-foreground">{item.pronunciation}</p>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-7 w-7" 
+                                            onClick={() => playAudio(item.word)}
+                                            disabled={audioState[item.word]?.loading || !audioState[item.word]?.data}
+                                        >
+                                            {audioState[item.word]?.loading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
                                     <blockquote className="border-l-2 pl-4 italic mt-1">
                                        <p>{item.meaning}</p>
                                        <p className="mt-1 text-sm text-muted-foreground">e.g., "{item.example}"</p>
@@ -198,7 +249,7 @@ export function VocabularyCoach() {
         <SaveToDeckDialog
             isOpen={isSaveToDeckOpen}
             onOpenChange={setIsSaveToDeckOpen}
-            cards={result.vocabulary.map(v => ({front: v.word, back: `${v.meaning}\n\nExample: ${v.example}`}))}
+            cards={result.vocabulary.map(v => ({front: `${v.word} ${v.pronunciation}`, back: `${v.meaning}\n\nExample: ${v.example}`}))}
             deckNameSuggestion={`Vocabulary: ${level}`}
             onSaveComplete={() => setIsSaveToDeckOpen(false)}
         />
