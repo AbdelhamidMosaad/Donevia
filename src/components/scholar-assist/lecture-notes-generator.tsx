@@ -15,6 +15,21 @@ import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
+import React from 'react';
+
+function InlineMarkdown({ text }: { text: string }) {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return (
+        <>
+            {parts.map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={i}>{part.slice(2, -2)}</strong>;
+                }
+                return part;
+            })}
+        </>
+    );
+}
 
 export function LectureNotesGenerator() {
   const { user } = useAuth();
@@ -199,7 +214,7 @@ export function LectureNotesGenerator() {
                         {section.content.map((point, pointIndex) => (
                             <li key={pointIndex} className={cn(point.isKeyPoint && "font-semibold")}>
                                 {point.icon && <span className="mr-2">{point.icon}</span>}
-                                {point.text}
+                                <InlineMarkdown text={point.text} />
                             </li>
                         ))}
                     </ul>
@@ -210,7 +225,7 @@ export function LectureNotesGenerator() {
                                 {sub.content.map((subPoint, subPointIndex) => (
                                     <li key={subPointIndex} className={cn(subPoint.isKeyPoint && "font-semibold")}>
                                          {subPoint.icon && <span className="mr-2">{subPoint.icon}</span>}
-                                        {subPoint.text}
+                                        <InlineMarkdown text={subPoint.text} />
                                     </li>
                                 ))}
                             </ul>
@@ -241,7 +256,7 @@ export function LectureNotesGenerator() {
                     <CardDescription>Your AI-generated notes are ready.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
-                    <ScrollArea className="h-full border rounded-md p-4 bg-white">
+                    <ScrollArea className="h-full border rounded-md p-4 bg-white text-black">
                        {renderStructuredNotes()}
                     </ScrollArea>
                 </CardContent>
