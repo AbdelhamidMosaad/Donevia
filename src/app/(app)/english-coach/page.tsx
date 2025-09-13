@@ -3,9 +3,10 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GrammarCoach } from '@/components/english-coach/grammar-coach';
-import { Languages, BookOpen, Mail } from 'lucide-react';
+import { Languages, BookOpen, Mail, Mic } from 'lucide-react';
 import { VocabularyCoach } from '@/components/english-coach/vocabulary-coach';
 import { EmailCoach } from '@/components/english-coach/email-coach';
+import { ShadowingCoach } from '@/components/english-coach/shadowing-coach';
 
 export default function EnglishCoachPage() {
   return (
@@ -33,6 +34,10 @@ export default function EnglishCoachPage() {
             <Mail className="mr-2 h-4 w-4" />
             Email Coach
           </TabsTrigger>
+          <TabsTrigger value="shadowing">
+            <Mic className="mr-2 h-4 w-4" />
+            Shadowing Coach
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="grammar" className="flex-1 mt-4">
@@ -43,6 +48,9 @@ export default function EnglishCoachPage() {
         </TabsContent>
         <TabsContent value="email" className="flex-1 mt-4">
             <EmailCoach />
+        </TabsContent>
+        <TabsContent value="shadowing" className="flex-1 mt-4">
+            <ShadowingCoach />
         </TabsContent>
       </Tabs>
     </div>
