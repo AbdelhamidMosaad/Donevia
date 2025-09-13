@@ -6,13 +6,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import type { UserVocabularyWord } from '@/lib/types';
+import type { MasteryLevel } from '@/lib/types/vocabulary';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { Volume2, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { deleteUserVocabularyWord } from '@/lib/vocabulary';
+import { deleteUserVocabularyWord, updateUserVocabularyWordLevel } from '@/lib/vocabulary';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -85,6 +86,16 @@ export function NewWordsLibrary() {
       toast({ variant: 'destructive', title: 'Failed to delete word' });
     }
   };
+
+  const handleMasteryLevelChange = async (wordId: string, level: MasteryLevel) => {
+    if (!user) return;
+    try {
+      await updateUserVocabularyWordLevel(user.uid, wordId, level);
+      toast({ title: 'Mastery level updated!' });
+    } catch (error) {
+       toast({ variant: 'destructive', title: 'Failed to update level.' });
+    }
+  }
 
   const playAudio = async (word: string) => {
     if (audioState[word]?.data && audioRef.current) {
@@ -164,6 +175,7 @@ export function NewWordsLibrary() {
               <TableHead>Word</TableHead>
               <TableHead>Meaning</TableHead>
               <TableHead>Example</TableHead>
+              <TableHead>Mastery</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -174,6 +186,21 @@ export function NewWordsLibrary() {
                         <TableCell className="font-semibold">{word.word} <em className="text-muted-foreground">{word.pronunciation}</em></TableCell>
                         <TableCell>{word.meaning}</TableCell>
                         <TableCell>"{word.example}"</TableCell>
+                        <TableCell>
+                          <Select 
+                            value={word.masteryLevel} 
+                            onValueChange={(level: MasteryLevel) => handleMasteryLevelChange(word.id, level)}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Novice">Novice</SelectItem>
+                              <SelectItem value="Intermediate">Intermediate</SelectItem>
+                              <SelectItem value="Mastered">Mastered</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                         <TableCell className="text-right">
                            <Button variant="ghost" size="icon" onClick={() => playAudio(word.word)} disabled={audioState[word.word]?.loading}>
                              {audioState[word.word]?.loading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4" />}
@@ -198,7 +225,7 @@ export function NewWordsLibrary() {
                 ))
             ) : (
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">No words found. Generate some in the Vocabulary Coach!</TableCell>
+                    <TableCell colSpan={5} className="text-center h-24">No words found. Generate some in the Vocabulary Coach!</TableCell>
                 </TableRow>
             )}
           </TableBody>

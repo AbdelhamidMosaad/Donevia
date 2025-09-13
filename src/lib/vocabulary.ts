@@ -9,7 +9,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserVocabularyWord, HighlightedWord, VocabularyLevel } from './types';
+import type { UserVocabularyWord, HighlightedWord, VocabularyLevel, MasteryLevel } from './types/vocabulary';
 
 export const addUserVocabularyWords = async (
   userId: string,
@@ -25,6 +25,7 @@ export const addUserVocabularyWords = async (
       ...wordData,
       ownerId: userId,
       sourceLevel,
+      masteryLevel: 'Novice', // Default mastery level
       createdAt: serverTimestamp() as any, // Let the server set the timestamp
     };
     batch.set(newWordRef, newWord);
@@ -32,6 +33,15 @@ export const addUserVocabularyWords = async (
 
   return await batch.commit();
 };
+
+export const updateUserVocabularyWordLevel = async (
+  userId: string,
+  wordId: string,
+  masteryLevel: MasteryLevel,
+) => {
+  const wordRef = doc(db, 'users', userId, 'vocabulary', wordId);
+  return await updateDoc(wordRef, { masteryLevel });
+}
 
 export const deleteUserVocabularyWord = async (
   userId: string,

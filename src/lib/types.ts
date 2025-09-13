@@ -8,6 +8,7 @@ import {
     QuizQuestionSchema as GenkitQuizQuestionSchema,
     FlashcardSchema as GenkitFlashcardSchema,
 } from '@/ai/flows/learning-tool-flow';
+import type { MasteryLevel } from "./types/vocabulary";
 
 
 /** Task Management Types */
@@ -490,6 +491,7 @@ export type UserVocabularyWord = {
     meaning: string;
     example: string;
     sourceLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+    masteryLevel: MasteryLevel;
     ownerId: string;
     createdAt: Timestamp;
 }

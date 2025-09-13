@@ -21,3 +21,6 @@ export const VocabularyCoachResponseSchema = z.object({
   vocabulary: z.array(HighlightedWordSchema).describe('An array of exactly 5 objects, each detailing one of the highlighted words from the story.'),
 });
 export type VocabularyCoachResponse = z.infer<typeof VocabularyCoachResponseSchema>;
+
+export const MasteryLevelSchema = z.enum(['Novice', 'Intermediate', 'Mastered']);
+export type MasteryLevel = z.infer<typeof MasteryLevelSchema>;
