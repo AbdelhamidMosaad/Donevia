@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, Download, Save, Volume2 } from 'lucide-react';
+import { Loader2, Sparkles, Download, Save, Volume2, Play, StopCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import type { VocabularyCoachResponse, VocabularyLevel, HighlightedWord } from '@/lib/types/vocabulary';
@@ -40,6 +40,7 @@ export function VocabularyCoach() {
   const router = useRouter();
 
   const [audioState, setAudioState] = useState<Record<string, {loading: boolean, data: string | null}>>({});
+  const [isStoryPlaying, setIsStoryPlaying] = useState(false);
   const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
@@ -102,35 +103,61 @@ export function VocabularyCoach() {
       setIsLoading(false);
     }
   };
-
-  const playAudio = async (word: string) => {
-    if (audioState[word]?.data && audioRef.current) {
-      audioRef.current.src = audioState[word]!.data!;
+  
+    const playAudio = async (text: string, isStory = false) => {
+    if (isStory) {
+      setIsStoryPlaying(true);
+    }
+    
+    if (audioState[text]?.data && audioRef.current) {
+      audioRef.current.src = audioState[text]!.data!;
       audioRef.current.play();
+      if (isStory) {
+        audioRef.current.onended = () => setIsStoryPlaying(false);
+      }
       return;
     }
 
     if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(word);
+      const utterance = new SpeechSynthesisUtterance(text);
       const voice = voices.find(v => v.name === selectedVoice);
       if (voice) {
         utterance.voice = voice;
       }
+      if (isStory) {
+        utterance.onend = () => setIsStoryPlaying(false);
+      }
       window.speechSynthesis.speak(utterance);
     } else { // Gemini TTS
-      setAudioState(prev => ({ ...prev, [word]: { loading: true, data: null } }));
+      setAudioState(prev => ({ ...prev, [text]: { loading: true, data: null } }));
       try {
-        const audioResult = await generateAudio(word);
-        setAudioState(prev => ({ ...prev, [word]: { loading: false, data: audioResult.media } }));
+        const audioResult = await generateAudio(text);
+        setAudioState(prev => ({ ...prev, [text]: { loading: false, data: audioResult.media } }));
         if (audioRef.current) {
           audioRef.current.src = audioResult.media;
           audioRef.current.play();
+           if (isStory) {
+            audioRef.current.onended = () => setIsStoryPlaying(false);
+          }
         }
       } catch (err) {
-        console.error(`Failed to generate audio for ${word}`, err);
+        console.error(`Failed to generate audio for ${text}`, err);
         toast({ variant: 'destructive', title: 'Audio Generation Failed' });
-        setAudioState(prev => ({ ...prev, [word]: { loading: false, data: null } }));
+        setAudioState(prev => ({ ...prev, [text]: { loading: false, data: null } }));
+         if (isStory) {
+          setIsStoryPlaying(false);
+        }
       }
+    }
+  };
+
+  const stopStoryAudio = () => {
+    setIsStoryPlaying(false);
+    if (ttsEngine === 'browser') {
+        window.speechSynthesis.cancel();
+    } else if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
     }
   };
   
@@ -243,7 +270,19 @@ export function VocabularyCoach() {
           ) : (
             <div className="grid lg:grid-cols-2 gap-6 h-full min-h-0">
                 <div className="flex flex-col gap-4">
-                    <h3 className="text-lg font-semibold">Your Story (Level: {level})</h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Your Story (Level: {level})</h3>
+                         {isStoryPlaying ? (
+                            <Button variant="destructive" size="sm" onClick={stopStoryAudio}>
+                                <StopCircle className="mr-2 h-4 w-4" /> Stop
+                            </Button>
+                        ) : (
+                            <Button variant="outline" size="sm" onClick={() => playAudio(result.story.replace(/\*\*/g, ''), true)} disabled={audioState[result.story]?.loading}>
+                                {audioState[result.story]?.loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Play className="mr-2 h-4 w-4" />}
+                                Listen to Story
+                            </Button>
+                        )}
+                    </div>
                     <ScrollArea className="border rounded-lg p-4 bg-background h-full">
                        <p className="whitespace-pre-wrap leading-relaxed">{highlightStory(result.story)}</p>
                     </ScrollArea>
