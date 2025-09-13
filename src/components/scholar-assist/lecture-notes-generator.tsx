@@ -1,40 +1,26 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { StudyMaterialRequest, StudyMaterialResponse } from '@/ai/flows/learning-tool-flow';
+import type { StudyMaterialRequest, StudyMaterialResponse } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Loader2, Copy, Download, Save } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { addDoc as addFirestoreDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { remark } from 'remark';
-import html from 'remark-html';
-
-async function markdownToHtml(markdown: string) {
-  const result = await remark().use(html).process(markdown);
-  return result.toString();
-}
+import { Separator } from '../ui/separator';
 
 export function LectureNotesGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [result, setResult] = useState<StudyMaterialResponse | null>(null);
-  const [renderedHtml, setRenderedHtml] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingToDocs, setIsSavingToDocs] = useState(false);
-
-  useEffect(() => {
-    if (result?.notesContent && typeof result.notesContent === 'string') {
-      markdownToHtml(result.notesContent).then(html => setRenderedHtml(html));
-    }
-  }, [result]);
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -44,7 +30,6 @@ export function LectureNotesGenerator() {
 
     setIsLoading(true);
     setResult(null);
-    setRenderedHtml(null);
 
     try {
       const requestPayload: StudyMaterialRequest = {
@@ -80,14 +65,12 @@ export function LectureNotesGenerator() {
   
   const handleReset = () => {
       setResult(null);
-      setRenderedHtml(null);
   }
 
   const convertNotesToText = () => {
-    if (!result?.notesContent) return '';
-    if (typeof result.notesContent === 'string') {
-      return `${result.title}\n\n${result.notesContent}`;
-    }
+    if (!result?.notesContent || typeof result.notesContent === 'string') {
+        return result?.notesContent || '';
+    };
     
     let text = `${result.title}\n\n`;
     text += `${result.notesContent.introduction}\n\n`;
@@ -140,6 +123,7 @@ export function LectureNotesGenerator() {
 
     let contentJSON;
     if (typeof result.notesContent === 'string') {
+        // Fallback for old string format, though new format is structured
         contentJSON = {
             type: 'doc',
             content: result.notesContent.split('\n').map(paragraph => ({
@@ -151,7 +135,7 @@ export function LectureNotesGenerator() {
         const tiptapContent = result.notesContent.sections.flatMap(section => {
             const sectionContent: any[] = [
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: section.heading }] },
-                ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `- ${point}` }] }))
+                ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `• ${point}` }] }))
             ];
             if (section.subsections) {
                 section.subsections.forEach(sub => {
@@ -200,6 +184,38 @@ export function LectureNotesGenerator() {
     }
   }
 
+  const renderStructuredNotes = () => {
+    if (!result?.notesContent || typeof result.notesContent === 'string') return null;
+    const { introduction, sections } = result.notesContent;
+
+    return (
+        <div className="prose dark:prose-invert max-w-none">
+            <p className="lead italic">{introduction}</p>
+            {sections.map((section, secIndex) => (
+                <div key={secIndex}>
+                    <h2>{section.heading}</h2>
+                    <ul>
+                        {section.content.map((point, pointIndex) => (
+                            <li key={pointIndex}>{point}</li>
+                        ))}
+                    </ul>
+                    {section.subsections && section.subsections.map((sub, subIndex) => (
+                        <div key={subIndex} className="ml-6">
+                            <h3>{sub.subheading}</h3>
+                            <ul>
+                                {sub.content.map((subPoint, subPointIndex) => (
+                                    <li key={subPointIndex}>{subPoint}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                    {section.addDividerAfter && <Separator className="my-6" />}
+                </div>
+            ))}
+        </div>
+    );
+  }
+
   const renderContent = () => {
     if (isLoading) {
         return (
@@ -219,10 +235,7 @@ export function LectureNotesGenerator() {
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
                     <ScrollArea className="h-full border rounded-md p-4 bg-background">
-                       <div 
-                         className="prose dark:prose-invert max-w-none"
-                         dangerouslySetInnerHTML={{ __html: renderedHtml || ''}}
-                       />
+                       {renderStructuredNotes()}
                     </ScrollArea>
                 </CardContent>
                 <CardFooter className="flex-wrap justify-end gap-2">
