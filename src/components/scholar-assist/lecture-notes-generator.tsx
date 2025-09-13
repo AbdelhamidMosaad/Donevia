@@ -190,7 +190,7 @@ export function LectureNotesGenerator() {
     const { introduction, sections } = result.notesContent;
 
     return (
-        <div className="prose dark:prose-invert max-w-none">
+        <div className="prose prose-black max-w-none">
             <p className="lead italic">{introduction}</p>
             {sections.map((section, secIndex) => (
                 <div key={secIndex}>
@@ -241,7 +241,7 @@ export function LectureNotesGenerator() {
                     <CardDescription>Your AI-generated notes are ready.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
-                    <ScrollArea className="h-full border rounded-md p-4 bg-background">
+                    <ScrollArea className="h-full border rounded-md p-4 bg-white">
                        {renderStructuredNotes()}
                     </ScrollArea>
                 </CardContent>
