@@ -8,9 +8,10 @@ export async function POST(request: Request) {
     if (!idToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const userId = decodedToken.uid;
 
-    const body: { text: string; mode: 'languagetool' | 'ginger' } = await request.json();
+    const body: { text: string; mode: 'languagetool' | 'sapling' } = await request.json();
     
     if (!body.text || body.text.length < 5) {
         return NextResponse.json({ error: 'Text input is required and must be at least 5 characters.' }, { status: 400 });
@@ -18,22 +19,29 @@ export async function POST(request: Request) {
     
     let result;
 
-    if (body.mode === 'ginger') {
-      const GINGER_API_KEY = process.env.GINGER_API_KEY || 'YOUR_GINGER_API_KEY';
-      if (GINGER_API_KEY === 'YOUR_GINGER_API_KEY') {
-        return NextResponse.json({ error: 'Ginger API key not configured.' }, { status: 500 });
+    if (body.mode === 'sapling') {
+      const SAPLING_API_KEY = process.env.SAPLING_API_KEY || 'YOUR_SAPLING_API_KEY';
+      if (SAPLING_API_KEY === 'YOUR_SAPLING_API_KEY') {
+        return NextResponse.json({ error: 'Sapling AI API key not configured.' }, { status: 500 });
       }
 
-      const gingerResponse = await fetch(`https://services.gingersoftware.com/Ginger/correct/json/GingerTheText?apiKey=${GINGER_API_KEY}&lang=US&text=${encodeURIComponent(body.text)}`, {
-        method: 'GET',
+      const saplingResponse = await fetch('https://api.sapling.ai/api/v1/edits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: SAPLING_API_KEY,
+          session_id: userId, // Use user ID for a consistent session
+          text: body.text,
+        }),
       });
       
-      if (!gingerResponse.ok) {
-        const errorText = await gingerResponse.text();
-        console.error('Ginger API error:', errorText);
-        return NextResponse.json({ error: 'Failed to communicate with Ginger service.' }, { status: gingerResponse.status });
+      if (!saplingResponse.ok) {
+        const errorText = await saplingResponse.text();
+        console.error('Sapling AI API error:', errorText);
+        return NextResponse.json({ error: 'Failed to communicate with Sapling AI service.' }, { status: saplingResponse.status });
       }
-      result = await gingerResponse.json();
+      result = await saplingResponse.json();
+
     } else {
       // Default to LanguageTool
       const params = new URLSearchParams();

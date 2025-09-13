@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Sparkles, Check, X } from 'lucide-react';
+import { Loader2, Sparkles, Check, X, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
@@ -18,38 +18,25 @@ interface LanguageToolMatch {
   replacements: { value: string }[];
   offset: number;
   length: number;
-  context: {
-    text: string;
-    offset: number;
-    length: number;
-  };
-  rule: {
-    id: string;
-    description: string;
-    issueType: string;
-    category: {
-      id: string;
-      name: string;
-    };
-  };
+  context: { text: string; offset: number; length: number; };
+  rule: { id: string; description: string; issueType: string; category: { id: string; name: string; }; };
 }
 
-interface GingerSuggestion {
-    Text: string;
-    CorrectedText: string;
-    Suggestions: {
-        Text: string;
-        CorrectedText: string;
-        Definition: string;
-    }[];
+// Define the structure of a Sapling AI edit
+interface SaplingEdit {
+    start: number;
+    end: number;
+    replacement: string;
+    general_error_type: string;
 }
 
-type Mode = 'languagetool' | 'ginger';
+type Mode = 'languagetool' | 'sapling';
 
 export function GrammarCoach() {
   const [inputText, setInputText] = useState('');
   const [ltMatches, setLtMatches] = useState<LanguageToolMatch[]>([]);
-  const [gingerResult, setGingerResult] = useState<GingerSuggestion | null>(null);
+  const [saplingEdits, setSaplingEdits] = useState<SaplingEdit[]>([]);
+  const [correctedText, setCorrectedText] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -67,7 +54,8 @@ export function GrammarCoach() {
 
     setIsLoading(true);
     setLtMatches([]);
-    setGingerResult(null);
+    setSaplingEdits([]);
+    setCorrectedText('');
 
     try {
       const response = await fetch('/api/english-coach/check-grammar', {
@@ -88,7 +76,13 @@ export function GrammarCoach() {
       if(mode === 'languagetool') {
           setLtMatches(data.matches);
       } else {
-          setGingerResult(data);
+          setSaplingEdits(data.edits);
+          // Reconstruct corrected text from edits for Sapling
+          let newText = inputText;
+          data.edits.slice().reverse().forEach((edit: SaplingEdit) => {
+              newText = newText.slice(0, edit.start) + edit.replacement + newText.slice(edit.end);
+          });
+          setCorrectedText(newText);
       }
       
     } catch (error) {
@@ -103,17 +97,19 @@ export function GrammarCoach() {
     }
   };
 
-  const getHighlightedText = (text: string, matches: LanguageToolMatch[]) => {
+  const getHighlightedText = (text: string, matches: any[], isSapling: boolean) => {
       let lastIndex = 0;
       const parts: (string | JSX.Element)[] = [];
       matches.forEach((match, i) => {
-          parts.push(text.substring(lastIndex, match.offset));
+          const offset = isSapling ? match.start : match.offset;
+          const length = isSapling ? match.end - match.start : match.length;
+          parts.push(text.substring(lastIndex, offset));
           parts.push(
               <span key={i} className="bg-yellow-200 dark:bg-yellow-800/70 rounded-md px-1">
-                  {text.substring(match.offset, match.offset + match.length)}
+                  {text.substring(offset, offset + length)}
               </span>
           );
-          lastIndex = match.offset + match.length;
+          lastIndex = offset + length;
       });
       parts.push(text.substring(lastIndex));
       return <p className="whitespace-pre-wrap leading-relaxed">{parts}</p>;
@@ -123,20 +119,18 @@ export function GrammarCoach() {
     <div className="space-y-6">
         <div className="p-4 bg-muted/50 rounded-lg">
             <h3 className="font-bold mb-2">Highlighted Text:</h3>
-            {getHighlightedText(inputText, ltMatches)}
+            {getHighlightedText(inputText, ltMatches, false)}
         </div>
-            <div>
+        <div>
             <h3 className="font-bold text-lg mb-2">Suggestions:</h3>
             {ltMatches.map((match, index) => (
                 <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
-                        <p className="text-sm text-muted-foreground font-semibold">{match.rule.category.name}</p>
-                        <p className="font-semibold mb-2">{match.message}</p>
-                    
+                    <p className="text-sm text-muted-foreground font-semibold">{match.rule.category.name}</p>
+                    <p className="font-semibold mb-2">{match.message}</p>
                     <div className="flex items-center gap-4 text-destructive text-sm">
                         <X className="h-4 w-4 shrink-0"/>
                         <p className="line-through">...{match.context.text}...</p>
                     </div>
-
                     {match.replacements.length > 0 && (
                         <div className="flex items-center gap-4 text-green-600 mt-2 text-sm">
                             <Check className="h-4 w-4 shrink-0"/>
@@ -145,31 +139,31 @@ export function GrammarCoach() {
                     )}
                 </div>
             ))}
-            </div>
+        </div>
     </div>
   );
   
-  const renderGingerResults = () => (
+  const renderSaplingResults = () => (
     <div className="space-y-6">
         <div className="p-4 bg-muted/50 rounded-lg">
              <h3 className="font-bold text-lg mb-2">Corrected Text:</h3>
-             <p className="text-lg text-primary">{gingerResult?.CorrectedText}</p>
+             <p className="text-lg text-primary">{correctedText}</p>
         </div>
         <div>
             <h3 className="font-bold text-lg mb-2">Corrections:</h3>
-            {gingerResult?.Suggestions.map((suggestion, index) => (
+            {saplingEdits.map((edit, index) => (
                  <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
                     <div className="flex items-center gap-4 text-destructive text-sm">
                         <X className="h-4 w-4 shrink-0"/>
-                        <p className="line-through">{suggestion.Text}</p>
+                        <p className="line-through">{inputText.substring(edit.start, edit.end)}</p>
                     </div>
                     <div className="flex items-center gap-4 text-green-600 mt-2 text-sm">
                         <Check className="h-4 w-4 shrink-0"/>
-                        <p>{suggestion.CorrectedText}</p>
+                        <p>{edit.replacement}</p>
                     </div>
-                     {suggestion.Definition && (
+                     {edit.general_error_type && (
                          <div className="mt-2 pl-9 text-sm text-muted-foreground">
-                            <p>{suggestion.Definition}</p>
+                            <p>({edit.general_error_type})</p>
                         </div>
                      )}
                  </div>
@@ -189,7 +183,7 @@ export function GrammarCoach() {
                     <Label htmlFor="mode-toggle">Mode</Label>
                     <ToggleGroup id="mode-toggle" type="single" value={mode} onValueChange={(value: Mode) => value && setMode(value)} size="sm">
                         <ToggleGroupItem value="languagetool">LanguageTool</ToggleGroupItem>
-                        <ToggleGroupItem value="ginger">Ginger</ToggleGroupItem>
+                        <ToggleGroupItem value="sapling">Sapling</ToggleGroupItem>
                     </ToggleGroup>
                 </div>
             </div>
@@ -206,7 +200,7 @@ export function GrammarCoach() {
         <CardFooter>
           <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {isLoading ? 'Analyzing...' : `Check with ${mode === 'ginger' ? 'Ginger' : 'LanguageTool'}`}
+            {isLoading ? 'Analyzing...' : `Check with ${mode === 'sapling' ? 'Sapling AI' : 'LanguageTool'}`}
           </Button>
         </CardFooter>
       </Card>
@@ -224,8 +218,8 @@ export function GrammarCoach() {
             </div>
           ) : (mode === 'languagetool' && ltMatches.length > 0) ? (
             renderLanguageToolResults()
-          ) : (mode === 'ginger' && gingerResult) ? (
-            renderGingerResults()
+          ) : (mode === 'sapling' && saplingEdits.length > 0) ? (
+            renderSaplingResults()
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               <p>Your feedback will appear here.</p>
