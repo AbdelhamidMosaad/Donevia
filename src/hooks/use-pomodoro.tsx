@@ -51,7 +51,6 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     const [secondsLeft, setSecondsLeft] = useState(defaultSettings.workMinutes * 60);
     const [isEndingSoon, setIsEndingSoon] = useState(false);
     const [sessionEnded, setSessionEnded] = useState(false);
-    const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 
     const getTimerDuration = useCallback((mode: PomodoroMode, settings: PomodoroSettingsData) => {
         switch (mode) {
@@ -63,10 +62,6 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
 
     // Effect for initializing and fetching data from Firestore
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            notificationAudioRef.current = new Audio('/notification.mp3');
-        }
-
         if (user) {
             const stateRef = doc(db, 'users', user.uid, 'pomodoro', 'state');
             const unsubscribe = onSnapshot(stateRef, (docSnap) => {
@@ -118,10 +113,6 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     }, [state.isActive, state.targetEndTime, state.mode]);
 
 
-    const playNotificationSound = () => {
-        notificationAudioRef.current?.play().catch(e => console.error("Error playing sound:", e));
-    };
-
     const showNotification = (message: string) => {
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
         new Notification('Donevia Pomodoro', { body: message, icon: '/logo.png' });
@@ -137,9 +128,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         if (!user || !state.mode) return;
         const sessionsCompleted = state.sessionsCompleted ?? 0;
 
-        // Play sound and show notification for session completion
         if (state.isActive) {
-            playNotificationSound();
             const message = state.mode === 'work' ? 'Work session finished! Time for a break.' : 'Break is over! Time to get back to work.';
             showNotification(message);
         }
