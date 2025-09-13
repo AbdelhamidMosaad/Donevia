@@ -15,6 +15,7 @@ const topics = ['Technology', 'Health', 'Travel', 'History', 'Art', 'Business', 
 const PAUSE_DURATION_MS = 3000; // 3 seconds pause for the user to repeat
 
 type SessionState = 'idle' | 'playing' | 'paused' | 'generating';
+type TtsEngine = 'gemini' | 'browser';
 
 export function ShadowingCoach() {
     const { user } = useAuth();
@@ -24,9 +25,28 @@ export function ShadowingCoach() {
     const [article, setArticle] = useState<ShadowingResponse | null>(null);
     const [sessionState, setSessionState] = useState<SessionState>('idle');
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
+
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+            const getVoices = () => {
+                const availableVoices = window.speechSynthesis.getVoices();
+                setVoices(availableVoices);
+                if (!selectedVoice && availableVoices.length > 0) {
+                    const defaultVoice = availableVoices.find(v => v.lang.startsWith('en') && v.default);
+                    setSelectedVoice(defaultVoice ? defaultVoice.name : availableVoices[0].name);
+                }
+            };
+            getVoices();
+            window.speechSynthesis.onvoiceschanged = getVoices;
+        }
+    }, [selectedVoice]);
 
     const handleGenerate = async () => {
         if (!user) return;
@@ -56,40 +76,57 @@ export function ShadowingCoach() {
         
         try {
             const phrase = article.phrases[currentIndex];
-            const audioData = await generateAudio(phrase);
-            
-            if (audioRef.current) {
-                audioRef.current.src = audioData.media;
-                audioRef.current.play();
-                
-                audioRef.current.onended = () => {
-                    // Pause for the user to repeat
+
+            if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(phrase);
+                const voice = voices.find(v => v.name === selectedVoice);
+                if (voice) {
+                    utterance.voice = voice;
+                }
+                utterance.onend = () => {
                     timeoutRef.current = setTimeout(() => {
                         setCurrentIndex(prev => prev + 1);
                     }, PAUSE_DURATION_MS);
                 };
+                window.speechSynthesis.speak(utterance);
+            } else { // Gemini TTS
+                const audioData = await generateAudio(phrase);
+                
+                if (audioRef.current) {
+                    audioRef.current.src = audioData.media;
+                    audioRef.current.play();
+                    
+                    audioRef.current.onended = () => {
+                        timeoutRef.current = setTimeout(() => {
+                            setCurrentIndex(prev => prev + 1);
+                        }, PAUSE_DURATION_MS);
+                    };
+                }
             }
+
         } catch (error) {
             console.error("Failed to play audio:", error);
             toast({ variant: 'destructive', title: 'Could not play audio for the phrase.' });
-            // Try moving to the next phrase after an error
             timeoutRef.current = setTimeout(() => {
                 setCurrentIndex(prev => prev + 1);
             }, PAUSE_DURATION_MS);
         }
-    }, [article, currentIndex, toast]);
+    }, [article, currentIndex, toast, ttsEngine, voices, selectedVoice]);
+
 
     useEffect(() => {
         if (sessionState === 'playing' && article) {
             playNextPhrase();
         }
         
-        // Cleanup timeouts and audio on stop or component unmount
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.onended = null;
+            }
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
             }
         };
     }, [sessionState, currentIndex, article, playNextPhrase]);
@@ -98,9 +135,16 @@ export function ShadowingCoach() {
         if (sessionState === 'playing') {
             setSessionState('paused');
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            if (audioRef.current) audioRef.current.pause();
-        } else {
+            if (ttsEngine === 'browser') {
+                window.speechSynthesis.pause();
+            } else {
+                audioRef.current?.pause();
+            }
+        } else { // 'paused' or 'idle'
             setSessionState('playing');
+             if (ttsEngine === 'browser' && sessionState === 'paused') {
+                window.speechSynthesis.resume();
+            }
         }
     };
 
@@ -108,7 +152,9 @@ export function ShadowingCoach() {
         setSessionState('idle');
         setCurrentIndex(0);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        if (audioRef.current) {
+        if (ttsEngine === 'browser') {
+            window.speechSynthesis.cancel();
+        } else if (audioRef.current) {
              audioRef.current.pause();
              audioRef.current.currentTime = 0;
         }
@@ -132,6 +178,29 @@ export function ShadowingCoach() {
                         </SelectContent>
                     </Select>
                 </div>
+                 <div className="space-y-1 text-left">
+                    <Label htmlFor="tts-engine-select">Text-to-Speech Engine</Label>
+                    <Select value={ttsEngine} onValueChange={(v: TtsEngine) => setTtsEngine(v)}>
+                        <SelectTrigger id="tts-engine-select"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="gemini">Gemini AI</SelectItem>
+                           <SelectItem value="browser">Browser-based</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                {ttsEngine === 'browser' && voices.length > 0 && (
+                    <div className="space-y-1 text-left">
+                        <Label htmlFor="voice-select">Voice</Label>
+                        <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                            <SelectTrigger id="voice-select"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {voices.filter(v => v.lang.startsWith('en')).map(v => (
+                                    <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                 <Button onClick={handleGenerate} disabled={sessionState === 'generating'} className="w-full">
                     {sessionState === 'generating' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     {sessionState === 'generating' ? 'Generating...' : 'Generate Article'}
@@ -147,7 +216,7 @@ export function ShadowingCoach() {
                  <div className="flex items-center justify-center gap-4">
                     <Button onClick={handlePlayPause} size="lg">
                         {sessionState === 'playing' ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
-                        {sessionState === 'playing' ? 'Pause' : 'Play'}
+                        {sessionState === 'playing' ? 'Pause' : (sessionState === 'paused' ? 'Resume' : 'Play')}
                     </Button>
                     <Button onClick={handleStop} variant="destructive" size="lg">
                         <StopCircle className="mr-2 h-5 w-5" /> Stop
