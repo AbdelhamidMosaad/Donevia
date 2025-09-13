@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -13,6 +14,7 @@ import { addDoc as addFirestoreDoc, collection, serverTimestamp } from 'firebase
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Separator } from '../ui/separator';
+import { cn } from '@/lib/utils';
 
 export function LectureNotesGenerator() {
   const { user } = useAuth();
@@ -69,19 +71,19 @@ export function LectureNotesGenerator() {
 
   const convertNotesToText = () => {
     if (!result?.notesContent || typeof result.notesContent === 'string') {
-        return result?.notesContent || '';
+        return typeof result?.notesContent === 'string' ? result.notesContent : '';
     };
     
-    let text = `${result.title}\n\n`;
+    let text = `${result.icon || ''} ${result.title}\n\n`;
     text += `${result.notesContent.introduction}\n\n`;
     result.notesContent.sections.forEach(section => {
-        text += `## ${section.heading}\n\n`;
-        section.content.forEach(point => text += `- ${point}\n`);
+        text += `## ${section.icon || ''} ${section.heading}\n\n`;
+        section.content.forEach(point => text += `- ${point.icon || ''} ${point.text}\n`);
         
         if (section.subsections) {
             section.subsections.forEach(subsection => {
-                text += `\n### ${subsection.subheading}\n`;
-                subsection.content.forEach(subPoint => text += `  - ${subPoint}\n`);
+                text += `\n### ${subsection.icon || ''} ${subsection.subheading}\n`;
+                subsection.content.forEach(subPoint => text += `  - ${subPoint.icon || ''} ${subPoint.text}\n`);
             });
         }
         text += '\n';
@@ -123,7 +125,6 @@ export function LectureNotesGenerator() {
 
     let contentJSON;
     if (typeof result.notesContent === 'string') {
-        // Fallback for old string format, though new format is structured
         contentJSON = {
             type: 'doc',
             content: result.notesContent.split('\n').map(paragraph => ({
@@ -134,13 +135,13 @@ export function LectureNotesGenerator() {
     } else {
         const tiptapContent = result.notesContent.sections.flatMap(section => {
             const sectionContent: any[] = [
-                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: section.heading }] },
-                ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `• ${point}` }] }))
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: `${section.icon || ''} ${section.heading}` }] },
+                ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `${point.icon || '•'} ${point.text}` }] }))
             ];
             if (section.subsections) {
                 section.subsections.forEach(sub => {
-                    sectionContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: sub.subheading }] });
-                    sectionContent.push(...sub.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `  - ${point}` }] })));
+                    sectionContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: `${sub.icon || ''} ${sub.subheading}` }] });
+                    sectionContent.push(...sub.content.map(subPoint => ({ type: 'paragraph', content: [{ type: 'text', text: `  - ${subPoint.icon || ''} ${subPoint.text}` }] })));
                 });
             }
             if (section.addDividerAfter) {
@@ -152,7 +153,7 @@ export function LectureNotesGenerator() {
         contentJSON = {
             type: 'doc',
             content: [
-                { type: 'paragraph', content: [{ type: 'text', text: result.notesContent.introduction }] },
+                { type: 'paragraph', content: [{ type: 'text', text: result.notesContent.introduction, marks: [{type: 'italic'}] }] },
                 ...tiptapContent
             ]
         };
@@ -160,7 +161,7 @@ export function LectureNotesGenerator() {
     
     try {
       const docRef = await addFirestoreDoc(collection(db, 'users', user.uid, 'docs'), {
-        title: result.title,
+        title: `${result.icon || ''} ${result.title}`,
         content: contentJSON,
         ownerId: user.uid,
         createdAt: serverTimestamp(),
@@ -193,18 +194,24 @@ export function LectureNotesGenerator() {
             <p className="lead italic">{introduction}</p>
             {sections.map((section, secIndex) => (
                 <div key={secIndex}>
-                    <h2>{section.heading}</h2>
+                    <h2><span className="mr-2">{section.icon}</span>{section.heading}</h2>
                     <ul>
                         {section.content.map((point, pointIndex) => (
-                            <li key={pointIndex}>{point}</li>
+                            <li key={pointIndex} className={cn(point.isKeyPoint && "font-semibold")}>
+                                {point.icon && <span className="mr-2">{point.icon}</span>}
+                                {point.text}
+                            </li>
                         ))}
                     </ul>
                     {section.subsections && section.subsections.map((sub, subIndex) => (
                         <div key={subIndex} className="ml-6">
-                            <h3>{sub.subheading}</h3>
+                            <h3><span className="mr-2">{sub.icon}</span>{sub.subheading}</h3>
                             <ul>
                                 {sub.content.map((subPoint, subPointIndex) => (
-                                    <li key={subPointIndex}>{subPoint}</li>
+                                    <li key={subPointIndex} className={cn(subPoint.isKeyPoint && "font-semibold")}>
+                                         {subPoint.icon && <span className="mr-2">{subPoint.icon}</span>}
+                                        {subPoint.text}
+                                    </li>
                                 ))}
                             </ul>
                         </div>
@@ -230,7 +237,7 @@ export function LectureNotesGenerator() {
         return (
             <Card className="flex-1 flex flex-col h-full">
                 <CardHeader>
-                    <CardTitle>{result.title}</CardTitle>
+                    <CardTitle><span className="mr-2">{result.icon}</span>{result.title}</CardTitle>
                     <CardDescription>Your AI-generated notes are ready.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
