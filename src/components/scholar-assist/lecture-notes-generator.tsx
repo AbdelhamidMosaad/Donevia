@@ -126,9 +126,62 @@ export function LectureNotesGenerator() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(link.href);
     toast({ title: '✓ Download started' });
   };
+  
+    const convertNotesToHtml = () => {
+        if (!result?.notesContent || typeof result.notesContent === 'string') {
+            return typeof result?.notesContent === 'string' ? `<p>${result.notesContent}</p>` : '';
+        }
+
+        let html = `<h1>${result.icon || ''} ${result.title}</h1>`;
+        html += `<p><em>${result.notesContent.introduction}</em></p>`;
+        
+        result.notesContent.sections.forEach(section => {
+            html += `<h2>${section.icon || ''} ${section.heading}</h2>`;
+            html += '<ul>';
+            section.content.forEach(point => {
+                const pointText = point.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                html += `<li>${point.icon || '•'} ${pointText}</li>`;
+            });
+            html += '</ul>';
+
+            if (section.subsections) {
+                section.subsections.forEach(subsection => {
+                    html += `<h3>${subsection.icon || ''} ${subsection.subheading}</h3>`;
+                    html += '<ul>';
+                    subsection.content.forEach(subPoint => {
+                        const subPointText = subPoint.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        html += `<li>- ${subPoint.icon || ''} ${subPointText}</li>`;
+                    });
+                    html += '</ul>';
+                });
+            }
+             if (section.addDividerAfter) {
+                html += '<hr>';
+            }
+        });
+
+        return html;
+    };
+
+
+   const handleExportWord = () => {
+        const contentHtml = convertNotesToHtml();
+        const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word Document</title></head><body>";
+        const footer = "</body></html>";
+        const sourceHTML = header + contentHtml + footer;
+
+        const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+        const fileDownload = document.createElement("a");
+        document.body.appendChild(fileDownload);
+        fileDownload.href = source;
+        fileDownload.download = `${result?.title.replace(/ /g, '_') || 'notes'}.doc`;
+        fileDownload.click();
+        document.body.removeChild(fileDownload);
+        toast({ title: '✓ Exporting as Word document' });
+    };
 
   const handleSaveToDocs = async () => {
     if (!user || !result || !result.notesContent) {
@@ -208,7 +261,7 @@ export function LectureNotesGenerator() {
         <div className="prose prose-black max-w-none">
             <p className="lead italic">{introduction}</p>
             {sections.map((section, secIndex) => (
-                <div key={secIndex}>
+                <React.Fragment key={secIndex}>
                     <h2><span className="mr-2">{section.icon}</span>{section.heading}</h2>
                     <ul>
                         {section.content.map((point, pointIndex) => (
@@ -231,8 +284,8 @@ export function LectureNotesGenerator() {
                             </ul>
                         </div>
                     ))}
-                    {section.addDividerAfter && <Separator className="my-6" />}
-                </div>
+                    {section.addDividerAfter && secIndex < sections.length - 1 && <Separator className="my-6" />}
+                </React.Fragment>
             ))}
         </div>
     );
@@ -267,6 +320,7 @@ export function LectureNotesGenerator() {
                         {isSavingToDocs ? 'Saving...' : 'Save to Docs'}
                     </Button>
                     <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
+                    <Button variant="outline" onClick={handleExportWord}><Download className="mr-2 h-4 w-4"/> Export as Word</Button>
                     <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
                 </CardFooter>
             </Card>
