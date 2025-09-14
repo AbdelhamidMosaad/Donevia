@@ -32,13 +32,12 @@ Follow these instructions precisely based on the requested 'generationType'.
 **NOTES INSTRUCTIONS**
 If the generation type is 'notes', you must follow these instructions:
 1. **Output Format**: You must produce a structured JSON output. Do not use Markdown.
-2. **Icons**: For the main title, and each section and subsection, you MUST select a relevant emoji from this list: [📌, 📚, 💡, 📋, ✨, 🚀, ❓] and place it in the 'icon' field.
-3. **Key Points**: For each section's content, identify 1-2 "key points" that are critical to understand. For these specific bullet points, set the 'isKeyPoint' flag to true and assign a relevant emoji from the list to the 'icon' field. For all other points, do not set these fields.
-4. **Note Style**: The notes must follow the structure requested in 'notesOptions.style' and be formatted like professional lecture notes.
-5. **Complexity**: Must match "{{notesOptions.complexity}}".
-6. **Content**: Use only the provided source text. Do not add external content.
-7. **Structure**: The notes should start with a clear, concise title and an introductory summary. Use distinct headings for each major topic covered in the source text. Use bold text to highlight key terms and concepts, and use bullet points to break down complex information into digestible points.
-8. **Tone**: Adopt a tone appropriate for a university-level lecture, making the content easy to understand and follow.
+2. **Key Points**: For each section's content, identify 1-2 "key points" that are critical to understand. For these specific bullet points, set the 'isKeyPoint' flag to true. For all other points, do not set this field.
+3. **Note Style**: The notes must follow the structure requested in 'notesOptions.style' and be formatted like professional lecture notes.
+4. **Complexity**: Must match "{{notesOptions.complexity}}".
+5. **Content**: Use only the provided source text. Do not add external content.
+6. **Structure**: The notes should start with a clear, concise title and an introductory summary. Use distinct headings for each major topic covered in the source text. Use bold text to highlight key terms and concepts, and use bullet points to break down complex information into digestible points.
+7. **Tone**: Adopt a tone appropriate for a university-level lecture, making the content easy to understand and follow.
 
 ---
 **QUIZ INSTRUCTIONS**

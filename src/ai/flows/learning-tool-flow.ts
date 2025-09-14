@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // ========== Input Schemas ==========
@@ -50,16 +51,13 @@ export type Flashcard = z.infer<typeof FlashcardSchema>;
 const NotePointSchema = z.object({
   text: z.string().describe('The text of the bullet point.'),
   isKeyPoint: z.boolean().optional().describe('Set to true if this is a critical key point.'),
-  icon: z.string().emoji().optional().describe('An optional emoji for key points.'),
 });
 
 export const LectureNoteSectionSchema = z.object({
   heading: z.string().describe('Section heading (e.g., "Introduction to Accounting").'),
-  icon: z.string().emoji().optional().describe('A relevant emoji for the section heading.'),
   content: z.array(NotePointSchema).describe('Bullet-point content for the section.'),
   subsections: z.array(z.object({
     subheading: z.string().describe('Subsection heading (e.g., "Three Basic Activities of Accounting").'),
-    icon: z.string().emoji().optional().describe('A relevant emoji for the subsection heading.'),
     content: z.array(NotePointSchema).describe('Bullet-point content for the subsection.')
   })).optional(),
   addDividerAfter: z.boolean().optional().describe('If true, a horizontal line (---) should be added after this section.')
@@ -73,7 +71,6 @@ export const NotesContentSchema = z.object({
 // Main Response
 export const StudyMaterialResponseSchema = z.object({
   title: z.string().describe('A concise and relevant title for the generated material.'),
-  icon: z.string().emoji().optional().describe('A relevant emoji for the main title.'),
   materialType: z.enum(['notes', 'quiz', 'flashcards']),
   notesContent: NotesContentSchema.optional().describe('Structured lecture notes with sections, bullet points, subsections, and optional dividers. Required if materialType is "notes".'),
   quizContent: z.array(QuizQuestionSchema).optional().describe('An array of quiz questions. Required if materialType is "quiz".'),

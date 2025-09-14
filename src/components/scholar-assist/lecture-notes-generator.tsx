@@ -89,16 +89,16 @@ export function LectureNotesGenerator() {
         return typeof result?.notesContent === 'string' ? result.notesContent : '';
     };
     
-    let text = `${result.icon || ''} ${result.title}\n\n`;
+    let text = `${result.title}\n\n`;
     text += `${result.notesContent.introduction}\n\n`;
     result.notesContent.sections.forEach(section => {
-        text += `## ${section.icon || ''} ${section.heading}\n\n`;
-        section.content.forEach(point => text += `- ${point.icon || ''} ${point.text}\n`);
+        text += `## ${section.heading}\n\n`;
+        section.content.forEach(point => text += `- ${point.text}\n`);
         
         if (section.subsections) {
             section.subsections.forEach(subsection => {
-                text += `\n### ${subsection.icon || ''} ${subsection.subheading}\n`;
-                subsection.content.forEach(subPoint => text += `  - ${subPoint.icon || ''} ${subPoint.text}\n`);
+                text += `\n### ${subsection.subheading}\n`;
+                subsection.content.forEach(subPoint => text += `  - ${subPoint.text}\n`);
             });
         }
         text += '\n';
@@ -135,25 +135,25 @@ export function LectureNotesGenerator() {
             return typeof result?.notesContent === 'string' ? `<p>${result.notesContent}</p>` : '';
         }
 
-        let html = `<h1>${result.icon || ''} ${result.title}</h1>`;
+        let html = `<h1>${result.title}</h1>`;
         html += `<p><em>${result.notesContent.introduction}</em></p>`;
         
         result.notesContent.sections.forEach(section => {
-            html += `<h2>${section.icon || ''} ${section.heading}</h2>`;
+            html += `<h2>${section.heading}</h2>`;
             html += '<ul>';
             section.content.forEach(point => {
                 const pointText = point.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                html += `<li>${point.icon || '•'} ${pointText}</li>`;
+                html += `<li>• ${pointText}</li>`;
             });
             html += '</ul>';
 
             if (section.subsections) {
                 section.subsections.forEach(subsection => {
-                    html += `<h3>${subsection.icon || ''} ${subsection.subheading}</h3>`;
+                    html += `<h3>${subsection.subheading}</h3>`;
                     html += '<ul>';
                     subsection.content.forEach(subPoint => {
                         const subPointText = subPoint.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                        html += `<li>- ${subPoint.icon || ''} ${subPointText}</li>`;
+                        html += `<li>- ${subPointText}</li>`;
                     });
                     html += '</ul>';
                 });
@@ -203,13 +203,13 @@ export function LectureNotesGenerator() {
     } else {
         const tiptapContent = result.notesContent.sections.flatMap(section => {
             const sectionContent: any[] = [
-                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: `${section.icon || ''} ${section.heading}` }] },
-                ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `${point.icon || '•'} ${point.text}` }] }))
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: `${section.heading}` }] },
+                ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `• ${point.text}` }] }))
             ];
             if (section.subsections) {
                 section.subsections.forEach(sub => {
-                    sectionContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: `${sub.icon || ''} ${sub.subheading}` }] });
-                    sectionContent.push(...sub.content.map(subPoint => ({ type: 'paragraph', content: [{ type: 'text', text: `  - ${subPoint.icon || ''} ${subPoint.text}` }] })));
+                    sectionContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: `${sub.subheading}` }] });
+                    sectionContent.push(...sub.content.map(subPoint => ({ type: 'paragraph', content: [{ type: 'text', text: `  - ${subPoint.text}` }] })));
                 });
             }
             if (section.addDividerAfter) {
@@ -229,7 +229,7 @@ export function LectureNotesGenerator() {
     
     try {
       const docRef = await addFirestoreDoc(collection(db, 'users', user.uid, 'docs'), {
-        title: `${result.icon || ''} ${result.title}`,
+        title: `${result.title}`,
         content: contentJSON,
         ownerId: user.uid,
         createdAt: serverTimestamp(),
@@ -262,22 +262,20 @@ export function LectureNotesGenerator() {
             <p className="lead italic">{introduction}</p>
             {sections.map((section, secIndex) => (
                 <React.Fragment key={secIndex}>
-                    <h2><span className="mr-2">{section.icon}</span>{section.heading}</h2>
+                    <h2>{section.heading}</h2>
                     <ul>
                         {section.content.map((point, pointIndex) => (
                             <li key={pointIndex} className={cn(point.isKeyPoint && "font-semibold")}>
-                                {point.icon && <span className="mr-2">{point.icon}</span>}
                                 <InlineMarkdown text={point.text} />
                             </li>
                         ))}
                     </ul>
                     {section.subsections && section.subsections.map((sub, subIndex) => (
                         <div key={subIndex} className="ml-6">
-                            <h3><span className="mr-2">{sub.icon}</span>{sub.subheading}</h3>
+                            <h3>{sub.subheading}</h3>
                             <ul>
                                 {sub.content.map((subPoint, subPointIndex) => (
                                     <li key={subPointIndex} className={cn(subPoint.isKeyPoint && "font-semibold")}>
-                                         {subPoint.icon && <span className="mr-2">{subPoint.icon}</span>}
                                         <InlineMarkdown text={subPoint.text} />
                                     </li>
                                 ))}
@@ -305,7 +303,7 @@ export function LectureNotesGenerator() {
         return (
             <Card className="flex-1 flex flex-col h-full">
                 <CardHeader>
-                    <CardTitle><span className="mr-2">{result.icon}</span>{result.title}</CardTitle>
+                    <CardTitle>{result.title}</CardTitle>
                     <CardDescription>Your AI-generated notes are ready.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
