@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { TradingStrategy } from '@/lib/types';
 import { addStrategy, updateStrategy } from '@/lib/trading-tracker';
+import { Save } from 'lucide-react';
 
 interface StrategyDialogProps {
   strategy?: TradingStrategy | null;
@@ -113,17 +114,14 @@ export function StrategyDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="secondary">
+            <Button type="button" variant="outline">
               Cancel
             </Button>
           </DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
+            <Save />
             {isSaving ? 'Saving...' : 'Save Strategy'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-    

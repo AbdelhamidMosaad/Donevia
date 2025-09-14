@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, FileDown, StickyNote, LineChart } from 'lucide-react';
+import { Trash2, FileDown, StickyNote, LineChart, RefreshCcw } from 'lucide-react';
 import moment from 'moment';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -227,8 +227,14 @@ export function TradeHistoryTable({ trades, strategies, onDeleteTrade, onFiltere
                     </Select>
                 </div>
                  <div className="flex gap-2">
-                    <Button onClick={resetFilters} variant="outline" className="w-full">Reset</Button>
-                    <Button onClick={handleExport} className="w-full"><FileDown className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button onClick={resetFilters} variant="outline" className="w-full">
+                        <RefreshCcw />
+                        Reset
+                    </Button>
+                    <Button onClick={handleExport} variant="outline" className="w-full">
+                        <FileDown />
+                        Export
+                    </Button>
                 </div>
             </CardContent>
         </Card>

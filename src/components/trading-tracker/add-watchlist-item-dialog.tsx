@@ -22,6 +22,7 @@ import { addWatchlistItem, updateWatchlistItem } from '@/lib/trading-tracker';
 import { Timestamp } from 'firebase/firestore';
 import moment from 'moment';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Save } from 'lucide-react';
 
 interface AddWatchlistItemDialogProps {
   item?: WatchlistItem | null;
@@ -160,11 +161,12 @@ export function AddWatchlistItemDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="secondary">
+            <Button type="button" variant="outline">
               Cancel
             </Button>
           </DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
+            <Save />
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Book, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Book } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { TradingStrategy } from '@/lib/types';
@@ -35,7 +35,7 @@ export function StrategyList({ strategies }: StrategyListProps) {
     <>
       <div className="flex justify-end mb-4">
         <Button onClick={() => setIsAddDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
+          <PlusCircle />
           New Strategy
         </Button>
       </div>

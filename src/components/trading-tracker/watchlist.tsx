@@ -25,9 +25,9 @@ export function Watchlist({ items }: WatchlistProps) {
     
     const filteredItems = useMemo(() => {
         if (priorityFilter === 'all') {
-            return items;
+            return items.filter(item => item.status !== 'Archived');
         }
-        return items.filter(item => (item.priority || 'Medium') === priorityFilter);
+        return items.filter(item => (item.priority || 'Medium') === priorityFilter && item.status !== 'Archived');
     }, [items, priorityFilter]);
 
     const handleDelete = async (itemId: string) => {
@@ -58,7 +58,7 @@ export function Watchlist({ items }: WatchlistProps) {
                     </Select>
                 </div>
                 <Button onClick={() => setIsAddDialogOpen(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4"/>
+                    <PlusCircle />
                     Add to Watchlist
                 </Button>
             </div>

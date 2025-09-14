@@ -24,7 +24,7 @@ import { db } from '@/lib/firebase';
 import moment from 'moment';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { v4 as uuidv4 } from 'uuid';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Save } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 
 interface AddTradeDialogProps {
@@ -268,11 +268,12 @@ export function AddTradeDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="secondary">
+            <Button type="button" variant="outline">
               Cancel
             </Button>
           </DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
+            <Save />
             {isSaving ? 'Saving...' : 'Save Trade'}
           </Button>
         </DialogFooter>

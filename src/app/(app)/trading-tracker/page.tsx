@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,6 +19,7 @@ import { AnalyticsDashboard } from '@/components/trading-tracker/analytics-dashb
 import { Watchlist } from '@/components/trading-tracker/watchlist';
 import { RiskManagementDashboard } from '@/components/trading-tracker/risk-management-dashboard';
 import { StockAverageCalculator } from '@/components/trading-tracker/stock-average-calculator';
+import { TradingTrackerIcon } from '@/components/icons/tools/trading-tracker-icon';
 
 export default function TradingTrackerPage() {
   const { user, loading } = useAuth();
@@ -82,7 +84,7 @@ export default function TradingTrackerPage() {
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-            <TrendingUp className="h-8 w-8 text-primary"/>
+            <TradingTrackerIcon className="h-10 w-10 text-primary"/>
             <div>
                 <h1 className="text-3xl font-bold font-headline">Trading Tracker</h1>
                 <p className="text-muted-foreground">Record, analyze, and improve your trading performance.</p>
@@ -103,7 +105,7 @@ export default function TradingTrackerPage() {
             <TabsContent value="records" className="flex-1 mt-4">
                 <div className="flex justify-end mb-4">
                     <Button onClick={() => setIsAddTradeDialogOpen(true)}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
+                      <PlusCircle />
                       New Trade
                     </Button>
                 </div>

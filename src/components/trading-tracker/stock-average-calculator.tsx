@@ -79,7 +79,7 @@ export function StockAverageCalculator() {
                     </div>
                 </div>
                  <Button onClick={handleAddPurchase} className="w-full">
-                    <PlusCircle className="mr-2 h-4 w-4"/>
+                    <PlusCircle />
                     Add Purchase
                 </Button>
             </CardContent>
@@ -110,7 +110,7 @@ export function StockAverageCalculator() {
                         <CardDescription>A list of all entered purchases.</CardDescription>
                     </div>
                     <Button variant="destructive" size="sm" onClick={handleClearAll} disabled={purchases.length === 0}>
-                        <XCircle className="mr-2 h-4 w-4" /> Clear All
+                        <XCircle /> Clear All
                     </Button>
                 </div>
             </CardHeader>
@@ -148,4 +148,3 @@ export function StockAverageCalculator() {
     </div>
   );
 }
-
