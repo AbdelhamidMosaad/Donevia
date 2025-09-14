@@ -28,11 +28,8 @@ export const Callout = Node.create({
 
   addCommands() {
     return {
-      toggleCallout: () => ({ commands, editor }) => {
-        if (editor.isActive('callout')) {
-          return commands.lift(this.name);
-        }
-        return commands.wrapIn(this.name);
+      toggleCallout: () => ({ commands }) => {
+        return commands.toggleWrap(this.name);
       },
     };
   },

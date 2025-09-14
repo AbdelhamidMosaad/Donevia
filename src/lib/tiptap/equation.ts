@@ -6,7 +6,7 @@ export const Equation = Node.create({
   group: 'block',
   content: 'text*',
   atom: true,
-  
+
   addAttributes() {
     return {
       'data-type': {
@@ -24,17 +24,20 @@ export const Equation = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'equation' }), 0];
+    return [
+      'div',
+      mergeAttributes(HTMLAttributes, { 'data-type': 'equation' }),
+      0,
+    ];
   },
 
   addCommands() {
     return {
-      toggleEquation: () => ({ commands, editor }) => {
-        if (editor.isActive('equation')) {
-            return commands.lift(this.name);
-        }
-        return commands.wrapIn(this.name);
-      },
+      toggleEquation:
+        () =>
+        ({ commands }) => {
+          return commands.toggleWrap(this.name);
+        },
     };
   },
 });
