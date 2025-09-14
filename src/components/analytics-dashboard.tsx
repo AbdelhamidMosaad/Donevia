@@ -3,11 +3,12 @@
 
 import { useMemo } from 'react';
 import type { Task, Stage } from '@/lib/types';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import moment from 'moment';
 import Link from 'next/link';
+import { ScrollArea } from './ui/scroll-area';
 
 interface AnalyticsDashboardProps {
   tasks: Task[];
@@ -52,7 +53,7 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
     return last7Days.map(day => {
         const count = tasks.filter(task => 
             doneStageIds.includes(task.status) && 
-            moment(task.dueDate.toDate()).isSame(day, 'day')
+            moment(task.updatedAt?.toDate() || task.createdAt?.toDate()).isSame(day, 'day')
         ).length;
         return {
             date: day.format('ddd'),
@@ -77,16 +78,17 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
   const dueSoonTasks = useMemo(() => {
     const now = moment();
     return tasks
-        .filter(t => !doneStageIds.includes(t.status) && moment(t.dueDate.toDate()).isAfter(now))
+        .filter(t => !doneStageIds.includes(t.status) && moment(t.dueDate.toDate()).isBetween(now, now.clone().add(3, 'days')))
         .sort((a,b) => a.dueDate.toMillis() - b.dueDate.toMillis())
         .slice(0, 5);
   }, [tasks, doneStageIds]);
 
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   return (
     <div className="grid gap-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-             <Card>
+             <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle>Recently Created</CardTitle>
                 </CardHeader>
@@ -94,7 +96,7 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
                     {recentTasks.length > 0 ? recentTasks.map(t => <TaskItem key={t.id} task={t}/>) : <p className="text-sm text-muted-foreground">No recent tasks.</p>}
                 </CardContent>
             </Card>
-             <Card>
+             <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle>High Priority</CardTitle>
                 </CardHeader>
@@ -102,7 +104,7 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
                     {highPriorityTasks.length > 0 ? highPriorityTasks.map(t => <TaskItem key={t.id} task={t}/>) : <p className="text-sm text-muted-foreground">No high-priority tasks.</p>}
                 </CardContent>
             </Card>
-             <Card>
+             <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle>Due Soon</CardTitle>
                 </CardHeader>
@@ -113,7 +115,7 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+            <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader>
                 <CardTitle>Tasks by Status</CardTitle>
                 <CardDescription>A breakdown of all your tasks by their current stage.</CardDescription>
@@ -135,7 +137,7 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader>
                 <CardTitle>Completions This Week</CardTitle>
                 <CardDescription>Number of tasks completed over the last 7 days.</CardDescription>
@@ -148,7 +150,7 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
                         <XAxis dataKey="date" />
                         <YAxis allowDecimals={false} />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="completed" fill="var(--color-primary)" radius={4} />
+                        <Bar dataKey="completed" fill="hsl(var(--primary))" radius={4} />
                     </BarChart>
                     </ResponsiveContainer>
                 </ChartContainer>
