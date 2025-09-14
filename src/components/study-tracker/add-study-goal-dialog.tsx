@@ -135,13 +135,9 @@ export function AddStudyGoalDialog({
           </div>
         </div>
          <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary">
-              Cancel
-            </Button>
-          </DialogClose>
+          <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saved' : 'Save Goal'}
+            {isSaving ? 'Saving...' : 'Save Goal'}
           </Button>
         </DialogFooter>
       </DialogContent>

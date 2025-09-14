@@ -100,8 +100,8 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
                 )}
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setIsAddSubtopicOpen(true)}>
-                    <PlusCircle className="h-4 w-4 mr-2"/>
+                <Button variant="outline" size="sm" onClick={() => setIsAddSubtopicOpen(true)}>
+                    <PlusCircle />
                     Add Subtopic
                 </Button>
                 <DropdownMenu>

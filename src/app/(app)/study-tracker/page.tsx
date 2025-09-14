@@ -122,16 +122,16 @@ export default function StudyTrackerPage() {
             <TabsContent value="goals" className="flex-1 flex flex-col min-h-0 mt-4 space-y-4">
                 <div className="flex justify-end items-center gap-2">
                     <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Study Goal view">
-                    <ToggleGroupItem value="card" aria-label="Card view">
-                        <LayoutGrid className="h-4 w-4" />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="list" aria-label="List view">
-                        <List className="h-4 w-4" />
-                    </ToggleGroupItem>
+                        <ToggleGroupItem value="card" aria-label="Card view">
+                            <LayoutGrid />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="list" aria-label="List view">
+                            <List />
+                        </ToggleGroupItem>
                     </ToggleGroup>
                     <Button onClick={() => setIsAddDialogOpen(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    New Study Goal
+                        <PlusCircle />
+                        New Study Goal
                     </Button>
                 </div>
 

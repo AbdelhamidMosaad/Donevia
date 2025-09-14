@@ -179,15 +179,15 @@ export function AddStudySubtopicDialog({
                              <Label htmlFor="new-res-url" className="text-xs">Resource URL</Label>
                             <Input id="new-res-url" value={newResourceUrl} onChange={(e) => setNewResourceUrl(e.target.value)} placeholder="https://..." />
                         </div>
-                        <Button size="icon" onClick={handleAddResource}><PlusCircle className="h-4 w-4"/></Button>
+                        <Button onClick={handleAddResource}><PlusCircle/></Button>
                     </div>
                 </div>
             </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+          <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saved' : 'Save'}
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

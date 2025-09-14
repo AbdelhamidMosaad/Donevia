@@ -298,15 +298,15 @@ export default function StudyGoalDetailPage() {
        {showConfetti && <Confetti width={width} height={height} recycle={false} />}
        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className='flex items-center gap-4'>
-            <Button variant="outline" size="icon" onClick={() => router.push('/study-tracker')}><ArrowLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => router.push('/study-tracker')}><ArrowLeft /></Button>
             <div>
                 <h1 className="text-3xl font-bold font-headline">{goal.title}</h1>
                 <p className="text-muted-foreground">{goal.description}</p>
             </div>
         </div>
         <div className='flex items-center gap-2'>
-            <Button variant="outline" onClick={handleShareProgress}><Share2 className="mr-2 h-4 w-4" /> Share Progress</Button>
-            <Button variant="outline" onClick={() => setIsEditGoalOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit Goal</Button>
+            <Button variant="outline" onClick={handleShareProgress}><Share2 /> Share Progress</Button>
+            <Button variant="outline" onClick={() => setIsEditGoalOpen(true)}><Edit /> Edit Goal</Button>
         </div>
       </div>
       
@@ -331,7 +331,7 @@ export default function StudyGoalDetailPage() {
                     <CardTitle>Content Breakdown</CardTitle>
                     <CardDescription>Organize your study material into chapters and subtopics.</CardDescription>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setIsAddChapterOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Chapter</Button>
+                <Button onClick={() => setIsAddChapterOpen(true)}><PlusCircle /> Add Chapter</Button>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-y-auto">
                     {chapters.length > 0 ? (
