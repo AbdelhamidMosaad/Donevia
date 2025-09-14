@@ -29,14 +29,8 @@ export const Equation = Node.create({
 
   addCommands() {
     return {
-      toggleEquation: () => ({ commands, state }) => {
-        const { selection } = state;
-        const isActive = this.editor.isActive(this.name);
-
-        if (isActive) {
-            return commands.lift(this.name);
-        }
-        return commands.wrapIn(this.name);
+      toggleEquation: () => ({ commands }) => {
+        return commands.toggleWrap(this.name);
       },
     };
   },
