@@ -152,8 +152,8 @@ export function AppSidebar() {
                                             tooltip={item.tooltip}
                                         >
                                             <Link href={item.href || '#'} className="flex items-center w-full">
-                                                <div className={cn("p-1", !open && "hidden")}>
-                                                    <GripVertical className="h-4 w-4 text-muted-foreground"/>
+                                                <div className={cn("p-1 text-muted-foreground", !open && "hidden")}>
+                                                    <GripVertical className="h-4 w-4"/>
                                                 </div>
                                                 <div className="w-8 h-8 flex items-center justify-center">
                                                   {React.cloneElement(item.icon as React.ReactElement, { className: "h-6 w-6" })}
