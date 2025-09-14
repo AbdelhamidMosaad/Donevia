@@ -19,13 +19,14 @@ export function ToolCard({ href, icon, title, description, color }: ToolCardProp
   const IconComponent = (LucideIcons as any)[icon];
 
   return (
-    <Link href={href}>
-      <Card className="h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col">
-        <CardHeader className="p-4">
-          <div className="p-2 bg-muted w-fit rounded-lg mb-2">
-            {IconComponent ? createElement(IconComponent, { className: cn("h-5 w-5", color) }) : null}
+    <Link href={href} className="h-full">
+      <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col">
+        <CardHeader className="p-4 flex-1">
+          <div className="p-3 bg-muted w-fit rounded-lg mb-3">
+            {IconComponent ? createElement(IconComponent, { className: cn("h-6 w-6", color) }) : null}
           </div>
-          <CardTitle className="font-headline text-base group-hover:text-primary transition-colors">{title}</CardTitle>
+          <CardTitle className="font-headline text-md group-hover:text-primary transition-colors">{title}</CardTitle>
+           <CardDescription className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</CardDescription>
         </CardHeader>
       </Card>
     </Link>
