@@ -63,8 +63,8 @@ function SearchResultsComponent() {
                         for (const node of content.content) {
                             text += getTextFromDocContent(node);
                         }
-                    } else if (node.text) {
-                        text += node.text + ' ';
+                    } else if (content.text) {
+                        text += content.text + ' ';
                     }
                     return text;
                 };
