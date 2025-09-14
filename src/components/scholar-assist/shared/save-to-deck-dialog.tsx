@@ -146,7 +146,7 @@ export function SaveToDeckDialog({
                  <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleSave} disabled={isLoading}>
-                        <Save/>
+                        {isLoading ? <Loader2/> : <Save/>}
                         {isLoading ? 'Saving...' : 'Save Cards'}
                     </Button>
                 </DialogFooter>

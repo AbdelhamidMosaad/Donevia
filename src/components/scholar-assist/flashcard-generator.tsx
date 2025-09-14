@@ -96,7 +96,7 @@ export function FlashcardGenerator() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(link.href);
     toast({ title: '✓ Download started' });
   };
   
@@ -142,21 +142,21 @@ export function FlashcardGenerator() {
                 </div>
                 <div className="flex items-center gap-4 mt-4">
                     <Button variant="outline" onClick={() => navigateCard('prev')} disabled={currentCardIndex === 0}>
-                        <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+                        <ChevronLeft /> Previous
                     </Button>
                     <Button onClick={() => setIsFlipped(!isFlipped)}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Flip Card
+                        <RefreshCw /> Flip Card
                     </Button>
                     <Button variant="outline" onClick={() => navigateCard('next')} disabled={currentCardIndex === totalCards - 1}>
-                        Next <ChevronRight className="ml-2 h-4 w-4" />
+                        Next <ChevronRight />
                     </Button>
                 </div>
             </CardContent>
             <CardFooter className="flex-wrap justify-end gap-2">
-                <Button variant="secondary" onClick={handleReset}>Generate New Flashcards</Button>
-                <Button variant="outline" onClick={() => setIsSaveOpen(true)}><Save className="mr-2 h-4 w-4"/> Save to Deck</Button>
-                <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
-                <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
+                <Button variant="outline" onClick={handleReset}>Generate New Flashcards</Button>
+                <Button onClick={() => setIsSaveOpen(true)}><Save/> Save to Deck</Button>
+                <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
+                <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
             </CardFooter>
         </Card>
         <SaveToDeckDialog

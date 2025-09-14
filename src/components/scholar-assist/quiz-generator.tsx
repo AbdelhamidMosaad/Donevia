@@ -190,17 +190,17 @@ export function QuizGenerator() {
             )}
             <div className="flex justify-between items-center">
                  <Button variant="outline" onClick={() => setCurrentQuestionIndex(i => i - 1)} disabled={currentQuestionIndex === 0}>
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+                    <ChevronLeft/> Previous
                 </Button>
                 <Button onClick={checkAllAnswers} disabled={score !== null}>Check Answers</Button>
                  <Button variant="outline" onClick={() => setCurrentQuestionIndex(i => i + 1)} disabled={currentQuestionIndex === totalQuestions - 1}>
-                    Next <ChevronRight className="ml-2 h-4 w-4" />
+                    Next <ChevronRight/>
                 </Button>
             </div>
             <div className="flex justify-end gap-2">
-                <Button variant="secondary" onClick={handleReset}>Generate New Quiz</Button>
-                <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
-                <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
+                <Button variant="outline" onClick={handleReset}>Generate New Quiz</Button>
+                <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
+                <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
             </div>
         </CardFooter>
       </Card>

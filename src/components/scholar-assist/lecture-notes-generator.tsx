@@ -314,12 +314,12 @@ export function LectureNotesGenerator() {
                 <CardFooter className="flex-wrap justify-end gap-2">
                     <Button variant="outline" onClick={handleReset}>Generate New Notes</Button>
                     <Button onClick={handleSaveToDocs} disabled={isSavingToDocs}>
-                        {isSavingToDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {isSavingToDocs ? <Loader2/> : <Save/>}
                         {isSavingToDocs ? 'Saving...' : 'Save to Docs'}
                     </Button>
-                    <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4"/> Copy Text</Button>
-                    <Button variant="outline" onClick={handleExportWord}><Download className="mr-2 h-4 w-4"/> Export as Word</Button>
-                    <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download .txt</Button>
+                    <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
+                    <Button variant="outline" onClick={handleExportWord}><Download/> Export as Word</Button>
+                    <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
                 </CardFooter>
             </Card>
         )
