@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, ReactNode } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import type { Task, Goal, Milestone, RecapRequest, RecapResponse, StudyGoal, StudyChapter, StudySubtopic, StudySession } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from './hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles } from 'lucide-react';
 import moment from 'moment';
 import {
@@ -46,6 +45,7 @@ export function RecapGenerator({
     const [period, setPeriod] = useState<'daily' | 'weekly'>('daily');
     const [recap, setRecap] = useState<RecapResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedRecapType, setSelectedRecapType] = useState<RecapType>('tasks_goals');
 
     const dataForPeriod = useMemo(() => {
         const now = moment();
@@ -120,7 +120,7 @@ export function RecapGenerator({
         }
     };
     
-    const hasTaskData = dataForPeriod.tasks.length > 0 || dataForPeriod.goals.length > 0;
+    const hasTaskData = dataForPeriod.tasks.length > 0 || dataForPeriod.goals.some(g => g.milestones.length > 0);
     const hasStudyData = dataForPeriod.studyData.studySessions.length > 0;
 
     return (
