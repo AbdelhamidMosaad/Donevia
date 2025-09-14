@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -128,7 +129,7 @@ export function MindMapTool() {
       });
       return () => unsub();
     }
-  }, [user, mindMapId, toast, router, getDocRef]);
+  }, [user, mindMapId, toast, router, getMindMapDocRef]);
   
   const saveMindMap = useDebouncedCallback(async (updatedNodes, updatedConnections) => {
     const mapRef = getMindMapDocRef();
@@ -337,7 +338,7 @@ export function MindMapTool() {
   };
 
   const handleMapNameChange = useDebouncedCallback(async (newName: string) => {
-    const mapRef = getWhiteboardDocRef();
+    const mapRef = getMindMapDocRef();
     if (mapRef && mindMap && newName.trim() !== mindMap.name) {
       await updateDoc(mapRef, { name: newName.trim(), updatedAt: new Date() });
       toast({ title: "Mind Map renamed!" });
