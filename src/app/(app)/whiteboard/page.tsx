@@ -114,7 +114,7 @@ export default function WhiteboardDashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={handleAddWhiteboard}>
-            <PlusCircle className="mr-2 h-4 w-4" />
+            <PlusCircle />
             New Whiteboard
           </Button>
         </div>

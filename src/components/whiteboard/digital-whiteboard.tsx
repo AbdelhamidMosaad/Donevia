@@ -360,7 +360,7 @@ export function DigitalWhiteboard() {
       size="sm"
       className="w-full justify-start"
     >
-      <Icon className="mr-2 h-4 w-4" />
+      <Icon />
       {!isToolbarCollapsed && label}
     </Button>
   );
@@ -373,7 +373,7 @@ export function DigitalWhiteboard() {
     <div className="flex flex-col h-full gap-4">
       <div className="flex items-center justify-between gap-4">
          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><ArrowLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><ArrowLeft /></Button>
             <Input 
                 value={boardName}
                 onChange={(e) => {
@@ -386,7 +386,7 @@ export function DigitalWhiteboard() {
          <div className="flex items-center gap-2">
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon"><Settings className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon"><Settings/></Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
                     <div className="grid gap-4">
@@ -422,7 +422,7 @@ export function DigitalWhiteboard() {
                     </div>
                 </PopoverContent>
             </Popover>
-            <Button onClick={saveState}><Save className="mr-2 h-4 w-4" /> Save</Button>
+            <Button onClick={saveState}><Save/> Save</Button>
          </div>
       </div>
 
@@ -434,7 +434,7 @@ export function DigitalWhiteboard() {
         )}>
           <div className="flex flex-col gap-2 w-full">
              <Button variant="ghost" size="sm" onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)} className="w-full justify-start">
-               {isToolbarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="mr-2 h-4 w-4" />}
+               {isToolbarCollapsed ? <PanelLeftOpen/> : <PanelLeftClose />}
                {!isToolbarCollapsed && 'Collapse'}
             </Button>
             <h3 className={cn("font-semibold px-2", isToolbarCollapsed && "hidden")}>Tools</h3>
@@ -465,22 +465,22 @@ export function DigitalWhiteboard() {
           </div>
           <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
              <h3 className="font-semibold px-2">Shapes</h3>
-             <Button variant="outline" size="sm" onClick={() => drawShape('rectangle')} className="justify-start"><Square className="mr-2 h-4 w-4" /> Rectangle</Button>
-             <Button variant="outline" size="sm" onClick={() => drawShape('circle')} className="justify-start"><Circle className="mr-2 h-4 w-4" /> Circle</Button>
+             <Button variant="outline" size="sm" onClick={() => drawShape('rectangle')} className="justify-start"><Square/> Rectangle</Button>
+             <Button variant="outline" size="sm" onClick={() => drawShape('circle')} className="justify-start"><Circle/> Circle</Button>
           </div>
            <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
              <h3 className="font-semibold px-2">Notes</h3>
-             <Button variant="outline" size="sm" onClick={() => addStickyNote('#FFF9C4')} className="justify-start"><StickyNote className="mr-2 h-4 w-4" /> Sticky Note</Button>
+             <Button variant="outline" size="sm" onClick={() => addStickyNote('#FFF9C4')} className="justify-start"><StickyNote/> Sticky Note</Button>
           </div>
           <div className="flex flex-col gap-2 mt-auto w-full">
             <Button variant="outline" size="sm" onClick={undo} disabled={historyIndex <= 0} className="justify-start">
-              <Undo className="mr-2 h-4 w-4" /> {!isToolbarCollapsed && 'Undo'}
+              <Undo/> {!isToolbarCollapsed && 'Undo'}
             </Button>
             <Button variant="outline" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1} className="justify-start">
-              <Redo className="mr-2 h-4 w-4" /> {!isToolbarCollapsed && 'Redo'}
+              <Redo/> {!isToolbarCollapsed && 'Redo'}
             </Button>
             <Button variant="destructive" size="sm" onClick={clearCanvas} className="justify-start">
-              <Trash2 className="mr-2 h-4 w-4" /> {!isToolbarCollapsed && 'Clear All'}
+              <Trash2/> {!isToolbarCollapsed && 'Clear All'}
             </Button>
           </div>
         </div>
