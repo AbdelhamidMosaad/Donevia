@@ -513,7 +513,7 @@ body {
 }
 .whiteboard-bg-lined {
     background-image: linear-gradient(hsla(var(--border)) 1px, transparent 1px);
-    background-size: 100% 24px; /* Adjust line spacing */
+    background-size: 100% 24px;
 }
 .whiteboard-bg-plain {
     background-image: none;
@@ -568,3 +568,5 @@ body {
       100% { background-position: 0% 50%; }
     }
 }
+
+    
