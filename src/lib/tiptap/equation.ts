@@ -29,19 +29,11 @@ export const Equation = Node.create({
 
   addCommands() {
     return {
-      toggleEquation: () => ({ commands, editor }) => {
-        const { selection } = editor.state;
-        const { $from, $to } = selection;
-        const range = { from: $from.pos, to: $to.pos };
-        
-        let isSelectionInEquation = false;
-        editor.state.doc.nodesBetween(range.from, range.to, (node) => {
-            if (node.type.name === this.name) {
-                isSelectionInEquation = true;
-            }
-        });
+      toggleEquation: () => ({ commands, state }) => {
+        const { selection } = state;
+        const isActive = this.editor.isActive(this.name);
 
-        if (isSelectionInEquation) {
+        if (isActive) {
             return commands.lift(this.name);
         }
         return commands.wrapIn(this.name);

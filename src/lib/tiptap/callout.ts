@@ -11,7 +11,6 @@ export const Callout = Node.create({
     return {
       'data-type': {
         default: 'info',
-        // Here you could add more types like 'warning', 'danger', etc.
       },
     };
   },
@@ -30,21 +29,14 @@ export const Callout = Node.create({
 
   addCommands() {
     return {
-      toggleCallout: () => ({ commands, editor }) => {
-        const { selection } = editor.state;
-        const { $from, $to } = selection;
-        const range = { from: $from.pos, to: $to.pos };
-        
-        let isSelectionInCallout = false;
-        editor.state.doc.nodesBetween(range.from, range.to, (node) => {
-            if (node.type.name === this.name) {
-                isSelectionInCallout = true;
-            }
-        });
+      toggleCallout: () => ({ commands, state }) => {
+        const { selection } = state
+        const isActive = this.editor.isActive(this.name)
 
-        if (isSelectionInCallout) {
+        if (isActive) {
           return commands.lift(this.name);
         }
+
         return commands.wrapIn(this.name);
       },
     };
