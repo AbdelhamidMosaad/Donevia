@@ -32,7 +32,16 @@ export const Callout = Node.create({
     return {
       toggleCallout: () => ({ commands, state }) => {
         const { selection } = state;
-        const isSelectionInCallout = selection.$from.findParent(this.name);
+        let isSelectionInCallout = false;
+        if(selection.ranges[0]) {
+            const fromNode = selection.ranges[0].$from;
+            for(let i = fromNode.depth; i > 0; i--) {
+                if(fromNode.node(i).type.name === this.name) {
+                    isSelectionInCallout = true;
+                    break;
+                }
+            }
+        }
         
         if (isSelectionInCallout) {
             return commands.lift(this.name);

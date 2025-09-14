@@ -31,7 +31,16 @@ export const Equation = Node.create({
     return {
       toggleEquation: () => ({ commands, state }) => {
         const { selection } = state;
-        const isSelectionInEquation = selection.$from.findParent(this.name);
+        let isSelectionInEquation = false;
+        if(selection.ranges[0]) {
+            const fromNode = selection.ranges[0].$from;
+            for(let i = fromNode.depth; i > 0; i--) {
+                if(fromNode.node(i).type.name === this.name) {
+                    isSelectionInEquation = true;
+                    break;
+                }
+            }
+        }
         
         if (isSelectionInEquation) {
             return commands.lift(this.name);
