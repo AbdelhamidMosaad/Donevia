@@ -33,6 +33,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ArrowLeft,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
@@ -72,7 +74,7 @@ export function DigitalWhiteboard() {
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
   const [whiteboard, setWhiteboard] = useState<Whiteboard | null>(null);
   const [boardName, setBoardName] = useState('');
-
+  
   const [currentTool, setCurrentTool] = useState<Tool>('pen');
   const [currentColor, setCurrentColor] = useState('#000000');
   const [brushSize, setBrushSize] = useState(4);
@@ -85,6 +87,8 @@ export function DigitalWhiteboard() {
   const lastMousePos = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
+  const whiteboardContainerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // --- Initialization and Canvas Setup ---
   useEffect(() => {
@@ -344,6 +348,27 @@ export function DigitalWhiteboard() {
     }
   };
 
+  const toggleFullscreen = useCallback(() => {
+    const elem = whiteboardContainerRef.current;
+    if (!elem) return;
+
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch(err => {
+        toast({ variant: 'destructive', title: 'Error entering fullscreen.', description: err.message });
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   // --- UI Components ---
   const ToolButton = ({
     tool,
@@ -370,7 +395,7 @@ export function DigitalWhiteboard() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div ref={whiteboardContainerRef} className={cn("flex flex-col h-full gap-4", isFullscreen && "bg-background")}>
       <div className="flex items-center justify-between gap-4">
          <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><ArrowLeft /></Button>
@@ -423,6 +448,9 @@ export function DigitalWhiteboard() {
                 </PopoverContent>
             </Popover>
             <Button onClick={saveState}><Save/> Save</Button>
+            <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                {isFullscreen ? <Minimize/> : <Maximize/>}
+            </Button>
          </div>
       </div>
 
