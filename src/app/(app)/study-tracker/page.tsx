@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, GraduationCap, LayoutGrid, List, BarChart3 } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { StudyGoal, StudySubtopic, StudySession } from '@/lib/types';
@@ -17,6 +18,7 @@ import { GamificationProfile } from '@/components/study-tracker/gamification-pro
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StudyGoalListView } from '@/components/study-tracker/study-goal-list-view';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
 
 
 type View = 'card' | 'list';
@@ -104,7 +106,7 @@ export default function StudyTrackerPage() {
   return (
     <div className="flex flex-col h-full gap-6">
        <div className="flex items-center gap-4">
-          <GraduationCap className="h-8 w-8 text-primary"/>
+          <StudyTrackerIcon className="h-10 w-10 text-primary"/>
           <div>
               <h1 className="text-3xl font-bold font-headline">Study Tracker</h1>
               <p className="text-muted-foreground">Track your learning goals, progress, and gamified stats.</p>
@@ -113,7 +115,7 @@ export default function StudyTrackerPage() {
       
        <Tabs defaultValue="goals" className="flex-1 flex flex-col min-h-0">
             <TabsList>
-                <TabsTrigger value="goals"><GraduationCap className="mr-2 h-4 w-4"/> Study Goals</TabsTrigger>
+                <TabsTrigger value="goals"><StudyTrackerIcon className="mr-2 h-4 w-4"/> Study Goals</TabsTrigger>
                 <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/> Analytics & Profile</TabsTrigger>
             </TabsList>
             
@@ -135,7 +137,7 @@ export default function StudyTrackerPage() {
 
                 {goals.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-                        <GraduationCap className="h-16 w-16 text-muted-foreground mb-4" />
+                        <StudyTrackerIcon className="h-24 w-24 text-muted-foreground mb-4" />
                         <h3 className="text-xl font-semibold font-headline">No Study Goals Yet</h3>
                         <p className="text-muted-foreground">Click "New Study Goal" to set your first one.</p>
                     </div>

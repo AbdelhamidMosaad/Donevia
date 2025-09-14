@@ -1,12 +1,14 @@
+
 'use client';
 import type { MeetingNote } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ClipboardSignature, MoreHorizontal, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
+import { MeetingNotesIcon } from '../icons/tools/meeting-notes-icon';
 
 interface MeetingNoteListViewProps {
   notes: MeetingNote[];
@@ -19,7 +21,7 @@ export function MeetingNoteListView({ notes, onDelete }: MeetingNoteListViewProp
   if (notes.length === 0) {
     return (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
-            <ClipboardSignature className="h-16 w-16 text-muted-foreground mb-4" />
+            <MeetingNotesIcon className="h-24 w-24 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold font-headline">No Meeting Notes Yet</h3>
             <p className="text-muted-foreground">
                 Click "New Meeting Note" to create your first one.
@@ -49,7 +51,7 @@ export function MeetingNoteListView({ notes, onDelete }: MeetingNoteListViewProp
             <TableRow key={note.id} onClick={(e) => handleNavigate(e, note.id)} className="cursor-pointer">
               <TableCell>
                   <a href={`/meeting-notes/${note.id}`} onClick={(e) => handleNavigate(e, note.id)} className="flex items-center gap-2 font-medium text-primary hover:underline">
-                      <ClipboardSignature className="h-4 w-4" />
+                      <MeetingNotesIcon className="h-5 w-5" />
                       {note.title}
                   </a>
               </TableCell>

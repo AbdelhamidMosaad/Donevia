@@ -10,7 +10,7 @@ import type { PlannerEvent, PlannerCategory, GoogleCalendarEvent, Task } from '@
 import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { CalendarDays, PlusCircle, Settings, Link as LinkIcon, RefreshCw } from 'lucide-react';
+import { Settings, Link as LinkIcon, RefreshCw, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { EventDialog } from '@/components/planner/event-dialog';
@@ -18,6 +18,7 @@ import { CategoryManager } from '@/components/planner/category-manager';
 import { useEventReminders } from '@/hooks/use-planner-reminders';
 import { useGoogleCalendar } from '@/hooks/use-google-calendar';
 import { getDocs } from 'firebase/firestore';
+import { PlannerIcon } from '@/components/icons/tools/planner-icon';
 
 const localizer = momentLocalizer(moment);
 
@@ -210,7 +211,7 @@ export default function PlannerPage() {
     <div className="flex flex-col h-full gap-6">
        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-            <CalendarDays className="h-8 w-8 text-primary"/>
+            <PlannerIcon className="h-10 w-10 text-primary"/>
             <div>
                 <h1 className="text-3xl font-bold font-headline">Planner</h1>
                 <p className="text-muted-foreground">Organize your time, events, and tasks.</p>

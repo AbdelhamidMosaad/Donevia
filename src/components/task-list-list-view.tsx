@@ -3,7 +3,7 @@
 import type { TaskList, Task } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { Folder, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { useState, useRef, useEffect } from 'react';
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { TasksIcon } from './icons/tools/tasks-icon';
 
 
 interface TaskListListViewProps {
@@ -95,7 +96,7 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
     if (taskLists.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-            <Folder className="h-16 w-16 text-muted-foreground mb-4" />
+            <TasksIcon className="h-24 w-24 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold font-headline">No Task Lists Yet</h3>
             <p className="text-muted-foreground">Create your first task list to get started.</p>
         </div>
@@ -118,7 +119,7 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
               <TableCell>
                 {editingListId === list.id ? (
                   <div className="flex items-center gap-2">
-                    <Folder className="h-4 w-4 shrink-0" />
+                    <TasksIcon className="h-5 w-5 shrink-0" />
                     <Input 
                       ref={inputRef}
                       value={editingListName}
@@ -130,7 +131,7 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
                   </div>
                 ) : (
                   <Link href={`/dashboard/lists/${list.id}`} className="flex items-center gap-2 font-medium text-primary hover:underline">
-                      <Folder className="h-4 w-4" />
+                      <TasksIcon className="h-5 w-5" />
                       {list.name}
                   </Link>
                 )}

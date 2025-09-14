@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, LayoutGrid, Kanban } from 'lucide-react';
+import { PlusCircle, LayoutGrid, Kanban } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, addDoc, Timestamp, orderBy, setDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -14,6 +14,7 @@ import { StickyNoteDialog } from '@/components/sticky-note-dialog';
 import { StickyNotesCanvas } from '@/components/sticky-notes-canvas';
 import { StickyNotesBoard } from '@/components/sticky-notes-board';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { StickyNotesIcon } from '@/components/icons/tools/sticky-notes-icon';
 
 type View = 'board' | 'canvas';
 
@@ -154,9 +155,12 @@ export default function StickyNotesPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Sticky Notes</h1>
-          <p className="text-muted-foreground">Your personal space for quick thoughts and reminders.</p>
+        <div className="flex items-center gap-4">
+            <StickyNotesIcon className="h-10 w-10 text-primary" />
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Sticky Notes</h1>
+                <p className="text-muted-foreground">Your personal space for quick thoughts and reminders.</p>
+            </div>
         </div>
         <div className="flex items-center gap-2">
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
@@ -176,7 +180,7 @@ export default function StickyNotesPage() {
 
       {notes.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+            <StickyNotesIcon className="h-24 w-24 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold font-headline">No Sticky Notes Yet</h3>
             <p className="text-muted-foreground">Click "Add Note" to create your first one.</p>
         </div>

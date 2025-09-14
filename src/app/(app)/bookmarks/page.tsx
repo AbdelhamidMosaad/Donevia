@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Bookmark as BookmarkIcon, Search, FolderPlus, MoreHorizontal, Edit, Trash2, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, Search, FolderPlus, MoreHorizontal, Edit, Trash2, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Bookmark } from '@/lib/types';
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { BookmarksIcon } from '@/components/icons/tools/bookmarks-icon';
 
 type View = 'card' | 'list';
 const DEFAULT_CATEGORIES = ['work', 'personal', 'education', 'entertainment', 'shopping', 'other'];
@@ -247,9 +248,12 @@ export default function BookmarksPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Bookmark Manager</h1>
-          <p className="text-muted-foreground">Organize and access your favorite websites with ease.</p>
+        <div className="flex items-center gap-4">
+          <BookmarksIcon className="h-10 w-10 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold font-headline">Bookmark Manager</h1>
+            <p className="text-muted-foreground">Organize and access your favorite websites with ease.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="View toggle">
@@ -324,7 +328,7 @@ export default function BookmarksPage() {
 
       {bookmarks.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
-          <BookmarkIcon className="h-16 w-16 text-muted-foreground mb-4" />
+          <BookmarksIcon className="h-24 w-24 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold font-headline">No Bookmarks Yet</h3>
           <p className="text-muted-foreground">Click "New Bookmark" to add your first one.</p>
         </div>
@@ -418,5 +422,3 @@ export default function BookmarksPage() {
     </div>
   );
 }
-
-    

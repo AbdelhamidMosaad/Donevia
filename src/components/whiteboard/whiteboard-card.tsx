@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { Whiteboard } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { PenSquare, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useAuth } from '@/hooks/use-auth';
@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
 } from '../ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
+import { WhiteboardIcon } from '../icons/tools/whiteboard-icon';
 
 interface WhiteboardCardProps {
   whiteboard: Whiteboard;
@@ -102,7 +103,7 @@ export function WhiteboardCard({ whiteboard, onDelete }: WhiteboardCardProps) {
               />
             ) : (
               <CardTitle className="font-headline hover:underline text-xl flex items-center gap-2">
-                <PenSquare className="h-5 w-5 text-primary" />
+                <WhiteboardIcon className="h-6 w-6 text-primary" />
                 {whiteboard.name}
               </CardTitle>
             )}

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { MeetingNote } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
-import { ClipboardSignature, MoreHorizontal, Trash2, Calendar } from 'lucide-react';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import {
 } from '../ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
+import { MeetingNotesIcon } from '../icons/tools/meeting-notes-icon';
 
 interface MeetingNoteCardProps {
   note: MeetingNote;
@@ -46,7 +47,7 @@ export function MeetingNoteCard({ note, onDelete }: MeetingNoteCardProps) {
         <CardHeader className="flex-row items-start justify-between w-full relative">
           <div>
             <CardTitle className="font-headline hover:underline text-xl flex items-center gap-2">
-              <ClipboardSignature className="h-5 w-5 text-primary" />
+              <MeetingNotesIcon className="h-6 w-6 text-primary" />
               {note.title}
             </CardTitle>
             <CardDescription className="mt-1">

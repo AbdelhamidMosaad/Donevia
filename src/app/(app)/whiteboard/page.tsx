@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, PenSquare } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Whiteboard } from '@/lib/types';
@@ -16,10 +16,12 @@ import {
   orderBy,
   deleteDoc,
   doc,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { WhiteboardCard } from '@/components/whiteboard/whiteboard-card';
+import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
 
 export default function WhiteboardDashboardPage() {
   const { user, loading } = useAuth();
@@ -103,9 +105,12 @@ export default function WhiteboardDashboardPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Whiteboards</h1>
-          <p className="text-muted-foreground">Your collection of digital canvases.</p>
+        <div className="flex items-center gap-4">
+            <WhiteboardIcon className="h-10 w-10 text-primary" />
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Whiteboards</h1>
+                <p className="text-muted-foreground">Your collection of digital canvases.</p>
+            </div>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={handleAddWhiteboard}>
@@ -117,7 +122,7 @@ export default function WhiteboardDashboardPage() {
 
       {whiteboards.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
-          <PenSquare className="h-16 w-16 text-muted-foreground mb-4" />
+          <WhiteboardIcon className="h-24 w-24 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold font-headline">No Whiteboards Yet</h3>
           <p className="text-muted-foreground">
             Click "New Whiteboard" to create your first canvas.

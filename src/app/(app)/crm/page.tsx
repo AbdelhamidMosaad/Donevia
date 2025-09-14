@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Briefcase, Users, Kanban, FileText, BarChart3, Receipt } from 'lucide-react';
+import { PlusCircle, Users, Kanban, BarChart3, Receipt } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Client, ClientRequest, Invoice } from '@/lib/types';
@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RequestBoard } from '@/components/crm/request-board';
 import { AnalyticsDashboard } from '@/components/crm/analytics-dashboard';
 import { InvoiceList } from '@/components/crm/invoice-list';
+import { CrmIcon } from '@/components/icons/tools/crm-icon';
 
 export default function CrmPage() {
   const { user, loading } = useAuth();
@@ -73,7 +74,7 @@ export default function CrmPage() {
     <div className="flex flex-col h-full">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
-                <Briefcase className="h-8 w-8 text-primary"/>
+                <CrmIcon className="h-10 w-10 text-primary"/>
                 <div>
                     <h1 className="text-3xl font-bold font-headline">Client Relationship Management</h1>
                     <p className="text-muted-foreground">Manage your clients, pipeline, invoices, and analytics.</p>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { collection, onSnapshot, query, orderBy, doc, setDoc, getDoc } from 'fir
 import { db } from '@/lib/firebase';
 import type { WorkActivity, WorkTrackerSettingItem, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Briefcase, List, Calendar, Settings, PlusCircle, FileText } from 'lucide-react';
+import { List, Calendar, Settings, PlusCircle, FileText } from 'lucide-react';
 import { ActivityForm } from '@/components/work-tracker/activity-form';
 import { ActivityTable } from '@/components/work-tracker/activity-table';
 import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
@@ -17,6 +18,7 @@ import { WorkTrackerSettings } from '@/components/work-tracker/tracker-settings'
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
 
 type View = 'table' | 'calendar';
 const colorPalette = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FED766", "#2AB7CA", "#F0CF65", "#9B59B6", "#3498DB", "#1ABC9C", "#E74C3C"];
@@ -119,7 +121,7 @@ export default function WorkTrackerPage() {
     <div className="flex flex-col h-full gap-6">
        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-            <Briefcase className="h-8 w-8 text-primary"/>
+            <WorkTrackerIcon className="h-10 w-10 text-primary"/>
             <div>
                 <h1 className="text-3xl font-bold font-headline">Work Activity Tracker</h1>
                 <p className="text-muted-foreground">Log and manage your daily work activities, appointments, and tasks.</p>

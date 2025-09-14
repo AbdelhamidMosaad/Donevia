@@ -3,7 +3,7 @@
 import type { TaskList } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
-import { Folder, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Button } from './ui/button';
 import { useState, useRef, useEffect } from 'react';
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { TasksIcon } from './icons/tools/tasks-icon';
 
 
 interface TaskListCardViewProps {
@@ -82,7 +83,7 @@ export function TaskListCardView({ taskLists, onDelete }: TaskListCardViewProps)
   if (taskLists.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-            <Folder className="h-16 w-16 text-muted-foreground mb-4" />
+            <TasksIcon className="h-24 w-24 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold font-headline">No Task Lists Yet</h3>
             <p className="text-muted-foreground">Create your first task list to get started.</p>
         </div>
@@ -105,9 +106,9 @@ export function TaskListCardView({ taskLists, onDelete }: TaskListCardViewProps)
                     className="text-lg font-headline"
                   />
                 ) : (
-                  <Link href={`/dashboard/lists/${list.id}`} passHref>
+                  <Link href={`/dashboard/list/${list.id}`} passHref>
                     <CardTitle className="flex items-center gap-2 font-headline hover:underline">
-                      <Folder className="h-5 w-5 text-primary" />
+                      <TasksIcon className="h-6 w-6 text-primary" />
                       {list.name}
                     </CardTitle>
                   </Link>
@@ -144,7 +145,7 @@ export function TaskListCardView({ taskLists, onDelete }: TaskListCardViewProps)
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>
-             <Link href={`/dashboard/lists/${list.id}`} passHref className="flex-1">
+             <Link href={`/dashboard/list/${list.id}`} passHref className="flex-1">
                 <CardContent>
                   <p className="text-sm text-muted-foreground">This list is ready for your tasks.</p>
                 </CardContent>

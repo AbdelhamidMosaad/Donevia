@@ -5,13 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LectureNotesGenerator } from '@/components/scholar-assist/lecture-notes-generator';
 import { QuizGenerator } from '@/components/scholar-assist/quiz-generator';
 import { FlashcardGenerator } from '@/components/scholar-assist/flashcard-generator';
-import { GraduationCap, FileText, HelpCircle, Layers } from 'lucide-react';
+import { FileText, HelpCircle, Layers } from 'lucide-react';
+import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 
 export default function LearningToolPage() {
   return (
     <div className="flex flex-col h-full gap-6">
       <div className="flex items-center gap-4">
-        <GraduationCap className="h-8 w-8 text-primary" />
+        <LearningAssistantIcon className="h-10 w-10 text-primary" />
         <div>
           <h1 className="text-3xl font-bold font-headline">Learning Assistant</h1>
           <p className="text-muted-foreground">

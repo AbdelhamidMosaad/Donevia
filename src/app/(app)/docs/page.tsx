@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, FolderPlus, Move, Trash2 } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, FolderPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -13,19 +13,14 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { DocListCardView } from '@/components/docs/doc-list-card-view';
 import { DocListListView } from '@/components/docs/doc-list-list-view';
-import { BrainCircuit } from 'lucide-react';
 import { FolderCard } from '@/components/docs/folder-card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu';
+import { DocsIcon } from '@/components/icons/tools/docs-icon';
 
 type View = 'card' | 'list';
 
@@ -173,9 +168,12 @@ export default function DocsDashboardPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-            <h1 className="text-3xl font-bold font-headline">Docs</h1>
-            <p className="text-muted-foreground">All your documents and folders in one place.</p>
+        <div className="flex items-center gap-4">
+            <DocsIcon className="h-10 w-10 text-primary" />
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Docs</h1>
+                <p className="text-muted-foreground">All your documents and folders in one place.</p>
+            </div>
         </div>
         <div className="flex items-center gap-2">
            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Document view">
@@ -207,7 +205,7 @@ export default function DocsDashboardPage() {
       
        {docs.length === 0 && folders.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-            <BrainCircuit className="h-16 w-16 text-muted-foreground mb-4" />
+            <DocsIcon className="h-24 w-24 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold font-headline">No Documents Yet</h3>
             <p className="text-muted-foreground">Click "New" to create your first document or folder.</p>
         </div>

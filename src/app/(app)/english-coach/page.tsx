@@ -3,17 +3,18 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GrammarCoach } from '@/components/english-coach/grammar-coach';
-import { Languages, BookOpen, Mail, Mic, MessageSquareQuote } from 'lucide-react';
+import { BookOpen, Mail, Mic, MessageSquareQuote } from 'lucide-react';
 import { VocabularyCoach } from '@/components/english-coach/vocabulary-coach';
 import { EmailCoach } from '@/components/english-coach/email-coach';
 import { ShadowingCoach } from '@/components/english-coach/shadowing-coach';
 import { NewWordsLibrary } from '@/components/english-coach/new-words-library';
+import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
 
 export default function EnglishCoachPage() {
   return (
     <div className="flex flex-col h-full gap-6">
       <div className="flex items-center gap-4">
-        <Languages className="h-8 w-8 text-primary" />
+        <EnglishCoachIcon className="h-10 w-10 text-primary" />
         <div>
           <h1 className="text-3xl font-bold font-headline">English Coach</h1>
           <p className="text-muted-foreground">

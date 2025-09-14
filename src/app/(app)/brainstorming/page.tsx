@@ -9,9 +9,10 @@ import { db } from '@/lib/firebase';
 import type { BrainstormingIdea } from '@/lib/types';
 import { BrainstormingCanvas } from '@/components/brainstorming/idea-canvas';
 import { BrainstormingSidePanel } from '@/components/brainstorming/side-panel';
-import { BrainCircuit, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { addIdea } from '@/lib/brainstorm';
 import { useToast } from '@/hooks/use-toast';
+import { BrainstormingIcon } from '@/components/icons/tools/brainstorming-icon';
 
 export default function BrainstormingPage() {
   const { user, loading: authLoading } = useAuth();
@@ -68,7 +69,7 @@ export default function BrainstormingPage() {
   return (
     <div className="flex flex-col h-full gap-6">
       <div className="flex items-center gap-4">
-        <BrainCircuit className="h-8 w-8 text-primary" />
+        <BrainstormingIcon className="h-10 w-10 text-primary" />
         <div>
           <h1 className="text-3xl font-bold font-headline">Brainstorming</h1>
           <p className="text-muted-foreground">Capture, organize, and develop your ideas on an infinite canvas.</p>

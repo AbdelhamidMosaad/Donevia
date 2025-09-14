@@ -1,7 +1,8 @@
+
 'use client';
 import type { MeetingNote } from '@/lib/types';
 import { MeetingNoteCard } from './meeting-note-card';
-import { ClipboardSignature } from 'lucide-react';
+import { MeetingNotesIcon } from '../icons/tools/meeting-notes-icon';
 
 interface MeetingNoteCardViewProps {
   notes: MeetingNote[];
@@ -12,7 +13,7 @@ export function MeetingNoteCardView({ notes, onDelete }: MeetingNoteCardViewProp
   if (notes.length === 0) {
     return (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
-            <ClipboardSignature className="h-16 w-16 text-muted-foreground mb-4" />
+            <MeetingNotesIcon className="h-24 w-24 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold font-headline">No Meeting Notes Yet</h3>
             <p className="text-muted-foreground">
                 Click "New Meeting Note" to create your first one.

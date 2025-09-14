@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ClipboardSignature, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { MeetingNote } from '@/lib/types';
@@ -23,6 +23,7 @@ import { NewMeetingNoteDialog } from '@/components/meeting-notes/new-meeting-not
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { MeetingNoteCardView } from '@/components/meeting-notes/meeting-note-card-view';
 import { MeetingNoteListView } from '@/components/meeting-notes/meeting-note-list-view';
+import { MeetingNotesIcon } from '@/components/icons/tools/meeting-notes-icon';
 
 type View = 'card' | 'list';
 
@@ -100,9 +101,12 @@ export default function MeetingNotesDashboardPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Meeting Notes</h1>
-          <p className="text-muted-foreground">Capture and organize your meeting minutes.</p>
+        <div className="flex items-center gap-4">
+          <MeetingNotesIcon className="h-10 w-10 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold font-headline">Meeting Notes</h1>
+            <p className="text-muted-foreground">Capture and organize your meeting minutes.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="View toggle">
@@ -121,11 +125,7 @@ export default function MeetingNotesDashboardPage() {
       </div>
       
       <div className="flex-1">
-        {view === 'card' ? (
-          <MeetingNoteCardView notes={meetingNotes} onDelete={handleDeleteNote} />
-        ) : (
-          <MeetingNoteListView notes={meetingNotes} onDelete={handleDeleteNote} />
-        )}
+        <MeetingNoteCardView notes={meetingNotes} onDelete={handleDeleteNote} />
       </div>
 
       <NewMeetingNoteDialog open={isNewNoteDialogOpen} onOpenChange={setIsNewNoteDialogOpen} />

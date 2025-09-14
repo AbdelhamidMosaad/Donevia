@@ -16,6 +16,7 @@ import { AddGoalDialog } from './add-goal-dialog';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Milestone } from '@/lib/types';
+import { GoalsIcon } from '../icons/tools/goals-icon';
 
 interface GoalCardProps {
   goal: Goal;
@@ -54,7 +55,10 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
         <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
           <CardHeader className="flex-row items-start justify-between">
             <div>
-              <CardTitle className="font-headline group-hover:underline">{goal.title}</CardTitle>
+              <CardTitle className="font-headline group-hover:underline flex items-center gap-2">
+                <GoalsIcon className="h-6 w-6" />
+                {goal.title}
+              </CardTitle>
               <CardDescription className="mt-1 line-clamp-2">{goal.description}</CardDescription>
             </div>
             <DropdownMenu>

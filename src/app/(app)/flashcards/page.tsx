@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Layers, FolderPlus, Move, Trash2 } from 'lucide-react';
+import { PlusCircle, Layers, FolderPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Deck, FlashcardFolder } from '@/lib/types';
@@ -17,11 +17,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu';
 import { FolderCard } from '@/components/flashcards/folder-card';
+import { FlashcardsIcon } from '@/components/icons/tools/flashcards-icon';
 
 export default function FlashcardsDashboardPage() {
   const { user, loading } = useAuth();
@@ -129,9 +127,12 @@ export default function FlashcardsDashboardPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Flashcard Decks</h1>
-          <p className="text-muted-foreground">Organize your flashcards into decks for focused studying.</p>
+        <div className="flex items-center gap-4">
+          <FlashcardsIcon className="h-10 w-10 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold font-headline">Flashcard Decks</h1>
+            <p className="text-muted-foreground">Organize your flashcards into decks for focused studying.</p>
+          </div>
         </div>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -152,7 +153,7 @@ export default function FlashcardsDashboardPage() {
       
        {decks.length === 0 && folders.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
-          <Layers className="h-16 w-16 text-muted-foreground mb-4" />
+          <FlashcardsIcon className="h-24 w-24 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold font-headline">No Decks Yet</h3>
           <p className="text-muted-foreground">Click "New" to create your first deck or folder.</p>
         </div>
