@@ -361,29 +361,31 @@ export interface PomodoroState extends PomodoroSettingsData {
 }
 
 /** Goals */
-export type Goal = {
-    id: string;
-    title: string;
-    description: string;
-    startDate: Timestamp;
-    targetDate: Timestamp;
-    status: 'Not Started' | 'In Progress' | 'Completed' | 'Archived';
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    ownerId: string;
-};
+export const GoalSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    startDate: FirebaseTimestampSchema,
+    targetDate: FirebaseTimestampSchema,
+    status: z.enum(['Not Started', 'In Progress', 'Completed', 'Archived']),
+    createdAt: FirebaseTimestampSchema,
+    updatedAt: FirebaseTimestampSchema,
+    ownerId: z.string(),
+});
+export type Goal = z.infer<typeof GoalSchema>;
 
-export type Milestone = {
-    id: string;
-    goalId: string;
-    title: string;
-    description: string;
-    dueDate: Timestamp;
-    isCompleted: boolean;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    ownerId: string;
-};
+export const MilestoneSchema = z.object({
+    id: z.string(),
+    goalId: z.string(),
+    title: z.string(),
+    description: z.string(),
+    dueDate: FirebaseTimestampSchema,
+    isCompleted: z.boolean(),
+    createdAt: FirebaseTimestampSchema,
+    updatedAt: FirebaseTimestampSchema,
+    ownerId: z.string(),
+});
+export type Milestone = z.infer<typeof MilestoneSchema>;
 
 export type ProgressUpdate = {
     id: string;
@@ -445,8 +447,13 @@ export type HabitCompletion = {
 };
 
 /** Recap Feature */
+const GoalWithMilestonesSchema = GoalSchema.extend({
+  milestones: z.array(MilestoneSchema),
+});
+
 export const RecapRequestSchema = z.object({
   tasks: z.array(TaskSchema),
+  goals: z.array(GoalWithMilestonesSchema),
   period: z.enum(['daily', 'weekly']),
 });
 export type RecapRequest = z.infer<typeof RecapRequestSchema>;
@@ -455,8 +462,8 @@ export const RecapResponseSchema = z.object({
   title: z.string().describe('A short, engaging title for the recap.'),
   quantitativeSummary: z.object({
     tasksCompleted: z.number().describe('The number of tasks completed in the period.'),
+    milestonesCompleted: z.number().describe('The number of milestones completed in the period.'),
     tasksCreated: z.number().describe('The number of tasks created in the period.'),
-    tasksOverdue: z.number().describe('The number of tasks that are overdue.'),
   }),
   accomplishments: z.array(z.string()).describe('A bulleted list of 2-4 key achievements.'),
   challenges: z.array(z.string()).describe('A bulleted list of 1-3 challenges or overdue items.'),

@@ -21,11 +21,23 @@ const recapPrompt = ai.definePrompt({
   prompt: `
 You are an expert productivity coach. Your task is to generate a comprehensive, insightful, and encouraging recap of a user's progress for a given period. The tone should be positive and motivational, but also direct about challenges.
 
-Analyze the following tasks provided for the user's {{period}} recap.
+Analyze the following user data for the {{period}} recap.
 The current date is ${new Date().toLocaleDateString()}.
 
-Tasks:
 ---
+**GOALS & MILESTONES**
+{{#each goals}}
+- Goal: {{this.title}} (Target: {{this.targetDate}})
+  {{#if this.milestones.length}}
+    {{#each this.milestones}}
+    - Milestone: {{this.title}} (Due: {{this.dueDate}}) - Status: {{#if this.isCompleted}}Completed{{else}}Pending{{/if}}
+    {{/each}}
+  {{else}}
+    - No milestones for this goal.
+  {{/if}}
+{{/each}}
+---
+**TASKS**
 {{#each tasks}}
 - Title: {{this.title}}
   Status: {{this.status}}
@@ -41,16 +53,16 @@ Based on this data, generate the following structured response:
 
 2.  **quantitativeSummary**:
     -   **tasksCompleted**: Accurately count the number of tasks marked as 'Done' or a similar completed status.
+    -   **milestonesCompleted**: Accurately count the number of milestones marked as 'Completed'.
     -   **tasksCreated**: Accurately count the total number of tasks in the list.
-    -   **tasksOverdue**: Accurately count the number of tasks whose due date is in the past and are not marked as 'Done'.
 
-3.  **accomplishments**: A bulleted list of 2-4 key achievements. Focus on completed high-priority tasks, finishing multiple tasks in a single day, or consistent progress. Be specific (e.g., "Completed the high-priority task: 'Implement Google Authentication'").
+3.  **accomplishments**: A bulleted list of 2-4 key achievements. Focus on completed high-priority tasks and milestones. Connect completed tasks to their parent goals where possible (e.g., "Made progress on 'Learn Guitar' by completing the 'Practice Chords' task.").
 
-4.  **challenges**: A bulleted list of 1-3 challenges or overdue items. Be gentle but clear. If there are overdue tasks, mention one or two important ones. If there are no challenges, state something positive like "Great work, no major roadblocks this period!"
+4.  **challenges**: A bulleted list of 1-3 challenges or overdue items. Be gentle but clear. If there are overdue tasks, mention one or two important ones. If goals have many pending milestones, mention it. If there are no challenges, state something positive like "Great work, no major roadblocks this period!"
 
 5.  **productivityInsights**: A 2-3 sentence paragraph offering one key observation or piece of advice. For example, "It looks like you're making great strides on front-end tasks. To maintain balance, consider dedicating a block of time for the backend items next week." or "You have a few high-priority tasks due soon. It might be helpful to tackle one of those first to build momentum."
 
-6.  **nextPeriodFocus**: A 1-2 sentence summary suggesting a focus for the next period. For example, "For the upcoming week, focusing on the 'Database Schema' task could unblock several other items."
+6.  **nextPeriodFocus**: A 1-2 sentence summary suggesting a focus for the next period, prioritizing tasks or milestones that will unblock other items or contribute to an upcoming goal deadline.
   `,
 });
 

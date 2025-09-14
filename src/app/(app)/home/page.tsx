@@ -6,13 +6,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Task, Stage } from '@/lib/types';
+import type { Task, Stage, Goal, Milestone } from '@/lib/types';
 import { Home, BarChart3, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics-dashboard';
 import { RecapGenerator } from '@/components/recap-generator';
 import { ToolCard } from '@/components/home/tool-card';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { RecapDisplay } from '@/components/recap-display';
 
 const allTools = [
     { id: 'planner', href: '/planner', icon: 'CalendarDays', title: 'Planner', description: 'Organize your time, events, and tasks.', color: 'text-green-500' },
@@ -40,6 +41,8 @@ export default function HomePage() {
   const { user, loading, settings } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [orderedTools, setOrderedTools] = useState(allTools);
 
@@ -81,9 +84,22 @@ export default function HomePage() {
         setStages(uniqueStages);
       });
 
+      const goalsQuery = query(collection(db, 'users', user.uid, 'goals'));
+      const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => {
+          setGoals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal)));
+      });
+
+      const milestonesQuery = query(collection(db, 'users', user.uid, 'milestones'));
+      const unsubscribeMilestones = onSnapshot(milestonesQuery, (snapshot) => {
+          setMilestones(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Milestone)));
+      });
+
+
       return () => {
         unsubscribeTasks();
         unsubscribeLists();
+        unsubscribeGoals();
+        unsubscribeMilestones();
       };
     }
   }, [user]);
@@ -159,10 +175,14 @@ export default function HomePage() {
                 <AnalyticsDashboard tasks={tasks} stages={stages} />
             </TabsContent>
             <TabsContent value="recap" className="flex-1 mt-4">
-                <RecapGenerator allTasks={tasks} recapDisplay={(props) => <div>Recap Display</div>} />
+                <RecapGenerator 
+                    allTasks={tasks}
+                    allGoals={goals}
+                    allMilestones={milestones}
+                    recapDisplay={RecapDisplay}
+                />
             </TabsContent>
         </Tabs>
     </div>
   );
 }
-

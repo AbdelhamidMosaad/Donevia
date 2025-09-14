@@ -5,7 +5,7 @@ import { useState, useMemo, ReactNode } from 'react';
 import { Button } from './ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
-import type { Task, RecapRequest, RecapResponse } from '@/lib/types';
+import type { Task, Goal, Milestone, RecapRequest, RecapResponse } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles } from 'lucide-react';
@@ -13,20 +13,22 @@ import moment from 'moment';
 
 interface RecapGeneratorProps {
     allTasks: Task[];
+    allGoals: Goal[];
+    allMilestones: Milestone[];
     recapDisplay: (props: { recap: RecapResponse, period: 'daily' | 'weekly' }) => ReactNode;
 }
 
-export function RecapGenerator({ allTasks, recapDisplay: RecapDisplay }: RecapGeneratorProps) {
+export function RecapGenerator({ allTasks, allGoals, allMilestones, recapDisplay: RecapDisplay }: RecapGeneratorProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [period, setPeriod] = useState<'daily' | 'weekly'>('daily');
     const [recap, setRecap] = useState<RecapResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const tasksForPeriod = useMemo(() => {
+    const dataForPeriod = useMemo(() => {
         const now = moment();
-        return allTasks.filter(task => {
-            if (!task.createdAt) return false; // Add this guard clause
+        const tasks = allTasks.filter(task => {
+            if (!task.createdAt) return false;
             const taskDate = moment(task.createdAt.toDate());
             if (period === 'daily') {
                 return taskDate.isSame(now, 'day');
@@ -34,7 +36,14 @@ export function RecapGenerator({ allTasks, recapDisplay: RecapDisplay }: RecapGe
                 return taskDate.isSame(now, 'week');
             }
         });
-    }, [allTasks, period]);
+        
+        const goalsWithMilestones = allGoals.map(goal => ({
+            ...goal,
+            milestones: allMilestones.filter(m => m.goalId === goal.id)
+        }));
+
+        return { tasks, goals: goalsWithMilestones };
+    }, [allTasks, allGoals, allMilestones, period]);
     
     const handleGenerateRecap = async () => {
         if (!user) {
@@ -47,7 +56,8 @@ export function RecapGenerator({ allTasks, recapDisplay: RecapDisplay }: RecapGe
         
         try {
             const requestPayload: RecapRequest = {
-                tasks: tasksForPeriod,
+                tasks: dataForPeriod.tasks,
+                goals: dataForPeriod.goals,
                 period,
             };
 
@@ -81,7 +91,7 @@ export function RecapGenerator({ allTasks, recapDisplay: RecapDisplay }: RecapGe
             <Card>
                 <CardHeader>
                     <CardTitle>Generate Progress Recap</CardTitle>
-                    <CardDescription>Select a period and generate an AI summary of your progress.</CardDescription>
+                    <CardDescription>Select a period and generate an AI summary of your progress across tasks and goals.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="flex items-center gap-4">
@@ -98,13 +108,13 @@ export function RecapGenerator({ allTasks, recapDisplay: RecapDisplay }: RecapGe
                                 Weekly
                             </ToggleGroupItem>
                         </ToggleGroup>
-                         <Button onClick={handleGenerateRecap} disabled={isLoading || tasksForPeriod.length === 0}>
+                         <Button onClick={handleGenerateRecap} disabled={isLoading || dataForPeriod.tasks.length === 0}>
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                             {isLoading ? 'Generating...' : 'Generate Recap'}
                          </Button>
                     </div>
-                     {tasksForPeriod.length === 0 && !isLoading && (
-                        <p className="text-sm text-muted-foreground">No tasks found for the selected period.</p>
+                     {dataForPeriod.tasks.length === 0 && dataForPeriod.goals.length === 0 && !isLoading && (
+                        <p className="text-sm text-muted-foreground">No activity found for the selected period.</p>
                      )}
                 </CardContent>
             </Card>
