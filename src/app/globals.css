@@ -367,6 +367,16 @@ body {
     @apply my-0;
   }
 
+  /* Equation block styling */
+  #editor div[data-type="equation"] {
+    @apply relative p-4 my-6 bg-muted rounded-lg font-code;
+  }
+  
+  #editor div[data-type="equation"]::before {
+    content: "ƒ(x)";
+    @apply absolute top-2 left-2 text-xs text-muted-foreground;
+  }
+
   #editor ul, #editor ol {
     margin: 1em 0;
     padding-left: 2em !important;

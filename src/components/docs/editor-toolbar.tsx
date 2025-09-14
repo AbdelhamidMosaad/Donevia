@@ -7,7 +7,7 @@ import {
   List, ListOrdered, Link, Quote, Code, Table,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Pilcrow, Highlighter, Palette,
   Undo, Redo, Superscript, Subscript, Image as ImageIcon, Minus, Upload, CaseSensitive,
-  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets, MessageSquareQuote, AlignVerticalSpaceAround, Settings
+  Trash2, ChevronsLeftRight, ChevronsUpDown, FlipVertical, FlipHorizontal, Square, Columns, Rows, PilcrowLeft, Droplets, MessageSquareQuote, AlignVerticalSpaceAround, Settings, SigmaSquare
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -262,6 +262,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
             <ToolbarButton editor={editor} name="blockquote" label="Blockquote" icon={Quote} />
             <ToolbarButton editor={editor} name="codeBlock" label="Code Block" icon={Code} />
             <ToolbarButton editor={editor} label="Callout" icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleCallout().run()} />
+            <ToolbarButton editor={editor} label="Equation" icon={SigmaSquare} onClick={() => editor.chain().focus().toggleEquation().run()} />
             <ToolbarButton editor={editor} label="Horizontal Line" icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
              <DropdownMenu>
               <DropdownMenuTrigger asChild>

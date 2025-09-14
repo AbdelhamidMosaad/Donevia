@@ -33,6 +33,7 @@ import { FontFamily } from '@/lib/tiptap/font-family';
 import { TextTransform } from '@/lib/tiptap/text-transform';
 import { cn } from '@/lib/utils';
 import { Callout } from '@/lib/tiptap/callout';
+import { Equation } from '@/lib/tiptap/equation';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
@@ -132,6 +133,7 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
       CharacterCount,
       TextTransform,
       Callout,
+      Equation,
     ],
     content: docData.content,
     editorProps: {
