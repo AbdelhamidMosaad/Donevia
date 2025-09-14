@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import type { Task, Doc, Client, StickyNote } from '@/lib/types';
 import { Loader2, Search as SearchIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -56,6 +56,20 @@ function SearchResultsComponent() {
                 const clientsSnap = await getDocs(collection(db, 'users', user.uid, 'clients'));
                 const notesSnap = await getDocs(collection(db, 'users', user.uid, 'stickyNotes'));
 
+                // Helper to extract text from Tiptap content
+                const getTextFromDocContent = (content: any): string => {
+                    let text = '';
+                    if (content?.content && Array.isArray(content.content)) {
+                        for (const node of content.content) {
+                            text += getTextFromDocContent(node);
+                        }
+                    } else if (node.text) {
+                        text += node.text + ' ';
+                    }
+                    return text;
+                };
+
+
                 // 2. Search through data on the client side
                 
                 // Search Tasks
@@ -75,8 +89,14 @@ function SearchResultsComponent() {
                 docsSnap.forEach(doc => {
                     const data = { id: doc.id, ...doc.data() } as Doc;
                     if (resultIds.has(data.id)) return;
+                    
+                    const contentText = getTextFromDocContent(data.content);
+
                     if (data.title.toLowerCase().includes(term)) {
                         allResults.push({ type: 'doc', data, match: { field: 'title', text: data.title }});
+                        resultIds.add(data.id);
+                    } else if (contentText.toLowerCase().includes(term)) {
+                         allResults.push({ type: 'doc', data, match: { field: 'content', text: contentText.substring(0, 100) + '...' }});
                         resultIds.add(data.id);
                     }
                 });
@@ -105,7 +125,7 @@ function SearchResultsComponent() {
                         allResults.push({ type: 'note', data, match: { field: 'title', text: data.title }});
                         resultIds.add(data.id);
                     } else if (data.text?.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'note', data, match: { field: 'text', text: data.text }});
+                        allResults.push({ type: 'note', data, match: { field: 'text', text: data.text.substring(0, 100) + '...' }});
                         resultIds.add(data.id);
                     }
                 });
