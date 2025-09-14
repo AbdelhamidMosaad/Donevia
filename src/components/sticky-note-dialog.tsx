@@ -158,7 +158,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
             </Select>
             <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-black/10">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10">
                 <Palette className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
@@ -181,7 +181,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
             </Popover>
              <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-black/10">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10">
                 <CaseSensitive className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>

@@ -82,7 +82,7 @@ export function StickyNoteCard({ note, onClick, onDelete, style, className }: St
             <Button
               variant="ghost"
               size="icon"
-              className="absolute bottom-2 right-2 h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+              className="absolute bottom-2 right-2 h-7 w-7 text-inherit opacity-0 group-hover:opacity-100 hover:bg-black/10"
               onClick={handleDeleteClick}
             >
               <Trash2 className="h-4 w-4" />

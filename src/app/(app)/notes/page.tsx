@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -165,14 +164,14 @@ export default function StickyNotesPage() {
         <div className="flex items-center gap-2">
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
               <ToggleGroupItem value="board" aria-label="Board view">
-                <Kanban className="h-4 w-4" />
+                <Kanban />
               </ToggleGroupItem>
               <ToggleGroupItem value="canvas" aria-label="Canvas view">
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid />
               </ToggleGroupItem>
             </ToggleGroup>
             <Button onClick={handleAddNote}>
-            <PlusCircle className="mr-2 h-4 w-4" />
+            <PlusCircle />
             Add Note
             </Button>
         </div>
