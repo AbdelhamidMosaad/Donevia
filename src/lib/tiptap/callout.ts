@@ -1,11 +1,11 @@
 'use client';
-import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
+import { Node, mergeAttributes } from '@tiptap/core';
 
 export const Callout = Node.create({
   name: 'callout',
   group: 'block',
   content: 'inline*',
-  
+
   addAttributes() {
     return {
       'data-type': {
@@ -23,14 +23,35 @@ export const Callout = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout' }), 0];
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'tiptap-callout' }), 0];
   },
 
   addCommands() {
     return {
-      toggleCallout: () => ({ commands }) => {
-        return commands.toggleWrap(this.name);
-      },
+      // explicit insert command
+      insertCallout:
+        () =>
+        ({ commands }) => {
+          return commands.insertContent({
+            type: this.name,
+            attrs: { 'data-type': 'callout' },
+            content: [{ type: 'text', text: 'New callout' }],
+          });
+        },
+
+      // toggle for toolbar compatibility (if already in a callout -> convert to paragraph, else insert)
+      toggleCallout:
+        () =>
+        ({ commands, editor }) => {
+          if (editor.isActive(this.name)) {
+            return commands.setParagraph();
+          }
+          return commands.insertContent({
+            type: this.name,
+            attrs: { 'data-type': 'callout' },
+            content: [{ type: 'text', text: 'New callout' }],
+          });
+        },
     };
   },
 });

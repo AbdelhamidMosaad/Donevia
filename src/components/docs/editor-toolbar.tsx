@@ -84,6 +84,11 @@ const ToolbarButton = ({
 
 const paperColors = ['#FFFFFF', '#FDF6E3', '#F5F5F5', '#E8F5E9', '#E3F2FD'];
 
+const mathSymbols = [
+    '±', '°', '²', '³', '√', '∛', '∜', '∞', '≈', '≠', '≤', '≥', '∂', '∑', '∏', '∫', 'ƒ', 'α', 'β', 'γ', 'Δ', 'δ', 'ε', 'θ', 'λ', 'μ', 'π', 'ρ', 'σ', 'τ', 'φ', 'ω', '∇', '∈', '∉', '∋', '⊂', '⊃', '∪', '∩', '→', '←', '↔', '⇒', '⇐', '⇔'
+];
+
+
 export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor, margin, onMarginChange, fullWidth, onFullWidthToggle }: EditorToolbarProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -155,6 +160,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
           <TabsTrigger value="format">Format</TabsTrigger>
           <TabsTrigger value="insert">Insert</TabsTrigger>
           {editor.isActive('table') && <TabsTrigger value="table">Table</TabsTrigger>}
+           {editor.isActive('equation') && <TabsTrigger value="equation">Equation</TabsTrigger>}
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="format" className="pt-2">
@@ -292,6 +298,28 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderColumn().run()} label="Toggle Header Column" icon={FlipHorizontal} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderRow().run()} label="Toggle Header Row" icon={FlipVertical} />
                 <ToolbarButton editor={editor} onClick={() => editor.chain().focus().toggleHeaderCell().run()} label="Toggle Header Cell" icon={Square} />
+            </div>
+        </TabsContent>
+         <TabsContent value="equation" className="pt-2">
+            <div className="flex items-center gap-x-1 gap-y-2 flex-wrap">
+                <ToolbarButton editor={editor} name="superscript" label="Superscript" icon={Superscript} />
+                <ToolbarButton editor={editor} name="subscript" label="Subscript" icon={Subscript} />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-auto text-left justify-start">
+                        <SigmaSquare className="h-4 w-4 mr-2" /> Insert Symbol
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="max-h-60 overflow-y-auto">
+                    <div className="grid grid-cols-6 gap-1 p-2">
+                       {mathSymbols.map(symbol => (
+                            <DropdownMenuItem key={symbol} onSelect={() => editor.chain().focus().insertContent(symbol).run()} className="justify-center text-lg">
+                                {symbol}
+                            </DropdownMenuItem>
+                        ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </TabsContent>
         <TabsContent value="settings" className="pt-2">
