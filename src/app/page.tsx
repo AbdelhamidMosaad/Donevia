@@ -21,7 +21,7 @@ export default function Home() {
   
   useEffect(() => {
     if (!loading && user) {
-      router.push('/dashboard');
+      router.push('/home');
     }
   }, [user, loading, router]);
   
@@ -29,7 +29,7 @@ export default function Home() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      router.push('/dashboard');
+      router.push('/home');
     } catch (error) {
       // Don't log an error if the user closes the popup
       const firebaseError = error as AuthError;
@@ -235,3 +235,4 @@ export default function Home() {
     </div>
   );
 }
+

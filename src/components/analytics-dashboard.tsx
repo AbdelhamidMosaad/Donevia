@@ -14,8 +14,6 @@ interface AnalyticsDashboardProps {
   stages: Stage[];
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
-
 function TaskItem({ task }: { task: Task }) {
     return (
         <Link href={`/dashboard/list/${task.listId}`} className="block hover:bg-muted p-2 rounded-md transition-colors">

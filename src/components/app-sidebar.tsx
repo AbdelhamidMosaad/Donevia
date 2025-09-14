@@ -47,7 +47,7 @@ import { DoneviaLogo } from './logo';
 import { cn } from '@/lib/utils';
 
 const defaultMenuItems = [
-    { href: '/dashboard', icon: <Home className="text-blue-500 ml-2" />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
+    { href: '/home', icon: <Home className="text-blue-500 ml-2" />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
     { href: '/planner', icon: <CalendarDays className="text-green-500 ml-2" />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500 ml-2" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
     { href: '/crm', icon: <Briefcase className="text-amber-500 ml-2" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
@@ -94,8 +94,11 @@ export function AppSidebar() {
 
   const isActive = (href?: string) => {
     if (!href) return false;
-    if (href === '/dashboard') {
-      return pathname === '/dashboard' || pathname.startsWith('/dashboard/lists');
+    if (href === '/home') {
+      return pathname === '/home';
+    }
+     if (href === '/dashboard/lists') {
+      return pathname.startsWith('/dashboard/lists') || pathname.startsWith('/dashboard/list');
     }
      if (href === '/crm') {
       return pathname === '/crm' || pathname.startsWith('/crm/');

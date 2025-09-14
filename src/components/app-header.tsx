@@ -10,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -70,7 +69,7 @@ export function AppHeader() {
           <DoneviaLogo className="size-6 shrink-0" />
       </Button>
       <div className="hidden items-center gap-4 md:flex">
-        <Link href="/dashboard" className="items-center gap-2 flex">
+        <Link href="/home" className="items-center gap-2 flex">
           <DoneviaLogo className="size-8 shrink-0" />
           <div className="flex flex-col">
             <span className="text-lg font-semibold font-headline leading-none">Donevia</span>
