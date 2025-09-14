@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -18,7 +19,7 @@ import {
   GitBranch,
   Settings,
   HelpCircle,
-  LayoutDashboard,
+  Home,
   Kanban,
   FileSignature,
   Timer,
@@ -46,7 +47,7 @@ import { DoneviaLogo } from './logo';
 import { cn } from '@/lib/utils';
 
 const defaultMenuItems = [
-    { href: '/dashboard', icon: <LayoutDashboard className="text-blue-500 ml-2" />, label: 'Dashboard', tooltip: 'Dashboard', id: 'dashboard' },
+    { href: '/dashboard', icon: <Home className="text-blue-500 ml-2" />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
     { href: '/planner', icon: <CalendarDays className="text-green-500 ml-2" />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
     { href: '/dashboard/lists', icon: <Kanban className="text-purple-500 ml-2" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
     { href: '/crm', icon: <Briefcase className="text-amber-500 ml-2" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
