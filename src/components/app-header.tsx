@@ -65,7 +65,7 @@ export function AppHeader() {
 
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+    <header className="flex h-16 items-center gap-4 border-b bg-card/60 px-4 backdrop-blur-sm sticky top-0 z-40 lg:px-6">
       <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={toggleSidebar}>
           <DoneviaLogo className="size-6 shrink-0" />
       </Button>
@@ -87,7 +87,7 @@ export function AppHeader() {
                 type="search"
                 name="search"
                 placeholder="Search everywhere..."
-                className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/2"
+                className="w-full appearance-none bg-background/80 pl-8 shadow-none md:w-2/3 lg:w-1/2"
               />
             </div>
           </form>
