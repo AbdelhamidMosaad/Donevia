@@ -31,7 +31,18 @@ export const Callout = Node.create({
   addCommands() {
     return {
       toggleCallout: () => ({ commands, editor }) => {
-        if (editor.isActive('callout')) {
+        const { selection } = editor.state;
+        const { $from, $to } = selection;
+        const range = { from: $from.pos, to: $to.pos };
+        
+        let isSelectionInCallout = false;
+        editor.state.doc.nodesBetween(range.from, range.to, (node) => {
+            if (node.type.name === this.name) {
+                isSelectionInCallout = true;
+            }
+        });
+
+        if (isSelectionInCallout) {
           return commands.lift(this.name);
         }
         return commands.wrapIn(this.name);
