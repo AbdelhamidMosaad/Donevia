@@ -111,14 +111,14 @@ export default function MeetingNotesDashboardPage() {
         <div className="flex items-center gap-2">
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="View toggle">
               <ToggleGroupItem value="card" aria-label="Card view">
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
-                <List className="h-4 w-4" />
+                <List />
               </ToggleGroupItem>
             </ToggleGroup>
           <Button onClick={() => setIsNewNoteDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
+            <PlusCircle />
             New Meeting Note
           </Button>
         </div>

@@ -98,7 +98,7 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
             <div className="flex justify-between items-center">
                  <h2 className="text-xl font-bold font-headline">Meeting Details</h2>
                  <Button variant="outline" onClick={handleExportPDF}>
-                    <Download className="mr-2 h-4 w-4" /> Export PDF
+                    <Download /> Export PDF
                 </Button>
             </div>
             <div>
@@ -126,7 +126,7 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
                         <Button variant="ghost" size="icon" onClick={() => handleRemoveAttendee(attendee.id)}><Trash2 className="h-4 w-4"/></Button>
                     </div>
                 ))}
-                <Button variant="outline" size="sm" onClick={handleAddAttendee}><UserPlus className="mr-2 h-4 w-4"/> Add Attendee</Button>
+                <Button variant="outline" size="sm" onClick={handleAddAttendee}><UserPlus /> Add Attendee</Button>
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Agenda</label>
@@ -138,7 +138,7 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
                         <Button variant="ghost" size="icon" onClick={() => handleRemoveAgendaItem(item.id)}><Trash2 className="h-4 w-4"/></Button>
                     </div>
                 ))}
-                 <Button variant="outline" size="sm" onClick={handleAddAgendaItem}><ListPlus className="mr-2 h-4 w-4"/> Add Agenda Item</Button>
+                 <Button variant="outline" size="sm" onClick={handleAddAgendaItem}><ListPlus /> Add Agenda Item</Button>
             </div>
         </div>
     </div>

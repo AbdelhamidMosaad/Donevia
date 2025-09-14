@@ -46,7 +46,7 @@ export default function MeetingNotePage() {
     <div className="h-full flex flex-col gap-4">
        <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => router.push('/meeting-notes')}>
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft />
             </Button>
             <h1 className="text-xl font-semibold truncate">{noteData.title}</h1>
         </div>
