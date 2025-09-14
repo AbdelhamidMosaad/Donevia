@@ -5,17 +5,17 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, or } from 'firebase/firestore';
+import { collection, query, getDocs } from 'firebase/firestore';
 import type { Task, Doc, Client, StickyNote } from '@/lib/types';
 import { Loader2, Search as SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
 type SearchResult = 
-    | { type: 'task', data: Task & { matchField: string } }
-    | { type: 'doc', data: Doc & { matchField: string } }
-    | { type: 'client', data: Client & { matchField: string } }
-    | { type: 'note', data: StickyNote & { matchField: string } };
+    | { type: 'task', data: Task, match: { field: string, text: string } }
+    | { type: 'doc', data: Doc, match: { field: string, text: string } }
+    | { type: 'client', data: Client, match: { field: string, text: string } }
+    | { type: 'note', data: StickyNote, match: { field: string, text: string } };
 
 function SearchResultsComponent() {
     const { user, loading: authLoading } = useAuth();
@@ -38,74 +38,77 @@ function SearchResultsComponent() {
         const performSearch = async () => {
             setIsLoading(true);
             setResults([]);
-            const allResults: SearchResult[] = [];
-            const resultIds = new Set<string>(); // To prevent duplicates
             
             try {
-                const term = queryTerm;
-                const endTerm = term + '\uf8ff';
-
-                // Tasks: Search title and description
-                const tasksRef = collection(db, 'users', user.uid, 'tasks');
-                const tasksTitleQuery = query(tasksRef, where('title', '>=', term), where('title', '<=', endTerm));
-                const tasksDescQuery = query(tasksRef, where('description', '>=', term), where('description', '<=', endTerm));
+                const term = queryTerm.toLowerCase();
+                if (term.length < 2) {
+                    toast({ variant: 'destructive', title: "Search query must be at least 2 characters." });
+                    setIsLoading(false);
+                    return;
+                }
                 
-                const [tasksTitleSnap, tasksDescSnap] = await Promise.all([
-                    getDocs(tasksTitleQuery),
-                    getDocs(tasksDescQuery),
-                ]);
+                const allResults: SearchResult[] = [];
+                const resultIds = new Set<string>(); // To prevent duplicates in the list
 
-                tasksTitleSnap.forEach(doc => {
-                    if (!resultIds.has(doc.id)) {
-                        allResults.push({ type: 'task', data: { id: doc.id, ...doc.data(), matchField: 'title' } as Task & { matchField: string }});
-                        resultIds.add(doc.id);
+                // 1. Fetch all data
+                const tasksSnap = await getDocs(collection(db, 'users', user.uid, 'tasks'));
+                const docsSnap = await getDocs(collection(db, 'users', user.uid, 'docs'));
+                const clientsSnap = await getDocs(collection(db, 'users', user.uid, 'clients'));
+                const notesSnap = await getDocs(collection(db, 'users', user.uid, 'stickyNotes'));
+
+                // 2. Search through data on the client side
+                
+                // Search Tasks
+                tasksSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as Task;
+                    if (resultIds.has(data.id)) return;
+                    if (data.title.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'task', data, match: { field: 'title', text: data.title }});
+                        resultIds.add(data.id);
+                    } else if (data.description?.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'task', data, match: { field: 'description', text: data.description }});
+                        resultIds.add(data.id);
                     }
                 });
-                 tasksDescSnap.forEach(doc => {
-                    if (!resultIds.has(doc.id)) {
-                       allResults.push({ type: 'task', data: { id: doc.id, ...doc.data(), matchField: 'description' } as Task & { matchField: string }});
-                       resultIds.add(doc.id);
-                    }
-                });
-            
-                // Docs: Search title
-                const docsRef = collection(db, 'users', user.uid, 'docs');
-                const docsQuery = query(docsRef, where('title', '>=', term), where('title', '<=', endTerm));
-                const docsSnap = await getDocs(docsQuery);
+
+                // Search Docs
                 docsSnap.forEach(doc => {
-                    if (!resultIds.has(doc.id)) {
-                        allResults.push({ type: 'doc', data: { id: doc.id, ...doc.data(), matchField: 'title' } as Doc & { matchField: string }});
-                        resultIds.add(doc.id);
+                    const data = { id: doc.id, ...doc.data() } as Doc;
+                    if (resultIds.has(data.id)) return;
+                    if (data.title.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'doc', data, match: { field: 'title', text: data.title }});
+                        resultIds.add(data.id);
                     }
                 });
 
-                // Clients: Search name, company, email
-                const clientsRef = collection(db, 'users', user.uid, 'clients');
-                const clientNameQuery = query(clientsRef, where('name', '>=', term), where('name', '<=', endTerm));
-                const clientCompanyQuery = query(clientsRef, where('company', '>=', term), where('company', '<=', endTerm));
-                const clientEmailQuery = query(clientsRef, where('email', '>=', term), where('email', '<=', endTerm));
+                // Search Clients
+                clientsSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as Client;
+                    if (resultIds.has(data.id)) return;
+                    if (data.name?.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'client', data, match: { field: 'name', text: data.name }});
+                        resultIds.add(data.id);
+                    } else if (data.company?.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'client', data, match: { field: 'company', text: data.company }});
+                        resultIds.add(data.id);
+                    } else if (data.email?.toLowerCase().includes(term)) {
+                         allResults.push({ type: 'client', data, match: { field: 'email', text: data.email }});
+                        resultIds.add(data.id);
+                    }
+                });
                 
-                const [clientNameSnap, clientCompanySnap, clientEmailSnap] = await Promise.all([
-                    getDocs(clientNameQuery),
-                    getDocs(clientCompanyQuery),
-                    getDocs(clientEmailQuery),
-                ]);
-                
-                clientNameSnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'client', data: { id: doc.id, ...doc.data(), matchField: 'name' } as Client & { matchField: string }}); }});
-                clientCompanySnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'client', data: { id: doc.id, ...doc.data(), matchField: 'company' } as Client & { matchField: string }}); }});
-                clientEmailSnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'client', data: { id: doc.id, ...doc.data(), matchField: 'email' } as Client & { matchField: string }}); }});
-
-                // Sticky Notes: Search title and text
-                const notesRef = collection(db, 'users', user.uid, 'stickyNotes');
-                const notesTitleQuery = query(notesRef, where('title', '>=', term), where('title', '<=', endTerm));
-                const notesTextQuery = query(notesRef, where('text', '>=', term), where('text', '<=', endTerm));
-                const [notesTitleSnap, notesTextSnap] = await Promise.all([
-                    getDocs(notesTitleQuery),
-                    getDocs(notesTextQuery),
-                ]);
-
-                notesTitleSnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'note', data: { id: doc.id, ...doc.data(), matchField: 'title' } as StickyNote & { matchField: string }}); }});
-                notesTextSnap.forEach(doc => { if (!resultIds.has(doc.id)) { resultIds.add(doc.id); allResults.push({ type: 'note', data: { id: doc.id, ...doc.data(), matchField: 'text' } as StickyNote & { matchField: string }}); }});
+                // Search Sticky Notes
+                notesSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as StickyNote;
+                    if (resultIds.has(data.id)) return;
+                     if (data.title.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'note', data, match: { field: 'title', text: data.title }});
+                        resultIds.add(data.id);
+                    } else if (data.text?.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'note', data, match: { field: 'text', text: data.text }});
+                        resultIds.add(data.id);
+                    }
+                });
 
                 setResults(allResults);
 
@@ -131,14 +134,7 @@ function SearchResultsComponent() {
     };
     
     const getResultDescription = (result: SearchResult) => {
-        const data = result.data as any;
-        switch (result.type) {
-            case 'task': return `Match in ${data.matchField}: ${data.description || `A task with priority: ${data.priority}`}`;
-            case 'doc': return `A document updated on ${data.updatedAt?.toDate().toLocaleDateString()}`;
-            case 'client': return `Match in ${data.matchField}: ${data.email || data.phone || `Client since ${data.createdAt?.toDate().toLocaleDateString()}`}`;
-            case 'note': return `Match in ${data.matchField}: ${data.text || `A sticky note with priority: ${data.priority}`}`;
-            default: return '';
-        }
+        return `Match in ${result.match.field}: "${result.match.text}"`;
     };
 
     if (!queryTerm) {
@@ -189,5 +185,3 @@ export default function SearchPage() {
         </Suspense>
     );
 }
-
-    
