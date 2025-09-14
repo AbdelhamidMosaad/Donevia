@@ -10,13 +10,14 @@ import type { StudyMaterialRequest, StudyMaterialResponse, QuizQuestion } from '
 import { Button } from '../ui/button';
 import { Loader2, Copy, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
+import { SaveToDeckDialog } from './shared/save-to-deck-dialog';
 
 export function QuizGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [result, setResult] = useState<StudyMaterialResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaveOpen, setIsSaveOpen] = useState(false);
 
   // State for interactive quiz
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -111,7 +112,7 @@ export function QuizGenerator() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(link.href);
     toast({ title: '✓ Download started' });
   };
 
@@ -138,6 +139,8 @@ export function QuizGenerator() {
   
   const currentQuestion = result?.quizContent?.[currentQuestionIndex];
   const totalQuestions = result?.quizContent?.length || 0;
+  const allQuestionsAnswered = Object.keys(userAnswers).length === totalQuestions;
+
 
   const renderQuizTaker = () => {
     if (!result || !result.quizContent || !currentQuestion) return null;
@@ -192,7 +195,7 @@ export function QuizGenerator() {
                  <Button variant="outline" onClick={() => setCurrentQuestionIndex(i => i - 1)} disabled={currentQuestionIndex === 0}>
                     <ChevronLeft/> Previous
                 </Button>
-                <Button onClick={checkAllAnswers} disabled={score !== null}>Check Answers</Button>
+                <Button onClick={checkAllAnswers} disabled={score !== null || !allQuestionsAnswered}>Check Answers</Button>
                  <Button variant="outline" onClick={() => setCurrentQuestionIndex(i => i + 1)} disabled={currentQuestionIndex === totalQuestions - 1}>
                     Next <ChevronRight/>
                 </Button>
