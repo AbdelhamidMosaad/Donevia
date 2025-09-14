@@ -19,8 +19,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase/firestore';
 import { useDropzone } from 'react-dropzone';
 import { getAuth } from 'firebase/auth';
-import { Paperclip, Trash2 } from 'lucide-react';
+import { Paperclip, Trash2, Check } from 'lucide-react';
 import { useGoogleCalendar } from '@/hooks/use-google-calendar';
+import { cn } from '@/lib/utils';
 
 
 interface EventDialogProps {
@@ -29,6 +30,9 @@ interface EventDialogProps {
   event: Partial<PlannerEvent> | null;
   categories: PlannerCategory[];
 }
+
+const colorPalette = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'];
+
 
 export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDialogProps) {
   const { user } = useAuth();
@@ -60,6 +64,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
         end: event.end || new Date(),
         attachments: event.attachments || [],
         reminder: event.reminder || 'none',
+        color: event.color,
       });
     } else {
       setFormData({});
@@ -119,6 +124,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
         taskId: formData.taskId || null,
         attachments: uploadedAttachments,
         recurringEndDate: formData.recurringEndDate ? formData.recurringEndDate : null,
+        color: formData.color,
     };
 
     try {
@@ -248,6 +254,25 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
                   </SelectContent>
               </Select>
             </div>
+           </div>
+           <div>
+            <Label>Event Color</Label>
+            <div className="flex flex-wrap gap-2 pt-2">
+                {colorPalette.map(c => (
+                    <button
+                        key={c}
+                        type="button"
+                        className={cn("h-8 w-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110", formData.color === c ? 'ring-2 ring-offset-2 ring-primary' : '')}
+                        style={{ backgroundColor: c }}
+                        onClick={() => handleChange('color', c)}
+                    >
+                       {formData.color === c && <Check className="h-4 w-4 text-white" />}
+                    </button>
+                ))}
+                 <Button variant="ghost" size="sm" onClick={() => handleChange('color', undefined)}>
+                    Use category color
+                </Button>
+             </div>
            </div>
            <div>
             <Label>Link to Task</Label>

@@ -184,12 +184,18 @@ export default function PlannerPage() {
   
   const eventStyleGetter = (event: PlannerEvent | GoogleCalendarEvent) => {
     let backgroundColor = '#3174ad'; // Default color
+    
     if ('isGoogleEvent' in event && event.isGoogleEvent) {
         backgroundColor = '#34A853'; // Google's green color
     } else {
-        const category = categories.find(c => c.id === (event as PlannerEvent).categoryId);
-        if (category) {
-            backgroundColor = category.color;
+        const plannerEvent = event as PlannerEvent;
+        if (plannerEvent.color) {
+            backgroundColor = plannerEvent.color;
+        } else {
+            const category = categories.find(c => c.id === plannerEvent.categoryId);
+            if (category) {
+                backgroundColor = category.color;
+            }
         }
     }
     

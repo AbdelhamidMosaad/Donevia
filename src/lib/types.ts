@@ -611,6 +611,7 @@ export type PlannerEvent = {
     attachments: Attachment[];
     reminder: 'none' | '5m' | '15m' | '30m' | '1h' | '1d';
     googleEventId?: string;
+    color?: string;
 };
 
 /** Google Calendar */
