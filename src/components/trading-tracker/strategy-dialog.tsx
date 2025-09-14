@@ -125,3 +125,5 @@ export function StrategyDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
