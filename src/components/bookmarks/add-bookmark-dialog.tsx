@@ -33,7 +33,7 @@ interface AddBookmarkDialogProps {
   focusColorPicker?: boolean;
 }
 
-const colorPalette = ['#FFFFFF', '#FFCDD2', '#D1C4E9', '#BBDEFB', '#C8E6C9', '#FFF9C4', '#FFE0B2', '#F5F5F5'];
+const colorPalette = ['#FFFFFF', '#FEE2E2', '#D1C4E9', '#BBDEFB', '#C8E6C9', '#FFF9C4', '#FFE0B2', '#F5F5F5'];
 
 export function AddBookmarkDialog({
   bookmark,
@@ -240,7 +240,7 @@ export function AddBookmarkDialog({
         {isEditMode && (
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="secondary">Cancel</Button>
+              <Button type="button" variant="outline">Cancel</Button>
             </DialogClose>
             <Button onClick={handleSave} disabled={saveStatus === 'saving'}>
               {saveStatus === 'saving' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
@@ -252,3 +252,5 @@ export function AddBookmarkDialog({
     </Dialog>
   );
 }
+
+    

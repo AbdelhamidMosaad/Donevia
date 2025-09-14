@@ -258,14 +258,14 @@ export default function BookmarksPage() {
         <div className="flex items-center gap-2">
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="View toggle">
               <ToggleGroupItem value="card" aria-label="Card view">
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
-                <List className="h-4 w-4" />
+                <List />
               </ToggleGroupItem>
             </ToggleGroup>
             <Button onClick={handleOpenAddDialog}>
-                <PlusCircle className="mr-2 h-4 w-4" />
+                <PlusCircle />
                 New Bookmark
             </Button>
         </div>
@@ -304,15 +304,15 @@ export default function BookmarksPage() {
                                 className="capitalize pr-2"
                             >
                                 <span onClick={(e) => { e.stopPropagation(); setActiveCategory(category) }} className="px-2 py-1 -ml-2 mr-1">{category}</span>
-                                <MoreHorizontal className="h-4 w-4" />
+                                <MoreHorizontal />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                             <DropdownMenuItem onSelect={() => {setCategoryToRename(category); setRenamedCategory(category); setIsRenameCategoryOpen(true);}}>
-                               <Edit className="mr-2 h-4 w-4" /> Rename
+                               <Edit /> Rename
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => setCategoryToDelete(category)} className="text-destructive focus:text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                <Trash2 /> Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -320,20 +320,20 @@ export default function BookmarksPage() {
               }
               return button;
           })}
-           <Button variant="ghost" size="sm" onClick={() => setIsAddCategoryOpen(true)}>
-                <FolderPlus className="mr-2 h-4 w-4" /> New Category
+           <Button variant="outline" size="sm" onClick={() => setIsAddCategoryOpen(true)}>
+                <FolderPlus /> New Category
             </Button>
         </div>
       </div>
 
       {bookmarks.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-card/60 backdrop-blur-sm">
           <BookmarksIcon className="h-24 w-24 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold font-headline">No Bookmarks Yet</h3>
           <p className="text-muted-foreground">Click "New Bookmark" to add your first one.</p>
         </div>
       ) : filteredBookmarks.length === 0 ? (
-         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
+         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-card/60 backdrop-blur-sm">
           <h3 className="text-xl font-semibold font-headline">No Bookmarks Found</h3>
           <p className="text-muted-foreground">Try adjusting your search or category filters.</p>
         </div>
@@ -415,10 +415,12 @@ export default function BookmarksPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDeleteCategory} variant="destructive">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
     </div>
   );
 }
+
+    
