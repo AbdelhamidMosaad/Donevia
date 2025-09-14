@@ -255,8 +255,8 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                     <Button variant="ghost" size="icon">
-                        <Download className="h-4 w-4" />
+                     <Button variant="outline" size="icon">
+                        <Download />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -264,8 +264,8 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
-                    {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                    {isFullscreen ? <Minimize /> : <Maximize />}
                 </Button>
             </div>
         </div>

@@ -178,25 +178,25 @@ export default function DocsDashboardPage() {
         <div className="flex items-center gap-2">
            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Document view">
               <ToggleGroupItem value="card" aria-label="Card view">
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
-                <List className="h-4 w-4" />
+                <List />
               </ToggleGroupItem>
             </ToggleGroup>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <PlusCircle />
                   New
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onSelect={handleAddDoc}>
-                  <PlusCircle className="mr-2 h-4 w-4" /> New Doc
+                  <PlusCircle /> New Doc
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={handleAddFolder}>
-                  <FolderPlus className="mr-2 h-4 w-4" /> New Folder
+                  <FolderPlus /> New Folder
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

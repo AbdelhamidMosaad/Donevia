@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -53,7 +52,7 @@ export default function DocPage() {
     <div className="h-full flex flex-col">
         <div className="p-4 border-b flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => router.push('/docs')}>
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft />
             </Button>
             <h1 className="text-xl font-semibold truncate">{docData.title}</h1>
         </div>

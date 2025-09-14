@@ -141,7 +141,7 @@ export default function DocsFolderPage() {
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
          <div className='flex items-center gap-4'>
-            <Button variant="outline" size="icon" onClick={() => router.push('/docs')}><ArrowLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => router.push('/docs')}><ArrowLeft /></Button>
             <div>
                  <div className="flex items-center gap-2">
                     <Folder className="h-7 w-7 text-primary"/>
@@ -153,14 +153,14 @@ export default function DocsFolderPage() {
         <div className="flex items-center gap-2">
            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Document view">
               <ToggleGroupItem value="card" aria-label="Card view">
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
-                <List className="h-4 w-4" />
+                <List />
               </ToggleGroupItem>
             </ToggleGroup>
             <Button onClick={handleAddDoc}>
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <PlusCircle />
               New Doc
             </Button>
         </div>
