@@ -85,6 +85,8 @@ export function RecapGenerator({ allTasks, allGoals, allMilestones, recapDisplay
             setIsLoading(false);
         }
     };
+    
+    const hasDataForPeriod = dataForPeriod.tasks.length > 0 || dataForPeriod.goals.length > 0;
 
     return (
         <div className="space-y-6">
@@ -108,12 +110,12 @@ export function RecapGenerator({ allTasks, allGoals, allMilestones, recapDisplay
                                 Weekly
                             </ToggleGroupItem>
                         </ToggleGroup>
-                         <Button onClick={handleGenerateRecap} disabled={isLoading || dataForPeriod.tasks.length === 0}>
+                         <Button onClick={handleGenerateRecap} disabled={isLoading || !hasDataForPeriod}>
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                             {isLoading ? 'Generating...' : 'Generate Recap'}
                          </Button>
                     </div>
-                     {dataForPeriod.tasks.length === 0 && dataForPeriod.goals.length === 0 && !isLoading && (
+                     {!hasDataForPeriod && !isLoading && (
                         <p className="text-sm text-muted-foreground">No activity found for the selected period.</p>
                      )}
                 </CardContent>
