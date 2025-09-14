@@ -506,10 +506,7 @@ body {
 
 /* Whiteboard Styles */
 .whiteboard-bg-dotted {
-    background-image:
-        linear-gradient(hsla(var(--border)) 1px, transparent 1px),
-        linear-gradient(90deg, hsla(var(--border)) 1px, transparent 1px);
-    background-size: 20px 20px;
+    background-image: none;
 }
 .whiteboard-bg-lined {
     background-image: linear-gradient(hsla(var(--border)) 1px, transparent 1px);
@@ -568,5 +565,3 @@ body {
       100% { background-position: 0% 50%; }
     }
 }
-
-    
