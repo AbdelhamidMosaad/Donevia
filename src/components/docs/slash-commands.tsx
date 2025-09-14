@@ -129,7 +129,7 @@ export const slashCommands = Extension.create({
           let popup: Instance[];
 
           return {
-            onStart: (props: SuggestionProps) => {
+            onStart: (props: any) => {
               component = new ReactRenderer(CommandList, {
                 props,
                 editor: props.editor,
@@ -149,7 +149,7 @@ export const slashCommands = Extension.create({
                 placement: 'bottom-start',
               });
             },
-            onUpdate(props: SuggestionProps) {
+            onUpdate(props: any) {
               component.updateProps(props);
               
                if (!props.clientRect) {
@@ -174,7 +174,7 @@ export const slashCommands = Extension.create({
             },
           };
         },
-      } as Omit<SuggestionOptions, 'editor'>),
+      } as any),
     ];
   },
 });
