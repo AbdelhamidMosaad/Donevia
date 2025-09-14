@@ -108,7 +108,7 @@ export default function MindMapDashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={handleAddMindMap}>
-            <PlusCircle className="mr-2 h-4 w-4" />
+            <PlusCircle />
             New Mind Map
           </Button>
         </div>

@@ -128,7 +128,7 @@ export function MindMapTool() {
       });
       return () => unsub();
     }
-  }, [user, mindMapId, toast, router, getMindMapDocRef]);
+  }, [user, mindMapId, toast, router, getDocRef]);
   
   const saveMindMap = useDebouncedCallback(async (updatedNodes, updatedConnections) => {
     const mapRef = getMindMapDocRef();
@@ -337,13 +337,13 @@ export function MindMapTool() {
   };
 
   const handleMapNameChange = useDebouncedCallback(async (newName: string) => {
-    const mapRef = getMindMapDocRef();
+    const mapRef = getWhiteboardDocRef();
     if (mapRef && mindMap && newName.trim() !== mindMap.name) {
       await updateDoc(mapRef, { name: newName.trim(), updatedAt: new Date() });
       toast({ title: "Mind Map renamed!" });
     }
   }, 1000);
-
+  
   const fitToScreen = () => {
     if (!nodes.length) return;
     const padding = 50;
@@ -568,7 +568,7 @@ export function MindMapTool() {
     <div ref={mindMapContainerRef} className={cn("flex flex-col h-full gap-4", isFullscreen && "bg-background")}>
         <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => router.push('/mind-map')}><ArrowLeft className="h-4 w-4"/></Button>
+                <Button variant="outline" size="icon" onClick={() => router.push('/mind-map')}><ArrowLeft /></Button>
                 <Input 
                     value={mapName}
                     onChange={(e) => {
@@ -580,7 +580,7 @@ export function MindMapTool() {
             </div>
              <div className="flex items-center gap-2">
                  <Popover>
-                    <PopoverTrigger asChild><Button variant="outline"><Settings className="mr-2 h-4 w-4"/> Settings</Button></PopoverTrigger>
+                    <PopoverTrigger asChild><Button variant="outline"><Settings /> Settings</Button></PopoverTrigger>
                     <PopoverContent className="w-80">
                         <div className="grid gap-4">
                             <div className="space-y-2"><h4 className="font-medium leading-none">Settings</h4></div>
@@ -614,8 +614,8 @@ export function MindMapTool() {
                         </div>
                     </PopoverContent>
                 </Popover>
-                <Button variant="outline" onClick={handleExportPNG}><Download className="mr-2"/> Export PNG</Button>
-                <Button variant="outline" onClick={handleExportPDF}><Download className="mr-2"/> Export PDF</Button>
+                <Button variant="outline" onClick={handleExportPNG}><Download /> Export PNG</Button>
+                <Button variant="outline" onClick={handleExportPDF}><Download /> Export PDF</Button>
             </div>
         </div>
 
@@ -632,7 +632,7 @@ export function MindMapTool() {
           onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
         >
-            <div className="absolute top-4 left-4 z-10 bg-card p-2 rounded-lg shadow-md flex gap-1">
+            <div className="absolute top-4 left-4 z-10 bg-card/60 backdrop-blur-md p-2 rounded-lg shadow-lg flex gap-1 border">
                 <Button variant={currentTool === 'select' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('select')}><MousePointer/></Button>
                 <Button variant={currentTool === 'pan' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('pan')}><Move/></Button>
                 <Button variant="ghost" size="icon" onClick={() => addNode()}><PlusCircle/></Button>
@@ -642,7 +642,7 @@ export function MindMapTool() {
             </div>
             
             {selectedNode && (
-                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-card p-2 rounded-lg shadow-md flex gap-1 items-center">
+                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-card/60 backdrop-blur-md p-2 rounded-lg shadow-lg flex gap-1 items-center border">
                     <Button variant={selectedNode.isBold ? 'secondary' : 'ghost'} size="icon" onClick={() => handleNodeUpdate(selectedNodeId!, { isBold: !selectedNode.isBold })}><Bold/></Button>
                     <Button variant={selectedNode.isItalic ? 'secondary' : 'ghost'} size="icon" onClick={() => handleNodeUpdate(selectedNodeId!, { isItalic: !selectedNode.isItalic })}><Italic/></Button>
                     <Button variant={selectedNode.isUnderline ? 'secondary' : 'ghost'} size="icon" onClick={() => handleNodeUpdate(selectedNodeId!, { isUnderline: !selectedNode.isUnderline })}><Underline/></Button>
@@ -659,7 +659,7 @@ export function MindMapTool() {
                  </div>
             )}
             
-             <div className="absolute bottom-4 right-4 z-10 bg-card p-2 rounded-lg shadow-md flex flex-col gap-1">
+             <div className="absolute bottom-4 right-4 z-10 bg-card/60 backdrop-blur-md p-2 rounded-lg shadow-lg flex flex-col gap-1 border">
                 <Button variant="ghost" size="icon" onClick={() => setScale(s => Math.min(s * 1.2, 5))}><Plus/></Button>
                 <Button variant="ghost" size="icon" onClick={() => setScale(s => Math.max(s * 0.8, 0.1))}><Minus/></Button>
                 <Button variant="ghost" size="icon" onClick={fitToScreen}><Expand/></Button>
@@ -723,10 +723,10 @@ export function MindMapTool() {
                                 style={{color: node.color}}
                             />
                             <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-20">
-                                <Button size="icon" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); addNode(node.id); }}><Plus className="h-4 w-4"/></Button>
+                                <Button size="icon" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); addNode(node.id); }}><Plus /></Button>
                             </div>
                              <div className="absolute -left-3 top-1/2 -translate-y-1/2 z-20">
-                                <Button size="icon" variant="destructive" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}><Trash2 className="h-4 w-4"/></Button>
+                                <Button size="icon" variant="destructive" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}><Trash2 /></Button>
                             </div>
                         </div>
                     ))}
