@@ -1,38 +1,80 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Task, Stage } from '@/lib/types';
-import { Home, BarChart3 } from 'lucide-react';
+import { Home, BarChart3, GripVertical } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics-dashboard';
-import { ToolCard } from '@/components/home/tool-card';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { PlannerIcon } from '@/components/icons/tools/planner-icon';
+import { TasksIcon } from '@/components/icons/tools/tasks-icon';
+import { CrmIcon } from '@/components/icons/tools/crm-icon';
+import { HabitsIcon } from '@/components/icons/tools/habits-icon';
+import { GoalsIcon } from '@/components/icons/tools/goals-icon';
+import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
+import { FlashcardsIcon } from '@/components/icons/tools/flashcards-icon';
+import { MeetingNotesIcon } from '@/components/icons/tools/meeting-notes-icon';
+import { StickyNotesIcon } from '@/components/icons/tools/sticky-notes-icon';
+import { BookmarksIcon } from '@/components/icons/tools/bookmarks-icon';
+import { TradingTrackerIcon } from '@/components/icons/tools/trading-tracker-icon';
+import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
+import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
+import { BrainstormingIcon } from '@/components/icons/tools/brainstorming-icon';
+import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
+import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
+import { DocsIcon } from '@/components/icons/tools/docs-icon';
+import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
+import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
+
+const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
+    planner: PlannerIcon,
+    tasks: TasksIcon,
+    crm: CrmIcon,
+    habits: HabitsIcon,
+    goals: GoalsIcon,
+    'study-tracker': StudyTrackerIcon,
+    flashcards: FlashcardsIcon,
+    'meeting-notes': MeetingNotesIcon,
+    notes: StickyNotesIcon,
+    bookmarks: BookmarksIcon,
+    'trading-tracker': TradingTrackerIcon,
+    'work-tracker': WorkTrackerIcon,
+    'english-coach': EnglishCoachIcon,
+    brainstorming: BrainstormingIcon,
+    whiteboard: WhiteboardIcon,
+    'mind-map': MindMapIcon,
+    docs: DocsIcon,
+    'learning-tool': LearningAssistantIcon,
+    pomodoro: PomodoroIcon,
+};
 
 const allTools = [
-    { id: 'planner', href: '/planner', icon: 'CalendarDays', title: 'Planner', description: 'Organize your time, events, and tasks.', color: 'text-green-500' },
-    { id: 'tasks', href: '/dashboard/lists', icon: 'Kanban', title: 'Task Management', description: 'Manage projects with boards, lists, and calendars.', color: 'text-purple-500' },
-    { id: 'crm', href: '/crm', icon: 'Briefcase', title: 'CRM', description: 'Manage clients, sales pipeline, and invoices.', color: 'text-amber-500' },
-    { id: 'habits', href: '/habits', icon: 'Repeat', title: 'Habit Tracker', description: 'Build consistency and track your daily habits.', color: 'text-teal-500' },
-    { id: 'goals', href: '/goals', icon: 'Target', title: 'Goal Tracker', description: 'Define, track, and achieve your ambitions.', color: 'text-red-500' },
-    { id: 'study-tracker', href: '/study-tracker', icon: 'GraduationCap', title: 'Study Tracker', description: 'Plan and gamify your learning sessions.', color: 'text-lime-500' },
-    { id: 'flashcards', href: '/flashcards', icon: 'Layers', title: 'Flashcards', description: 'Master any subject with smart flashcards.', color: 'text-indigo-500' },
-    { id: 'meeting-notes', href: '/meeting-notes', icon: 'ClipboardSignature', title: 'Meeting Notes', description: 'Capture and organize meeting minutes.', color: 'text-cyan-500' },
-    { id: 'notes', href: '/notes', icon: 'FileText', title: 'Sticky Notes', description: 'A flexible space for quick thoughts & reminders.', color: 'text-orange-500' },
-    { id: 'bookmarks', href: '/bookmarks', icon: 'Bookmark', title: 'Bookmarks', description: 'Save and organize your favorite websites.', color: 'text-blue-500' },
-    { id: 'trading-tracker', href: '/trading-tracker', icon: 'TrendingUp', title: 'Trading Tracker', description: 'Record and analyze your trading performance.', color: 'text-emerald-500' },
-    { id: 'work-tracker', href: '/work-tracker', icon: 'Briefcase', title: 'Work Tracker', description: 'Log your daily work activities and tasks.', color: 'text-amber-500' },
-    { id: 'english-coach', href: '/english-coach', icon: 'Languages', title: 'English Coach', description: 'Improve your English with AI-powered tools.', color: 'text-red-500' },
-    { id: 'brainstorming', href: '/brainstorming', icon: 'BrainCircuit', title: 'Brainstorming', description: 'Capture ideas on a structured canvas.', color: 'text-violet-500' },
-    { id: 'whiteboard', href: '/whiteboard', icon: 'PenSquare', title: 'Whiteboard', description: 'A free-form digital canvas for your ideas.', color: 'text-indigo-500' },
-    { id: 'mind-map', href: '/mind-map', icon: 'GitBranch', title: 'Mind Map', description: 'Visually organize your thoughts & plans.', color: 'text-pink-500' },
-    { id: 'docs', href: '/docs', icon: 'FileSignature', title: 'Docs', description: 'A powerful, feature-rich document editor.', color: 'text-cyan-500' },
-    { id: 'learning-tool', href: '/learning-tool', icon: 'GraduationCap', title: 'Learning Assistant', description: 'Generate study materials with AI.', color: 'text-lime-500' },
-    { id: 'pomodoro', href: '/pomodoro', icon: 'Timer', title: 'Pomodoro', description: 'Improve focus with a time management tool.', color: 'text-rose-500' },
+    { id: 'planner', href: '/planner', title: 'Planner', description: 'Organize your time, events, and tasks.' },
+    { id: 'tasks', href: '/dashboard/lists', title: 'Task Management', description: 'Manage projects with boards, lists, and calendars.' },
+    { id: 'crm', href: '/crm', title: 'CRM', description: 'Manage clients, sales pipeline, and invoices.' },
+    { id: 'habits', href: '/habits', title: 'Habit Tracker', description: 'Build consistency and track your daily habits.' },
+    { id: 'goals', href: '/goals', title: 'Goal Tracker', description: 'Define, track, and achieve your ambitions.' },
+    { id: 'study-tracker', href: '/study-tracker', title: 'Study Tracker', description: 'Plan and gamify your learning sessions.' },
+    { id: 'flashcards', href: '/flashcards', title: 'Flashcards', description: 'Master any subject with smart flashcards.' },
+    { id: 'meeting-notes', href: '/meeting-notes', title: 'Meeting Notes', description: 'Capture and organize meeting minutes.' },
+    { id: 'notes', href: '/notes', title: 'Sticky Notes', description: 'A flexible space for quick thoughts & reminders.' },
+    { id: 'bookmarks', href: '/bookmarks', title: 'Bookmarks', description: 'Save and organize your favorite websites.' },
+    { id: 'trading-tracker', href: '/trading-tracker', title: 'Trading Tracker', description: 'Record and analyze your trading performance.' },
+    { id: 'work-tracker', href: '/work-tracker', title: 'Work Tracker', description: 'Log your daily work activities and tasks.' },
+    { id: 'english-coach', href: '/english-coach', title: 'English Coach', description: 'Improve your English with AI-powered tools.' },
+    { id: 'brainstorming', href: '/brainstorming', title: 'Brainstorming', description: 'Capture ideas on a structured canvas.' },
+    { id: 'whiteboard', href: '/whiteboard', title: 'Whiteboard', description: 'A free-form digital canvas for your ideas.' },
+    { id: 'mind-map', href: '/mind-map', title: 'Mind Map', description: 'Visually organize your thoughts & plans.' },
+    { id: 'docs', href: '/docs', title: 'Docs', description: 'A powerful, feature-rich document editor.' },
+    { id: 'learning-tool', href: '/learning-tool', title: 'Learning Assistant', description: 'Generate study materials with AI.' },
+    { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },
 ];
 
 export default function HomePage() {
@@ -130,21 +172,31 @@ export default function HomePage() {
                             <div
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
-                                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+                                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
                             >
-                                {orderedTools.map((tool, index) => (
+                                {orderedTools.map((tool, index) => {
+                                   const Icon = toolIcons[tool.id];
+                                   return (
                                     <Draggable key={tool.id} draggableId={tool.id} index={index}>
                                         {(provided) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                            >
-                                                <ToolCard {...tool} />
-                                            </div>
+                                           <div ref={provided.innerRef} {...provided.draggableProps}>
+                                             <Link href={tool.href} className="group block h-full">
+                                                <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
+                                                    <div {...provided.dragHandleProps} className="absolute top-2 right-2 z-10 p-1 opacity-20 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+                                                        <GripVertical className="h-5 w-5 text-muted-foreground" />
+                                                    </div>
+                                                    <div className="p-6 flex flex-col items-center text-center">
+                                                        {Icon && <Icon className="h-24 w-24 mb-4" />}
+                                                        <h3 className="text-lg font-bold font-headline text-foreground">{tool.title}</h3>
+                                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+                                                    </div>
+                                                </Card>
+                                             </Link>
+                                           </div>
                                         )}
                                     </Draggable>
-                                ))}
+                                   )
+                                })}
                                 {provided.placeholder}
                             </div>
                         )}
