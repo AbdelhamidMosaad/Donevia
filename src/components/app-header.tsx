@@ -66,7 +66,7 @@ export function AppHeader() {
 
   return (
     <header className="flex h-16 items-center gap-4 border-b bg-card/60 px-4 backdrop-blur-sm sticky top-0 z-40 lg:px-6">
-      <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={toggleSidebar}>
+      <Button variant="outline" size="icon" className="md:hidden h-8 w-8" onClick={toggleSidebar}>
           <DoneviaLogo className="size-6 shrink-0" />
       </Button>
       <div className="hidden items-center gap-4 md:flex">
@@ -87,7 +87,7 @@ export function AppHeader() {
                 type="search"
                 name="search"
                 placeholder="Search everywhere..."
-                className="w-full appearance-none bg-background/80 pl-8 shadow-none md:w-2/3 lg:w-1/2"
+                className="w-full appearance-none bg-background/50 backdrop-blur-sm pl-8 shadow-sm md:w-2/3 lg:w-1/2"
               />
             </div>
           </form>
@@ -98,8 +98,8 @@ export function AppHeader() {
 
        <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
+            <Button variant="outline" size="icon" className="relative">
+                <Bell />
                 {overdueTasks.length > 0 && (
                     <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{overdueTasks.length}</Badge>
                 )}
@@ -135,7 +135,7 @@ export function AppHeader() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full">
+          <Button variant="outline" size="icon" className="rounded-full">
             <Avatar>
               <AvatarImage src={user?.photoURL || "https://picsum.photos/32/32"} data-ai-hint="person avatar" />
               <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
@@ -148,13 +148,13 @@ export function AppHeader() {
           <DropdownMenuSeparator />
           <SettingsDialog>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <Settings className="mr-2 h-4 w-4" />
+                <Settings />
                 <span>Settings</span>
             </DropdownMenuItem>
           </SettingsDialog>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut />
             <span>Log out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
