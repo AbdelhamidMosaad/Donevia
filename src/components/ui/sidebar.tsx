@@ -216,14 +216,14 @@ const Sidebar = React.forwardRef<
         <div
           aria-hidden="true"
           className={cn(
-            "fixed inset-y-0 h-svh bg-transparent transition-all duration-200 ease-linear ml-4",
+            "fixed inset-y-0 h-svh bg-transparent transition-all duration-200 ease-linear",
             open ? "w-[var(--sidebar-width-expanded)]" : "w-[var(--sidebar-width-collapsed)]",
             "group-data-[side=right]:hidden"
           )}
         />
         <div
           className={cn(
-            "fixed inset-y-0 z-10 hidden h-svh transition-all duration-200 ease-linear md:flex ml-4",
+            "fixed inset-y-0 z-10 hidden h-svh transition-all duration-200 ease-linear md:flex",
             open ? "w-[var(--sidebar-width-expanded)]" : "w-[var(--sidebar-width-collapsed)]",
             "group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
@@ -308,7 +308,7 @@ const SidebarInset = React.forwardRef<
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background",
         "transition-all duration-200 ease-linear",
-        open ? "md:ml-[calc(var(--sidebar-width-expanded)+1rem)]" : "md:ml-[calc(var(--sidebar-width-collapsed)+1rem)]",
+        open ? "md:ml-[var(--sidebar-width-expanded)]" : "md:ml-[var(--sidebar-width-collapsed)]",
         className
       )}
       {...props}
@@ -401,7 +401,7 @@ const SidebarContent = React.forwardRef<
         className
       )}
     >
-        <div className={cn("p-2 flex-1 flex flex-col", !open && "px-1 justify-center")} {...props} />
+        <div className={cn("p-2 flex-1 flex flex-col", !open && "px-1.5 justify-center")} {...props} />
     </ScrollArea>
   )
 })
