@@ -8,6 +8,7 @@ import { Button } from '../ui/button';
 import { Plus, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '../ui/label';
 
 interface BrainstormingSidePanelProps {
   onAddIdea: (content: string, color: string) => void;
@@ -45,15 +46,19 @@ export function BrainstormingSidePanel({ onAddIdea }: BrainstormingSidePanelProp
         <CardTitle>Quick Capture</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Textarea
-          placeholder="Type your idea here..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={4}
-        />
+        <div className="space-y-1.5">
+          <Label htmlFor="idea-content">Your Idea</Label>
+          <Textarea
+            id="idea-content"
+            placeholder="Type your idea here..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={4}
+          />
+        </div>
         <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2"><Palette className="h-4 w-4"/>Color</label>
+            <Label className="flex items-center gap-2"><Palette className="h-4 w-4"/>Color</Label>
             <div className="flex flex-wrap gap-2">
                 {ideaColors.map(color => (
                     <button
@@ -61,8 +66,8 @@ export function BrainstormingSidePanel({ onAddIdea }: BrainstormingSidePanelProp
                         onClick={() => setSelectedColor(color)}
                         style={{ backgroundColor: color }}
                         className={cn(
-                            "w-8 h-8 rounded-full border-2",
-                            selectedColor === color ? 'border-primary' : 'border-transparent'
+                            "w-8 h-8 rounded-full border-2 transition-transform hover:scale-110",
+                            selectedColor === color ? 'border-primary ring-2 ring-primary/50' : 'border-transparent'
                         )}
                         aria-label={`Select color ${color}`}
                     />
@@ -70,7 +75,7 @@ export function BrainstormingSidePanel({ onAddIdea }: BrainstormingSidePanelProp
             </div>
         </div>
         <Button onClick={handleAddClick} className="w-full">
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus />
           Add Idea
         </Button>
       </CardContent>

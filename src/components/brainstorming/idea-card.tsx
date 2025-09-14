@@ -11,12 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { GripVertical, Trash2, Edit, Check } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem
-} from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 
@@ -31,7 +25,8 @@ export function IdeaCard({ idea, dragHandleProps }: IdeaCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(idea.content);
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!user) return;
     try {
       await deleteIdea(user.uid, idea.id);
@@ -41,7 +36,8 @@ export function IdeaCard({ idea, dragHandleProps }: IdeaCardProps) {
     }
   };
   
-  const handleSave = async () => {
+  const handleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!user || content.trim() === '') return;
     try {
       await updateIdea(user.uid, idea.id, { content });
@@ -55,7 +51,11 @@ export function IdeaCard({ idea, dragHandleProps }: IdeaCardProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleSave();
+        if (!user || content.trim() === '') return;
+        updateIdea(user.uid, idea.id, { content }).then(() => {
+            setIsEditing(false);
+            toast({ title: 'Idea updated' });
+        });
     } else if (e.key === 'Escape') {
         setIsEditing(false);
         setContent(idea.content);
@@ -69,25 +69,26 @@ export function IdeaCard({ idea, dragHandleProps }: IdeaCardProps) {
         "transition-shadow hover:shadow-lg"
       )}
       style={{ backgroundColor: idea.color }}
+      onClick={() => !isEditing && setIsEditing(true)}
     >
       <div className="absolute top-2 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
          {isEditing ? (
              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave}><Check className="h-4 w-4 text-green-600"/></Button>
          ) : (
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); setIsEditing(true)}}><Edit className="h-4 w-4"/></Button>
          )}
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button size="icon" variant="ghost" className="h-7 w-7"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => e.stopPropagation()}><Trash2 className="h-4 w-4 text-destructive"/></Button>
           </AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this idea?</AlertDialogTitle>
               <AlertDialogDescription>This action is permanent and cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+              <AlertDialogAction onClick={handleDelete} variant="destructive">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -102,6 +103,7 @@ export function IdeaCard({ idea, dragHandleProps }: IdeaCardProps) {
             className="w-full h-full bg-transparent border-primary resize-none"
             autoFocus
             onFocus={(e) => e.target.select()}
+            onClick={(e) => e.stopPropagation()}
           />
         ) : (
           <p className="text-sm whitespace-pre-wrap">{idea.content}</p>
