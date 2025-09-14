@@ -139,7 +139,7 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
                         placeholder={`New ${label.slice(0,-1)}...`}
                     />
                     <Button variant="outline" size="icon" onClick={() => handleAddItem(type)}>
-                        <PlusCircle className="h-4 w-4" />
+                        <PlusCircle />
                     </Button>
                 </div>
             </div>
@@ -149,8 +149,8 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings className="h-4 w-4" />
+        <Button variant="outline">
+          <Settings /> Settings
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
@@ -166,9 +166,9 @@ export function WorkTrackerSettings({ settings: initialSettings }: WorkTrackerSe
             {renderListEditor('customerOptions', 'Customers')}
         </div>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saved' : 'Save Changes'}
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, FileDown } from 'lucide-react';
+import { Trash2, FileDown, RefreshCcw } from 'lucide-react';
 import moment from 'moment';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -123,7 +123,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
         <div className="space-y-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Filters &amp; Export</CardTitle>
+                    <CardTitle>Filters & Export</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
                     {/* Date Filters */}
@@ -207,8 +207,14 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                         </Select>
                     </div>
                     <div className="flex gap-2">
-                        <Button onClick={resetFilters} variant="outline" className="w-full">Reset</Button>
-                        <Button onClick={handleExport} className="w-full"><FileDown className="mr-2 h-4 w-4" /> Export</Button>
+                        <Button onClick={resetFilters} variant="outline" className="w-full">
+                            <RefreshCcw />
+                            Reset
+                        </Button>
+                        <Button onClick={handleExport} variant="outline" className="w-full">
+                            <FileDown />
+                            Export
+                        </Button>
                     </div>
                 </CardContent>
             </Card>

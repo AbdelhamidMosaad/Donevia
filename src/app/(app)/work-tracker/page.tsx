@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { List, Calendar, Settings, PlusCircle, FileText } from 'lucide-react';
 import { ActivityForm } from '@/components/work-tracker/activity-form';
 import { ActivityTable } from '@/components/work-tracker/activity-table';
-import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { WorkTrackerSettings } from '@/components/work-tracker/tracker-settings';
@@ -132,8 +131,8 @@ export default function WorkTrackerPage() {
 
        <Tabs defaultValue="log" className="flex-1 flex flex-col min-h-0">
             <TabsList>
-                <TabsTrigger value="log"><PlusCircle className="mr-2 h-4 w-4"/> Log Activity</TabsTrigger>
-                <TabsTrigger value="records"><FileText className="mr-2 h-4 w-4"/> View Records</TabsTrigger>
+                <TabsTrigger value="log"><PlusCircle /> Log Activity</TabsTrigger>
+                <TabsTrigger value="records"><FileText /> View Records</TabsTrigger>
             </TabsList>
             
             <TabsContent value="log" className="flex-1 mt-4">
@@ -142,7 +141,7 @@ export default function WorkTrackerPage() {
                 </Card>
             </TabsContent>
             <TabsContent value="records" className="flex-1 flex flex-col min-h-0 mt-4">
-                 <Card className="flex-1 flex flex-col min-h-0">
+                 <Card className="flex-1 flex flex-col min-h-0 bg-card/60 backdrop-blur-sm">
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
@@ -151,10 +150,10 @@ export default function WorkTrackerPage() {
                             </div>
                             <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
                                 <ToggleGroupItem value="table" aria-label="Table view">
-                                <List className="h-4 w-4" />
+                                <List />
                                 </ToggleGroupItem>
                                 <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                                <Calendar className="h-4 w-4" />
+                                <Calendar />
                                 </ToggleGroupItem>
                             </ToggleGroup>
                         </div>

@@ -45,7 +45,7 @@ export function AddSettingItem({ type, onAdd }: AddSettingItemProps) {
         onClick={(e) => e.stopPropagation()} // Prevent closing the dropdown
       />
       <Button size="icon" className="h-8 w-8" onClick={handleAdd} disabled={!value.trim()}>
-        <Plus className="h-4 w-4" />
+        <Plus />
       </Button>
     </div>
   );
