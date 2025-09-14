@@ -49,7 +49,7 @@ export function AddProgressUpdate({ goalId, milestoneId }: AddProgressUpdateProp
       />
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={isSaving || !text.trim()}>
-          {isSaving ? 'Saved' : 'Save Update'}
+          {isSaving ? 'Saving...' : 'Save Update'}
         </Button>
       </div>
     </div>

@@ -102,19 +102,19 @@ export default function GoalDetailPage() {
                 <p className="text-muted-foreground">{goal.description}</p>
             </div>
         </div>
-        <Button variant="outline" onClick={() => setIsEditGoalOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit Goal</Button>
+        <Button variant="outline" onClick={() => setIsEditGoalOpen(true)}><Edit/> Edit Goal</Button>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        <Card>
+        <Card className="bg-card/60 backdrop-blur-sm">
           <CardHeader><CardTitle>Status</CardTitle></CardHeader>
           <CardContent><p className="text-lg font-semibold text-primary">{goal.status}</p></CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card/60 backdrop-blur-sm">
           <CardHeader><CardTitle>Target Date</CardTitle></CardHeader>
           <CardContent><p className="text-lg font-semibold">{moment(goal.targetDate.toDate()).format('MMMM D, YYYY')}</p></CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card/60 backdrop-blur-sm">
           <CardHeader><CardTitle>Overall Progress</CardTitle></CardHeader>
           <CardContent>
              <Progress value={progressPercentage} className="mb-2" />
@@ -124,10 +124,10 @@ export default function GoalDetailPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 flex-1 min-h-0">
-        <Card className="flex flex-col">
+        <Card className="flex flex-col bg-card/60 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className='flex items-center gap-2'><Target className="h-5 w-5" /><CardTitle>Milestones</CardTitle></div>
-              <Button size="sm" variant="outline" onClick={() => setIsAddMilestoneOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add</Button>
+              <Button size="sm" variant="outline" onClick={() => setIsAddMilestoneOpen(true)}><PlusCircle/> Add</Button>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
                 {milestones.length > 0 ? (
@@ -141,7 +141,7 @@ export default function GoalDetailPage() {
                 )}
             </CardContent>
         </Card>
-         <Card className="flex flex-col">
+         <Card className="flex flex-col bg-card/60 backdrop-blur-sm">
             <CardHeader><CardTitle>Progress Journal</CardTitle></CardHeader>
             <CardContent className="flex-1 flex flex-col gap-4 overflow-y-auto">
               <AddProgressUpdate goalId={goalId} />

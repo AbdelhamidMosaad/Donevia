@@ -66,14 +66,14 @@ export default function GoalsPage() {
         </div>
         <div className="flex items-center gap-2">
             <Button onClick={() => setIsAddDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <PlusCircle />
               New Goal
             </Button>
         </div>
       </div>
       
        {goals.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
+        <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-card/60 backdrop-blur-sm">
             <GoalsIcon className="h-24 w-24 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold font-headline">No Goals Yet</h3>
             <p className="text-muted-foreground">Click "New Goal" to set your first one.</p>
