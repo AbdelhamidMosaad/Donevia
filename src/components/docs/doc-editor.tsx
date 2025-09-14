@@ -247,6 +247,7 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
                 onMarginChange={handleMarginChange}
                 fullWidth={!!docData.fullWidth}
                 onFullWidthToggle={handleFullWidthToggle}
+                container={editorContainerRef.current}
               />
              <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-muted-foreground">
                 {saveStatus === 'saving' && <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>}

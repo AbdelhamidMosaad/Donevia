@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Editor } from '@tiptap/react';
@@ -30,6 +31,7 @@ interface EditorToolbarProps {
   onMarginChange: (margin: 'small' | 'medium' | 'large') => void;
   fullWidth: boolean;
   onFullWidthToggle: () => void;
+  container: HTMLElement | null;
 }
 
 const ToolbarButton = ({
@@ -89,7 +91,7 @@ const mathSymbols = [
 ];
 
 
-export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor, margin, onMarginChange, fullWidth, onFullWidthToggle }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor, margin, onMarginChange, fullWidth, onFullWidthToggle, container }: EditorToolbarProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -178,7 +180,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                    'Paragraph'}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent container={container}>
                 <DropdownMenuItem onSelect={() => editor.chain().focus().setParagraph().run()}>Paragraph</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>Heading 1</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>Heading 2</DropdownMenuItem>
@@ -192,7 +194,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                   {editor.getAttributes('textStyle').fontFamily?.split(',')[0].replace(/'/g, '') || 'Inter'}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent container={container}>
                 {fontFamilies.map(font => (
                   <DropdownMenuItem key={font.name} onSelect={() => editor.chain().focus().setFontFamily(font.value).run()} style={{ fontFamily: font.value }}>
                     {font.name}
@@ -208,7 +210,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                   {editor.getAttributes('textStyle').fontSize || '16px'}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent container={container}>
                 {fontSizes.map(size => (
                   <DropdownMenuItem key={size} onSelect={() => editor.chain().focus().setFontSize(size).run()}>{size}</DropdownMenuItem>
                 ))}
@@ -232,7 +234,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                   </label>
                 </Toggle>
               </TooltipTrigger>
-              <TooltipContent><p>Text Color</p></TooltipContent>
+              <TooltipContent>Text Color</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -243,7 +245,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                   </label>
                 </Toggle>
               </TooltipTrigger>
-              <TooltipContent><p>Highlight Color</p></TooltipContent>
+              <TooltipContent>Highlight Color</TooltipContent>
             </Tooltip>
           </div>
         </TabsContent>
@@ -257,7 +259,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                   <Upload className="h-4 w-4" />
                 </Toggle>
               </TooltipTrigger>
-              <TooltipContent><p>Upload Image</p></TooltipContent>
+              <TooltipContent>Upload Image</TooltipContent>
             </Tooltip>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
             <ToolbarButton editor={editor} label="Table" icon={Table} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
@@ -275,7 +277,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                   <PilcrowLeft className="h-4 w-4 mr-2" /> Text Transform
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent container={container}>
                 <DropdownMenuItem onSelect={() => editor.commands.transform('uppercase')}>UPPERCASE</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.commands.transform('lowercase')}>lowercase</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => editor.commands.transform('capitalize')}>Capitalize</DropdownMenuItem>
@@ -310,7 +312,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                         <SigmaSquare className="h-4 w-4 mr-2" /> Insert Symbol
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="max-h-60 overflow-y-auto">
+                  <DropdownMenuContent className="max-h-60 overflow-y-auto" container={container}>
                     <div className="grid grid-cols-6 gap-1 p-2">
                        {mathSymbols.map(symbol => (
                             <DropdownMenuItem key={symbol} onSelect={() => editor.chain().focus().insertContent(symbol).run()} className="justify-center text-lg">
@@ -330,7 +332,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                   <Droplets className="h-4 w-4 mr-2" /> Paper Color
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-2">
+              <PopoverContent className="w-auto p-2" container={container}>
                 <div className="flex gap-1">
                   {paperColors.map(c => (
                     <button key={c} onClick={() => onBackgroundColorChange(c)} className={cn('h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center')} style={{ backgroundColor: c }}>
@@ -346,7 +348,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                   <AlignVerticalSpaceAround className="h-4 w-4 mr-2" /> Page Margins
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent container={container}>
                 <DropdownMenuItem onSelect={() => onMarginChange('small')}>Small</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => onMarginChange('medium')}>Medium</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => onMarginChange('large')}>Large</DropdownMenuItem>
@@ -358,7 +360,7 @@ export function EditorToolbar({ editor, onBackgroundColorChange, backgroundColor
                         <ChevronsLeftRight className="h-4 w-4" />
                     </Toggle>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent container={container}>
                     <p>Toggle Full Width</p>
                 </TooltipContent>
             </Tooltip>
