@@ -1,6 +1,5 @@
-
 'use client';
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
 
 export const Callout = Node.create({
   name: 'callout',
@@ -10,7 +9,7 @@ export const Callout = Node.create({
   addAttributes() {
     return {
       'data-type': {
-        default: 'info',
+        default: 'callout',
       },
     };
   },
@@ -29,8 +28,11 @@ export const Callout = Node.create({
 
   addCommands() {
     return {
-      toggleCallout: () => ({ commands }) => {
-        return commands.toggleWrap(this.name)
+      toggleCallout: () => ({ commands, editor }) => {
+        if (editor.isActive('callout')) {
+          return commands.lift(this.name);
+        }
+        return commands.wrapIn(this.name);
       },
     };
   },

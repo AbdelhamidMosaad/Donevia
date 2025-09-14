@@ -1,4 +1,3 @@
-
 'use client';
 import { Node, mergeAttributes } from '@tiptap/core';
 
@@ -6,6 +5,7 @@ export const Equation = Node.create({
   name: 'equation',
   group: 'block',
   content: 'text*',
+  atom: true,
   
   addAttributes() {
     return {
@@ -29,8 +29,11 @@ export const Equation = Node.create({
 
   addCommands() {
     return {
-      toggleEquation: () => ({ commands }) => {
-        return commands.toggleWrap(this.name);
+      toggleEquation: () => ({ commands, editor }) => {
+        if (editor.isActive('equation')) {
+            return commands.lift(this.name);
+        }
+        return commands.wrapIn(this.name);
       },
     };
   },
