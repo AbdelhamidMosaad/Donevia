@@ -83,9 +83,9 @@ export function InvoiceList({ allInvoices, clients }: InvoiceListProps) {
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="max-w-sm"
                       />
-                      <Button variant="outline" onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export</Button>
+                      <Button variant="outline" onClick={handleExport}><FileDown /> Export</Button>
                       <Button onClick={() => setIsAddDialogOpen(true)}>
-                          <PlusCircle className="mr-2 h-4 w-4" /> New Invoice
+                          <PlusCircle/> New Invoice
                       </Button>
                   </div>
               </div>

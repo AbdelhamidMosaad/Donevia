@@ -156,7 +156,7 @@ export function AddInvoiceDialog({ clients, open, onOpenChange }: AddInvoiceDial
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+          <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? 'Saved' : 'Add Invoice'}
           </Button>

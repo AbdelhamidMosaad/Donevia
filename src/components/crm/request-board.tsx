@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -139,7 +140,7 @@ export function RequestBoard() {
       <div className="flex justify-end mb-4 gap-2">
         <PipelineSettings currentStages={stages} />
         <Button onClick={handleAddNewRequest}>
-          <PlusCircle className="mr-2 h-4 w-4" /> New Deal
+          <PlusCircle /> New Deal
         </Button>
       </div>
       <ScrollArea className="flex-1">

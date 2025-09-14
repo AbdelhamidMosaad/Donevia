@@ -93,9 +93,9 @@ export function ClientList({ clients }: ClientListProps) {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="max-w-xs"
                     />
-                    <Button variant="outline" onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button variant="outline" onClick={handleExport}><FileDown /> Export</Button>
                     <Button onClick={() => setIsAddDialogOpen(true)}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
+                        <PlusCircle/>
                         New Client
                     </Button>
                 </div>

@@ -98,7 +98,7 @@ export function QuoteInvoiceManager({ type, client }: QuoteInvoiceManagerProps) 
           <CardDescription>Manage {type}s for this client.</CardDescription>
         </div>
         <Button onClick={handleAddNew}>
-          <PlusCircle className="mr-2 h-4 w-4" /> New {itemTitle}
+          <PlusCircle /> New {itemTitle}
         </Button>
       </CardHeader>
       <CardContent>
@@ -271,7 +271,7 @@ function EditDialog({ isOpen, onOpenChange, item, type, client, onSave }: any) {
             </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+          <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
           <Button onClick={handleUploadAndSave}>Save</Button>
         </DialogFooter>
       </DialogContent>

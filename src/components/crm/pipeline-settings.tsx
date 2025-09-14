@@ -93,7 +93,7 @@ export function PipelineSettings({ currentStages }: PipelineSettingsProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                    <Settings className="mr-2 h-4 w-4" />
+                    <Settings />
                     Pipeline Settings
                 </Button>
             </DialogTrigger>
@@ -135,13 +135,13 @@ export function PipelineSettings({ currentStages }: PipelineSettingsProps) {
                         </DragDropContext>
                         <div className="flex items-center gap-2 mt-4">
                             <Input placeholder="New stage name" value={newStageName} onChange={(e) => setNewStageName(e.target.value)} />
-                            <Button onClick={handleAddStage}><PlusCircle className="mr-2 h-4 w-4" /> Add Stage</Button>
+                            <Button onClick={handleAddStage}><PlusCircle /> Add Stage</Button>
                         </div>
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                     <Button onClick={handleSaveChanges}>Save Changes</Button>
                 </DialogFooter>
             </DialogContent>

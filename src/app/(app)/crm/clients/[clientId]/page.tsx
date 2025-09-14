@@ -63,7 +63,7 @@ export default function ClientDetailPage() {
                 <p className="text-muted-foreground">{client.company}</p>
             </div>
         </div>
-        <Button variant="outline" onClick={() => setIsEditClientOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit Client</Button>
+        <Button variant="outline" onClick={() => setIsEditClientOpen(true)}><Edit/> Edit Client</Button>
       </div>
 
        <Tabs defaultValue="quotes" className="flex-1 flex flex-col">
