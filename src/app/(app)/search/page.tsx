@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
-import type { Task, Doc, Client, StickyNote } from '@/lib/types';
+import type { Task, Doc, Client, StickyNote, PlannerEvent, DocFolder, FlashcardFolder, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Loader2, Search as SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +15,12 @@ type SearchResult =
     | { type: 'task', data: Task, match: { field: string, text: string } }
     | { type: 'doc', data: Doc, match: { field: string, text: string } }
     | { type: 'client', data: Client, match: { field: string, text: string } }
-    | { type: 'note', data: StickyNote, match: { field: string, text: string } };
+    | { type: 'note', data: StickyNote, match: { field: string, text: string } }
+    | { type: 'event', data: PlannerEvent, match: { field: string, text: string } }
+    | { type: 'docFolder', data: DocFolder, match: { field: string, text: string } }
+    | { type: 'flashcardFolder', data: FlashcardFolder, match: { field: string, text: string } }
+    | { type: 'studyChapter', data: StudyChapter, match: { field: string, text: string } }
+    | { type: 'studySubtopic', data: StudySubtopic, match: { field: string, text: string } };
 
 function SearchResultsComponent() {
     const { user, loading: authLoading } = useAuth();
@@ -51,15 +56,33 @@ function SearchResultsComponent() {
                 const resultIds = new Set<string>(); // To prevent duplicates in the list
 
                 // 1. Fetch all data
-                const tasksSnap = await getDocs(collection(db, 'users', user.uid, 'tasks'));
-                const docsSnap = await getDocs(collection(db, 'users', user.uid, 'docs'));
-                const clientsSnap = await getDocs(collection(db, 'users', user.uid, 'clients'));
-                const notesSnap = await getDocs(collection(db, 'users', user.uid, 'stickyNotes'));
+                const [
+                    tasksSnap,
+                    docsSnap,
+                    clientsSnap,
+                    notesSnap,
+                    eventsSnap,
+                    docFoldersSnap,
+                    flashcardFoldersSnap,
+                    studyChaptersSnap,
+                    studySubtopicsSnap
+                ] = await Promise.all([
+                    getDocs(collection(db, 'users', user.uid, 'tasks')),
+                    getDocs(collection(db, 'users', user.uid, 'docs')),
+                    getDocs(collection(db, 'users', user.uid, 'clients')),
+                    getDocs(collection(db, 'users', user.uid, 'stickyNotes')),
+                    getDocs(collection(db, 'users', user.uid, 'plannerEvents')),
+                    getDocs(collection(db, 'users', user.uid, 'docFolders')),
+                    getDocs(collection(db, 'users', user.uid, 'flashcardFolders')),
+                    getDocs(collection(db, 'users', user.uid, 'studyChapters')),
+                    getDocs(collection(db, 'users', user.uid, 'studySubtopics')),
+                ]);
 
                 // Helper to extract text from Tiptap content
                 const getTextFromDocContent = (content: any): string => {
                     let text = '';
-                    if (content?.content && Array.isArray(content.content)) {
+                    if (!content) return text;
+                    if (content.content && Array.isArray(content.content)) {
                         for (const node of content.content) {
                             text += getTextFromDocContent(node);
                         }
@@ -68,7 +91,6 @@ function SearchResultsComponent() {
                     }
                     return text;
                 };
-
 
                 // 2. Search through data on the client side
                 
@@ -129,6 +151,63 @@ function SearchResultsComponent() {
                         resultIds.add(data.id);
                     }
                 });
+                
+                // Search Planner Events
+                eventsSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as PlannerEvent;
+                    if (resultIds.has(data.id)) return;
+                     if (data.title.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'event', data, match: { field: 'title', text: data.title }});
+                        resultIds.add(data.id);
+                    } else if (data.description?.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'event', data, match: { field: 'description', text: data.description.substring(0, 100) + '...' }});
+                        resultIds.add(data.id);
+                    }
+                });
+                
+                // Search Doc Folders
+                docFoldersSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as DocFolder;
+                    if (resultIds.has(`docfolder-${data.id}`)) return;
+                     if (data.name.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'docFolder', data, match: { field: 'name', text: data.name }});
+                        resultIds.add(`docfolder-${data.id}`);
+                    }
+                });
+                
+                // Search Flashcard Folders
+                flashcardFoldersSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as FlashcardFolder;
+                    if (resultIds.has(`flashcardfolder-${data.id}`)) return;
+                     if (data.name.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'flashcardFolder', data, match: { field: 'name', text: data.name }});
+                        resultIds.add(`flashcardfolder-${data.id}`);
+                    }
+                });
+
+                // Search Study Chapters
+                studyChaptersSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as StudyChapter;
+                    if (resultIds.has(`chapter-${data.id}`)) return;
+                     if (data.title.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'studyChapter', data, match: { field: 'title', text: data.title }});
+                        resultIds.add(`chapter-${data.id}`);
+                    }
+                });
+
+                // Search Study Subtopics
+                studySubtopicsSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as StudySubtopic;
+                    if (resultIds.has(`subtopic-${data.id}`)) return;
+                     if (data.title.toLowerCase().includes(term)) {
+                        allResults.push({ type: 'studySubtopic', data, match: { field: 'title', text: data.title }});
+                        resultIds.add(`subtopic-${data.id}`);
+                    } else if (data.notes?.toLowerCase().includes(term)) {
+                         allResults.push({ type: 'studySubtopic', data, match: { field: 'notes', text: data.notes.substring(0, 100) + '...' }});
+                        resultIds.add(`subtopic-${data.id}`);
+                    }
+                });
+
 
                 setResults(allResults);
 
@@ -149,10 +228,21 @@ function SearchResultsComponent() {
             case 'doc': return `/docs/${result.data.id}`;
             case 'client': return `/crm/clients/${result.data.id}`;
             case 'note': return `/notes`;
+            case 'event': return `/planner`;
+            case 'docFolder': return `/docs/folder/${result.data.id}`;
+            case 'flashcardFolder': return `/flashcards/folder/${result.data.id}`;
+            case 'studyChapter': return `/study-tracker/${result.data.goalId}`;
+            case 'studySubtopic': return `/study-tracker/${result.data.goalId}`;
             default: return '#';
         }
     };
     
+    const getResultTitle = (result: SearchResult) => {
+        if ('name' in result.data) return result.data.name;
+        if ('title' in result.data) return result.data.title;
+        return 'Untitled';
+    }
+
     const getResultDescription = (result: SearchResult) => {
         return `Match in ${result.match.field}: "${result.match.text}"`;
     };
@@ -185,7 +275,7 @@ function SearchResultsComponent() {
                         <li key={`${result.type}-${result.data.id}-${index}`}>
                             <Link href={getResultLink(result)} className="block p-4 border rounded-lg hover:bg-muted transition-colors">
                                 <div className="flex items-center justify-between">
-                                    <p className="font-semibold text-primary">{result.data.title || (result.data as Client).name || (result.data as Client).company}</p>
+                                    <p className="font-semibold text-primary">{getResultTitle(result)}</p>
                                     <span className="text-xs font-mono uppercase text-muted-foreground bg-secondary px-2 py-1 rounded-full">{result.type}</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1 truncate">{getResultDescription(result)}</p>
@@ -205,3 +295,5 @@ export default function SearchPage() {
         </Suspense>
     );
 }
+
+    
