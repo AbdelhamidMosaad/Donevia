@@ -252,6 +252,7 @@ export interface UserSettings {
     listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
     tableColumns?: { [listId: string]: string[] };
     sidebarOrder?: string[];
+    toolOrder?: string[];
     bookmarkSettings?: {
         categories: string[];
     };

@@ -21,12 +21,11 @@ export function ToolCard({ href, icon, title, description, color }: ToolCardProp
   return (
     <Link href={href}>
       <Card className="h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col">
-        <CardHeader>
-          <div className="p-3 bg-muted w-fit rounded-lg mb-4">
-            {IconComponent ? createElement(IconComponent, { className: cn("h-6 w-6", color) }) : null}
+        <CardHeader className="p-4">
+          <div className="p-2 bg-muted w-fit rounded-lg mb-2">
+            {IconComponent ? createElement(IconComponent, { className: cn("h-5 w-5", color) }) : null}
           </div>
-          <CardTitle className="font-headline group-hover:text-primary transition-colors">{title}</CardTitle>
-          <CardDescription className="line-clamp-2">{description}</CardDescription>
+          <CardTitle className="font-headline text-base group-hover:text-primary transition-colors">{title}</CardTitle>
         </CardHeader>
       </Card>
     </Link>

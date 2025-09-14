@@ -41,6 +41,7 @@ const defaultSettings: UserSettings = {
     listViews: {},
     tableColumns: {},
     sidebarOrder: [],
+    toolOrder: [],
     currency: 'USD',
     studyProfile: {
         currentStreak: 0,
