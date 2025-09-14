@@ -108,9 +108,9 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+          <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saved' : 'Save Card'}
+            {isSaving ? 'Saving...' : 'Save Card'}
           </Button>
         </DialogFooter>
       </DialogContent>

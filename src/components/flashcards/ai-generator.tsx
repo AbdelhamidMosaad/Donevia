@@ -98,7 +98,7 @@ export function AIGenerator({ deckId }: AIGeneratorProps) {
       </CardContent>
       <CardFooter>
         <Button onClick={handleGenerate} disabled={loading || !text.trim()}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4"/>}
+          {loading ? <Loader2 /> : <Sparkles />}
           {loading ? 'Generating...' : 'Generate Cards'}
         </Button>
       </CardFooter>

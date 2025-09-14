@@ -137,15 +137,15 @@ export default function FlashcardsDashboardPage() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" /> New
+                  <PlusCircle /> New
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
                 <DropdownMenuItem onSelect={handleAddDeck}>
-                    <Layers className="mr-2 h-4 w-4"/> New Deck
+                    <Layers /> New Deck
                 </DropdownMenuItem>
                  <DropdownMenuItem onSelect={handleAddFolder}>
-                    <FolderPlus className="mr-2 h-4 w-4"/> New Folder
+                    <FolderPlus/> New Folder
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

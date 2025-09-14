@@ -126,7 +126,7 @@ export default function StudyPage() {
             <h2 className="text-2xl font-bold">No cards are due for review.</h2>
             <p className="text-muted-foreground">Well done! Come back later to review more cards.</p>
             <Button onClick={() => router.push(`/flashcards/${deckId}`)} className="mt-4">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Go Back to Deck
+                <ArrowLeft /> Go Back to Deck
             </Button>
         </div>
     )
@@ -136,7 +136,7 @@ export default function StudyPage() {
     <div className="flex flex-col h-full items-center justify-center gap-6">
         <div className="absolute top-6 left-6">
             <Button variant="outline" onClick={() => router.push(`/flashcards/${deckId}`)}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Deck
+                <ArrowLeft /> Back to Deck
             </Button>
         </div>
        <div className="text-center">
@@ -154,8 +154,8 @@ export default function StudyPage() {
                     <Button variant="destructive" onClick={() => handleQuality(1)} title="Recalled with great difficulty">1</Button>
                     <Button variant="secondary" onClick={() => handleQuality(2)} title="Recalled with difficulty">2</Button>
                     <Button variant="secondary" onClick={() => handleQuality(3)} title="Recalled correctly, but with hesitation">3</Button>
-                    <Button variant="default" className="bg-blue-500 hover:bg-blue-600" onClick={() => handleQuality(4)} title="Recalled with ease">4</Button>
-                    <Button variant="default" className="bg-green-600 hover:bg-green-700" onClick={() => handleQuality(5)} title="Recalled perfectly">5</Button>
+                    <Button onClick={() => handleQuality(4)} title="Recalled with ease">4</Button>
+                    <Button onClick={() => handleQuality(5)} title="Recalled perfectly" className="bg-green-600 hover:bg-green-700">5</Button>
                 </div>
             </div>
        )}

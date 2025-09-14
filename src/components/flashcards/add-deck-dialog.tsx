@@ -89,9 +89,9 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+          <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saved' : 'Save Changes'}
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -178,7 +178,7 @@ export default function DeckDetailPage() {
     <div className="flex flex-col h-full gap-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
          <div className='flex items-center gap-4'>
-            <Button variant="outline" size="icon" onClick={() => router.push('/flashcards')}><ArrowLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => router.push('/flashcards')}><ArrowLeft /></Button>
             <div>
                  <div className="flex items-center gap-2">
                     <Layers3 className="h-7 w-7 text-primary"/>
@@ -188,9 +188,9 @@ export default function DeckDetailPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
-           <Button variant="outline" onClick={() => setIsAddCardOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Card</Button>
+           <Button variant="outline" onClick={() => setIsAddCardOpen(true)}><PlusCircle /> Add Card</Button>
             <Button onClick={() => router.push(`/flashcards/${deckId}/study`)} disabled={dueCardsCount === 0}>
-              <BookOpen className="mr-2 h-4 w-4" /> Study ({dueCardsCount} due)
+              <BookOpen /> Study ({dueCardsCount} due)
             </Button>
         </div>
       </div>
@@ -222,7 +222,7 @@ export default function DeckDetailPage() {
                     <Switch id="publish-switch" checked={deck.isPublic} onCheckedChange={handlePublishToggle} disabled={!isOwner} />
                     <Label htmlFor="publish-switch">Publish to Public Library</Label>
                 </div>
-                <Button variant="outline" onClick={() => setIsShareOpen(true)} disabled={!isOwner}><Share2 className="mr-2 h-4 w-4"/> Share with Others</Button>
+                <Button variant="outline" onClick={() => setIsShareOpen(true)} disabled={!isOwner}><Share2 /> Share with Others</Button>
             </CardContent>
         </Card>
       </div>
@@ -238,9 +238,9 @@ export default function DeckDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <Input placeholder="Search cards..." className="w-64" onChange={(e) => debouncedSearch(e.target.value)} />
-                    <Button variant="outline" size="sm" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button variant="outline" size="sm" onClick={handleExport}><Download /> Export</Button>
                     <input type="file" ref={importFileInputRef} className="hidden" accept=".json" onChange={handleImport} />
-                    <Button variant="outline" size="sm" onClick={() => importFileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4" /> Import</Button>
+                    <Button variant="outline" size="sm" onClick={() => importFileInputRef.current?.click()}><Upload /> Import</Button>
                 </div>
               </div>
           </CardHeader>

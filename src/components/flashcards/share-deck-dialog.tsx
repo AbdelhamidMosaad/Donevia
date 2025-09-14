@@ -103,7 +103,7 @@ export function ShareDeckDialog({ deck, open, onOpenChange }: ShareDeckDialogPro
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="secondary">
+            <Button type="button" variant="outline">
               Done
             </Button>
           </DialogClose>
