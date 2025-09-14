@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 
 
 interface SaveToDeckDialogProps {
@@ -144,10 +144,10 @@ export function SaveToDeckDialog({
                     )}
                 </div>
                  <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleSave} disabled={isLoading}>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Cards
+                        <Save/>
+                        {isLoading ? 'Saving...' : 'Save Cards'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -234,7 +234,7 @@ export function GrammarCoach() {
               <CardDescription>Enter the text you want to have reviewed.</CardDescription>
                 <div className="flex items-center gap-2">
                     <Label htmlFor="mode-toggle">Mode</Label>
-                    <ToggleGroup id="mode-toggle" type="single" value={mode} onValueChange={(value: Mode) => value && setMode(value)} size="sm">
+                    <ToggleGroup id="mode-toggle" type="single" variant="outline" value={mode} onValueChange={(value: Mode) => value && setMode(value)} size="sm">
                         <ToggleGroupItem value="gemini">Gemini</ToggleGroupItem>
                         <ToggleGroupItem value="languagetool">LanguageTool</ToggleGroupItem>
                         <ToggleGroupItem value="sapling">Sapling</ToggleGroupItem>
@@ -253,7 +253,7 @@ export function GrammarCoach() {
         </CardContent>
         <CardFooter>
           <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            <Sparkles className="mr-2 h-4 w-4" />
             {isLoading ? 'Analyzing...' : `Check with ${mode.charAt(0).toUpperCase() + mode.slice(1)}`}
           </Button>
         </CardFooter>

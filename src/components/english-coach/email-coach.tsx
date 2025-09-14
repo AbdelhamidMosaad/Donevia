@@ -159,7 +159,7 @@ export function EmailCoach() {
         </CardContent>
         <CardFooter>
           <Button onClick={handleImproveEmail} disabled={isLoading || !emailText.trim() || !context.trim()} className="w-full">
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            <Sparkles className="mr-2 h-4 w-4" />
             {isLoading ? 'Analyzing...' : 'Improve My Email'}
           </Button>
         </CardFooter>

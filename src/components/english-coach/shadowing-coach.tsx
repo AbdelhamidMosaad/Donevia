@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -202,7 +203,7 @@ export function ShadowingCoach() {
                     </div>
                 )}
                 <Button onClick={handleGenerate} disabled={sessionState === 'generating'} className="w-full">
-                    {sessionState === 'generating' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    <Sparkles className="mr-2 h-4 w-4" />
                     {sessionState === 'generating' ? 'Generating...' : 'Generate Article'}
                 </Button>
             </div>
@@ -214,11 +215,11 @@ export function ShadowingCoach() {
         return (
             <div className="space-y-4">
                  <div className="flex items-center justify-center gap-4">
-                    <Button onClick={handlePlayPause} size="lg">
+                    <Button onClick={handlePlayPause}>
                         {sessionState === 'playing' ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
                         {sessionState === 'playing' ? 'Pause' : (sessionState === 'paused' ? 'Resume' : 'Play')}
                     </Button>
-                    <Button onClick={handleStop} variant="destructive" size="lg">
+                    <Button onClick={handleStop} variant="destructive">
                         <StopCircle className="mr-2 h-5 w-5" /> Stop
                     </Button>
                 </div>

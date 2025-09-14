@@ -183,7 +183,7 @@ export function NewWordsLibrary() {
                     </div>
                 )}
             </div>
-             <Button variant="outline" onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Export Excel</Button>
+             <Button variant="outline" onClick={handleExport}><FileDown /> Export Excel</Button>
         </div>
       </CardHeader>
       <CardContent>

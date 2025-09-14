@@ -267,7 +267,7 @@ export function VocabularyCoach() {
                         </div>
                     )}
                     <Button onClick={handleGenerate} disabled={isLoading} className="w-full">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        <Sparkles />
                         {isLoading ? 'Generating...' : 'Generate Story'}
                     </Button>
                 </div>
@@ -279,11 +279,11 @@ export function VocabularyCoach() {
                         <h3 className="text-lg font-semibold">Your Story (Level: {level})</h3>
                          {isStoryPlaying ? (
                             <Button variant="destructive" size="sm" onClick={stopStoryAudio}>
-                                <StopCircle className="mr-2 h-4 w-4" /> Stop
+                                <StopCircle /> Stop
                             </Button>
                         ) : (
                             <Button variant="outline" size="sm" onClick={() => playAudio(result.story.replace(/\*\*/g, ''), true)} disabled={audioState[result.story]?.loading}>
-                                {audioState[result.story]?.loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Play className="mr-2 h-4 w-4" />}
+                                <Play />
                                 Listen to Story
                             </Button>
                         )}
@@ -326,10 +326,10 @@ export function VocabularyCoach() {
         {result && (
              <CardFooter className="justify-end gap-2">
                 <Button variant="outline" onClick={() => setResult(null)}>Generate Another</Button>
-                <Button variant="outline" onClick={handleExportWord}><Download className="mr-2 h-4 w-4"/> Export as Word</Button>
-                <Button variant="outline" onClick={() => setIsSaveToDeckOpen(true)}><Save className="mr-2 h-4 w-4"/> Save to Flashcards</Button>
+                <Button variant="outline" onClick={handleExportWord}><Download/> Export as Word</Button>
+                <Button variant="outline" onClick={() => setIsSaveToDeckOpen(true)}><Save/> Save to Flashcards</Button>
                 <Button onClick={handleSaveToDocs} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save/>}
                     Save to Docs
                 </Button>
             </CardFooter>
