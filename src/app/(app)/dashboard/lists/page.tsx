@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase';
 import { TaskListCardView } from '@/components/task-list-card-view';
 import { TaskListListView } from '@/components/task-list-list-view';
 import { useToast } from '@/hooks/use-toast';
+import { TasksIcon } from '@/components/icons/tools/tasks-icon';
 
 
 type View = 'card' | 'list';
@@ -128,21 +129,24 @@ export default function TaskListsPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-            <h1 className="text-3xl font-bold font-headline">Task Lists</h1>
-            <p className="text-muted-foreground">Organize your tasks into lists.</p>
+        <div className="flex items-center gap-4">
+            <TasksIcon className="h-10 w-10 text-primary" />
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Task Lists</h1>
+                <p className="text-muted-foreground">Organize your tasks into lists.</p>
+            </div>
         </div>
         <div className="flex items-center gap-2">
            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task list view">
               <ToggleGroupItem value="card" aria-label="Card view">
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
-                <List className="h-4 w-4" />
+                <List />
               </ToggleGroupItem>
             </ToggleGroup>
             <Button onClick={handleAddList}>
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <PlusCircle />
               New List
             </Button>
         </div>

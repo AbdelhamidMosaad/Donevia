@@ -141,7 +141,7 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                    <Settings className="mr-2 h-4 w-4" />
+                    <Settings />
                     Board Settings
                 </Button>
             </DialogTrigger>
@@ -193,7 +193,7 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
                         </DragDropContext>
                         <div className="flex items-center gap-2 mt-4">
                             <Input placeholder="New stage name" value={newStageName} onChange={(e) => setNewStageName(e.target.value)} />
-                            <Button onClick={handleAddStage}><PlusCircle className="mr-2 h-4 w-4" /> Add Stage</Button>
+                            <Button onClick={handleAddStage}><PlusCircle /> Add Stage</Button>
                         </div>
                     </div>
                     
@@ -201,17 +201,16 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
                          <Label>Save as New Template</Label>
                         <div className="flex items-center gap-2 mt-2">
                             <Input placeholder="New template name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} />
-                            <Button variant="outline" onClick={handleSaveAsTemplate}><Save className="mr-2 h-4 w-4" /> Save Template</Button>
+                            <Button variant="outline" onClick={handleSaveAsTemplate}><Save /> Save Template</Button>
                         </div>
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                     <Button onClick={handleSaveChanges}>Save Changes</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
-

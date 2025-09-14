@@ -15,6 +15,7 @@ import { AddTaskDialog } from '@/components/add-task-dialog';
 import type { Task } from '@/lib/types';
 import { collection, onSnapshot, query, where, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { TasksIcon } from '@/components/icons/tools/tasks-icon';
 
 type View = 'calendar' | 'list' | 'board' | 'table';
 
@@ -28,6 +29,7 @@ export default function TaskListPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [listName, setListName] = useState('');
   const [listExists, setListExists] = useState<boolean | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
   useEffect(() => {
     if (!loading && !user) {
@@ -111,39 +113,41 @@ export default function TaskListPage() {
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-           <Button variant="outline" size="icon" onClick={() => router.push('/dashboard/lists')}><ArrowLeft className="h-4 w-4" /></Button>
+           <Button variant="outline" size="icon" onClick={() => router.push('/dashboard/lists')}><ArrowLeft /></Button>
             <div>
-                <h1 className="text-3xl font-bold font-headline capitalize">{listName}</h1>
+                 <div className="flex items-center gap-2">
+                    <TasksIcon className="h-7 w-7 text-primary" />
+                    <h1 className="text-3xl font-bold font-headline capitalize">{listName}</h1>
+                </div>
                 <p className="text-muted-foreground">Manage your tasks for this list.</p>
             </div>
         </div>
         <div className="flex items-center gap-2">
            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
               <ToggleGroupItem value="board" aria-label="Board view">
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
-                <List className="h-4 w-4" />
+                <List />
               </ToggleGroupItem>
               <ToggleGroupItem value="table" aria-label="Table view">
-                <Table className="h-4 w-4" />
+                <Table />
               </ToggleGroupItem>
               <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                <CalendarIcon className="h-4 w-4" />
+                <CalendarIcon />
               </ToggleGroupItem>
             </ToggleGroup>
-          <AddTaskDialog listId={listId} onTaskAdded={() => {}}>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle />
               New Task
             </Button>
-          </AddTaskDialog>
         </div>
       </div>
       
       <div className="flex-1 overflow-y-auto">
         {renderView()}
       </div>
+       <AddTaskDialog listId={listId} open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} onTaskAdded={() => {}} />
     </div>
   );
 }

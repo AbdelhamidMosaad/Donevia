@@ -268,7 +268,7 @@ export function AddTaskDialog({
                         onChange={(e) => setNewSubtaskTitle(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
                     />
-                    <Button onClick={handleAddSubtask}><PlusCircle className="mr-2 h-4 w-4" /> Add</Button>
+                    <Button onClick={handleAddSubtask}><PlusCircle /> Add</Button>
                 </div>
             </div>
           </div>
@@ -318,15 +318,15 @@ export function AddTaskDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="secondary">Cancel</Button>
+            <Button type="button" variant="outline">Cancel</Button>
           </DialogClose>
           {!isEditMode && (
             <Button onClick={() => handleSave(true)} disabled={isSaving} variant="outline">
-              {isSaving ? 'Saved' : 'Save & Add Another'}
+              {isSaving ? 'Saving...' : 'Save & Add Another'}
             </Button>
           )}
           <Button onClick={() => handleSave(false)} disabled={isSaving}>
-            {isSaving ? 'Saved' : 'Save'}
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>
