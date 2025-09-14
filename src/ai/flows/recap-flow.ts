@@ -24,6 +24,7 @@ You are an expert productivity coach. Your task is to generate a comprehensive, 
 Analyze the following user data for the {{period}} recap.
 The current date is ${new Date().toLocaleDateString()}.
 
+{{#if tasks}}
 ---
 **TASKS**
 {{#if tasks.length}}
@@ -38,6 +39,9 @@ The current date is ${new Date().toLocaleDateString()}.
 No task activity in this period.
 {{/if}}
 ---
+{{/if}}
+
+{{#if goals}}
 **GOALS & MILESTONES**
 {{#if goals.length}}
 {{#each goals}}
@@ -54,6 +58,9 @@ No task activity in this period.
 No goal activity.
 {{/if}}
 ---
+{{/if}}
+
+{{#if studyData}}
 **STUDY TRACKER DATA**
 {{#if studyData.studySessions.length}}
 Total Study Sessions: {{studyData.studySessions.length}}
@@ -70,10 +77,12 @@ Completed Subtopics:
 No study sessions logged in this period.
 {{/if}}
 ---
+{{/if}}
+
 
 Based on this data, generate the following structured response:
 
-1.  **title**: A short, engaging title for the recap (e.g., "Your Weekly Wins & Insights!" or "Daily Progress Breakdown").
+1.  **title**: A short, engaging title for the recap (e.g., "Your Weekly Wins & Insights!" or "Daily Progress Breakdown" or "Study Session Analysis").
 
 2.  **quantitativeSummary**:
     -   **tasksCompleted**: Accurately count the number of tasks marked as 'Done' or a similar completed status.

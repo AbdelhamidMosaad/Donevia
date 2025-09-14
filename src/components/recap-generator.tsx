@@ -7,9 +7,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import type { Task, Goal, Milestone, RecapRequest, RecapResponse, StudyGoal, StudyChapter, StudySubtopic, StudySession } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from './hooks/use-toast';
 import { Loader2, Sparkles } from 'lucide-react';
 import moment from 'moment';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ChevronDown } from 'lucide-react';
 
 interface RecapGeneratorProps {
     allTasks: Task[];
@@ -21,6 +28,8 @@ interface RecapGeneratorProps {
     allStudySessions: StudySession[];
     recapDisplay: (props: { recap: RecapResponse, period: 'daily' | 'weekly' }) => ReactNode;
 }
+
+type RecapType = 'tasks_goals' | 'study';
 
 export function RecapGenerator({ 
     allTasks, 
@@ -58,14 +67,16 @@ export function RecapGenerator({
         return { 
             tasks, 
             goals: goalsWithMilestones,
-            studyGoals: allStudyGoals,
-            studyChapters: allStudyChapters,
-            studySubtopics: allStudySubtopics,
-            studySessions,
+            studyData: {
+                studyGoals: allStudyGoals,
+                studyChapters: allStudyChapters,
+                studySubtopics: allStudySubtopics,
+                studySessions,
+            }
         };
     }, [allTasks, allGoals, allMilestones, allStudyGoals, allStudyChapters, allStudySubtopics, allStudySessions, period]);
     
-    const handleGenerateRecap = async () => {
+    const handleGenerateRecap = async (type: RecapType) => {
         if (!user) {
             toast({ variant: 'destructive', title: 'You must be logged in' });
             return;
@@ -74,19 +85,16 @@ export function RecapGenerator({
         setIsLoading(true);
         setRecap(null);
         
-        try {
-            const requestPayload: RecapRequest = {
-                tasks: dataForPeriod.tasks,
-                goals: dataForPeriod.goals,
-                studyData: {
-                    studyGoals: dataForPeriod.studyGoals,
-                    studyChapters: dataForPeriod.studyChapters,
-                    studySubtopics: dataForPeriod.studySubtopics,
-                    studySessions: dataForPeriod.studySessions,
-                },
-                period,
-            };
+        let requestPayload: Partial<RecapRequest> = { period };
+        
+        if (type === 'tasks_goals') {
+            requestPayload.tasks = dataForPeriod.tasks;
+            requestPayload.goals = dataForPeriod.goals;
+        } else if (type === 'study') {
+            requestPayload.studyData = dataForPeriod.studyData;
+        }
 
+        try {
             const response = await fetch('/api/recap/generate', {
                 method: 'POST',
                 headers: {
@@ -112,14 +120,15 @@ export function RecapGenerator({
         }
     };
     
-    const hasDataForPeriod = dataForPeriod.tasks.length > 0 || dataForPeriod.goals.length > 0 || dataForPeriod.studySessions.length > 0;
+    const hasTaskData = dataForPeriod.tasks.length > 0 || dataForPeriod.goals.length > 0;
+    const hasStudyData = dataForPeriod.studyData.studySessions.length > 0;
 
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Generate Progress Recap</CardTitle>
-                    <CardDescription>Select a period and generate an AI summary of your progress across tasks and goals.</CardDescription>
+                    <CardDescription>Select a period and a tool to generate an AI summary of your progress.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="flex items-center gap-4">
@@ -136,14 +145,30 @@ export function RecapGenerator({
                                 Weekly
                             </ToggleGroupItem>
                         </ToggleGroup>
-                         <Button onClick={handleGenerateRecap} disabled={isLoading || !hasDataForPeriod}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                            {isLoading ? 'Generating...' : 'Generate Recap'}
-                         </Button>
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                    {isLoading ? 'Generating...' : 'Generate Recap'}
+                                    <ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                             <DropdownMenuContent>
+                                <DropdownMenuItem 
+                                    onSelect={() => handleGenerateRecap('tasks_goals')}
+                                    disabled={!hasTaskData}
+                                >
+                                    For Tasks & Goals
+                                </DropdownMenuItem>
+                                 <DropdownMenuItem 
+                                    onSelect={() => handleGenerateRecap('study')}
+                                    disabled={!hasStudyData}
+                                >
+                                    For Study Tracker
+                                </DropdownMenuItem>
+                             </DropdownMenuContent>
+                         </DropdownMenu>
                     </div>
-                     {!hasDataForPeriod && !isLoading && (
-                        <p className="text-sm text-muted-foreground">No activity found for the selected period.</p>
-                     )}
                 </CardContent>
             </Card>
 

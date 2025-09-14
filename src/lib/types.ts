@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -521,8 +520,8 @@ const StudyDataSchema = z.object({
 
 
 export const RecapRequestSchema = z.object({
-  tasks: z.array(TaskSchema),
-  goals: z.array(GoalWithMilestonesSchema),
+  tasks: z.array(TaskSchema).optional(),
+  goals: z.array(GoalWithMilestonesSchema).optional(),
   studyData: StudyDataSchema.optional(),
   period: z.enum(['daily', 'weekly']),
 });

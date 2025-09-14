@@ -14,8 +14,8 @@ export async function POST(request: Request) {
 
     const body: RecapRequest = await request.json();
 
-    if (!body.tasks || !body.period) {
-        return NextResponse.json({ error: 'Missing tasks or period in request body.' }, { status: 400 });
+    if (!body.period) {
+        return NextResponse.json({ error: 'Missing period in request body.' }, { status: 400 });
     }
 
     const recapData = await generateRecap(body);
