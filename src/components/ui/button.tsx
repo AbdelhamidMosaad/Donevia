@@ -6,16 +6,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold ring-offset-background transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-violet-600 text-primary-foreground shadow-lg shadow-violet-600/30 hover:bg-violet-700 hover:shadow-violet-700/40 hover:-translate-y-px",
+          "bg-gradient-to-br from-violet-500 to-violet-600 text-primary-foreground shadow-lg shadow-violet-500/30 hover:shadow-violet-600/40 hover:-translate-y-px",
         destructive:
           "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/30 hover:bg-destructive/90 hover:-translate-y-px",
         outline:
-          "border border-input bg-background/60 backdrop-blur-sm shadow-md rounded-xl border-white/20 hover:bg-accent hover:text-accent-foreground hover:-translate-y-px",
+          "border border-white/20 bg-white/10 backdrop-blur-md shadow-lg shadow-black/5 hover:bg-white/20 hover:-translate-y-px",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
