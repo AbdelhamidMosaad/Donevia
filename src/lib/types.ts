@@ -506,42 +506,6 @@ export const StudySessionSchema = z.object({
 export type StudySession = z.infer<typeof StudySessionSchema>;
 
 
-/** Recap Feature */
-const GoalWithMilestonesSchema = GoalSchema.extend({
-  milestones: z.array(MilestoneSchema),
-});
-
-const StudyDataSchema = z.object({
-    studyGoals: z.array(StudyGoalSchema),
-    studyChapters: z.array(StudyChapterSchema),
-    studySubtopics: z.array(StudySubtopicSchema),
-    studySessions: z.array(StudySessionSchema),
-});
-
-
-export const RecapRequestSchema = z.object({
-  tasks: z.array(TaskSchema).optional(),
-  goals: z.array(GoalWithMilestonesSchema).optional(),
-  studyData: StudyDataSchema.optional(),
-  period: z.enum(['daily', 'weekly']),
-});
-export type RecapRequest = z.infer<typeof RecapRequestSchema>;
-
-export const RecapResponseSchema = z.object({
-  title: z.string().describe('A short, engaging title for the recap.'),
-  quantitativeSummary: z.object({
-    tasksCompleted: z.number().describe('The number of tasks completed in the period.'),
-    milestonesCompleted: z.number().describe('The number of milestones completed in the period.'),
-    tasksCreated: z.number().describe('The number of tasks created in the period.'),
-  }),
-  accomplishments: z.array(z.string()).describe('A bulleted list of 2-4 key achievements.'),
-  challenges: z.array(z.string()).describe('A bulleted list of 1-3 challenges or overdue items.'),
-  productivityInsights: z.string().describe('A 2-3 sentence paragraph offering one key observation or piece of advice.'),
-  nextPeriodFocus: z.string().describe('A 1-2 sentence summary suggesting a focus for the next period.'),
-});
-export type RecapResponse = z.infer<typeof RecapResponseSchema>;
-
-
 /** Learning Tool Feature */
 export const StudyMaterialRequestSchema = GenkitStudyMaterialRequestSchema;
 export type StudyMaterialRequest = z.infer<typeof StudyMaterialRequestSchema>;

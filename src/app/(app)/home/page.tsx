@@ -6,14 +6,12 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Task, Stage, Goal, Milestone, StudyGoal, StudyChapter, StudySubtopic, StudySession } from '@/lib/types';
-import { Home, BarChart3, Sparkles } from 'lucide-react';
+import type { Task, Stage } from '@/lib/types';
+import { Home, BarChart3 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics-dashboard';
-import { RecapGenerator } from '@/components/recap-generator';
 import { ToolCard } from '@/components/home/tool-card';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { RecapDisplay } from '@/components/recap-display';
 
 const allTools = [
     { id: 'planner', href: '/planner', icon: 'CalendarDays', title: 'Planner', description: 'Organize your time, events, and tasks.', color: 'text-green-500' },
@@ -41,14 +39,6 @@ export default function HomePage() {
   const { user, loading, settings } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  
-  const [studyGoals, setStudyGoals] = useState<StudyGoal[]>([]);
-  const [studyChapters, setStudyChapters] = useState<StudyChapter[]>([]);
-  const [studySubtopics, setStudySubtopics] = useState<StudySubtopic[]>([]);
-  const [studySessions, setStudySessions] = useState<StudySession[]>([]);
-
   const [dataLoading, setDataLoading] = useState(true);
   const [orderedTools, setOrderedTools] = useState(allTools);
 
@@ -78,12 +68,6 @@ export default function HomePage() {
             docs.forEach(doc => { if (doc.stages) allStages.push(...doc.stages) });
             return allStages.filter((stage, index, self) => index === self.findIndex(s => s.id === stage.id && s.name === stage.name));
         }},
-        { name: 'goals', setter: setGoals },
-        { name: 'milestones', setter: setMilestones },
-        { name: 'studyGoals', setter: setStudyGoals },
-        { name: 'studyChapters', setter: setStudyChapters },
-        { name: 'studySubtopics', setter: setStudySubtopics },
-        { name: 'studySessions', setter: setStudySessions },
       ];
 
       const unsubscribes = collectionsToFetch.map(({ name, setter, queryConstraints = [], transform }) => {
@@ -137,7 +121,6 @@ export default function HomePage() {
             <TabsList>
                 <TabsTrigger value="overview"><Home className="mr-2 h-4 w-4"/> Overview</TabsTrigger>
                 <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/> Analytics</TabsTrigger>
-                <TabsTrigger value="recap"><Sparkles className="mr-2 h-4 w-4"/> AI Recap</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="flex-1 mt-4">
@@ -170,18 +153,6 @@ export default function HomePage() {
             </TabsContent>
             <TabsContent value="analytics" className="flex-1 mt-4">
                 <AnalyticsDashboard tasks={tasks} stages={stages} />
-            </TabsContent>
-            <TabsContent value="recap" className="flex-1 mt-4">
-                <RecapGenerator 
-                    allTasks={tasks}
-                    allGoals={goals}
-                    allMilestones={milestones}
-                    allStudyGoals={studyGoals}
-                    allStudyChapters={studyChapters}
-                    allStudySubtopics={studySubtopics}
-                    allStudySessions={studySessions}
-                    recapDisplay={RecapDisplay}
-                />
             </TabsContent>
         </Tabs>
     </div>
