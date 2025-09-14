@@ -7,6 +7,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieCha
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import moment from 'moment';
+import Link from 'next/link';
 
 interface AnalyticsDashboardProps {
   tasks: Task[];
@@ -14,6 +15,17 @@ interface AnalyticsDashboardProps {
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+
+function TaskItem({ task }: { task: Task }) {
+    return (
+        <Link href={`/dashboard/list/${task.listId}`} className="block hover:bg-muted p-2 rounded-md transition-colors">
+             <div className="flex justify-between items-start">
+                <p className="font-medium text-sm truncate pr-4">{task.title}</p>
+                {task.dueDate && <p className="text-xs text-muted-foreground shrink-0">{moment(task.dueDate.toDate()).format('MMM D')}</p>}
+             </div>
+        </Link>
+    );
+}
 
 export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
 
@@ -24,18 +36,6 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
   const totalTasks = tasks.length;
   const completionRate = totalTasks > 0 ? (tasksCompleted / totalTasks) * 100 : 0;
   
-  const averageTasksPerDay = useMemo(() => {
-    if (tasks.length === 0) return 0;
-    const firstTaskDate = tasks.reduce((oldest, task) => {
-        if (task.createdAt && task.createdAt.toDate() < oldest) {
-            return task.createdAt.toDate();
-        }
-        return oldest;
-    }, new Date());
-    const daysSinceFirstTask = moment().diff(moment(firstTaskDate), 'days') + 1;
-    return tasksCompleted / daysSinceFirstTask;
-  }, [tasks, tasksCompleted]);
-
   const tasksByStatus = useMemo(() => {
     const stageMap = new Map(stages.map(s => [s.id, s.name]));
     const counts: Record<string, number> = {};
@@ -62,41 +62,54 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
         };
     }).reverse();
   }, [tasks, doneStageIds]);
+  
+  const recentTasks = useMemo(() => {
+    return [...tasks]
+        .sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))
+        .slice(0, 5);
+  }, [tasks]);
+
+  const highPriorityTasks = useMemo(() => {
+    return tasks
+        .filter(t => t.priority === 'High' && !doneStageIds.includes(t.status))
+        .sort((a,b) => a.dueDate.toMillis() - b.dueDate.toMillis())
+        .slice(0, 5);
+  }, [tasks, doneStageIds]);
+  
+  const dueSoonTasks = useMemo(() => {
+    const now = moment();
+    return tasks
+        .filter(t => !doneStageIds.includes(t.status) && moment(t.dueDate.toDate()).isAfter(now))
+        .sort((a,b) => a.dueDate.toMillis() - b.dueDate.toMillis())
+        .slice(0, 5);
+  }, [tasks, doneStageIds]);
 
 
   return (
     <div className="grid gap-6">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+             <Card>
                 <CardHeader>
-                    <CardTitle>Tasks Completed</CardTitle>
+                    <CardTitle>Recently Created</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">{tasksCompleted}</p>
+                <CardContent className="space-y-2">
+                    {recentTasks.length > 0 ? recentTasks.map(t => <TaskItem key={t.id} task={t}/>) : <p className="text-sm text-muted-foreground">No recent tasks.</p>}
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader>
-                    <CardTitle>Tasks Overdue</CardTitle>
+                    <CardTitle>High Priority</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">{tasksOverdue}</p>
+                <CardContent className="space-y-2">
+                    {highPriorityTasks.length > 0 ? highPriorityTasks.map(t => <TaskItem key={t.id} task={t}/>) : <p className="text-sm text-muted-foreground">No high-priority tasks.</p>}
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader>
-                    <CardTitle>Completion Rate</CardTitle>
+                    <CardTitle>Due Soon</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">{completionRate.toFixed(1)}%</p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Avg. Daily Tasks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">{averageTasksPerDay.toFixed(1)}</p>
+                <CardContent className="space-y-2">
+                    {dueSoonTasks.length > 0 ? dueSoonTasks.map(t => <TaskItem key={t.id} task={t}/>) : <p className="text-sm text-muted-foreground">No upcoming tasks.</p>}
                 </CardContent>
             </Card>
         </div>
