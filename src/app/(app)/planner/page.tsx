@@ -219,18 +219,18 @@ export default function PlannerPage() {
         </div>
         <div className="flex items-center gap-2">
             {isSignedIn && (
-                <Button variant="outline" onClick={listUpcomingEvents} disabled={isSyncing}>
+                <Button variant="outline" onClick={listUpcomingEvents} disabled={isSyncing} className="bg-white/60 backdrop-blur-sm shadow-md rounded-xl border-gray-200/80 hover:bg-white/80 hover:-translate-y-px transform transition-all">
                     <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} /> Sync
                 </Button>
             )}
-            <Button variant="outline" onClick={handleAuthClick} disabled={isSyncing}>
+            <Button variant="outline" onClick={handleAuthClick} disabled={isSyncing} className="bg-white/60 backdrop-blur-sm shadow-md rounded-xl border-gray-200/80 hover:bg-white/80 hover:-translate-y-px transform transition-all">
                 <LinkIcon className="mr-2 h-4 w-4" /> 
                 {isSyncing ? 'Syncing...' : (isSignedIn ? 'Disconnect Calendar' : 'Connect Google Calendar')}
             </Button>
-            <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)}>
+            <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)} className="bg-white/60 backdrop-blur-sm shadow-md rounded-xl border-gray-200/80 hover:bg-white/80 hover:-translate-y-px transform transition-all">
                 <Settings className="mr-2 h-4 w-4" /> Manage Categories
             </Button>
-            <Button onClick={() => handleSelectSlot({ start: new Date(), end: new Date() })}>
+            <Button onClick={() => handleSelectSlot({ start: new Date(), end: new Date() })} className="bg-blue-500 text-white shadow-lg shadow-blue-500/30 rounded-xl hover:bg-blue-600 hover:-translate-y-px transform transition-all">
               <PlusCircle className="mr-2 h-4 w-4" />
               New Event
             </Button>
