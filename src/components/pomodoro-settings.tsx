@@ -10,10 +10,12 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Save } from 'lucide-react';
 
 interface PomodoroSettingsData {
     workMinutes: number;
@@ -111,8 +113,13 @@ export function PomodoroSettings({ children, onSave, currentSettings }: Pomodoro
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSave}>Save Changes</Button>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleSave}>
+                        <Save />
+                        Save Changes
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

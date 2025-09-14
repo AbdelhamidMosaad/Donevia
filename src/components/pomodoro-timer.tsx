@@ -39,9 +39,9 @@ export function PomodoroTimer() {
     const seconds = secondsLeft % 60;
 
     const modeColors = {
-        work: '#3399FF', // primary
+        work: 'hsl(var(--primary))',
         shortBreak: '#10B981', // green-500
-        longBreak: '#8040FF' // accent
+        longBreak: 'hsl(var(--accent))'
     }
 
     const getDisplayText = () => {
@@ -52,7 +52,7 @@ export function PomodoroTimer() {
     };
 
     return (
-        <div className="flex flex-col items-center gap-6 p-8 rounded-2xl bg-card shadow-xl w-full max-w-md">
+        <div className="flex flex-col items-center gap-6 p-8 rounded-2xl bg-card/60 backdrop-blur-sm shadow-xl w-full max-w-md">
             <div className="w-64 h-64">
                 <CircularProgressbar
                     value={sessionEnded ? 100 : percentage}
@@ -67,11 +67,11 @@ export function PomodoroTimer() {
             </div>
             <div className="flex items-center gap-4">
                 <Button onClick={toggleTimer} size="lg" className="w-32">
-                    {isActive ? <Pause className="mr-2" /> : <Play className="mr-2" />}
+                    {isActive ? <Pause /> : <Play />}
                     {sessionEnded ? (mode === 'work' ? 'Start Work' : 'Start Break') : (isActive ? 'Pause' : 'Start')}
                 </Button>
                 <Button onClick={() => resetTimer()} variant="outline" size="lg">
-                    <RotateCcw className="mr-2" /> Reset
+                    <RotateCcw /> Reset
                 </Button>
                  <PomodoroSettings onSave={saveSettings} currentSettings={settings}>
                     <Button variant="ghost" size="icon">
