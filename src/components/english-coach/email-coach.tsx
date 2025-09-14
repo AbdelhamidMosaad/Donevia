@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Sparkles, Check, X, ArrowRight, Wand2, Lightbulb } from 'lucide-react';
+import { Loader2, Sparkles, Check, X, ArrowRight, Wand2, Lightbulb, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import type { EmailCoachResponse } from '@/lib/types/email-coach';
@@ -62,6 +62,12 @@ export function EmailCoach() {
       setIsLoading(false);
     }
   };
+  
+  const handleCopy = () => {
+      if (!result?.improvedEmail) return;
+      navigator.clipboard.writeText(result.improvedEmail);
+      toast({ title: '✓ Copied to clipboard!' });
+  }
 
   const renderResults = () => {
     if (!result) {
@@ -74,8 +80,11 @@ export function EmailCoach() {
     return (
       <div className="space-y-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2"><Wand2 /> Improved Version</CardTitle>
+            <Button variant="ghost" size="icon" onClick={handleCopy} title="Copy to clipboard">
+              <Copy className="h-4 w-4" />
+            </Button>
           </CardHeader>
           <CardContent>
             <p className="whitespace-pre-wrap text-foreground/90">{result.improvedEmail}</p>

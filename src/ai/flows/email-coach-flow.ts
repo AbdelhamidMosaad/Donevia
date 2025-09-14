@@ -30,7 +30,7 @@ const emailCoachPrompt = ai.definePrompt({
 
     **Instructions:**
 
-    1.  **Rewrite the Email**: Create a polished, professional, and improved version of the entire email. Place this in the \`improvedEmail\` field. The tone should be appropriate for the provided context.
+    1.  **Rewrite the Email**: Create a polished, professional, and improved version of the entire email. Place this in the \`improvedEmail\` field. The tone should be appropriate for the provided context. **Crucially, you must preserve paragraph breaks and natural line spacing to ensure the email is readable. Use newline characters (\\n) for line breaks.**
 
     2.  **Identify Specific Corrections**: In the \`corrections\` array, detail at least 3-5 specific changes you made. For each correction:
         -   \`original\`: The exact phrase or sentence from the original text.
