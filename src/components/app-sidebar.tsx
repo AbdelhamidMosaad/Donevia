@@ -14,27 +14,10 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import {
-  FileText,
-  PenSquare,
-  GitBranch,
   Settings,
   HelpCircle,
   Home,
-  Kanban,
-  FileSignature,
-  Timer,
-  Target,
-  Repeat,
   GripVertical,
-  GraduationCap,
-  Bookmark,
-  Briefcase,
-  BrainCircuit,
-  Layers,
-  ClipboardSignature,
-  CalendarDays,
-  TrendingUp,
-  Languages,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -43,30 +26,48 @@ import { useAuth } from '@/hooks/use-auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { DoneviaLogo } from './logo';
 import { cn } from '@/lib/utils';
+import { PlannerIcon } from '@/components/icons/tools/planner-icon';
+import { TasksIcon } from '@/components/icons/tools/tasks-icon';
+import { CrmIcon } from '@/components/icons/tools/crm-icon';
+import { HabitsIcon } from '@/components/icons/tools/habits-icon';
+import { GoalsIcon } from '@/components/icons/tools/goals-icon';
+import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
+import { FlashcardsIcon } from '@/components/icons/tools/flashcards-icon';
+import { MeetingNotesIcon } from '@/components/icons/tools/meeting-notes-icon';
+import { StickyNotesIcon } from '@/components/icons/tools/sticky-notes-icon';
+import { BookmarksIcon } from '@/components/icons/tools/bookmarks-icon';
+import { TradingTrackerIcon } from '@/components/icons/tools/trading-tracker-icon';
+import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
+import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
+import { BrainstormingIcon } from '@/components/icons/tools/brainstorming-icon';
+import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
+import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
+import { DocsIcon } from '@/components/icons/tools/docs-icon';
+import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
+import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 
 const defaultMenuItems = [
-    { href: '/home', icon: <Home className="text-blue-500 ml-2" />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
-    { href: '/planner', icon: <CalendarDays className="text-green-500 ml-2" />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
-    { href: '/dashboard/lists', icon: <Kanban className="text-purple-500 ml-2" />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
-    { href: '/crm', icon: <Briefcase className="text-amber-500 ml-2" />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
-    { href: '/habits', icon: <Repeat className="text-teal-500 ml-2" />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
-    { href: '/goals', icon: <Target className="text-red-500 ml-2" />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
-    { href: '/study-tracker', icon: <GraduationCap className="text-lime-500 ml-2" />, label: 'Study Tracker', tooltip: 'Study Tracker', id: 'study-tracker' },
-    { href: '/flashcards', icon: <Layers className="text-indigo-500 ml-2" />, label: 'Flashcards', tooltip: 'Flashcards', id: 'flashcards' },
-    { href: '/meeting-notes', icon: <ClipboardSignature className="text-cyan-500 ml-2" />, label: 'Meeting Notes', tooltip: 'Meeting Notes', id: 'meeting-notes' },
-    { href: '/notes', icon: <FileText className="text-orange-500 ml-2" />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
-    { href: '/bookmarks', icon: <Bookmark className="text-blue-500 ml-2" />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
-    { href: '/trading-tracker', icon: <TrendingUp className="text-emerald-500 ml-2" />, label: 'Trading Tracker', tooltip: 'Trading Tracker', id: 'trading-tracker' },
-    { href: '/work-tracker', icon: <Briefcase className="text-amber-500 ml-2" />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
-    { href: '/english-coach', icon: <Languages className="text-red-500 ml-2" />, label: 'English Coach', tooltip: 'English Coach', id: 'english-coach' },
-    { href: '/brainstorming', icon: <BrainCircuit className="text-violet-500 ml-2" />, label: 'Brainstorming', tooltip: 'Brainstorming', id: 'brainstorming' },
-    { href: '/whiteboard', icon: <PenSquare className="text-indigo-500 ml-2" />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
-    { href: '/mind-map', icon: <GitBranch className="text-pink-500 ml-2" />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
-    { href: '/docs', icon: <FileSignature className="text-cyan-500 ml-2" />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
-    { href: '/learning-tool', icon: <GraduationCap className="text-lime-500 ml-2" />, label: 'Learning Tool', tooltip: 'Learning Tool', id: 'learning-tool' },
-    { href: '/pomodoro', icon: <Timer className="text-rose-500 ml-2" />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
+    { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
+    { href: '/planner', icon: <PlannerIcon />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
+    { href: '/dashboard/lists', icon: <TasksIcon />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
+    { href: '/crm', icon: <CrmIcon />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
+    { href: '/habits', icon: <HabitsIcon />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
+    { href: '/goals', icon: <GoalsIcon />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
+    { href: '/study-tracker', icon: <StudyTrackerIcon />, label: 'Study Tracker', tooltip: 'Study Tracker', id: 'study-tracker' },
+    { href: '/flashcards', icon: <FlashcardsIcon />, label: 'Flashcards', tooltip: 'Flashcards', id: 'flashcards' },
+    { href: '/meeting-notes', icon: <MeetingNotesIcon />, label: 'Meeting Notes', tooltip: 'Meeting Notes', id: 'meeting-notes' },
+    { href: '/notes', icon: <StickyNotesIcon />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
+    { href: '/bookmarks', icon: <BookmarksIcon />, label: 'Bookmarks', tooltip: 'Bookmarks', id: 'bookmarks' },
+    { href: '/trading-tracker', icon: <TradingTrackerIcon />, label: 'Trading Tracker', tooltip: 'Trading Tracker', id: 'trading-tracker' },
+    { href: '/work-tracker', icon: <WorkTrackerIcon />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
+    { href: '/english-coach', icon: <EnglishCoachIcon />, label: 'English Coach', tooltip: 'English Coach', id: 'english-coach' },
+    { href: '/brainstorming', icon: <BrainstormingIcon />, label: 'Brainstorming', tooltip: 'Brainstorming', id: 'brainstorming' },
+    { href: '/whiteboard', icon: <WhiteboardIcon />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
+    { href: '/mind-map', icon: <MindMapIcon />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
+    { href: '/docs', icon: <DocsIcon />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
+    { href: '/learning-tool', icon: <LearningAssistantIcon />, label: 'Learning Tool', tooltip: 'Learning Tool', id: 'learning-tool' },
+    { href: '/pomodoro', icon: <PomodoroIcon />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
 ];
 
 export function AppSidebar() {
@@ -154,8 +155,10 @@ export function AppSidebar() {
                                                 <div className={cn("p-1", !open && "hidden")}>
                                                     <GripVertical className="h-4 w-4 text-muted-foreground"/>
                                                 </div>
-                                                {item.icon}
-                                                {open && <span className="flex-1">{item.label}</span>}
+                                                <div className="w-8 h-8 flex items-center justify-center">
+                                                  {React.cloneElement(item.icon as React.ReactElement, { className: "h-6 w-6" })}
+                                                </div>
+                                                {open && <span className="flex-1 ml-2">{item.label}</span>}
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
