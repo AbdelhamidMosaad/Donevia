@@ -19,10 +19,6 @@ declare module '@tiptap/core' {
        * Unset the font family
        */
       unsetFontFamily: () => ReturnType;
-      /**
-       * Set the stored font family
-       */
-      setStoredFontFamily: (fontFamily: string) => ReturnType;
     };
   }
 }
@@ -34,12 +30,6 @@ export const FontFamily = Extension.create<FontFamilyOptions>({
     return {
       types: ['textStyle'],
     };
-  },
-  
-  addStorage() {
-    return {
-      fontFamily: null,
-    }
   },
 
   addGlobalAttributes() {
@@ -70,27 +60,13 @@ export const FontFamily = Extension.create<FontFamilyOptions>({
       setFontFamily:
         (fontFamily) =>
         ({ chain }) => {
-          this.storage.fontFamily = fontFamily;
           return chain().setMark('textStyle', { fontFamily }).run();
         },
       unsetFontFamily:
         () =>
         ({ chain }) => {
-          this.storage.fontFamily = null;
           return chain().setMark('textStyle', { fontFamily: null }).removeEmptyTextStyle().run();
         },
-       setStoredFontFamily:
-        (fontFamily) =>
-        ({ editor }) => {
-          this.storage.fontFamily = fontFamily;
-          return editor.commands.setFontFamily(fontFamily);
-        },
     };
-  },
-  
-  onTransaction() {
-    if (this.storage.fontFamily) {
-      this.editor.chain().setFontFamily(this.storage.fontFamily).run();
-    }
   },
 });
