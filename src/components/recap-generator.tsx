@@ -5,7 +5,7 @@ import { useState, useMemo, ReactNode } from 'react';
 import { Button } from './ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
-import type { Task, Goal, Milestone, RecapRequest, RecapResponse } from '@/lib/types';
+import type { Task, Goal, Milestone, RecapRequest, RecapResponse, StudyGoal, StudyChapter, StudySubtopic, StudySession } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles } from 'lucide-react';
@@ -15,10 +15,23 @@ interface RecapGeneratorProps {
     allTasks: Task[];
     allGoals: Goal[];
     allMilestones: Milestone[];
+    allStudyGoals: StudyGoal[];
+    allStudyChapters: StudyChapter[];
+    allStudySubtopics: StudySubtopic[];
+    allStudySessions: StudySession[];
     recapDisplay: (props: { recap: RecapResponse, period: 'daily' | 'weekly' }) => ReactNode;
 }
 
-export function RecapGenerator({ allTasks, allGoals, allMilestones, recapDisplay: RecapDisplay }: RecapGeneratorProps) {
+export function RecapGenerator({ 
+    allTasks, 
+    allGoals, 
+    allMilestones,
+    allStudyGoals,
+    allStudyChapters,
+    allStudySubtopics,
+    allStudySessions,
+    recapDisplay: RecapDisplay 
+}: RecapGeneratorProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [period, setPeriod] = useState<'daily' | 'weekly'>('daily');
@@ -27,23 +40,30 @@ export function RecapGenerator({ allTasks, allGoals, allMilestones, recapDisplay
 
     const dataForPeriod = useMemo(() => {
         const now = moment();
-        const tasks = allTasks.filter(task => {
-            if (!task.createdAt) return false;
-            const taskDate = moment(task.createdAt.toDate());
-            if (period === 'daily') {
-                return taskDate.isSame(now, 'day');
-            } else { // weekly
-                return taskDate.isSame(now, 'week');
-            }
-        });
-        
+        const filterByPeriod = (item: { createdAt?: any, date?: any }) => {
+            const itemDate = moment(item.createdAt?.toDate() || item.date?.toDate());
+            if (!itemDate.isValid()) return false;
+            if (period === 'daily') return itemDate.isSame(now, 'day');
+            return itemDate.isSame(now, 'week');
+        };
+
+        const tasks = allTasks.filter(filterByPeriod);
         const goalsWithMilestones = allGoals.map(goal => ({
             ...goal,
             milestones: allMilestones.filter(m => m.goalId === goal.id)
         }));
+        
+        const studySessions = allStudySessions.filter(filterByPeriod);
 
-        return { tasks, goals: goalsWithMilestones };
-    }, [allTasks, allGoals, allMilestones, period]);
+        return { 
+            tasks, 
+            goals: goalsWithMilestones,
+            studyGoals: allStudyGoals,
+            studyChapters: allStudyChapters,
+            studySubtopics: allStudySubtopics,
+            studySessions,
+        };
+    }, [allTasks, allGoals, allMilestones, allStudyGoals, allStudyChapters, allStudySubtopics, allStudySessions, period]);
     
     const handleGenerateRecap = async () => {
         if (!user) {
@@ -58,6 +78,12 @@ export function RecapGenerator({ allTasks, allGoals, allMilestones, recapDisplay
             const requestPayload: RecapRequest = {
                 tasks: dataForPeriod.tasks,
                 goals: dataForPeriod.goals,
+                studyData: {
+                    studyGoals: dataForPeriod.studyGoals,
+                    studyChapters: dataForPeriod.studyChapters,
+                    studySubtopics: dataForPeriod.studySubtopics,
+                    studySessions: dataForPeriod.studySessions,
+                },
                 period,
             };
 
@@ -86,7 +112,7 @@ export function RecapGenerator({ allTasks, allGoals, allMilestones, recapDisplay
         }
     };
     
-    const hasDataForPeriod = dataForPeriod.tasks.length > 0 || dataForPeriod.goals.length > 0;
+    const hasDataForPeriod = dataForPeriod.tasks.length > 0 || dataForPeriod.goals.length > 0 || dataForPeriod.studySessions.length > 0;
 
     return (
         <div className="space-y-6">

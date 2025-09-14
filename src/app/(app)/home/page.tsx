@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Task, Stage, Goal, Milestone } from '@/lib/types';
+import type { Task, Stage, Goal, Milestone, StudyGoal, StudyChapter, StudySubtopic, StudySession } from '@/lib/types';
 import { Home, BarChart3, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics-dashboard';
@@ -43,6 +43,12 @@ export default function HomePage() {
   const [stages, setStages] = useState<Stage[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  
+  const [studyGoals, setStudyGoals] = useState<StudyGoal[]>([]);
+  const [studyChapters, setStudyChapters] = useState<StudyChapter[]>([]);
+  const [studySubtopics, setStudySubtopics] = useState<StudySubtopic[]>([]);
+  const [studySessions, setStudySessions] = useState<StudySession[]>([]);
+
   const [dataLoading, setDataLoading] = useState(true);
   const [orderedTools, setOrderedTools] = useState(allTools);
 
@@ -64,43 +70,34 @@ export default function HomePage() {
   useEffect(() => {
     if (user) {
       setDataLoading(true);
-      const taskQuery = query(collection(db, 'users', user.uid, 'tasks'), where('deleted', '!=', true));
-      const unsubscribeTasks = onSnapshot(taskQuery, (snapshot) => {
-        setTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
-        if(dataLoading) setDataLoading(false);
-      });
+      
+      const collectionsToFetch = [
+        { name: 'tasks', setter: setTasks, queryConstraints: [where('deleted', '!=', true)] },
+        { name: 'taskLists', setter: setStages, transform: (docs: any[]) => {
+            const allStages: Stage[] = [];
+            docs.forEach(doc => { if (doc.stages) allStages.push(...doc.stages) });
+            return allStages.filter((stage, index, self) => index === self.findIndex(s => s.id === stage.id && s.name === stage.name));
+        }},
+        { name: 'goals', setter: setGoals },
+        { name: 'milestones', setter: setMilestones },
+        { name: 'studyGoals', setter: setStudyGoals },
+        { name: 'studyChapters', setter: setStudyChapters },
+        { name: 'studySubtopics', setter: setStudySubtopics },
+        { name: 'studySessions', setter: setStudySessions },
+      ];
 
-      const listsQuery = query(collection(db, 'users', user.uid, 'taskLists'));
-      const unsubscribeLists = onSnapshot(listsQuery, (snapshot) => {
-        const allStages: Stage[] = [];
-        snapshot.docs.forEach(doc => {
-            if (doc.data().stages) {
-                allStages.push(...doc.data().stages);
-            }
+      const unsubscribes = collectionsToFetch.map(({ name, setter, queryConstraints = [], transform }) => {
+        const collRef = collection(db, 'users', user.uid, name);
+        const q = query(collRef, ...queryConstraints);
+        return onSnapshot(q, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setter(transform ? transform(data) : data);
         });
-        const uniqueStages = allStages.filter((stage, index, self) =>
-            index === self.findIndex((s) => (s.id === stage.id && s.name === stage.name))
-        );
-        setStages(uniqueStages);
       });
 
-      const goalsQuery = query(collection(db, 'users', user.uid, 'goals'));
-      const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => {
-          setGoals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal)));
-      });
+      setDataLoading(false);
 
-      const milestonesQuery = query(collection(db, 'users', user.uid, 'milestones'));
-      const unsubscribeMilestones = onSnapshot(milestonesQuery, (snapshot) => {
-          setMilestones(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Milestone)));
-      });
-
-
-      return () => {
-        unsubscribeTasks();
-        unsubscribeLists();
-        unsubscribeGoals();
-        unsubscribeMilestones();
-      };
+      return () => unsubscribes.forEach(unsub => unsub());
     }
   }, [user]);
   
@@ -179,6 +176,10 @@ export default function HomePage() {
                     allTasks={tasks}
                     allGoals={goals}
                     allMilestones={milestones}
+                    allStudyGoals={studyGoals}
+                    allStudyChapters={studyChapters}
+                    allStudySubtopics={studySubtopics}
+                    allStudySessions={studySessions}
                     recapDisplay={RecapDisplay}
                 />
             </TabsContent>

@@ -446,14 +446,84 @@ export type HabitCompletion = {
     ownerId: string;
 };
 
+/** Study Tracker */
+export type StudyDifficulty = 'Easy' | 'Medium' | 'Hard';
+
+export const StudyGoalSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    createdAt: FirebaseTimestampSchema,
+    updatedAt: FirebaseTimestampSchema,
+    ownerId: z.string(),
+    dueDate: FirebaseTimestampSchema.nullable().optional(),
+});
+export type StudyGoal = z.infer<typeof StudyGoalSchema>;
+
+export const StudyChapterSchema = z.object({
+    id: z.string(),
+    goalId: z.string(),
+    title: z.string(),
+    order: z.number(),
+    createdAt: FirebaseTimestampSchema,
+    ownerId: z.string(),
+    dueDate: FirebaseTimestampSchema.nullable().optional(),
+    reminder: z.enum(['none', 'on-due-date', '1-day', '2-days', '1-week']).optional(),
+    difficulty: z.enum(['Easy', 'Medium', 'Hard']).optional(),
+});
+export type StudyChapter = z.infer<typeof StudyChapterSchema>;
+
+export const StudySubtopicResourceSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    url: z.string(),
+});
+export type StudySubtopicResource = z.infer<typeof StudySubtopicResourceSchema>;
+
+export const StudySubtopicSchema = z.object({
+    id: z.string(),
+    goalId: z.string(),
+    chapterId: z.string(),
+    title: z.string(),
+    isCompleted: z.boolean(),
+    order: z.number(),
+    createdAt: FirebaseTimestampSchema,
+    ownerId: z.string(),
+    notes: z.string().optional(),
+    resources: z.array(StudySubtopicResourceSchema).optional(),
+    timeSpentSeconds: z.number().optional(),
+    difficulty: z.enum(['Easy', 'Medium', 'Hard']).optional(),
+});
+export type StudySubtopic = z.infer<typeof StudySubtopicSchema>;
+
+export const StudySessionSchema = z.object({
+    id: z.string(),
+    subtopicId: z.string(),
+    date: FirebaseTimestampSchema,
+    durationSeconds: z.number(),
+    ownerId: z.string(),
+});
+export type StudySession = z.infer<typeof StudySessionSchema>;
+
+
 /** Recap Feature */
 const GoalWithMilestonesSchema = GoalSchema.extend({
   milestones: z.array(MilestoneSchema),
 });
 
+const StudyDataSchema = z.object({
+    studyGoals: z.array(StudyGoalSchema),
+    studyChapters: z.array(StudyChapterSchema),
+    studySubtopics: z.array(StudySubtopicSchema),
+    studySessions: z.array(StudySessionSchema),
+});
+
+
 export const RecapRequestSchema = z.object({
   tasks: z.array(TaskSchema),
   goals: z.array(GoalWithMilestonesSchema),
+  studyData: StudyDataSchema.optional(),
   period: z.enum(['daily', 'weekly']),
 });
 export type RecapRequest = z.infer<typeof RecapRequestSchema>;
@@ -554,60 +624,6 @@ export type FlashcardProgress = {
     lastReviewedAt: string | null; // ISO string
 };
 
-/** Study Tracker */
-export type StudyDifficulty = 'Easy' | 'Medium' | 'Hard';
-
-export type StudyGoal = {
-    id: string;
-    title: string;
-    description?: string;
-    tags?: string[];
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    ownerId: string;
-    dueDate?: Timestamp | null;
-}
-
-export type StudyChapter = {
-    id: string;
-    goalId: string;
-    title: string;
-    order: number;
-    createdAt: Timestamp;
-    ownerId: string;
-    dueDate?: Timestamp | null;
-    reminder?: 'none' | 'on-due-date' | '1-day' | '2-days' | '1-week';
-    difficulty?: StudyDifficulty;
-}
-
-export type StudySubtopicResource = {
-    id: string;
-    title: string;
-    url: string;
-}
-
-export type StudySubtopic = {
-    id: string;
-    goalId: string;
-    chapterId: string;
-    title: string;
-    isCompleted: boolean;
-    order: number;
-    createdAt: Timestamp;
-    ownerId: string;
-    notes?: string;
-    resources?: StudySubtopicResource[];
-    timeSpentSeconds?: number;
-    difficulty?: StudyDifficulty;
-}
-
-export type StudySession = {
-    id: string;
-    subtopicId: string;
-    date: Timestamp;
-    durationSeconds: number;
-    ownerId: string;
-}
 
 /** Planner */
 export type PlannerCategory = {
