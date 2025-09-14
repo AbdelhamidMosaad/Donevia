@@ -5,8 +5,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import type { Task, Doc, Client, StickyNote, PlannerEvent, DocFolder, FlashcardFolder, StudyChapter, StudySubtopic } from '@/lib/types';
+import { collection, getDocs, query, collectionGroup } from 'firebase/firestore';
+import type { Task, Doc, Client, StickyNote, PlannerEvent, DocFolder, FlashcardFolder, StudyChapter, StudySubtopic, FlashcardDeck, FlashcardToolCard, WorkActivity, ClientRequest, Trade, TradingStrategy, WatchlistItem, MeetingNote, MindMap, Whiteboard } from '@/lib/types';
 import { Loader2, Search as SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -15,12 +15,22 @@ type SearchResult =
     | { type: 'task', data: Task, match: { field: string, text: string } }
     | { type: 'doc', data: Doc, match: { field: string, text: string } }
     | { type: 'client', data: Client, match: { field: string, text: string } }
+    | { type: 'clientRequest', data: ClientRequest, match: { field: string, text: string } }
     | { type: 'note', data: StickyNote, match: { field: string, text: string } }
     | { type: 'event', data: PlannerEvent, match: { field: string, text: string } }
     | { type: 'docFolder', data: DocFolder, match: { field: string, text: string } }
     | { type: 'flashcardFolder', data: FlashcardFolder, match: { field: string, text: string } }
+    | { type: 'flashcardDeck', data: FlashcardDeck, match: { field: string, text: string } }
+    | { type: 'flashcard', data: FlashcardToolCard, match: { field: string, text: string } }
     | { type: 'studyChapter', data: StudyChapter, match: { field: string, text: string } }
-    | { type: 'studySubtopic', data: StudySubtopic, match: { field: string, text: string } };
+    | { type: 'studySubtopic', data: StudySubtopic, match: { field: string, text: string } }
+    | { type: 'workActivity', data: WorkActivity, match: { field: string, text: string } }
+    | { type: 'trade', data: Trade, match: { field: string, text: string } }
+    | { type: 'tradingStrategy', data: TradingStrategy, match: { field: string, text: string } }
+    | { type: 'watchlist', data: WatchlistItem, match: { field: string, text: string } }
+    | { type: 'meetingNote', data: MeetingNote, match: { field: string, text: string } }
+    | { type: 'mindmap', data: MindMap, match: { field: string, text: string } }
+    | { type: 'whiteboard', data: Whiteboard, match: { field: string, text: string } };
 
 function SearchResultsComponent() {
     const { user, loading: authLoading } = useAuth();
@@ -57,15 +67,11 @@ function SearchResultsComponent() {
 
                 // 1. Fetch all data
                 const [
-                    tasksSnap,
-                    docsSnap,
-                    clientsSnap,
-                    notesSnap,
-                    eventsSnap,
-                    docFoldersSnap,
-                    flashcardFoldersSnap,
-                    studyChaptersSnap,
-                    studySubtopicsSnap
+                    tasksSnap, docsSnap, clientsSnap, notesSnap, eventsSnap,
+                    docFoldersSnap, flashcardFoldersSnap, studyChaptersSnap, studySubtopicsSnap,
+                    flashcardDecksSnap, workActivitiesSnap, clientRequestsSnap,
+                    tradesSnap, tradingStrategiesSnap, watchlistItemsSnap,
+                    meetingNotesSnap, mindMapsSnap, whiteboardsSnap
                 ] = await Promise.all([
                     getDocs(collection(db, 'users', user.uid, 'tasks')),
                     getDocs(collection(db, 'users', user.uid, 'docs')),
@@ -76,15 +82,29 @@ function SearchResultsComponent() {
                     getDocs(collection(db, 'users', user.uid, 'flashcardFolders')),
                     getDocs(collection(db, 'users', user.uid, 'studyChapters')),
                     getDocs(collection(db, 'users', user.uid, 'studySubtopics')),
+                    getDocs(collection(db, 'users', user.uid, 'flashcardDecks')),
+                    getDocs(collection(db, 'users', user.uid, 'workActivities')),
+                    getDocs(collection(db, 'users', user.uid, 'clientRequests')),
+                    getDocs(collection(db, 'users', user.uid, 'trades')),
+                    getDocs(collection(db, 'users', user.uid, 'tradingStrategies')),
+                    getDocs(collection(db, 'users', user.uid, 'watchlistItems')),
+                    getDocs(collection(db, 'users', user.uid, 'meetingNotes')),
+                    getDocs(collection(db, 'users', user.uid, 'mindMaps')),
+                    getDocs(collection(db, 'users', user.uid, 'whiteboards')),
                 ]);
+                
+                // Fetch all flashcards from all decks
+                const flashcardsGroupQuery = query(collectionGroup(db, 'cards'));
+                const flashcardsSnap = await getDocs(flashcardsGroupQuery);
+
 
                 // Helper to extract text from Tiptap content
                 const getTextFromDocContent = (content: any): string => {
                     let text = '';
                     if (!content) return text;
                     if (content.content && Array.isArray(content.content)) {
-                        for (const node of content.content) {
-                            text += getTextFromDocContent(node);
+                        for (const childNode of content.content) {
+                            text += getTextFromDocContent(childNode);
                         }
                     } else if (content.text) {
                         text += content.text + ' ';
@@ -94,119 +114,62 @@ function SearchResultsComponent() {
 
                 // 2. Search through data on the client side
                 
-                // Search Tasks
                 tasksSnap.forEach(doc => {
                     const data = { id: doc.id, ...doc.data() } as Task;
                     if (resultIds.has(data.id)) return;
-                    if (data.title.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'task', data, match: { field: 'title', text: data.title }});
-                        resultIds.add(data.id);
-                    } else if (data.description?.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'task', data, match: { field: 'description', text: data.description }});
-                        resultIds.add(data.id);
-                    }
+                    if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'task', data, match: { field: 'title', text: data.title }}); resultIds.add(data.id); } 
+                    else if (data.description?.toLowerCase().includes(term)) { allResults.push({ type: 'task', data, match: { field: 'description', text: data.description }}); resultIds.add(data.id); }
                 });
 
-                // Search Docs
                 docsSnap.forEach(doc => {
                     const data = { id: doc.id, ...doc.data() } as Doc;
                     if (resultIds.has(data.id)) return;
-                    
                     const contentText = getTextFromDocContent(data.content);
-
-                    if (data.title.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'doc', data, match: { field: 'title', text: data.title }});
-                        resultIds.add(data.id);
-                    } else if (contentText.toLowerCase().includes(term)) {
-                         allResults.push({ type: 'doc', data, match: { field: 'content', text: contentText.substring(0, 100) + '...' }});
-                        resultIds.add(data.id);
-                    }
+                    if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'doc', data, match: { field: 'title', text: data.title }}); resultIds.add(data.id); } 
+                    else if (contentText.toLowerCase().includes(term)) { allResults.push({ type: 'doc', data, match: { field: 'content', text: contentText.substring(0, 100) + '...' }}); resultIds.add(data.id); }
                 });
 
-                // Search Clients
                 clientsSnap.forEach(doc => {
                     const data = { id: doc.id, ...doc.data() } as Client;
                     if (resultIds.has(data.id)) return;
-                    if (data.name?.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'client', data, match: { field: 'name', text: data.name }});
-                        resultIds.add(data.id);
-                    } else if (data.company?.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'client', data, match: { field: 'company', text: data.company }});
-                        resultIds.add(data.id);
-                    } else if (data.email?.toLowerCase().includes(term)) {
-                         allResults.push({ type: 'client', data, match: { field: 'email', text: data.email }});
-                        resultIds.add(data.id);
-                    }
+                    if (data.name?.toLowerCase().includes(term)) { allResults.push({ type: 'client', data, match: { field: 'name', text: data.name }}); resultIds.add(data.id); } 
+                    else if (data.company?.toLowerCase().includes(term)) { allResults.push({ type: 'client', data, match: { field: 'company', text: data.company }}); resultIds.add(data.id); } 
+                    else if (data.email?.toLowerCase().includes(term)) { allResults.push({ type: 'client', data, match: { field: 'email', text: data.email }}); resultIds.add(data.id); }
                 });
                 
-                // Search Sticky Notes
+                clientRequestsSnap.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() } as ClientRequest;
+                     if (resultIds.has(data.id)) return;
+                    if(data.title.toLowerCase().includes(term)) { allResults.push({ type: 'clientRequest', data, match: { field: 'title', text: data.title }}); resultIds.add(data.id); }
+                });
+                
                 notesSnap.forEach(doc => {
                     const data = { id: doc.id, ...doc.data() } as StickyNote;
                     if (resultIds.has(data.id)) return;
-                     if (data.title.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'note', data, match: { field: 'title', text: data.title }});
-                        resultIds.add(data.id);
-                    } else if (data.text?.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'note', data, match: { field: 'text', text: data.text.substring(0, 100) + '...' }});
-                        resultIds.add(data.id);
-                    }
+                     if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'note', data, match: { field: 'title', text: data.title }}); resultIds.add(data.id); } 
+                     else if (data.text?.toLowerCase().includes(term)) { allResults.push({ type: 'note', data, match: { field: 'text', text: data.text.substring(0, 100) + '...' }}); resultIds.add(data.id); }
                 });
                 
-                // Search Planner Events
                 eventsSnap.forEach(doc => {
                     const data = { id: doc.id, ...doc.data() } as PlannerEvent;
                     if (resultIds.has(data.id)) return;
-                     if (data.title.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'event', data, match: { field: 'title', text: data.title }});
-                        resultIds.add(data.id);
-                    } else if (data.description?.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'event', data, match: { field: 'description', text: data.description.substring(0, 100) + '...' }});
-                        resultIds.add(data.id);
-                    }
+                     if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'event', data, match: { field: 'title', text: data.title }}); resultIds.add(data.id); } 
+                     else if (data.description?.toLowerCase().includes(term)) { allResults.push({ type: 'event', data, match: { field: 'description', text: data.description.substring(0, 100) + '...' }}); resultIds.add(data.id); }
                 });
                 
-                // Search Doc Folders
-                docFoldersSnap.forEach(doc => {
-                    const data = { id: doc.id, ...doc.data() } as DocFolder;
-                    if (resultIds.has(`docfolder-${data.id}`)) return;
-                     if (data.name.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'docFolder', data, match: { field: 'name', text: data.name }});
-                        resultIds.add(`docfolder-${data.id}`);
-                    }
-                });
-                
-                // Search Flashcard Folders
-                flashcardFoldersSnap.forEach(doc => {
-                    const data = { id: doc.id, ...doc.data() } as FlashcardFolder;
-                    if (resultIds.has(`flashcardfolder-${data.id}`)) return;
-                     if (data.name.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'flashcardFolder', data, match: { field: 'name', text: data.name }});
-                        resultIds.add(`flashcardfolder-${data.id}`);
-                    }
-                });
-
-                // Search Study Chapters
-                studyChaptersSnap.forEach(doc => {
-                    const data = { id: doc.id, ...doc.data() } as StudyChapter;
-                    if (resultIds.has(`chapter-${data.id}`)) return;
-                     if (data.title.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'studyChapter', data, match: { field: 'title', text: data.title }});
-                        resultIds.add(`chapter-${data.id}`);
-                    }
-                });
-
-                // Search Study Subtopics
-                studySubtopicsSnap.forEach(doc => {
-                    const data = { id: doc.id, ...doc.data() } as StudySubtopic;
-                    if (resultIds.has(`subtopic-${data.id}`)) return;
-                     if (data.title.toLowerCase().includes(term)) {
-                        allResults.push({ type: 'studySubtopic', data, match: { field: 'title', text: data.title }});
-                        resultIds.add(`subtopic-${data.id}`);
-                    } else if (data.notes?.toLowerCase().includes(term)) {
-                         allResults.push({ type: 'studySubtopic', data, match: { field: 'notes', text: data.notes.substring(0, 100) + '...' }});
-                        resultIds.add(`subtopic-${data.id}`);
-                    }
-                });
+                docFoldersSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as DocFolder; if (resultIds.has(`docfolder-${data.id}`)) return; if (data.name.toLowerCase().includes(term)) { allResults.push({ type: 'docFolder', data, match: { field: 'name', text: data.name }}); resultIds.add(`docfolder-${data.id}`); } });
+                flashcardFoldersSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as FlashcardFolder; if (resultIds.has(`flashcardfolder-${data.id}`)) return; if (data.name.toLowerCase().includes(term)) { allResults.push({ type: 'flashcardFolder', data, match: { field: 'name', text: data.name }}); resultIds.add(`flashcardfolder-${data.id}`); } });
+                flashcardDecksSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as FlashcardDeck; if (resultIds.has(`deck-${data.id}`)) return; if (data.name.toLowerCase().includes(term)) { allResults.push({ type: 'flashcardDeck', data, match: { field: 'name', text: data.name }}); resultIds.add(`deck-${data.id}`); } });
+                flashcardsSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as FlashcardToolCard; if (data.ownerId !== user.uid) return; if (resultIds.has(`flashcard-${data.id}`)) return; if (data.front.toLowerCase().includes(term) || data.back.toLowerCase().includes(term)) { allResults.push({ type: 'flashcard', data, match: { field: 'content', text: `${data.front.substring(0,50)}...` }}); resultIds.add(`flashcard-${data.id}`); } });
+                studyChaptersSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as StudyChapter; if (resultIds.has(`chapter-${data.id}`)) return; if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'studyChapter', data, match: { field: 'title', text: data.title }}); resultIds.add(`chapter-${data.id}`); } });
+                studySubtopicsSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as StudySubtopic; if (resultIds.has(`subtopic-${data.id}`)) return; if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'studySubtopic', data, match: { field: 'title', text: data.title }}); resultIds.add(`subtopic-${data.id}`); } else if (data.notes?.toLowerCase().includes(term)) { allResults.push({ type: 'studySubtopic', data, match: { field: 'notes', text: data.notes.substring(0, 100) + '...' }}); resultIds.add(`subtopic-${data.id}`); } });
+                workActivitiesSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as WorkActivity; if (resultIds.has(`work-${data.id}`)) return; if (data.description.toLowerCase().includes(term) || data.notes?.toLowerCase().includes(term)) { allResults.push({ type: 'workActivity', data, match: { field: 'description', text: data.description }}); resultIds.add(`work-${data.id}`); } });
+                tradesSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as Trade; if (resultIds.has(`trade-${data.id}`)) return; if (data.symbol.toLowerCase().includes(term)) { allResults.push({ type: 'trade', data, match: { field: 'symbol', text: data.symbol }}); resultIds.add(`trade-${data.id}`); } });
+                tradingStrategiesSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as TradingStrategy; if (resultIds.has(`strategy-${data.id}`)) return; if (data.name.toLowerCase().includes(term) || data.description.toLowerCase().includes(term)) { allResults.push({ type: 'tradingStrategy', data, match: { field: 'name', text: data.name }}); resultIds.add(`strategy-${data.id}`); } });
+                watchlistItemsSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as WatchlistItem; if (resultIds.has(`watchlist-${data.id}`)) return; if (data.symbol.toLowerCase().includes(term) || data.notes?.toLowerCase().includes(term)) { allResults.push({ type: 'watchlist', data, match: { field: 'symbol', text: data.symbol }}); resultIds.add(`watchlist-${data.id}`); } });
+                meetingNotesSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as MeetingNote; if (resultIds.has(`meeting-${data.id}`)) return; const contentText = getTextFromDocContent(data.notes); if (data.title.toLowerCase().includes(term) || contentText.toLowerCase().includes(term)) { allResults.push({ type: 'meetingNote', data, match: { field: 'title', text: data.title }}); resultIds.add(`meeting-${data.id}`); } });
+                mindMapsSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as MindMap; if (resultIds.has(`mindmap-${data.id}`)) return; if (data.name.toLowerCase().includes(term)) { allResults.push({ type: 'mindmap', data, match: { field: 'name', text: data.name }}); resultIds.add(`mindmap-${data.id}`); } });
+                whiteboardsSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as Whiteboard; if (resultIds.has(`whiteboard-${data.id}`)) return; if (data.name.toLowerCase().includes(term)) { allResults.push({ type: 'whiteboard', data, match: { field: 'name', text: data.name }}); resultIds.add(`whiteboard-${data.id}`); } });
 
 
                 setResults(allResults);
@@ -227,19 +190,32 @@ function SearchResultsComponent() {
             case 'task': return `/dashboard/list/${result.data.listId}`;
             case 'doc': return `/docs/${result.data.id}`;
             case 'client': return `/crm/clients/${result.data.id}`;
+            case 'clientRequest': return `/crm`;
             case 'note': return `/notes`;
             case 'event': return `/planner`;
             case 'docFolder': return `/docs/folder/${result.data.id}`;
             case 'flashcardFolder': return `/flashcards/folder/${result.data.id}`;
+            case 'flashcardDeck': return `/flashcards/${result.data.id}`;
+            case 'flashcard': return `/flashcards/${result.data.deckId}`;
             case 'studyChapter': return `/study-tracker/${result.data.goalId}`;
             case 'studySubtopic': return `/study-tracker/${result.data.goalId}`;
+            case 'workActivity': return `/work-tracker`;
+            case 'trade': return `/trading-tracker`;
+            case 'tradingStrategy': return `/trading-tracker`;
+            case 'watchlist': return `/trading-tracker`;
+            case 'meetingNote': return `/meeting-notes/${result.data.id}`;
+            case 'mindmap': return `/mind-map/${result.data.id}`;
+            case 'whiteboard': return `/whiteboard/${result.data.id}`;
             default: return '#';
         }
     };
     
     const getResultTitle = (result: SearchResult) => {
-        if ('name' in result.data) return result.data.name;
-        if ('title' in result.data) return result.data.title;
+        if ('name' in result.data && result.data.name) return result.data.name;
+        if ('title' in result.data && result.data.title) return result.data.title;
+        if ('symbol' in result.data && result.data.symbol) return result.data.symbol;
+        if (result.type === 'flashcard') return `Card: ${result.data.front.substring(0,20)}...`;
+        if (result.type === 'workActivity') return `Activity: ${result.data.description.substring(0,20)}...`;
         return 'Untitled';
     }
 
@@ -295,5 +271,3 @@ export default function SearchPage() {
         </Suspense>
     );
 }
-
-    
