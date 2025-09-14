@@ -66,7 +66,7 @@ const defaultMenuItems = [
     { href: '/whiteboard', icon: <WhiteboardIcon />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
     { href: '/mind-map', icon: <MindMapIcon />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
     { href: '/docs', icon: <DocsIcon />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
-    { href: '/learning-tool', icon: <LearningAssistantIcon />, label: 'Learning Tool', tooltip: 'Learning Tool', id: 'learning-tool' },
+    { href: '/learning-tool', icon: <LearningAssistantIcon />, label: 'Learning Assistant', tooltip: 'Learning Assistant', id: 'learning-tool' },
     { href: '/pomodoro', icon: <PomodoroIcon />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
 ];
 
