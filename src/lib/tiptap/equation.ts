@@ -29,23 +29,10 @@ export const Equation = Node.create({
 
   addCommands() {
     return {
-      toggleEquation: () => ({ commands, state }) => {
-        const { selection } = state;
-        let isSelectionInEquation = false;
-        if(selection.ranges[0]) {
-            const fromNode = selection.ranges[0].$from;
-            for(let i = fromNode.depth; i > 0; i--) {
-                if(fromNode.node(i).type.name === this.name) {
-                    isSelectionInEquation = true;
-                    break;
-                }
-            }
-        }
-        
-        if (isSelectionInEquation) {
+      toggleEquation: () => ({ commands, editor }) => {
+        if (editor.isActive('equation')) {
             return commands.lift(this.name);
         }
-
         return commands.wrapIn(this.name);
       },
     };

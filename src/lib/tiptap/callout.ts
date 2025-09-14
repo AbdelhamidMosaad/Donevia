@@ -30,23 +30,10 @@ export const Callout = Node.create({
 
   addCommands() {
     return {
-      toggleCallout: () => ({ commands, state }) => {
-        const { selection } = state;
-        let isSelectionInCallout = false;
-        if(selection.ranges[0]) {
-            const fromNode = selection.ranges[0].$from;
-            for(let i = fromNode.depth; i > 0; i--) {
-                if(fromNode.node(i).type.name === this.name) {
-                    isSelectionInCallout = true;
-                    break;
-                }
-            }
+      toggleCallout: () => ({ commands, editor }) => {
+        if (editor.isActive('callout')) {
+          return commands.lift(this.name);
         }
-        
-        if (isSelectionInCallout) {
-            return commands.lift(this.name);
-        }
-
         return commands.wrapIn(this.name);
       },
     };
