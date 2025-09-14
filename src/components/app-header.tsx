@@ -65,7 +65,8 @@ export function AppHeader() {
 
 
   return (
-    <header className="flex h-16 items-center gap-4 border-b bg-card/60 px-4 backdrop-blur-sm sticky top-0 z-40 lg:px-6">
+    <header className="sticky top-4 z-40 mx-4 md:mx-6 my-4">
+        <div className="flex h-16 items-center gap-4 rounded-2xl border border-white/20 bg-card/60 px-4 backdrop-blur-xl shadow-lg lg:px-6">
       <Button variant="outline" size="icon" className="md:hidden h-8 w-8" onClick={toggleSidebar}>
           <DoneviaLogo className="size-6 shrink-0" />
       </Button>
@@ -159,6 +160,7 @@ export function AppHeader() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+        </div>
     </header>
   );
 }

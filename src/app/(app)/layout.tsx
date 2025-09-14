@@ -63,7 +63,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarInset>
                   <div className="flex flex-col h-screen">
                   <AppHeader />
-                  <main className="flex-1 overflow-y-auto p-4 md:p-6">
+                  <main className="flex-1 overflow-y-auto px-4 md:px-6">
                       {children}
                   </main>
                   </div>
