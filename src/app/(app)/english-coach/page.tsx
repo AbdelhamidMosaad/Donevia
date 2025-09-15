@@ -2,13 +2,14 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GrammarCoach } from '@/components/english-coach/grammar-coach';
-import { BookOpen, Mail, Mic, MessageSquareQuote, BookMarked } from 'lucide-react';
+import { BookOpen, Mail, Mic, MessageSquareQuote, BookMarked, Waves } from 'lucide-react';
 import { VocabularyCoach } from '@/components/english-coach/vocabulary-coach';
 import { EmailCoach } from '@/components/english-coach/email-coach';
 import { ShadowingCoach } from '@/components/english-coach/shadowing-coach';
 import { NewWordsLibrary } from '@/components/english-coach/new-words-library';
 import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
 import { ReadingCoach } from '@/components/english-coach/reading-coach';
+import { PronunciationCoach } from '@/components/english-coach/pronunciation-coach';
 
 export default function EnglishCoachPage() {
   return (
@@ -45,6 +46,10 @@ export default function EnglishCoachPage() {
             <Mic className="mr-2 h-4 w-4" />
             Shadowing Coach
           </TabsTrigger>
+          <TabsTrigger value="pronunciation">
+            <Waves className="mr-2 h-4 w-4" />
+            Pronunciation
+          </TabsTrigger>
            <TabsTrigger value="reading">
             <BookMarked className="mr-2 h-4 w-4" />
             Reading Coach
@@ -65,6 +70,9 @@ export default function EnglishCoachPage() {
         </TabsContent>
         <TabsContent value="shadowing" className="flex-1 mt-4">
             <ShadowingCoach />
+        </TabsContent>
+        <TabsContent value="pronunciation" className="flex-1 mt-4">
+            <PronunciationCoach />
         </TabsContent>
          <TabsContent value="reading" className="flex-1 mt-4">
             <ReadingCoach />
