@@ -681,3 +681,35 @@ export type WatchlistItem = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }
+
+/** Interview Prep Tool */
+export type InterviewSession = {
+    id: string;
+    ownerId: string;
+    jobTitle: string;
+    industry: string;
+    experienceLevel: 'entry' | 'mid' | 'senior';
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    status: 'not-started' | 'in-progress' | 'completed';
+};
+
+export type InterviewQuestion = {
+    id: string;
+    sessionId: string;
+    questionText: string;
+    category: 'HR' | 'Technical' | 'Behavioral';
+    userAnswerText?: string;
+    userAnswerAudioUrl?: string;
+    userAnswerVideoUrl?: string;
+    feedback?: InterviewFeedback;
+    createdAt: Timestamp;
+};
+
+export type InterviewFeedback = {
+    clarity: number; // Score 1-10
+    relevance: number; // Score 1-10
+    confidence: number; // Score 1-10
+    suggestions: string[];
+    overallAssessment: string;
+};

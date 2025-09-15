@@ -46,6 +46,7 @@ import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
 import { DocsIcon } from '@/components/icons/tools/docs-icon';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
+import { InterviewPrepIcon } from './icons/tools/interview-prep-icon';
 
 const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
@@ -62,6 +63,7 @@ const defaultMenuItems = [
     { href: '/trading-tracker', icon: <TradingTrackerIcon />, label: 'Trading Tracker', tooltip: 'Trading Tracker', id: 'trading-tracker' },
     { href: '/work-tracker', icon: <WorkTrackerIcon />, label: 'Work Tracker', tooltip: 'Work Tracker', id: 'work-tracker' },
     { href: '/english-coach', icon: <EnglishCoachIcon />, label: 'English Coach', tooltip: 'English Coach', id: 'english-coach' },
+    { href: '/interview-prep', icon: <InterviewPrepIcon />, label: 'Interview Prep', tooltip: 'Interview Prep', id: 'interview-prep' },
     { href: '/brainstorming', icon: <BrainstormingIcon />, label: 'Brainstorming', tooltip: 'Brainstorming', id: 'brainstorming' },
     { href: '/whiteboard', icon: <WhiteboardIcon />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
     { href: '/mind-map', icon: <MindMapIcon />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mindmap' },
