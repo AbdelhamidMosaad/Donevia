@@ -2,40 +2,104 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import Image from 'next/image';
+import { Link } from "lucide-react";
+import { Button } from "../ui/button";
 
-const resources = [
+const resourceCategories = [
   {
-    id: 'star-method',
-    title: 'Mastering the STAR Method',
-    description: 'A structured way to answer behavioral questions.',
-    content: "The STAR method is a technique for answering behavioral interview questions. It helps you provide a concise yet detailed story about a specific experience. It stands for: Situation (provide context), Task (describe your responsibility), Action (explain the steps you took), and Result (share the outcome and what you learned).",
-    image: 'https://picsum.photos/seed/interview1/600/400',
-    dataAiHint: 'interview planning presentation'
+    id: 'general-prep',
+    title: 'General Interview Preparation',
+    description: 'Guides, tips, and company-specific questions.',
+    links: [
+      {
+        title: 'Indeed Career Guide – Interview Tips',
+        url: 'https://www.indeed.com/career-advice/interviewing',
+        description: "Step-by-step guides, common questions, do’s/don’ts."
+      },
+      {
+        title: 'Glassdoor – Interview Questions & Reviews',
+        url: 'https://www.glassdoor.com/Interview/index.htm',
+        description: 'Real questions shared by candidates for specific companies.'
+      },
+      {
+        title: 'LinkedIn Learning – Interview Prep Courses',
+        url: 'https://www.linkedin.com/learning/topics/interviewing-and-job-search',
+        description: 'Some free trials available for in-depth courses.'
+      }
+    ]
   },
   {
-    id: 'common-questions',
-    title: 'Common Questions to Prepare For',
-    description: "Anticipate and prepare for frequently asked questions.",
-    content: "While questions will vary, you can almost always expect to encounter some classics. Be ready to discuss your strengths and weaknesses, why you're interested in the role, where you see yourself in five years, and how you handle stress or pressure. Preparing for these will boost your confidence.",
-    image: 'https://picsum.photos/seed/interview2/600/400',
-    dataAiHint: 'question mark list'
+    id: 'behavioral-star',
+    title: 'Behavioral & STAR Method',
+    description: 'Learn to structure compelling answers about your experience.',
+    links: [
+      {
+        title: 'MindTools – STAR Technique',
+        url: 'https://www.mindtools.com/a4wo118/star-interview-technique',
+        description: 'Explains how to structure answers for behavioral questions.'
+      },
+      {
+        title: 'The Balance Careers – Behavioral Interview Tips',
+        url: 'https://www.thebalancemoney.com/behavioral-interview-questions-2058575',
+        description: 'Tips and example questions for behavioral interviews.'
+      },
+    ]
+  },
+  {
+    id: 'industry-specific',
+    title: 'Industry-Specific Resources',
+    description: 'Practice questions for technical and specialized roles.',
+    links: [
+      {
+        title: 'LeetCode – for software/tech interviews',
+        url: 'https://leetcode.com/',
+        description: 'A popular platform for practicing coding interview questions.'
+      },
+      {
+        title: 'Big Interview – Role-Specific Guides',
+        url: 'https://biginterview.com/blog/',
+        description: 'Practice platform with guides for various roles.'
+      },
+      {
+        title: 'Nursing/Medical Interviews (NHS Guide)',
+        url: 'https://www.jobs.nhs.uk/advice/interview-tips.xhtml',
+        description: 'UK NHS guide, but the principles are applicable globally.'
+      },
+    ]
   },
   {
     id: 'body-language',
-    title: 'Body Language and Non-Verbal Cues',
-    description: "Your non-verbal communication speaks volumes.",
-    content: "Maintain good eye contact, offer a firm handshake, and sit up straight to convey confidence. Use hand gestures to emphasize points, but avoid fidgeting. Nodding to show you are listening is also effective. Remember to smile and be personable!",
-    image: 'https://picsum.photos/seed/interview3/600/400',
-    dataAiHint: 'person talking presentation'
+    title: 'Body Language & Communication',
+    description: 'Master the non-verbal aspects of your interview.',
+    links: [
+      {
+        title: 'Toastmasters International – Speaking Tips',
+        url: 'https://www.toastmasters.org/resources/public-speaking-tips',
+        description: 'Tips on public speaking and communication.'
+      },
+      {
+        title: 'Psychology Today – Body Language Basics',
+        url: 'https://www.psychologytoday.com/us/basics/body-language',
+        description: 'Understand the basics of non-verbal communication.'
+      },
+    ]
   },
   {
-    id: 'pre-interview-checklist',
-    title: 'Pre-Interview Checklist',
-    description: "Don't walk into the interview unprepared.",
-    content: "Before the interview: research the company and your interviewers, prepare a few insightful questions to ask them, print copies of your resume, and plan your outfit. For virtual interviews, test your camera and microphone, ensure a professional background, and close unnecessary tabs.",
-    image: 'https://picsum.photos/seed/interview4/600/400',
-    dataAiHint: 'checklist tasks clipboard'
+    id: 'checklists-templates',
+    title: 'Checklists & Templates',
+    description: "Stay organized and prepared for your big day.",
+    links: [
+       {
+        title: 'Zety – Interview Preparation Checklist',
+        url: 'https://zety.com/blog/interview-preparation',
+        description: 'A comprehensive checklist for interview preparation.'
+       },
+       {
+        title: 'MIT Career Advising Resources',
+        url: 'https://careers.mit.edu/channels/resumes-cover-letters-and-more/',
+        description: 'Example of free guides published by university career services.'
+       },
+    ]
   }
 ];
 
@@ -44,29 +108,31 @@ export function ResourceHub() {
         <Card>
             <CardHeader>
                 <CardTitle>Resource Hub</CardTitle>
-                <CardDescription>Tips, tricks, and checklists for interview success.</CardDescription>
+                <CardDescription>A curated list of external articles, guides, and tools to help you ace your next interview.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Accordion type="single" collapsible className="w-full">
-                    {resources.map(resource => (
-                        <AccordionItem value={resource.id} key={resource.id}>
+                    {resourceCategories.map(category => (
+                        <AccordionItem value={category.id} key={category.id}>
                             <AccordionTrigger>
                                 <div className="text-left">
-                                    <h4 className="font-semibold">{resource.title}</h4>
-                                    <p className="text-sm text-muted-foreground font-normal">{resource.description}</p>
+                                    <h4 className="font-semibold">{category.title}</h4>
+                                    <p className="text-sm text-muted-foreground font-normal">{category.description}</p>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
-                                <div className="grid md:grid-cols-2 gap-6 items-center">
-                                    <p className="text-muted-foreground">{resource.content}</p>
-                                     <Image 
-                                        src={resource.image}
-                                        alt={resource.title}
-                                        width={600}
-                                        height={400}
-                                        data-ai-hint={resource.dataAiHint}
-                                        className="rounded-lg shadow-md aspect-video object-cover"
-                                    />
+                                <div className="pl-4 border-l-2 ml-2 space-y-4">
+                                    {category.links.map((link, index) => (
+                                        <div key={index}>
+                                            <Button variant="link" asChild className="p-0 h-auto">
+                                                <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-base font-semibold">
+                                                    <Link className="mr-2 h-4 w-4" />
+                                                    {link.title}
+                                                </a>
+                                            </Button>
+                                            <p className="text-sm text-muted-foreground mt-1">{link.description}</p>
+                                        </div>
+                                    ))}
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
