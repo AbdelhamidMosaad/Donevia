@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, Volume2 } from 'lucide-react';
@@ -17,11 +18,20 @@ const topics = [
     'v and w (very, well)',
     'short i vs long e (ship, sheep)',
     'cat vs cut (æ vs ʌ)',
+    'pool vs pull (uː vs ʊ)',
+    'cat vs bet (æ vs ɛ)',
+    'cot vs caught (ɒ vs ɔː)',
     's vs sh (see, she)',
+    'z vs s (zoo, sue)',
     'p vs b (pat, bat)',
     'f vs v (fan, van)',
     'ch vs j (cheap, jeep)',
-    'word endings (-s, -ed)'
+    'The \'ng\' sound (singer, finger)',
+    'Diphthongs (my, cow, boy)',
+    'Syllable stress in words',
+    'Linking sounds in phrases',
+    'Silent letters (know, island)',
+    'Word endings (-s, -ed)'
 ];
 type TtsEngine = 'gemini' | 'browser';
 
