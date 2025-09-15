@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import moment from 'moment';
 import type { Task, Stage, Subtask } from '@/lib/types';
 import { DialogTrigger } from './ui/dialog';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from './ui/checkbox';
 
@@ -326,6 +326,7 @@ export function AddTaskDialog({
             </Button>
           )}
           <Button onClick={() => handleSave(false)} disabled={isSaving}>
+            {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
