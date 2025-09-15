@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { WorkActivity, WorkTrackerSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, FileDown, RefreshCcw } from 'lucide-react';
+import { Trash2, FileDown, RefreshCcw, ArrowUpDown } from 'lucide-react';
 import moment from 'moment';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -23,11 +23,14 @@ interface ActivityTableProps {
     settings: WorkTrackerSettings;
 }
 
+type SortableColumn = 'date' | 'appointment' | 'category' | 'customer' | 'amount';
+type SortDirection = 'asc' | 'desc';
+
 export function ActivityTable({ activities, settings }: ActivityTableProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     
-    // State for filters
+    // Filter states
     const [dateFilterType, setDateFilterType] = useState<'all' | 'month' | 'period'>('all');
     const [filterMonth, setFilterMonth] = useState<string>(moment().format('M'));
     const [filterYear, setFilterYear] = useState<string>(moment().format('YYYY'));
@@ -36,14 +39,18 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
     const [filterAppointment, setFilterAppointment] = useState('all');
     const [filterCategory, setFilterCategory] = useState('all');
     const [filterCustomer, setFilterCustomer] = useState('all');
+    
+    // Sorting states
+    const [sortColumn, setSortColumn] = useState<SortableColumn>('date');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-    const filteredActivities = useMemo(() => {
-        return activities.filter(activity => {
+
+    const filteredAndSortedActivities = useMemo(() => {
+        let filtered = activities.filter(activity => {
             const activityDate = moment(activity.date.toDate());
             
-            // Date filtering
             if (dateFilterType === 'month') {
-                if(!filterYear || !filterMonth) return true; // Don't filter if year or month is not set
+                if(!filterYear || !filterMonth) return true;
                 if (activityDate.year() !== parseInt(filterYear) || (activityDate.month() + 1) !== parseInt(filterMonth)) {
                     return false;
                 }
@@ -54,14 +61,45 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                 if (end && activityDate.isAfter(end)) return false;
             }
 
-            // Other filters
             if (filterAppointment !== 'all' && activity.appointment !== filterAppointment) return false;
             if (filterCategory !== 'all' && activity.category !== filterCategory) return false;
             if (filterCustomer !== 'all' && activity.customer !== filterCustomer) return false;
             
             return true;
         });
-    }, [activities, dateFilterType, filterMonth, filterYear, filterStartDate, filterEndDate, filterAppointment, filterCategory, filterCustomer]);
+
+        // Sorting logic
+        return filtered.sort((a, b) => {
+            const aVal = a[sortColumn as keyof WorkActivity];
+            const bVal = b[sortColumn as keyof WorkActivity];
+
+            let comparison = 0;
+            if (sortColumn === 'date') {
+                comparison = moment(a.date.toDate()).diff(moment(b.date.toDate()));
+            } else if (typeof aVal === 'string' && typeof bVal === 'string') {
+                comparison = aVal.localeCompare(bVal);
+            } else if (typeof aVal === 'number' && typeof bVal === 'number') {
+                comparison = aVal - bVal;
+            }
+
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+
+    }, [activities, dateFilterType, filterMonth, filterYear, filterStartDate, filterEndDate, filterAppointment, filterCategory, filterCustomer, sortColumn, sortDirection]);
+
+    const handleSort = (column: SortableColumn) => {
+        if (sortColumn === column) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    }
+
+    const renderSortArrow = (column: SortableColumn) => {
+        if (sortColumn !== column) return null;
+        return <ArrowUpDown className="h-4 w-4 ml-2" />;
+    };
 
     const resetFilters = () => {
         setDateFilterType('all');
@@ -86,7 +124,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
     };
 
     const handleExport = () => {
-        const dataToExport = filteredActivities.map(a => ({
+        const dataToExport = filteredAndSortedActivities.map(a => ({
             Date: moment(a.date.toDate()).format('YYYY-MM-DD'),
             Appointment: a.appointment,
             Category: a.category,
@@ -126,7 +164,6 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                     <CardTitle>Filters & Export</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
-                    {/* Date Filters */}
                     <div className="flex flex-col space-y-1.5">
                         <Label>Date Filter</Label>
                         <Select value={dateFilterType} onValueChange={(v: 'all' | 'month' | 'period') => setDateFilterType(v)}>
@@ -174,8 +211,6 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                             </div>
                         </>
                     )}
-
-                    {/* Other Filters */}
                     <div className="flex flex-col space-y-1.5">
                         <Label>Appointment</Label>
                         <Select value={filterAppointment} onValueChange={setFilterAppointment}>
@@ -223,13 +258,23 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Appointment</TableHead>
-                            <TableHead>Category</TableHead>
+                            <TableHead className="cursor-pointer" onClick={() => handleSort('date')}>
+                                <div className="flex items-center">Date {renderSortArrow('date')}</div>
+                            </TableHead>
+                            <TableHead className="cursor-pointer" onClick={() => handleSort('appointment')}>
+                                <div className="flex items-center">Appointment {renderSortArrow('appointment')}</div>
+                            </TableHead>
+                            <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
+                                <div className="flex items-center">Category {renderSortArrow('category')}</div>
+                            </TableHead>
                             <TableHead>Description</TableHead>
-                            <TableHead>Customer</TableHead>
+                            <TableHead className="cursor-pointer" onClick={() => handleSort('customer')}>
+                                <div className="flex items-center">Customer {renderSortArrow('customer')}</div>
+                            </TableHead>
                             <TableHead>Invoice #</TableHead>
-                            <TableHead>Amount</TableHead>
+                            <TableHead className="cursor-pointer" onClick={() => handleSort('amount')}>
+                                <div className="flex items-center">Amount {renderSortArrow('amount')}</div>
+                            </TableHead>
                             <TableHead>Travel</TableHead>
                             <TableHead>OT Hours</TableHead>
                             <TableHead>OT Days</TableHead>
@@ -238,8 +283,8 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredActivities.length > 0 ? (
-                            filteredActivities.map(activity => (
+                        {filteredAndSortedActivities.length > 0 ? (
+                            filteredAndSortedActivities.map(activity => (
                                 <TableRow key={activity.id}>
                                     <TableCell>{moment(activity.date.toDate()).format('YYYY-MM-DD')}</TableCell>
                                     <TableCell>
