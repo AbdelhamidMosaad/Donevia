@@ -28,6 +28,7 @@ export default function WorkTrackerPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [activities, setActivities] = useState<WorkActivity[]>([]);
+  const [filteredActivities, setFilteredActivities] = useState<WorkActivity[]>([]);
   const [view, setView] = useState<View>('table');
   const [settings, setSettings] = useState<WorkTrackerSettingsType>({
     appointmentOptions: [],
@@ -47,6 +48,7 @@ export default function WorkTrackerPage() {
       const unsubscribeActivities = onSnapshot(q, (snapshot) => {
         const activitiesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkActivity));
         setActivities(activitiesData);
+        setFilteredActivities(activitiesData); // Initialize filtered with all activities
       });
 
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'workTrackerSettings');
@@ -153,7 +155,11 @@ export default function WorkTrackerPage() {
                     </ToggleGroup>
                 </div>
                 {view === 'table' ? (
-                    <ActivityTable activities={activities} settings={settings} />
+                    <ActivityTable 
+                        activities={activities} 
+                        settings={settings} 
+                        onFilteredTradesChange={setFilteredActivities}
+                    />
                 ) : (
                     <ActivityCalendar activities={activities} />
                 )}
