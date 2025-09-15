@@ -35,6 +35,20 @@ const topics = [
 ];
 type TtsEngine = 'gemini' | 'browser';
 
+function HighlightedText({ text }: { text: string }) {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return (
+        <>
+            {parts.map((part, index) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={index} className="text-primary font-bold">{part.slice(2, -2)}</strong>;
+                }
+                return part;
+            })}
+        </>
+    );
+}
+
 export function PronunciationCoach() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -92,33 +106,34 @@ export function PronunciationCoach() {
   };
   
   const playAudio = async (text: string) => {
-    if (audioState[text]?.data && audioRef.current) {
-        audioRef.current.src = audioState[text]!.data!;
+    const cleanText = text.replace(/\*\*/g, '');
+    if (audioState[cleanText]?.data && audioRef.current) {
+        audioRef.current.src = audioState[cleanText]!.data!;
         audioRef.current.play();
         return;
     }
 
     if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
+        const utterance = new SpeechSynthesisUtterance(cleanText);
         const voice = voices.find(v => v.name === selectedVoice);
         if (voice) {
             utterance.voice = voice;
         }
         window.speechSynthesis.speak(utterance);
     } else { // Gemini TTS
-        setAudioState(prev => ({...prev, [text]: { loading: true, data: null }}));
+        setAudioState(prev => ({...prev, [cleanText]: { loading: true, data: null }}));
         try {
-          const result = await generateAudio(text);
+          const result = await generateAudio(cleanText);
           if (audioRef.current && result.media) {
             audioRef.current.src = result.media;
             audioRef.current.play();
-             setAudioState(prev => ({...prev, [text]: { loading: false, data: result.media }}));
+             setAudioState(prev => ({...prev, [cleanText]: { loading: false, data: result.media }}));
           } else {
              throw new Error('Audio generation returned no media.');
           }
         } catch (err) {
           toast({ variant: 'destructive', title: 'Failed to generate audio' });
-          setAudioState(prev => ({...prev, [text]: { loading: false, data: null }}));
+          setAudioState(prev => ({...prev, [cleanText]: { loading: false, data: null }}));
         }
     }
   }
@@ -141,11 +156,11 @@ export function PronunciationCoach() {
               {result.practiceItems.map((item, index) => (
                 <li key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                     <div>
-                        <span className="font-semibold text-lg">{item.text}</span>
+                        <span className="font-semibold text-lg"><HighlightedText text={item.text} /></span>
                         <span className="text-muted-foreground ml-2 text-sm">({item.ipa})</span>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => playAudio(item.text)} disabled={audioState[item.text]?.loading}>
-                        {audioState[item.text]?.loading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4" />}
+                    <Button variant="ghost" size="icon" onClick={() => playAudio(item.text)} disabled={audioState[item.text.replace(/\*\*/g, '')]?.loading}>
+                        {audioState[item.text.replace(/\*\*/g, '')]?.loading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4" />}
                     </Button>
                 </li>
               ))}

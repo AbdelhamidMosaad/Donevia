@@ -13,7 +13,7 @@ const PronunciationPracticeRequestSchema = z.object({
 });
 
 const PracticeItemSchema = z.object({
-  text: z.string().describe('The word or short phrase to practice.'),
+  text: z.string().describe('The word or short phrase to practice, with the target sound wrapped in markdown bold (**). E.g., "**th**ink" or "li**gh**t".'),
   ipa: z.string().describe('The International Phonetic Alphabet (IPA) transcription.'),
 });
 
@@ -38,8 +38,9 @@ const pronunciationCoachPrompt = ai.definePrompt({
     1.  **Acknowledge Focus**: In the 'focus' field, confirm the pronunciation topic. For example, if the topic is 'th', you could say 'The "th" sound'.
     2.  **Provide a Tip**: In the 'practiceTip' field, provide one clear, simple, and actionable tip for producing the sound.
     3.  **Generate Items**: Create exactly 10 practice items (a mix of single words and short, common phrases) that are appropriate for a {{level}} learner and target the '{{topic}}' sound.
-    4.  **Provide IPA**: For each item, provide its IPA transcription in the 'ipa' field.
-    5.  **JSON Output**: Ensure your entire output is a single, valid JSON object.
+    4.  **Highlight the Sound**: For each item in 'practiceItems', wrap the specific letters that make the target sound in markdown bold (**). For example, if the topic is 'sh', 'she sells' should be '**sh**e sells'. If the sound appears multiple times, highlight the most prominent one.
+    5.  **Provide IPA**: For each item, provide its IPA transcription in the 'ipa' field.
+    6.  **JSON Output**: Ensure your entire output is a single, valid JSON object.
   `,
 });
 
