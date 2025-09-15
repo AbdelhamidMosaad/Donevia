@@ -24,7 +24,7 @@ import {
 } from './ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, where, doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import moment from 'moment';
 
@@ -36,6 +36,8 @@ const priorityColors = {
 
 interface TaskTableProps {
     listId: string;
+    tasks: Task[];
+    stages: Stage[];
 }
 
 type Column = 'title' | 'status' | 'priority' | 'dueDate' | 'tags' | 'createdAt';
@@ -49,10 +51,8 @@ const allColumns: { id: Column; label: string }[] = [
     { id: 'createdAt', label: 'Created At' },
 ];
 
-export function TaskTable({ listId }: TaskTableProps) {
+export function TaskTable({ listId, tasks, stages }: TaskTableProps) {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [stages, setStages] = useState<Stage[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<Column[]>(['title', 'status', 'priority', 'dueDate']);
 
   useEffect(() => {
@@ -66,29 +66,6 @@ export function TaskTable({ listId }: TaskTableProps) {
           }
         }
       });
-    }
-  }, [user, listId]);
-  
-  useEffect(() => {
-    if (user && listId) {
-      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-      const unsubscribeStages = onSnapshot(listRef, (docSnap) => {
-        if(docSnap.exists()) {
-          const listData = docSnap.data();
-          setStages(listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || []);
-        }
-      });
-
-      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), where('deleted', '!=', true));
-      const unsubscribeTasks = onSnapshot(q, (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-        setTasks(tasksData);
-      });
-      
-      return () => {
-          unsubscribeStages();
-          unsubscribeTasks();
-      };
     }
   }, [user, listId]);
 

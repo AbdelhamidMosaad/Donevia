@@ -7,10 +7,11 @@ import { Input } from './ui/input';
 import { Plus, X, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { addTask } from '@/lib/tasks';
+import { addTask as addTaskToDb } from '@/lib/tasks';
 import { Timestamp } from 'firebase/firestore';
 import { Textarea } from './ui/textarea';
 import { Card } from './ui/card';
+import { useTasks } from '@/hooks/use-tasks';
 
 interface BoardTaskCreatorProps {
     listId: string;
@@ -35,6 +36,7 @@ const cardColors = [
 const getRandomColor = () => cardColors[Math.floor(Math.random() * cardColors.length)];
 
 export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
+    const { addTask } = useTasks(listId);
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState('');
     const { user } = useAuth();
@@ -59,7 +61,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
         if (!user) return;
         
         try {
-            await addTask(user.uid, {
+            await addTask({
                 title: title.trim(),
                 listId,
                 status: stageId,
@@ -68,6 +70,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                 tags: [],
                 ownerId: user.uid,
                 color: getRandomColor(),
+                deleted: false,
             });
             // Immediately reset for the next task
             setTitle('');

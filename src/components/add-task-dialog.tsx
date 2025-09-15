@@ -31,8 +31,8 @@ interface AddTaskDialogProps {
   children?: ReactNode;
   listId: string;
   task?: Task | null;
-  onTaskAdded?: (id: string) => void;
-  onTaskUpdated?: () => void;
+  onTaskAdded?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => void;
+  onTaskUpdated?: (id: string, updates: Partial<Task>) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   defaultDueDate?: Date;
@@ -168,9 +168,8 @@ export function AddTaskDialog({
         return;
     }
 
-    console.log('Attempting to save task:', title);
     setIsSaving(true);
-    const taskData = {
+    const taskData: Partial<Task> = {
         title,
         description,
         reflection,
@@ -182,37 +181,31 @@ export function AddTaskDialog({
         subtasks,
         tags: task?.tags || [],
         listId,
-        ownerId: user.uid,
-        ...(isEditMode ? {} : { createdAt: serverTimestamp() }),
-        updatedAt: serverTimestamp(),
+        deleted: false,
     };
 
     try {
-      if (isEditMode && task) {
-          const taskRef = doc(db, 'users', user.uid, 'tasks', task.id);
-          await updateDoc(taskRef, taskData);
+      if (isEditMode && task && onTaskUpdated) {
+          onTaskUpdated(task.id, taskData);
           toast({
             title: 'Task Updated',
             description: `"${title}" has been updated.`,
           });
-          onTaskUpdated?.();
-          if (!andAddNew) setOpen(false);
-      } else {
-          const docRef = await addDoc(collection(db, 'users', user.uid, 'tasks'), taskData);
+      } else if (onTaskAdded) {
+          onTaskAdded(taskData as Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>);
           toast({
             title: 'Task Added',
             description: `"${title}" has been added successfully.`,
           });
-          onTaskAdded?.(docRef.id);
           
           if (andAddNew) {
             resetForm();
-          } else {
-            setOpen(false);
+            return; // Don't close dialog
           }
       }
+      setOpen(false);
     } catch (e) {
-      console.error("Error saving document: ", e);
+      console.error("Error saving task: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to save task.' });
     } finally {
       setIsSaving(false);

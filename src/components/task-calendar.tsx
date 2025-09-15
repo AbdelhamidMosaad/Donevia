@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback, ReactNode } from 'react';
-import { collection, onSnapshot, doc, updateDoc, Timestamp, query, where } from 'firebase/firestore';
+import { updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import type { Task } from '@/lib/types';
@@ -11,6 +11,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AddTaskDialog } from './add-task-dialog';
+import { useTasks } from '@/hooks/use-tasks';
 
 const localizer = momentLocalizer(moment);
 
@@ -77,16 +78,16 @@ interface DayCellWrapperProps {
 
 const DayCellWrapper = ({ children, value, listId }: DayCellWrapperProps) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { addTask } = useTasks(listId);
 
     const handleOpenDialog = (e: React.MouseEvent) => {
-      // only handle clicks on the day cell background, not on events
       if ((e.target as HTMLElement).classList.contains('rbc-day-bg')) {
         setIsDialogOpen(true);
       }
     }
     
     return (
-      <AddTaskDialog listId={listId} defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <AddTaskDialog listId={listId} defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen} onTaskAdded={addTask}>
         <div className="relative h-full" onClick={handleOpenDialog}>
             {children}
         </div>
@@ -96,58 +97,42 @@ const DayCellWrapper = ({ children, value, listId }: DayCellWrapperProps) => {
 
 interface TaskCalendarProps {
     listId: string;
+    tasks: Task[];
+    onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
 }
 
-export function TaskCalendar({ listId }: TaskCalendarProps) {
-  const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
+export function TaskCalendar({ listId, tasks, onUpdateTask }: TaskCalendarProps) {
   const [events, setEvents] = useState<Task[]>([]);
   const [view, setView] = useState<keyof typeof Views>(Views.MONTH);
   const [date, setDate] = useState(new Date());
 
   useEffect(() => {
-    if (user && listId) {
-      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), where('deleted', '!=', true));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-        setTasks(tasksData);
-        setEvents(tasksData.map(task => ({
-          ...task,
-          start: task.dueDate.toDate(),
-          end: task.dueDate.toDate(),
-        })));
-      });
-      return () => unsubscribe();
-    }
-  }, [user, listId]);
+    setEvents(tasks.map(task => ({
+      ...task,
+      start: task.dueDate.toDate(),
+      end: task.dueDate.toDate(),
+    })));
+  }, [tasks]);
 
   const handleSelectSlot = useCallback(
     ({ start, end }: { start: Date, end: Date }) => {
-      // For now, we'll just log the selection.
-      // In the future, this could open an AddTaskDialog.
-      console.log('Selected slot:', start, end);
+      // Logic to open AddTaskDialog can be added here if needed
     },
     []
   );
 
   const handleSelectEvent = useCallback(
     (event: Task) => {
-      // In the future, this could open an EditTaskDialog.
-      console.log('Selected event:', event);
+      // Logic to open an edit dialog could go here
     },
     []
   );
 
   const handleEventDrop = useCallback(
     async ({ event, start, end }: { event: any, start: any, end: any }) => {
-      if (user && event.id) {
-        const taskRef = doc(db, 'users', user.uid, 'tasks', event.id);
-        await updateDoc(taskRef, {
-          dueDate: Timestamp.fromDate(start),
-        });
-      }
+      onUpdateTask(event.id, { dueDate: Timestamp.fromDate(start) });
     },
-    [user]
+    [onUpdateTask]
   );
   
 

@@ -4,7 +4,7 @@ import type { Task, Stage } from '@/lib/types';
 import { TaskCard } from './task-card';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, doc, updateDoc, where } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useToast } from '@/hooks/use-toast';
@@ -13,24 +13,22 @@ import { BoardTaskCreator } from './board-task-creator';
 import { Button } from './ui/button';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTasks } from '@/hooks/use-tasks';
 
 interface TaskBoardProps {
   listId: string;
 }
 
-const defaultStages: Stage[] = [
-    { id: 'backlog', name: 'Backlog', order: 0 },
-    { id: 'todo', name: 'To Do', order: 1 },
-    { id: 'inprogress', name: 'In Progress', order: 2 },
-    { id: 'done', name: 'Done', order: 3 },
-];
-
 export function TaskBoard({ listId }: TaskBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [stages, setStages] = useState<Stage[]>([]);
+  const { tasks, stages, updateTask } = useTasks(listId);
+  const [localStages, setLocalStages] = useState<Stage[]>([]);
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
+  
+  useEffect(() => {
+    setLocalStages(stages);
+  }, [stages]);
 
   useEffect(() => {
       const storedCollapsedState = localStorage.getItem(`collapsed-stages-${listId}`);
@@ -48,37 +46,8 @@ export function TaskBoard({ listId }: TaskBoardProps) {
       const newState = {...collapsedStages, [stageId]: !collapsedStages[stageId]};
       updateCollapsedState(newState);
   };
-
-  useEffect(() => {
-    if (user && listId) {
-      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-      const unsubscribeList = onSnapshot(listRef, async (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.stages && data.stages.length > 0) {
-            setStages(data.stages.sort((a: any, b: any) => a.order - b.order));
-          } else {
-            // Set default stages if none exist
-            await updateDoc(listRef, { stages: defaultStages });
-            setStages(defaultStages);
-          }
-        }
-      });
-      
-      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), where('deleted', '!=', true));
-      const unsubscribeTasks = onSnapshot(q, (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-        setTasks(tasksData);
-      });
-
-      return () => {
-        unsubscribeList();
-        unsubscribeTasks();
-      }
-    }
-  }, [user, listId]);
   
-  const sortedStages = useMemo(() => [...stages].sort((a, b) => a.order - b.order), [stages]);
+  const sortedStages = useMemo(() => [...localStages].sort((a, b) => a.order - b.order), [localStages]);
 
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
@@ -91,7 +60,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
         newStages.splice(destination.index, 0, reorderedItem);
 
         const updatedStages = newStages.map((stage, index) => ({ ...stage, order: index }));
-        setStages(updatedStages);
+        setLocalStages(updatedStages); // Optimistic update
 
         if (user) {
             const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
@@ -109,38 +78,29 @@ export function TaskBoard({ listId }: TaskBoardProps) {
         const task = tasks.find(t => t.id === draggableId);
         if (task && user) {
             const newStatus = destination.droppableId;
-            const taskRef = doc(db, 'users', user.uid, 'tasks', draggableId);
-            try {
-                await updateDoc(taskRef, { status: newStatus });
-                toast({
-                    title: 'Task Updated',
-                    description: `Task "${task.title}" moved to ${stages.find(s => s.id === newStatus)?.name}.`,
-                });
-            } catch (error) {
-                console.error("Error updating task status: ", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Error',
-                    description: 'Failed to update task status.',
-                });
-            }
+            updateTask(draggableId, { status: newStatus });
+             toast({
+                title: 'Task Updated',
+                description: `Task "${task.title}" moved to ${stages.find(s => s.id === newStatus)?.name}.`,
+            });
         }
     }
   };
 
-  const tasksByColumn = useMemo(() => sortedStages.reduce((acc, stage) => {
-    acc[stage.id] = tasks
-      .filter((task) => task.status === stage.id)
-      .sort((a, b) => {
-        if (a.createdAt && b.createdAt) {
-          return a.createdAt.toMillis() - b.createdAt.toMillis();
-        }
-        if (a.createdAt) return -1;
-        if (b.createdAt) return 1;
-        return 0;
+  const tasksByColumn = useMemo(() => {
+      const tasksWithOrder = tasks.map(task => {
+        const stageTasks = tasks.filter(t => t.status === task.status);
+        const order = stageTasks.findIndex(t => t.id === task.id);
+        return { ...task, order };
       });
-    return acc;
-  }, {} as Record<string, Task[]>), [sortedStages, tasks]);
+
+      return sortedStages.reduce((acc, stage) => {
+        acc[stage.id] = tasksWithOrder
+            .filter((task) => task.status === stage.id)
+            .sort((a, b) => a.order - b.order);
+        return acc;
+      }, {} as Record<string, (Task & {order: number})[]>);
+    }, [sortedStages, tasks]);
 
   if (!user || stages.length === 0) {
       return <div>Loading board...</div>;

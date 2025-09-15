@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,10 +11,10 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { AddTaskDialog } from '@/components/add-task-dialog';
-import type { Task } from '@/lib/types';
-import { collection, onSnapshot, query, where, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
+import { useTasks } from '@/hooks/use-tasks';
 
 type View = 'calendar' | 'list' | 'board' | 'table';
 
@@ -24,9 +23,9 @@ export default function TaskListPage() {
   const router = useRouter();
   const params = useParams();
   const listId = params.listId as string;
+  const { tasks, stages, addTask, updateTask, deleteTask } = useTasks(listId);
 
   const [view, setView] = useState<View>('board');
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [listName, setListName] = useState('');
   const [listExists, setListExists] = useState<boolean | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -60,16 +59,9 @@ export default function TaskListPage() {
           router.push('/dashboard/lists');
         }
       });
-
-      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId), where('deleted', '!=', true));
-      const unsubscribeTasks = onSnapshot(q, (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-        setTasks(tasksData);
-      });
       
       return () => {
         unsubscribeList();
-        unsubscribeTasks();
       }
     }
   }, [user, listId, router]);
@@ -98,14 +90,14 @@ export default function TaskListPage() {
   const renderView = () => {
     switch (view) {
       case 'list':
-        return <TaskList listId={listId} />;
+        return <TaskList tasks={tasks} stages={stages} onDeleteTask={deleteTask} onUpdateTask={updateTask} />;
       case 'board':
         return <TaskBoard listId={listId} />;
       case 'table':
-        return <TaskTable listId={listId} />;
+        return <TaskTable tasks={tasks} stages={stages} />;
       case 'calendar':
       default:
-        return <TaskCalendar listId={listId} />;
+        return <TaskCalendar tasks={tasks} onUpdateTask={updateTask} listId={listId} />;
     }
   }
 
@@ -147,7 +139,12 @@ export default function TaskListPage() {
       <div className="flex-1 overflow-y-auto">
         {renderView()}
       </div>
-       <AddTaskDialog listId={listId} open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} onTaskAdded={() => {}} />
+       <AddTaskDialog 
+          listId={listId} 
+          open={isAddDialogOpen} 
+          onOpenChange={setIsAddDialogOpen} 
+          onTaskAdded={addTask} 
+        />
     </div>
   );
 }

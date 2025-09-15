@@ -15,12 +15,12 @@ import {
 import { Button } from './ui/button';
 import { AddTaskDialog } from './add-task-dialog';
 import { useState } from 'react';
-import { deleteTask } from '@/lib/tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import moment from 'moment';
 import { cn } from '@/lib/utils';
+import { useTasks } from '@/hooks/use-tasks';
 
 
 interface TaskCardProps {
@@ -35,17 +35,16 @@ const priorityIcons = {
 
 export function TaskCard({ task }: TaskCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { user } = useAuth();
+  const { deleteTask, updateTask } = useTasks(task.listId);
   const { toast } = useToast();
 
   const handleDelete = async () => {
-      if(!user) return;
-      try {
-        await deleteTask(user.uid, task.id);
-        toast({ title: 'Task deleted' });
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error deleting task' });
-      }
+    try {
+      await deleteTask(task.id);
+      toast({ title: 'Task deleted' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error deleting task' });
+    }
   }
   
   const isDueSoon = moment(task.dueDate.toDate()).isBefore(moment().add(3, 'days'));
@@ -62,7 +61,6 @@ export function TaskCard({ task }: TaskCardProps) {
         <div className="flex justify-between items-start">
           <p className="font-semibold text-sm leading-tight pr-2">{task.title}</p>
           <DropdownMenu onOpenChange={(e) => {
-              // Stop propagation to prevent the card's onClick from firing
               if (e) {
                 const card = document.querySelector(`[data-task-id="${task.id}"]`);
                 card?.setAttribute('data-menu-open', 'true');
@@ -79,7 +77,7 @@ export function TaskCard({ task }: TaskCardProps) {
               </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-destructive">
+                    <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-destructive focus:text-destructive w-full">
                          <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </DropdownMenuItem>
                 </AlertDialogTrigger>
@@ -134,6 +132,7 @@ export function TaskCard({ task }: TaskCardProps) {
         task={task}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
+        onTaskUpdated={(id, updates) => updateTask(id, updates)}
     />
     </>
   );

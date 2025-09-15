@@ -3,18 +3,18 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from '
 import { db } from './firebase';
 import type { Task } from './types';
 
-export const addTask = async (userId: string, taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+// This function is now only used for seeding/testing if needed.
+// The primary addTask logic is in the useTasks hook for optimistic updates.
+export const addTaskToDb = async (userId: string, taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     const tasksRef = collection(db, 'users', userId, 'tasks');
     return await addDoc(tasksRef, {
         ...taskData,
-        ownerId: userId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        deleted: false, // Set initial deleted status
     });
 };
 
-export const updateTask = async (userId: string, taskId: string, taskData: Partial<Omit<Task, 'id'>>) => {
+export const updateTaskInDb = async (userId: string, taskId: string, taskData: Partial<Omit<Task, 'id'>>) => {
     const taskRef = doc(db, 'users', userId, 'tasks', taskId);
     return await updateDoc(taskRef, {
         ...taskData,
@@ -22,11 +22,9 @@ export const updateTask = async (userId: string, taskId: string, taskData: Parti
     });
 };
 
-export const deleteTask = async (userId: string, taskId: string) => {
+export const deleteTaskFromDb = async (userId: string, taskId: string) => {
     const taskRef = doc(db, 'users', userId, 'tasks', taskId);
-    // Soft delete by updating a 'deleted' flag
-    return await updateDoc(taskRef, {
-        deleted: true,
-        deletedAt: serverTimestamp()
-    });
+    // Using a hard delete for simplicity in optimistic UI.
+    // Soft delete can be re-introduced if a trash/archive feature is needed.
+    return await deleteDoc(taskRef);
 };
