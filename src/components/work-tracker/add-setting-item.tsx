@@ -14,9 +14,9 @@ interface AddSettingItemProps {
 export function AddSettingItem({ type, onAdd }: AddSettingItemProps) {
   const [value, setValue] = useState('');
 
-  const handleAdd = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  const handleAdd = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    e?.preventDefault();
     if (value.trim()) {
       onAdd(type, value.trim());
       setValue('');
@@ -27,10 +27,7 @@ export function AddSettingItem({ type, onAdd }: AddSettingItemProps) {
       if(e.key === 'Enter') {
           e.stopPropagation();
           e.preventDefault();
-          if (value.trim()) {
-            onAdd(type, value.trim());
-            setValue('');
-          }
+          handleAdd();
       }
   }
 

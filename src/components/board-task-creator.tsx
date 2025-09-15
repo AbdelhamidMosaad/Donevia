@@ -126,7 +126,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                     Add card
                  </Button>
                  <Button variant="ghost" size="icon" onClick={resetAndClose} className="h-8 w-8">
-                    <ArrowRight className="h-4 w-4" />
+                    <X className="h-4 w-4" />
                     <span className="sr-only">Cancel</span>
                  </Button>
             </div>
