@@ -1,10 +1,8 @@
-// src/lib/firebase.ts
+
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Your web app's Firebase configuration
-// Get this from Firebase Console → Project Settings → General → Your apps
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,25 +12,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
-
-// Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
-
-// Create Google Auth Provider
-export const googleProvider = new GoogleAuthProvider();
-
-// Add calendar scope for Google Calendar access
-googleProvider.addScope('https://www.googleapis.com/auth/calendar');
-
-// Set critical parameters for offline access
-googleProvider.setCustomParameters({
-  access_type: 'offline',
-  prompt: 'consent' // Forces consent screen to ensure refresh token
-});
-
 export default app;

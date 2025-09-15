@@ -3,19 +3,47 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 export async function POST(request: Request) {
   try {
-    const { uid } = await request.json();
+    const { googleId, email, accessToken } = await request.json();
 
-    if (!uid) {
-      return NextResponse.json({ error: 'UID is required' }, { status: 400 });
+    if (!googleId || !email) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
-    const adminAuth = getFirebaseAdmin().auth();
-    const customToken = await adminAuth.createCustomToken(uid);
+    const admin = getFirebaseAdmin();
+    
+    // Create or get the Firebase user
+    let firebaseUser;
+    try {
+      firebaseUser = await admin.auth().getUserByEmail(email);
+    } catch (error) {
+      // User doesn't exist, create them
+      firebaseUser = await admin.auth().createUser({
+        uid: `google:${googleId}`,
+        email: email,
+        emailVerified: true,
+        displayName: email,
+      });
+    }
 
-    return NextResponse.json({ token: customToken });
+    // Create a custom token for this user
+    const customToken = await admin.auth().createCustomToken(firebaseUser.uid, {
+      googleAccessToken: accessToken,
+      googleId: googleId
+    });
+
+    return NextResponse.json({
+      customToken,
+      firebaseUserId: firebaseUser.uid
+    });
+
   } catch (error) {
-    console.error('Error creating custom token:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
+    console.error('Custom token creation error:', error);
+    return NextResponse.json(
+      { error: 'Failed to create custom token' },
+      { status: 500 }
+    );
   }
 }

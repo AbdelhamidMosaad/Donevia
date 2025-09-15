@@ -1,25 +1,28 @@
-// src/app/api/auth/google/callback/route.ts
 import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    // 1. Get the authorization code from Google's callback
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
+    const error = searchParams.get('error');
 
-    if (!code) {
-      return NextResponse.json({ error: 'No authorization code provided' }, { status: 400 });
+    if (error) {
+      return NextResponse.redirect(new URL('/?error=auth_failed', request.url));
     }
 
-    // 2. Exchange the code for access and refresh tokens
+    if (!code) {
+      return NextResponse.redirect(new URL('/?error=no_code', request.url));
+    }
+
+    // Exchange authorization code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        code: code,
+        code,
         client_id: process.env.GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
         redirect_uri: `${request.nextUrl.origin}/api/auth/google/callback`,
@@ -30,16 +33,12 @@ export async function GET(request: NextRequest) {
     const tokens = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
-      console.error('Token exchange error:', tokens);
-      return NextResponse.json({ error: 'Failed to exchange code for tokens' }, { status: 400 });
+      console.error('Token exchange failed:', tokens);
+      return NextResponse.redirect(new URL('/?error=token_exchange_failed', request.url));
     }
 
-    // 3. ✅ YOU NOW HAVE THE REFRESH TOKEN!
-    // tokens.refresh_token contains your long-lived refresh token
-    // tokens.access_token contains your short-lived access token
-
-    // 4. (Optional) Get user info from Google
-    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    // Get user info from Google
+    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v1/userinfo', {
       headers: {
         Authorization: `Bearer ${tokens.access_token}`,
       },
@@ -47,20 +46,18 @@ export async function GET(request: NextRequest) {
 
     const userInfo = await userInfoResponse.json();
 
-    // 5. Here you would typically:
-    // - Save the refresh_token securely to a database
-    // - Create a session or JWT for your frontend
-    // - Redirect the user back to your application
+    // Store tokens securely (in database in production)
+    // For now, we'll pass them via URL params to the frontend
+    const frontendRedirectUrl = new URL('/', request.url);
+    frontendRedirectUrl.searchParams.set('access_token', tokens.access_token);
+    frontendRedirectUrl.searchParams.set('refresh_token', tokens.refresh_token || '');
+    frontendRedirectUrl.searchParams.set('user_id', userInfo.id);
+    frontendRedirectUrl.searchParams.set('user_email', userInfo.email);
 
-    // For now, let's just redirect to the homepage with a success message
-    const response = NextResponse.redirect(new URL('/', request.url));
-    // You could set a cookie with the access token here if needed
-    // response.cookies.set('google_access_token', tokens.access_token, { httpOnly: true });
-    
-    return response;
+    return NextResponse.redirect(frontendRedirectUrl);
 
   } catch (error) {
     console.error('Callback error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.redirect(new URL('/?error=server_error', request.url));
   }
 }
