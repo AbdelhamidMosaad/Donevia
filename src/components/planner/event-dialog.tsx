@@ -20,7 +20,6 @@ import { Timestamp } from 'firebase/firestore';
 import { useDropzone } from 'react-dropzone';
 import { getAuth } from 'firebase/auth';
 import { Paperclip, Trash2, Check } from 'lucide-react';
-import { useGoogleCalendar } from '@/hooks/use-google-calendar';
 import { cn } from '@/lib/utils';
 
 
@@ -40,7 +39,6 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
   const [formData, setFormData] = useState<Partial<PlannerEvent>>({});
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
-  const { createGoogleEvent, updateGoogleEvent, deleteGoogleEvent, isSignedIn } = useGoogleCalendar();
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: acceptedFiles => setFilesToUpload(prev => [...prev, ...acceptedFiles]),
@@ -131,18 +129,10 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
         if(eventData.id) {
             const eventRef = doc(db, 'users', user.uid, 'plannerEvents', eventData.id);
             await updateDoc(eventRef, eventData);
-            if(isSignedIn && eventData.googleEventId) {
-                await updateGoogleEvent(eventData.googleEventId, eventData);
-            }
             toast({ title: 'Event updated successfully!' });
         } else {
-            let googleEventId = null;
-            if(isSignedIn) {
-                googleEventId = await createGoogleEvent(eventData);
-            }
             await addDoc(collection(db, 'users', user.uid, 'plannerEvents'), {
                 ...eventData,
-                googleEventId,
                 ownerId: user.uid,
                 createdAt: serverTimestamp(),
             });
@@ -157,9 +147,6 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
   const handleDelete = async () => {
     if(!user || !formData.id) return;
     try {
-        if(isSignedIn && formData.googleEventId) {
-            await deleteGoogleEvent(formData.googleEventId);
-        }
         const eventRef = doc(db, 'users', user.uid, 'plannerEvents', formData.id);
         await deleteDoc(eventRef);
         toast({ title: 'Event deleted' });
