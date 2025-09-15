@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, orderBy, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { WorkActivity, WorkTrackerSettingItem, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { List, Calendar, Settings, PlusCircle, FileText } from 'lucide-react';
+import { List, Calendar, Settings, PlusCircle, FileText, Maximize, Minimize } from 'lucide-react';
 import { ActivityForm } from '@/components/work-tracker/activity-form';
 import { ActivityTable } from '@/components/work-tracker/activity-table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -19,6 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
 import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
+import { cn } from '@/lib/utils';
 
 type View = 'table' | 'calendar';
 const colorPalette = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FED766", "#2AB7CA", "#F0CF65", "#9B59B6", "#3498DB", "#1ABC9C", "#E74C3C"];
@@ -35,6 +36,9 @@ export default function WorkTrackerPage() {
     categoryOptions: [],
     customerOptions: [],
   });
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const recordsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -114,6 +118,28 @@ export default function WorkTrackerPage() {
     }
   };
 
+  const toggleFullscreen = useCallback(() => {
+    const elem = recordsContainerRef.current;
+    if (!elem) return;
+
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch(err => {
+        toast({ variant: 'destructive', title: 'Error entering fullscreen.', description: err.message });
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
 
   if (loading || !user) {
     return <div>Loading...</div>;
@@ -121,7 +147,7 @@ export default function WorkTrackerPage() {
 
   return (
     <div className="flex flex-col h-full gap-6">
-       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+       <div className={cn("flex-col md:flex-row items-start md:items-center justify-between gap-4", isFullscreen ? 'hidden' : 'flex')}>
         <div className="flex items-center gap-4">
             <WorkTrackerIcon className="h-10 w-10 text-primary"/>
             <div>
@@ -132,37 +158,44 @@ export default function WorkTrackerPage() {
          <WorkTrackerSettings settings={settings} />
       </div>
 
-       <Tabs defaultValue="log" className="flex-1 flex flex-col min-h-0">
-            <TabsList>
+       <Tabs defaultValue="log" className={cn("flex-1 flex flex-col min-h-0", isFullscreen && 'h-full')}>
+            <TabsList className={cn(isFullscreen && 'hidden')}>
                 <TabsTrigger value="log"><PlusCircle /> Log Activity</TabsTrigger>
                 <TabsTrigger value="records"><FileText /> View Records</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="log" className="flex-1 mt-4">
+            <TabsContent value="log" className={cn("flex-1 mt-4", isFullscreen && 'hidden')}>
                  <Card>
                     <ActivityForm settings={settings} onAddNewItem={handleAddNewSettingItem} />
                 </Card>
             </TabsContent>
-            <TabsContent value="records" className="mt-4 space-y-4">
-                 <div className="flex justify-end items-center gap-2">
-                     <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
-                        <ToggleGroupItem value="table" aria-label="Table view">
-                        <List />
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                        <Calendar />
-                        </ToggleGroupItem>
-                    </ToggleGroup>
-                </div>
-                {view === 'table' ? (
-                    <ActivityTable 
-                        activities={activities} 
-                        settings={settings} 
-                        onFilteredTradesChange={setFilteredActivities}
-                    />
-                ) : (
-                    <ActivityCalendar activities={activities} />
-                )}
+            <TabsContent value="records" className={cn("mt-4 space-y-4", isFullscreen && 'h-full flex flex-col')}>
+                 <div ref={recordsContainerRef} className={cn("space-y-4", isFullscreen && 'h-full flex flex-col flex-1 bg-background p-4')}>
+                    <div className="flex justify-end items-center gap-2">
+                        <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
+                            <ToggleGroupItem value="table" aria-label="Table view">
+                            <List />
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="calendar" aria-label="Calendar view">
+                            <Calendar />
+                            </ToggleGroupItem>
+                        </ToggleGroup>
+                        <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                            {isFullscreen ? <Minimize /> : <Maximize />}
+                        </Button>
+                    </div>
+                    <div className={cn(isFullscreen && 'flex-1 min-h-0')}>
+                        {view === 'table' ? (
+                            <ActivityTable 
+                                activities={activities} 
+                                settings={settings} 
+                                onFilteredTradesChange={setFilteredActivities}
+                            />
+                        ) : (
+                            <ActivityCalendar activities={activities} />
+                        )}
+                    </div>
+                 </div>
             </TabsContent>
         </Tabs>
     </div>
