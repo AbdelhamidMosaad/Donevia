@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -80,11 +81,6 @@ export function VocabularyCoach() {
     try {
       const data = await generateVocabularyStory({ level });
       setResult(data);
-      
-      // Auto-save the generated words
-      await addUserVocabularyWords(user.uid, data.vocabulary, level);
-      toast({ title: 'New words saved to your library!' });
-      
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -205,6 +201,19 @@ export function VocabularyCoach() {
       }
   }
 
+  const handleSaveToLibrary = async () => {
+    if (!user || !result?.vocabulary) return;
+    setIsSaving(true);
+    try {
+      await addUserVocabularyWords(user.uid, result.vocabulary, level);
+      toast({ title: 'New words saved to your library!' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Failed to save words.', description: (error as Error).message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
     <Card className="h-full flex flex-col">
@@ -313,6 +322,10 @@ export function VocabularyCoach() {
         {result && (
              <CardFooter className="justify-end gap-2">
                 <Button variant="outline" onClick={() => setResult(null)}>Generate Another</Button>
+                <Button onClick={handleSaveToLibrary} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save/>}
+                    Save to Library
+                </Button>
                 <Button variant="outline" onClick={handleExportWord}><Download/> Export as Word</Button>
                 <Button variant="outline" onClick={() => setIsSaveToDeckOpen(true)}><Save/> Save to Flashcards</Button>
                 <Button onClick={handleSaveToDocs} disabled={isSaving}>
