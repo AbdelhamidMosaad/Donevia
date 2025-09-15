@@ -68,7 +68,7 @@ export default function PlannerPage() {
   const [currentView, setCurrentView] = useState<any>(Views.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { isSignedIn, googleEvents, handleAuthClick, isSyncing, listUpcomingEvents } = useGoogleCalendar();
+  const { isSignedIn, googleEvents, isSyncing, listUpcomingEvents } = useGoogleCalendar();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   // Initialize reminder hook
@@ -229,7 +229,7 @@ export default function PlannerPage() {
                     <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} /> Sync
                 </Button>
             )}
-            <Button variant="outline" onClick={handleAuthClick} disabled={isSyncing}>
+            <Button variant="outline" onClick={() => window.location.href = "/api/auth/google"} disabled={isSyncing}>
                 <LinkIcon className="mr-2 h-4 w-4" /> 
                 {isSyncing ? 'Syncing...' : (isSignedIn ? 'Disconnect Calendar' : 'Connect Google Calendar')}
             </Button>
