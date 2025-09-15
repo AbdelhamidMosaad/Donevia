@@ -506,10 +506,11 @@ body {
 
 /* Whiteboard Styles */
 .whiteboard-bg-dotted {
-    background-image: none;
+    background-image: radial-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 16px 16px;
 }
 .whiteboard-bg-lined {
-    background-image: linear-gradient(hsla(var(--border)) 1px, transparent 1px);
+    background-image: linear-gradient(hsl(var(--border)) 1px, transparent 1px);
     background-size: 100% 24px;
 }
 .whiteboard-bg-plain {
@@ -552,16 +553,28 @@ body {
   scrollbar-color: hsl(var(--border)) hsl(var(--sidebar-background));
 }
 
+@keyframes AnimateBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 @layer utilities {
     .animated-gradient-background {
       background-size: 200% 200%;
       background-image: linear-gradient(-45deg, hsl(var(--primary) / 0.8), hsl(var(--accent) / 0.8), hsl(var(--primary) / 0.8), hsl(var(--accent) / 0.8));
       animation: AnimateBG 5s ease infinite;
     }
-
-    @keyframes AnimateBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    
+    .bg-glassmorphism {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    
+    .dark .bg-glassmorphism {
+        background: rgba(22, 22, 38, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
 }
