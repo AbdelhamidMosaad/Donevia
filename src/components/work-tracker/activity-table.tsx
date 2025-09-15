@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, FileDown, RefreshCcw, ArrowUpDown } from 'lucide-react';
+import { Trash2, FileDown, RefreshCcw, ArrowUpDown, Edit } from 'lucide-react';
 import moment from 'moment';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import * as XLSX from 'xlsx';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { ActivityDialog } from './activity-dialog';
 
 interface ActivityTableProps {
     activities: WorkActivity[];
@@ -44,6 +45,7 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
     const [sortColumn, setSortColumn] = useState<SortableColumn>('date');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
+    const [editingActivity, setEditingActivity] = useState<WorkActivity | null>(null);
 
     const filteredAndSortedActivities = useMemo(() => {
         let filtered = activities.filter(activity => {
@@ -313,23 +315,28 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                                     <TableCell>{activity.overtimeDays || '-'}</TableCell>
                                     <TableCell>{activity.notes || '-'}</TableCell>
                                     <TableCell>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action cannot be undone. This will permanently delete the activity.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(activity.id)}>Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <div className="flex items-center gap-1">
+                                            <Button variant="ghost" size="icon" onClick={() => setEditingActivity(activity)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This action cannot be undone. This will permanently delete the activity.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(activity.id)}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -343,6 +350,15 @@ export function ActivityTable({ activities, settings }: ActivityTableProps) {
                     </TableBody>
                 </Table>
             </div>
+            {editingActivity && (
+                 <ActivityDialog
+                    activity={editingActivity}
+                    isOpen={!!editingActivity}
+                    onOpenChange={(isOpen) => !isOpen && setEditingActivity(null)}
+                    settings={settings}
+                    onAddNewItem={() => {}} // This is handled in the main page form
+                />
+            )}
         </div>
     );
 }
