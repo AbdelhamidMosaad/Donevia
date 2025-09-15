@@ -6,17 +6,16 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, doc, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { PlannerEvent, PlannerCategory, GoogleCalendarEvent, Task } from '@/lib/types';
+import type { PlannerEvent, PlannerCategory, Task } from '@/lib/types';
 import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Settings, Link as LinkIcon, RefreshCw, PlusCircle } from 'lucide-react';
+import { Settings, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { EventDialog } from '@/components/planner/event-dialog';
 import { CategoryManager } from '@/components/planner/category-manager';
 import { useEventReminders } from '@/hooks/use-planner-reminders';
-import { useGoogleCalendar } from '@/hooks/use-google-calendar';
 import { getDocs } from 'firebase/firestore';
 import { PlannerIcon } from '@/components/icons/tools/planner-icon';
 
@@ -68,33 +67,20 @@ export default function PlannerPage() {
   const [currentView, setCurrentView] = useState<any>(Views.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { isSignedIn, googleEvents, isSyncing, listUpcomingEvents } = useGoogleCalendar();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   // Initialize reminder hook
   useEventReminders(events);
 
   const combinedEvents = useMemo(() => {
-    // 1. Map Donevia events to BigCalendar format, adding associated task titles
-    const doneviaEvents = events.map(event => {
+    return events.map(event => {
         const linkedTask = tasks.find(t => t.id === event.taskId);
         return {
             ...event,
             title: linkedTask ? `[T] ${event.title}` : event.title,
         };
     });
-
-    // 2. Map Google Calendar events
-    const gcalEvents = googleEvents.map(gEvent => ({
-        ...gEvent,
-        start: new Date(gEvent.start?.dateTime || gEvent.start?.date || ''),
-        end: new Date(gEvent.end?.dateTime || gEvent.end?.date || ''),
-        title: gEvent.summary,
-        isGoogleEvent: true, // Custom property to identify
-    }));
-
-    return [...doneviaEvents, ...gcalEvents];
-  }, [events, googleEvents, tasks]);
+  }, [events, tasks]);
 
   useEffect(() => {
     if (!user) {
@@ -167,35 +153,26 @@ export default function PlannerPage() {
     setIsEventDialogOpen(true);
   }, []);
 
-  const handleSelectEvent = (event: PlannerEvent | GoogleCalendarEvent) => {
-     if ('isGoogleEvent' in event && event.isGoogleEvent) {
-      window.open(event.htmlLink, '_blank');
-    } else {
-      setSelectedEvent(event as PlannerEvent);
+  const handleSelectEvent = (event: PlannerEvent) => {
+      setSelectedEvent(event);
       setIsEventDialogOpen(true);
-    }
   };
   
   const handleEventDrop = async ({ event, start, end }: { event: any, start: any, end: any }) => {
-    if (!user || ('isGoogleEvent' in event)) return;
+    if (!user) return;
     const eventRef = doc(db, 'users', user.uid, 'plannerEvents', event.id);
     await updateDoc(eventRef, { start, end });
   };
   
-  const eventStyleGetter = (event: PlannerEvent | GoogleCalendarEvent) => {
+  const eventStyleGetter = (event: PlannerEvent) => {
     let backgroundColor = '#3174ad'; // Default color
     
-    if ('isGoogleEvent' in event && event.isGoogleEvent) {
-        backgroundColor = '#34A853'; // Google's green color
+    if (event.color) {
+        backgroundColor = event.color;
     } else {
-        const plannerEvent = event as PlannerEvent;
-        if (plannerEvent.color) {
-            backgroundColor = plannerEvent.color;
-        } else {
-            const category = categories.find(c => c.id === plannerEvent.categoryId);
-            if (category) {
-                backgroundColor = category.color;
-            }
+        const category = categories.find(c => c.id === event.categoryId);
+        if (category) {
+            backgroundColor = category.color;
         }
     }
     
@@ -224,15 +201,6 @@ export default function PlannerPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
-            {isSignedIn && (
-                <Button variant="outline" onClick={listUpcomingEvents} disabled={isSyncing}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} /> Sync
-                </Button>
-            )}
-            <Button variant="outline" onClick={() => window.location.href = "/api/auth/google"} disabled={isSyncing}>
-                <LinkIcon className="mr-2 h-4 w-4" /> 
-                {isSyncing ? 'Syncing...' : (isSignedIn ? 'Disconnect Calendar' : 'Connect Google Calendar')}
-            </Button>
             <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)}>
                 <Settings className="mr-2 h-4 w-4" /> Manage Categories
             </Button>
