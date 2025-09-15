@@ -143,7 +143,7 @@ export function LectureNotesGenerator() {
             html += '<ul>';
             section.content.forEach(point => {
                 const pointText = point.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                html += `<li>• ${pointText}</li>`;
+                html += `<li>${pointText}</li>`;
             });
             html += '</ul>';
 
@@ -153,7 +153,7 @@ export function LectureNotesGenerator() {
                     html += '<ul>';
                     subsection.content.forEach(subPoint => {
                         const subPointText = subPoint.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                        html += `<li>- ${subPointText}</li>`;
+                        html += `<li>${subPointText}</li>`;
                     });
                     html += '</ul>';
                 });
@@ -258,7 +258,7 @@ export function LectureNotesGenerator() {
     const { introduction, sections } = result.notesContent;
 
     return (
-        <div className="prose prose-black max-w-none">
+        <div className="prose prose-sm dark:prose-invert max-w-none">
             <p className="lead italic">{introduction}</p>
             {sections.map((section, secIndex) => (
                 <React.Fragment key={secIndex}>
@@ -307,7 +307,7 @@ export function LectureNotesGenerator() {
                     <CardDescription>Your AI-generated notes are ready.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
-                    <ScrollArea className="h-full border rounded-md p-4 bg-white text-black">
+                    <ScrollArea className="h-full border rounded-md p-4 bg-background">
                        {renderStructuredNotes()}
                     </ScrollArea>
                 </CardContent>
