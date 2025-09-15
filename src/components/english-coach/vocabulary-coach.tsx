@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -8,6 +7,7 @@ import { Loader2, Sparkles, Download, Save, Volume2, Play, StopCircle } from 'lu
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import type { VocabularyCoachResponse, VocabularyLevel, HighlightedWord } from '@/lib/types/vocabulary';
+import { generateVocabularyStory } from '@/ai/flows/vocabulary-coach-flow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
@@ -78,20 +78,7 @@ export function VocabularyCoach() {
     setAudioState({});
 
     try {
-      const response = await fetch('/api/english-coach/generate-vocabulary', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${await user.getIdToken()}`,
-        },
-        body: JSON.stringify({ level }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate vocabulary story.');
-      }
-
-      const data: VocabularyCoachResponse = await response.json();
+      const data = await generateVocabularyStory({ level });
       setResult(data);
       
       // Auto-save the generated words

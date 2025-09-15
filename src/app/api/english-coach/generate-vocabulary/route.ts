@@ -3,6 +3,8 @@ import { adminAuth } from '@/lib/firebase-admin';
 import { generateVocabularyStory } from '@/ai/flows/vocabulary-coach-flow';
 import type { VocabularyCoachRequest } from '@/lib/types/vocabulary';
 
+// This API route is no longer used by the component, which now calls the flow directly.
+// It is kept here for potential future use or direct API access if needed.
 export async function POST(request: Request) {
   try {
     const idToken = request.headers.get('Authorization')?.replace('Bearer ', '');
