@@ -37,7 +37,10 @@ const pronunciationCoachPrompt = ai.definePrompt({
     **Instructions:**
     1.  **Acknowledge Focus**: In the 'focus' field, confirm the pronunciation topic. For example, if the topic is 'th', you could say 'The "th" sound'.
     2.  **Provide a Tip**: In the 'practiceTip' field, provide a clear, simple, and actionable tip for producing the sound. This should explain the theory of pronunciation, such as tongue and mouth placement.
-    3.  **Generate Items**: Create exactly 10 practice items (a mix of single words and short, common phrases) that are appropriate for a {{level}} learner and target the '{{topic}}' sound.
+    3.  **Generate Level-Appropriate Items**: Create exactly 10 practice items (a mix of single words and short, common phrases) that are **strictly appropriate for a {{level}} learner** and target the '{{topic}}' sound. 
+        - For **Beginner**: Use simple, one-syllable, high-frequency words. Example for 'th': 'the', 'this', 'with'.
+        - For **Intermediate**: Use multi-syllable words and common phrases. Example for 'th': 'something', 'healthy', 'throw it away'.
+        - For **Advanced**: Use complex, less common words, or phrases with tricky combinations. Example for 'th': 'anesthetist', 'thoroughly', 'a stitch in time'.
     4.  **Highlight the Sound**: For each item in 'practiceItems', wrap the specific letters that make the target sound in markdown bold (**). For example, if the topic is 'sh', 'she sells' should be '**sh**e sells'. If the sound appears multiple times, highlight the most prominent one.
     5.  **Provide IPA**: For each item, provide its IPA transcription in the 'ipa' field.
     6.  **JSON Output**: Ensure your entire output is a single, valid JSON object.
