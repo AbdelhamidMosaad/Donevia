@@ -27,11 +27,6 @@ export default function Home() {
   
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    // Explicitly set the client ID to ensure the correct one is used.
-    provider.setCustomParameters({
-      'client_id': process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-    });
-
     try {
       await signInWithPopup(auth, provider);
       router.push('/home');
