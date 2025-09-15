@@ -140,17 +140,24 @@ export function useGoogleCalendar(conflictResolution: ConflictResolution = { str
     }
   }, [performInitialSync, toast]);
 
+  const handleTokenResponse = useCallback(async (tokenResponse: any) => {
+    if (tokenResponse && tokenResponse.access_token) {
+        window.gapi.client.setToken(tokenResponse);
+        setIsSignedIn(true);
+        await initializeTwoWaySync();
+    } else if (tokenResponse.error !== undefined) {
+        console.error("Google token error:", tokenResponse);
+        toast({ variant: 'destructive', title: 'Google Sign-In Error' });
+    }
+  }, [initializeTwoWaySync, toast]);
+
+
   const gapiInit = useCallback(() => {
     window.gapi.client.init({
       apiKey: API_KEY,
       discoveryDocs: DISCOVERY_DOCS,
     }).then(() => {
       setIsGapiInitialized(true);
-      const token = window.gapi.client.getToken();
-      if (token) {
-        setIsSignedIn(true);
-        initializeTwoWaySync();
-      }
     }).catch((e: any) => {
       console.error("Error init gapi client", e);
       toast({
@@ -159,21 +166,21 @@ export function useGoogleCalendar(conflictResolution: ConflictResolution = { str
         description: "Could not initialize Google Calendar API"
       });
     });
-  }, [initializeTwoWaySync, toast]);
+  }, [toast]);
+
 
   const gisInit = useCallback(() => {
     if (!CLIENT_ID) return;
     
-    setTokenClient(
-      window.google.accounts.oauth2.initTokenClient({
+    const client = window.google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
-        callback: '', // defined later
-      })
-    );
-  }, []);
+        callback: handleTokenResponse,
+    });
+    setTokenClient(client);
+  }, [handleTokenResponse]);
 
-  // Initialize scripts
+
   useEffect(() => {
     const gapiScript = document.createElement('script');
     gapiScript.src = 'https://apis.google.com/js/api.js';
@@ -202,6 +209,7 @@ export function useGoogleCalendar(conflictResolution: ConflictResolution = { str
       }
     };
   }, [gapiInit, gisInit]);
+
 
   // Cleanup on unmount
   useEffect(() => {
@@ -448,33 +456,29 @@ export function useGoogleCalendar(conflictResolution: ConflictResolution = { str
   const handleAuthClick = useCallback(() => {
     if (!tokenClient) return;
 
-    if (window.gapi.client.getToken() === null) {
-      tokenClient.callback = async (resp: any) => {
-        if (resp.error !== undefined) {
-          throw(resp);
-        }
-        setIsSignedIn(true);
-        await initializeTwoWaySync();
-      };
+    if (!isSignedIn) {
       tokenClient.requestAccessToken({prompt: 'consent'});
     } else {
-      window.google.accounts.oauth2.revoke(window.gapi.client.getToken().access_token, () => {
-        window.gapi.client.setToken(null);
-        setIsSignedIn(false);
-        setGoogleEvents([]);
-        setPendingOperations([]);
-        setSyncState({
-          lastSyncTime: null,
-          syncToken: null,
-          isInitialSync: true
+      const token = window.gapi.client.getToken();
+      if(token) {
+        window.google.accounts.oauth2.revoke(token.access_token, () => {
+          window.gapi.client.setToken(null);
+          setIsSignedIn(false);
+          setGoogleEvents([]);
+          setPendingOperations([]);
+          setSyncState({
+            lastSyncTime: null,
+            syncToken: null,
+            isInitialSync: true
+          });
+          if (syncIntervalRef.current) {
+            clearInterval(syncIntervalRef.current);
+          }
+          toast({ title: "Signed out of Google Calendar" });
         });
-        if (syncIntervalRef.current) {
-          clearInterval(syncIntervalRef.current);
-        }
-        toast({ title: "Signed out of Google Calendar" });
-      });
+      }
     }
-  }, [tokenClient, initializeTwoWaySync, toast]);
+  }, [tokenClient, isSignedIn, toast]);
 
   const createGoogleEventDirect = async (event: Partial<PlannerEvent>) => {
     if (!window.gapi.client.calendar || !isSignedIn) throw new Error('Not authenticated');
@@ -595,3 +599,5 @@ export function useGoogleCalendar(conflictResolution: ConflictResolution = { str
     listUpcomingEvents: performIncrementalSync,
   };
 }
+
+    
