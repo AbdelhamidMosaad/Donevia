@@ -11,7 +11,18 @@ import { Label } from '../ui/label';
 import { generatePronunciationPractice, type PronunciationPracticeResponse } from '@/ai/flows/pronunciation-coach-flow';
 import { generateAudio } from '@/ai/flows/tts-flow';
 
-const topics = ['th', 'r/l', 'v/w', 'short i / long e', 's/z'];
+const topics = [
+    'th (think, that)',
+    'r and l (right, light)',
+    'v and w (very, well)',
+    'short i vs long e (ship, sheep)',
+    'cat vs cut (æ vs ʌ)',
+    's vs sh (see, she)',
+    'p vs b (pat, bat)',
+    'f vs v (fan, van)',
+    'ch vs j (cheap, jeep)',
+    'word endings (-s, -ed)'
+];
 type TtsEngine = 'gemini' | 'browser';
 
 export function PronunciationCoach() {
@@ -19,7 +30,7 @@ export function PronunciationCoach() {
   const { toast } = useToast();
 
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
-  const [topic, setTopic] = useState('th');
+  const [topic, setTopic] = useState(topics[0]);
   const [result, setResult] = useState<PronunciationPracticeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [audioState, setAudioState] = useState<Record<string, { loading: boolean, data: string | null }>>({});
