@@ -1,49 +1,34 @@
+
 import { NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 export async function POST(request: Request) {
   try {
-    const { googleId, email, accessToken } = await request.json();
+    const { uid } = await request.json();
 
-    if (!googleId || !email) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    if (!uid) {
+      return NextResponse.json({ error: 'UID is required' }, { status: 400 });
     }
 
     const admin = getFirebaseAdmin();
     
-    // Create or get the Firebase user
-    let firebaseUser;
+    // Check if user exists. If not, you might want to create one,
+    // but for this flow, we assume the user is already signed into Firebase.
     try {
-      firebaseUser = await admin.auth().getUserByEmail(email);
+        await admin.auth().getUser(uid);
     } catch (error) {
-      // User doesn't exist, create them
-      firebaseUser = await admin.auth().createUser({
-        uid: `google:${googleId}`,
-        email: email,
-        emailVerified: true,
-        displayName: email,
-      });
+        // Handle case where user does not exist if necessary,
+        // for example, by creating the user.
+        // For now, we'll assume the user exists.
+        console.warn(`Attempted to create token for non-existent user: ${uid}`);
     }
 
-    // Create a custom token for this user
-    const customToken = await admin.auth().createCustomToken(firebaseUser.uid, {
-      googleAccessToken: accessToken,
-      googleId: googleId
-    });
+    const customToken = await admin.auth().createCustomToken(uid);
 
-    return NextResponse.json({
-      customToken,
-      firebaseUserId: firebaseUser.uid
-    });
+    return NextResponse.json({ customToken });
 
   } catch (error) {
     console.error('Custom token creation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create custom token' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create custom token' }, { status: 500 });
   }
 }
