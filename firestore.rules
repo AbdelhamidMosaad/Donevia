@@ -1,111 +1,35 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check ownership
+
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the requesting user is the owner of the document
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // Match all collections under a user's ID
-    match /users/{userId} {
-      // Allow user to manage their own profile settings
-      match /profile/{settingId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Explicit rules for each top-level collection
-      match /tasks/{taskId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /taskLists/{listId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /stickyNotes/{noteId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /bookmarks/{bookmarkId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /clients/{clientId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /clientRequests/{requestId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /meetingNotes/{noteId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /docs/{docId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /docFolders/{folderId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /whiteboards/{whiteboardId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /whiteboards/{whiteboardId}/data/{dataId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /mindMaps/{mapId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /goals/{goalId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /milestones/{milestoneId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /progressUpdates/{updateId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /habits/{habitId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /habitCompletions/{completionId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /flashcardDecks/{deckId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /flashcardDecks/{deckId}/{subcollection}/{cardId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /flashcardFolders/{folderId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /studyGoals/{goalId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /studyChapters/{chapterId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /studySubtopics/{subtopicId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /studySessions/{sessionId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /workActivities/{activityId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /pomodoro/{stateId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /pomodoroHistory/{historyId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /brainstormingIdeas/{ideaId} {
-        allow read, write: if isOwner(userId);
-      }
+    // Match all collections for a specific user
+    match /users/{userId}/{document=**} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
     }
-
-    // Publicly readable collection for shared flashcard decks
+    
+    // Specific, stricter rule for Google Auth Tokens
+    match /users/{userId}/googleAuthTokens/{tokenId} {
+      allow read, write: if isAuthenticated() && isOwner(userId) && resource.data.userId == userId;
+      // Deny list access to everyone to prevent leaking tokens
+      allow list: if false;
+    }
+    
+    // Rules for public data, if any
     match /publicDecks/{deckId} {
-      allow read: if true;
-      allow write: if false; // Nobody can write directly to the public collection
+      allow get;
+      allow list;
+      allow write: if false; // Nobody can write directly to public decks
     }
   }
 }

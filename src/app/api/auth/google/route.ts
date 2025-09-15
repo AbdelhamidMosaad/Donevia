@@ -1,36 +1,30 @@
+// src/app/api/auth/google/route.ts
 import { NextResponse } from 'next/server';
-import { google } from 'googleapis';
+import { NextRequest } from 'next/server';
 
-const OAUTH2_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const OAUTH2_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const OAUTH2_REDIRECT_URI = process.env.NEXT_PUBLIC_URL
-  ? `${process.env.NEXT_PUBLIC_URL}/api/auth/google/callback`
-  : 'http://localhost:9002/api/auth/google/callback';
+export async function GET(request: NextRequest) {
+  // 1. Get configuration from Environment Variables
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  
+  // 2. Construct the redirect URI for the callback
+  // Use the current request's hostname to build the URL dynamically
+  const host = request.headers.get('host');
+  const protocol = host?.includes('localhost') ? 'http' : 'https';
+  const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
 
-export async function GET() {
-  if (!OAUTH2_CLIENT_ID || !OAUTH2_CLIENT_SECRET) {
-    return NextResponse.json(
-      { error: 'Google OAuth2 credentials are not configured.' },
-      { status: 500 }
-    );
-  }
-
-  const oauth2Client = new google.auth.OAuth2(
-    OAUTH2_CLIENT_ID,
-    OAUTH2_CLIENT_SECRET,
-    OAUTH2_REDIRECT_URI
-  );
-
-  // Generate the url that will be used for the consent dialog.
-  const authorizeUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline', // This is crucial for getting a refresh token.
-    prompt: 'consent', // Ensures the user is prompted for consent every time, necessary to get a refresh token.
-    scope: [
-      'https://www.googleapis.com/auth/calendar',
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-    ],
+  // 3. Construct the Google Auth URL
+  const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID!,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'https://www.googleapis.com/auth/calendar',
+    access_type: 'offline',
+    prompt: 'consent',
   });
 
-  return NextResponse.redirect(authorizeUrl);
+  googleAuthUrl.search = params.toString();
+
+  // 4. Redirect to Google's authentication page
+  return NextResponse.redirect(googleAuthUrl.toString());
 }
