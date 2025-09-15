@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
+import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
 
 type View = 'table' | 'calendar';
 const colorPalette = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FED766", "#2AB7CA", "#F0CF65", "#9B59B6", "#3498DB", "#1ABC9C", "#E74C3C"];
@@ -140,28 +141,22 @@ export default function WorkTrackerPage() {
                     <ActivityForm settings={settings} onAddNewItem={handleAddNewSettingItem} />
                 </Card>
             </TabsContent>
-            <TabsContent value="records" className="flex-1 flex flex-col min-h-0 mt-4">
-                 <Card className="flex-1 flex flex-col min-h-0 bg-card/60 backdrop-blur-sm">
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle>Recorded Activities</CardTitle>
-                                <CardDescription>View your logged activities in a table or calendar format.</CardDescription>
-                            </div>
-                            <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
-                                <ToggleGroupItem value="table" aria-label="Table view">
-                                <List />
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                                <Calendar />
-                                </ToggleGroupItem>
-                            </ToggleGroup>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                        {view === 'table' ? <ActivityTable activities={activities} settings={settings} /> : <ActivityCalendar activities={activities} />}
-                    </CardContent>
-                </Card>
+            <TabsContent value="records" className="mt-4 space-y-4">
+                 <div className="flex justify-end items-center gap-2">
+                     <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)} aria-label="View toggle">
+                        <ToggleGroupItem value="table" aria-label="Table view">
+                        <List />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="calendar" aria-label="Calendar view">
+                        <Calendar />
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                </div>
+                {view === 'table' ? (
+                    <ActivityTable activities={activities} settings={settings} />
+                ) : (
+                    <ActivityCalendar activities={activities} />
+                )}
             </TabsContent>
         </Tabs>
     </div>
