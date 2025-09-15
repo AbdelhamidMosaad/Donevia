@@ -130,7 +130,7 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
                     />
                   </div>
                 ) : (
-                  <Link href={`/dashboard/lists/${list.id}`} className="flex items-center gap-2 font-medium text-primary hover:underline">
+                  <Link href={`/dashboard/list/${list.id}`} className="flex items-center gap-2 font-medium text-primary hover:underline">
                       <TasksIcon className="h-5 w-5" />
                       {list.name}
                   </Link>
@@ -160,7 +160,7 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => onDelete(list.id)}>Delete</AlertDialogAction>
+                                  <AlertDialogAction onClick={() => onDelete(list.id)} variant="destructive">Delete</AlertDialogAction>
                               </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

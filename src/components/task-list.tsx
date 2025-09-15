@@ -11,6 +11,10 @@ import { MoreHorizontal, Edit, Trash2, CheckCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { deleteTask } from '@/lib/tasks';
+
 
 interface TaskListProps {
     listId: string;
@@ -18,6 +22,7 @@ interface TaskListProps {
 
 export function TaskList({ listId }: TaskListProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [sortBy, setSortBy] = useState('createdAt');
@@ -52,6 +57,16 @@ export function TaskList({ listId }: TaskListProps) {
 
   const getStageName = (statusId: string) => {
       return stages.find(s => s.id === statusId)?.name || statusId;
+  }
+  
+   const handleDelete = async (taskId: string) => {
+      if(!user) return;
+      try {
+        await deleteTask(user.uid, taskId);
+        toast({ title: 'Task deleted' });
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error deleting task' });
+      }
   }
 
   return (
@@ -103,7 +118,23 @@ export function TaskList({ listId }: TaskListProps) {
               <DropdownMenuContent>
                 <DropdownMenuItem><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                 <DropdownMenuItem><CheckCircle className="mr-2 h-4 w-4" /> Mark as complete</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete this task.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(task.id)} variant="destructive">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
