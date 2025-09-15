@@ -33,6 +33,7 @@ import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
 import { DocsIcon } from '@/components/icons/tools/docs-icon';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
+import { InterviewPrepIcon } from '@/components/icons/tools/interview-prep-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -48,6 +49,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     'trading-tracker': TradingTrackerIcon,
     'work-tracker': WorkTrackerIcon,
     'english-coach': EnglishCoachIcon,
+    'interview-prep': InterviewPrepIcon,
     brainstorming: BrainstormingIcon,
     whiteboard: WhiteboardIcon,
     'mind-map': MindMapIcon,
@@ -70,6 +72,7 @@ const allTools = [
     { id: 'trading-tracker', href: '/trading-tracker', title: 'Trading Tracker', description: 'Record and analyze your trading performance.' },
     { id: 'work-tracker', href: '/work-tracker', title: 'Work Tracker', description: 'Log your daily work activities and tasks.' },
     { id: 'english-coach', href: '/english-coach', title: 'English Coach', description: 'Improve your English with AI-powered tools.' },
+    { id: 'interview-prep', href: '/interview-prep', title: 'Interview Prep', description: 'Practice for your next job interview.' },
     { id: 'brainstorming', href: '/brainstorming', title: 'Brainstorming', description: 'Capture ideas on a structured canvas.' },
     { id: 'whiteboard', href: '/whiteboard', title: 'Whiteboard', description: 'A free-form digital canvas for your ideas.' },
     { id: 'mind-map', href: '/mind-map', title: 'Mind Map', description: 'Visually organize your thoughts & plans.' },
