@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Bookmark } from '@/lib/types';
@@ -9,14 +8,16 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 import { BookmarksIcon } from '../icons/tools/bookmarks-icon';
+import { cn } from '@/lib/utils';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
   onEdit: (focusColor?: boolean) => void;
   onDelete: () => void;
+  size?: 'small' | 'large';
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDelete, size = 'large' }: BookmarkCardProps) {
   const handleActionClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -28,9 +29,12 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
             className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl"
             style={{ backgroundColor: bookmark.color }}
         >
-            <div className="p-6 flex flex-col items-center text-center h-full justify-center">
-                <BookmarksIcon className="h-24 w-24 mb-4" />
-                <h3 className="text-lg font-bold font-headline text-foreground">{bookmark.title}</h3>
+            <div className={cn(
+                "p-6 flex flex-col items-center text-center h-full justify-center",
+                size === 'small' && 'p-4'
+            )}>
+                <BookmarksIcon className={cn("mb-4", size === 'large' ? 'h-24 w-24' : 'h-16 w-16')} />
+                <h3 className={cn("font-bold font-headline text-foreground", size === 'large' ? 'text-lg' : 'text-sm')}>{bookmark.title}</h3>
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{bookmark.url}</p>
                  <p className="text-xs text-muted-foreground mt-2 px-2 py-1 bg-black/5 rounded-full capitalize">{bookmark.category}</p>
             </div>

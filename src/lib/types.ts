@@ -248,6 +248,7 @@ export interface UserSettings {
     meetingNotesView?: 'card' | 'list';
     studyTrackerView?: 'card' | 'list';
     bookmarksView?: 'card' | 'list';
+    bookmarkCardSize?: 'small' | 'large';
     listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
     tableColumns?: { [listId: string]: string[] };
     sidebarOrder?: string[];

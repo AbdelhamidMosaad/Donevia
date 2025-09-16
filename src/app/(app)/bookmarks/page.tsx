@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, FolderPlus, MoreHorizontal, Edit, Trash2, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, Search, FolderPlus, MoreHorizontal, Edit, Trash2, LayoutGrid, List, Minus, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Bookmark } from '@/lib/types';
@@ -32,6 +31,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { BookmarksIcon } from '@/components/icons/tools/bookmarks-icon';
 
 type View = 'card' | 'list';
+type CardSize = 'small' | 'large';
 const DEFAULT_CATEGORIES = ['work', 'personal', 'education', 'entertainment', 'shopping', 'other'];
 
 export default function BookmarksPage() {
@@ -41,6 +41,7 @@ export default function BookmarksPage() {
   
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [view, setView] = useState<View>('card');
+  const [cardSize, setCardSize] = useState<CardSize>('large');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,8 +67,14 @@ export default function BookmarksPage() {
     if (user) {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
         getDoc(settingsRef).then(docSnap => {
-            if (docSnap.exists() && docSnap.data().bookmarksView) {
-                setView(docSnap.data().bookmarksView);
+            if (docSnap.exists()) {
+                const settings = docSnap.data();
+                if (settings.bookmarksView) {
+                    setView(settings.bookmarksView);
+                }
+                 if (settings.bookmarkCardSize) {
+                    setCardSize(settings.bookmarkCardSize);
+                }
             }
         });
     }
@@ -82,6 +89,16 @@ export default function BookmarksPage() {
         }
     }
   };
+  
+  const handleCardSizeChange = (newSize: CardSize) => {
+      if (newSize) {
+          setCardSize(newSize);
+          if(user) {
+              const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+              setDoc(settingsRef, { bookmarkCardSize: newSize }, { merge: true });
+          }
+      }
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -264,6 +281,12 @@ export default function BookmarksPage() {
                 <List />
               </ToggleGroupItem>
             </ToggleGroup>
+            {view === 'card' && (
+                <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                    <ToggleGroupItem value="small" aria-label="Small cards"><Minus/></ToggleGroupItem>
+                    <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+                </ToggleGroup>
+            )}
             <Button onClick={handleOpenAddDialog}>
                 <PlusCircle />
                 New Bookmark
@@ -343,6 +366,7 @@ export default function BookmarksPage() {
                 bookmarks={filteredBookmarks}
                 onEdit={handleEditBookmark}
                 onDelete={handleDeleteBookmark}
+                cardSize={cardSize}
             />
         ) : (
             <BookmarkListView 
@@ -422,5 +446,3 @@ export default function BookmarksPage() {
     </div>
   );
 }
-
-    
