@@ -38,6 +38,7 @@ const defaultSettings: UserSettings = {
     docsView: 'card',
     notesView: 'board',
     studyTrackerView: 'card',
+    homeCardSize: 'large',
     listViews: {},
     tableColumns: {},
     sidebarOrder: [],

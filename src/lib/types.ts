@@ -249,6 +249,7 @@ export interface UserSettings {
     studyTrackerView?: 'card' | 'list';
     bookmarksView?: 'card' | 'list';
     bookmarkCardSize?: 'x-small' |'small' | 'large';
+    homeCardSize?: 'small' | 'medium' | 'large';
     listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
     tableColumns?: { [listId: string]: string[] };
     sidebarOrder?: string[];

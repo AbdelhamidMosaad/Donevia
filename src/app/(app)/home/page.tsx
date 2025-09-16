@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Task, Stage } from '@/lib/types';
-import { Home, BarChart3, GripVertical } from 'lucide-react';
+import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics-dashboard';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -34,6 +34,7 @@ import { DocsIcon } from '@/components/icons/tools/docs-icon';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from '@/components/icons/tools/interview-prep-icon';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -81,12 +82,15 @@ const allTools = [
     { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },
 ];
 
+type CardSize = 'small' | 'medium' | 'large';
+
 export default function HomePage() {
   const { user, loading, settings } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [orderedTools, setOrderedTools] = useState(allTools);
+  const [cardSize, setCardSize] = useState<CardSize>(settings.homeCardSize || 'large');
 
   useEffect(() => {
     if (settings.toolOrder) {
@@ -131,6 +135,14 @@ export default function HomePage() {
     }
   }, [user]);
   
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize && user) {
+        setCardSize(newSize);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { homeCardSize: newSize }, { merge: true });
+    }
+  }
+
   const onDragEnd = async (result: DropResult) => {
     if (!result.destination || !user) {
       return;
@@ -155,12 +167,19 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col h-full gap-6">
-        <div className="flex items-center gap-4">
-            <Home className="h-8 w-8 text-primary"/>
-            <div>
-                <h1 className="text-3xl font-bold font-headline">Home</h1>
-                <p className="text-muted-foreground">{welcomeMessage}</p>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+                <Home className="h-8 w-8 text-primary"/>
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">Home</h1>
+                    <p className="text-muted-foreground">{welcomeMessage}</p>
+                </div>
             </div>
+            <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+            </ToggleGroup>
         </div>
         
         <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
@@ -176,7 +195,12 @@ export default function HomePage() {
                             <div
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
-                                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+                                className={cn(
+                                    "grid gap-6",
+                                    cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+                                    cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
+                                    cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                                )}
                             >
                                 {orderedTools.map((tool, index) => {
                                    const Icon = toolIcons[tool.id];
@@ -190,9 +214,19 @@ export default function HomePage() {
                                                         <GripVertical className="h-5 w-5 text-muted-foreground" />
                                                     </div>
                                                     <div className="p-6 flex flex-col items-center text-center">
-                                                        {Icon && <Icon className="h-24 w-24 mb-4" />}
-                                                        <h3 className="text-lg font-bold font-headline text-foreground">{tool.title}</h3>
-                                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+                                                        {Icon && <Icon className={cn(
+                                                            "mb-4",
+                                                            cardSize === 'large' && "h-24 w-24",
+                                                            cardSize === 'medium' && "h-16 w-16",
+                                                            cardSize === 'small' && "h-12 w-12",
+                                                        )} />}
+                                                        <h3 className={cn(
+                                                            "font-bold font-headline text-foreground",
+                                                            cardSize === 'large' && "text-lg",
+                                                            cardSize === 'medium' && "text-sm",
+                                                            cardSize === 'small' && "text-xs",
+                                                        )}>{tool.title}</h3>
+                                                        {cardSize === 'large' && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>}
                                                     </div>
                                                 </Card>
                                              </Link>
