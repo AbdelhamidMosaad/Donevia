@@ -7,16 +7,23 @@ import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import type { TaskList } from '@/lib/types';
+import type { TaskList, Stage } from '@/lib/types';
 import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, writeBatch, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TaskListCardView } from '@/components/task-list-card-view';
 import { TaskListListView } from '@/components/task-list-list-view';
 import { useToast } from '@/hooks/use-toast';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
+import { v4 as uuidv4 } from 'uuid';
 
 
 type View = 'card' | 'list';
+
+const defaultStages: Stage[] = [
+    { id: uuidv4(), name: 'To Do', order: 0 },
+    { id: uuidv4(), name: 'In Progress', order: 1 },
+    { id: uuidv4(), name: 'Done', order: 2 },
+];
 
 export default function TaskListsPage() {
   const { user, loading } = useAuth();
@@ -106,6 +113,7 @@ export default function TaskListsPage() {
         name: 'Untitled List',
         ownerId: user.uid,
         createdAt: Timestamp.now(),
+        stages: defaultStages,
       });
       toast({
         title: '✓ List Added',
