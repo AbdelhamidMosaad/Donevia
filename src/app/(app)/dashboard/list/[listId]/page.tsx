@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -92,12 +93,12 @@ export default function TaskListPage() {
       case 'list':
         return <TaskList tasks={tasks} stages={stages} onDeleteTask={deleteTask} onUpdateTask={updateTask} />;
       case 'board':
-        return <TaskBoard listId={listId} />;
+        return <TaskBoard listId={listId} tasks={tasks} stages={stages} />;
       case 'table':
-        return <TaskTable tasks={tasks} stages={stages} />;
+        return <TaskTable listId={listId} tasks={tasks} stages={stages} />;
       case 'calendar':
       default:
-        return <TaskCalendar tasks={tasks} onUpdateTask={updateTask} listId={listId} />;
+        return <TaskCalendar listId={listId} tasks={tasks} onUpdateTask={updateTask} />;
     }
   }
 
@@ -144,6 +145,7 @@ export default function TaskListPage() {
           open={isAddDialogOpen} 
           onOpenChange={setIsAddDialogOpen} 
           onTaskAdded={addTask} 
+          onTaskUpdated={updateTask}
         />
     </div>
   );

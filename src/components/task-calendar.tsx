@@ -78,7 +78,7 @@ interface DayCellWrapperProps {
 
 const DayCellWrapper = ({ children, value, listId }: DayCellWrapperProps) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const { addTask } = useTasks(listId);
+    const { addTask, updateTask } = useTasks(listId);
 
     const handleOpenDialog = (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).classList.contains('rbc-day-bg')) {
@@ -87,7 +87,14 @@ const DayCellWrapper = ({ children, value, listId }: DayCellWrapperProps) => {
     }
     
     return (
-      <AddTaskDialog listId={listId} defaultDueDate={value} open={isDialogOpen} onOpenChange={setIsDialogOpen} onTaskAdded={addTask}>
+      <AddTaskDialog 
+        listId={listId} 
+        defaultDueDate={value} 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+        onTaskAdded={addTask}
+        onTaskUpdated={updateTask}
+      >
         <div className="relative h-full" onClick={handleOpenDialog}>
             {children}
         </div>

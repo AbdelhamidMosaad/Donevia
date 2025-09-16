@@ -31,7 +31,7 @@ interface AddTaskDialogProps {
   children?: ReactNode;
   listId: string;
   task?: Task | null;
-  onTaskAdded?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => void;
+  onTaskAdded?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'deleted'>) => void;
   onTaskUpdated?: (id: string, updates: Partial<Task>) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -192,7 +192,7 @@ export function AddTaskDialog({
             description: `"${title}" has been updated.`,
           });
       } else if (onTaskAdded) {
-          onTaskAdded(taskData as Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>);
+          onTaskAdded(taskData as Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'deleted'>);
           toast({
             title: 'Task Added',
             description: `"${title}" has been added successfully.`,
@@ -236,7 +236,7 @@ export function AddTaskDialog({
                     <div key={st.id} className="flex items-center gap-2">
                         <Checkbox 
                             checked={st.isCompleted} 
-                            onCheckedChange={(checked) => handleSubtaskChange(st.id, 'isCompleted', checked)}
+                            onCheckedChange={(checked) => handleSubtaskChange(st.id, 'isCompleted', !!checked)}
                         />
                         <Input 
                             value={st.title} 

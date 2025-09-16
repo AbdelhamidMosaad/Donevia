@@ -17,12 +17,14 @@ import { useTasks } from '@/hooks/use-tasks';
 
 interface TaskBoardProps {
   listId: string;
+  tasks: Task[];
+  stages: Stage[];
 }
 
-export function TaskBoard({ listId }: TaskBoardProps) {
+export function TaskBoard({ listId, tasks, stages }: TaskBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { tasks, stages, updateTask } = useTasks(listId);
+  const { updateTask } = useTasks(listId);
   const [localStages, setLocalStages] = useState<Stage[]>([]);
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
   
