@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table, ArrowLeft, Loader2 } from 'lucide-react';
 import { TaskCalendar } from '@/components/task-calendar';
 import { TaskList } from '@/components/task-list';
 import { TaskBoard } from '@/components/task-board';
@@ -20,11 +20,11 @@ import { useTasks } from '@/hooks/use-tasks';
 type View = 'calendar' | 'list' | 'board' | 'table';
 
 export default function TaskListPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const listId = params.listId as string;
-  const { tasks, stages, addTask, updateTask, deleteTask } = useTasks(listId);
+  const { tasks, stages, addTask, updateTask, deleteTask, isLoading: tasksLoading } = useTasks(listId);
 
   const [view, setView] = useState<View>('board');
   const [listName, setListName] = useState('');
@@ -32,10 +32,10 @@ export default function TaskListPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.push('/');
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
   
   useEffect(() => {
     if (user && listId) {
@@ -79,8 +79,13 @@ export default function TaskListPage() {
     }
   };
     
-  if (loading || !user || listExists === null) {
-    return <div>Loading...</div>; // Or a spinner component
+  if (authLoading || !user || listExists === null) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            <p className="ml-2">Loading List...</p>
+        </div>
+    );
   }
 
   if (listExists === false) {
@@ -89,6 +94,14 @@ export default function TaskListPage() {
   }
 
   const renderView = () => {
+    if (tasksLoading) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+          <p className="ml-2">Loading board...</p>
+        </div>
+      );
+    }
     switch (view) {
       case 'list':
         return <TaskList tasks={tasks} stages={stages} onDeleteTask={deleteTask} onUpdateTask={updateTask} />;
