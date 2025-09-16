@@ -98,10 +98,6 @@ export function TaskBoard({ listId, tasks, stages }: TaskBoardProps) {
       }, {} as Record<string, (Task & {order: number})[]>);
     }, [sortedStages, tasks]);
 
-  if (!user || stages.length === 0) {
-      return <div>Loading board...</div>;
-  }
-
   return (
     <DragDropContext onDragEnd={onDragEnd}>
         <div className="mb-4 flex justify-end items-center gap-2">
