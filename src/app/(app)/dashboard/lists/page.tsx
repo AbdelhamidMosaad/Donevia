@@ -20,9 +20,10 @@ import { v4 as uuidv4 } from 'uuid';
 type View = 'card' | 'list';
 
 const defaultStages: Stage[] = [
-    { id: uuidv4(), name: 'To Do', order: 0 },
-    { id: uuidv4(), name: 'In Progress', order: 1 },
-    { id: uuidv4(), name: 'Done', order: 2 },
+    { id: uuidv4(), name: 'Backlog', order: 0 },
+    { id: uuidv4(), name: 'To Do', order: 1 },
+    { id: uuidv4(), name: 'In Progress', order: 2 },
+    { id: uuidv4(), name: 'Done', order: 3 },
 ];
 
 export default function TaskListsPage() {
