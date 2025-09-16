@@ -157,7 +157,10 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
     };
     
     if (eventData.recurring === 'none' || !eventData.recurring) {
-        delete eventData.recurring; // Remove the field if it's not set
+        delete eventData.recurring;
+    }
+    if (eventData.color === undefined) {
+        delete eventData.color;
     }
 
 
