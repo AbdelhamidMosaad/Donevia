@@ -25,13 +25,8 @@ export function TaskBoard({ listId, tasks, stages }: TaskBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { updateTask } = useTasks(listId);
-  const [localStages, setLocalStages] = useState<Stage[]>([]);
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
   
-  useEffect(() => {
-    setLocalStages(stages);
-  }, [stages]);
-
   useEffect(() => {
       const storedCollapsedState = localStorage.getItem(`collapsed-stages-${listId}`);
       if (storedCollapsedState) {
@@ -49,7 +44,7 @@ export function TaskBoard({ listId, tasks, stages }: TaskBoardProps) {
       updateCollapsedState(newState);
   };
   
-  const sortedStages = useMemo(() => [...localStages].sort((a, b) => a.order - b.order), [localStages]);
+  const sortedStages = useMemo(() => [...stages].sort((a, b) => a.order - b.order), [stages]);
 
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
@@ -62,8 +57,7 @@ export function TaskBoard({ listId, tasks, stages }: TaskBoardProps) {
         newStages.splice(destination.index, 0, reorderedItem);
 
         const updatedStages = newStages.map((stage, index) => ({ ...stage, order: index }));
-        setLocalStages(updatedStages); // Optimistic update
-
+        
         if (user) {
             const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
             await updateDoc(listRef, { stages: updatedStages });
