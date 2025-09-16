@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,6 +11,7 @@ import type { EmailCoachResponse } from '@/lib/types/email-coach';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
+import { improveEmail } from '@/ai/flows/email-coach-flow';
 
 export function EmailCoach() {
   const [emailText, setEmailText] = useState('');
@@ -35,23 +35,8 @@ export function EmailCoach() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/english-coach/improve-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${await user.getIdToken()}`,
-        },
-        body: JSON.stringify({ emailText, context }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to improve email.');
-      }
-
-      const data = await response.json();
+      const data = await improveEmail({ emailText, context });
       setResult(data);
-      
     } catch (error) {
       toast({
         variant: 'destructive',

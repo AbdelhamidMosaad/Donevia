@@ -1,45 +1,21 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Sparkles, Check, X, ArrowRight } from 'lucide-react';
+import { Loader2, Sparkles, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { Label } from '../ui/label';
 import type { GrammarCorrectionResponse } from '@/lib/types/grammar';
-
-// Define the structure of a LanguageTool match
-interface LanguageToolMatch {
-  message: string;
-  shortMessage: string;
-  replacements: { value: string }[];
-  offset: number;
-  length: number;
-  context: { text: string; offset: number; length: number; };
-  rule: { id: string; description: string; issueType: string; category: { id: string; name: string; }; };
-}
-
-// Define the structure of a Sapling AI edit
-interface SaplingEdit {
-    start: number;
-    end: number;
-    replacement: string;
-    general_error_type: string;
-}
-
-type Mode = 'languagetool' | 'sapling' | 'gemini';
+import { checkGrammarWithAI } from '@/ai/flows/grammar-coach-flow';
 
 export function GrammarCoach() {
   const [inputText, setInputText] = useState('');
-  const [result, setResult] = useState<any | null>(null);
+  const [result, setResult] = useState<GrammarCorrectionResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const [mode, setMode] = useState<Mode>('gemini');
 
   const handleCheckGrammar = async () => {
     if (!inputText.trim()) {
@@ -55,35 +31,8 @@ export function GrammarCoach() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/english-coach/check-grammar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${await user.getIdToken()}`,
-        },
-        body: JSON.stringify({ text: inputText, mode }),
-      });
-
-      if (!response.ok) {
-         const errorText = await response.text();
-         console.error('Grammar check failed:', errorText);
-         // Try to parse as JSON, but fall back to text if it fails
-         let errorMessage = 'An unknown error occurred.';
-         try {
-           const errorData = JSON.parse(errorText);
-           errorMessage = errorData.error || errorData.details || 'Failed to check grammar.';
-         } catch (e) {
-           // The error response wasn't JSON. Use the raw text.
-            if (errorText.length < 300) { // Avoid showing huge HTML error pages
-              errorMessage = errorText;
-            }
-         }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
+      const data = await checkGrammarWithAI({ text: inputText });
       setResult(data);
-      
     } catch (error) {
       console.error('Grammar check failed:', error);
       toast({
@@ -96,151 +45,57 @@ export function GrammarCoach() {
     }
   };
 
-   const getHighlightedText = (text: string, matches: any[], mode: Mode) => {
-      let lastIndex = 0;
-      const parts: (string | JSX.Element)[] = [];
-      matches.forEach((match, i) => {
-          const offset = mode === 'sapling' ? match.start : match.offset;
-          const length = mode === 'sapling' ? match.end - match.start : match.length;
-          parts.push(text.substring(lastIndex, offset));
-          parts.push(
-              <span key={i} className="bg-yellow-200 dark:bg-yellow-800/70 rounded-md px-1">
-                  {text.substring(offset, offset + length)}
-              </span>
-          );
-          lastIndex = offset + length;
-      });
-      parts.push(text.substring(lastIndex));
-      return <p className="whitespace-pre-wrap leading-relaxed">{parts}</p>;
-  }
-
-  const renderLanguageToolResults = () => (
-    <div className="space-y-6">
-        <div className="p-4 bg-muted/50 rounded-lg">
-            <h3 className="font-bold mb-2">Highlighted Text:</h3>
-            {getHighlightedText(inputText, result.matches, 'languagetool')}
-        </div>
-        <div>
-            <h3 className="font-bold text-lg mb-2">Suggestions:</h3>
-            {result.matches.map((match: LanguageToolMatch, index: number) => (
-                <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
-                    <p className="text-sm text-muted-foreground font-semibold">{match.rule.category.name}</p>
-                    <p className="font-semibold mb-2">{match.message}</p>
-                    <div className="flex items-center gap-4 text-destructive text-sm">
-                        <X className="h-4 w-4 shrink-0"/>
-                        <p className="line-through">...{match.context.text}...</p>
-                    </div>
-                    {match.replacements.length > 0 && (
-                        <div className="flex items-center gap-4 text-green-600 mt-2 text-sm">
-                            <Check className="h-4 w-4 shrink-0"/>
-                            <p>Suggestion: <span className="font-semibold">{match.replacements[0].value}</span></p>
-                        </div>
-                    )}
-                </div>
-            ))}
-        </div>
-    </div>
-  );
-  
-  const renderSaplingResults = () => {
-    let correctedText = inputText;
-    result.edits.slice().reverse().forEach((edit: SaplingEdit) => {
-        correctedText = correctedText.slice(0, edit.start) + edit.replacement + correctedText.slice(edit.end);
-    });
-
-    return (
-    <div className="space-y-6">
-        <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-             <h3 className="font-bold text-lg mb-2">Final Polished Version:</h3>
-             <p className="text-lg text-primary/90">{correctedText}</p>
-        </div>
-        <div>
-            <h3 className="font-bold text-lg mb-2">Corrections:</h3>
-            {result.edits.map((edit: SaplingEdit, index: number) => (
-                 <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
-                    <div className="flex items-center gap-4 text-destructive text-sm">
-                        <X className="h-4 w-4 shrink-0"/>
-                        <p className="line-through">{inputText.substring(edit.start, edit.end)}</p>
-                    </div>
-                    <div className="flex items-center gap-4 text-green-600 mt-2 text-sm">
-                        <Check className="h-4 w-4 shrink-0"/>
-                        <p>{edit.replacement}</p>
-                    </div>
-                     {edit.general_error_type && (
-                         <div className="mt-2 pl-9 text-sm text-muted-foreground">
-                            <p>({edit.general_error_type})</p>
-                        </div>
-                     )}
-                 </div>
-            ))}
-        </div>
-    </div>
-  )};
-
-   const renderGeminiResults = () => (
-     <div className="space-y-6">
-        <div>
-            <h3 className="font-bold text-lg mb-2">Error Breakdown:</h3>
-            {result.errors.map((error: any, index: number) => (
-                <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
-                    <div className="flex items-center gap-4 text-destructive">
-                        <X className="h-5 w-5 shrink-0"/>
-                        <p className="line-through">{error.original}</p>
-                    </div>
-                    <div className="flex items-center gap-4 text-green-600 mt-2">
-                        <Check className="h-5 w-5 shrink-0"/>
-                        <p>{error.correction}</p>
-                    </div>
-                    <div className="mt-2 pl-9 text-sm text-muted-foreground">
-                        <p>{error.explanation}</p>
-                    </div>
-                </div>
-            ))}
-        </div>
-      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-        <h3 className="font-bold text-lg">Final Polished Version:</h3>
-        <p className="mt-2 text-primary/90">{result.corrected_text}</p>
-      </div>
-    </div>
-  );
-
   const renderResults = () => {
-      if (!result) {
-           return (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>Your feedback will appear here.</p>
+    if (!result) {
+      return (
+        <div className="flex items-center justify-center h-full text-muted-foreground">
+          <p>Your feedback will appear here.</p>
+        </div>
+      );
+    }
+    if (result.errors.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center text-green-600">
+          <Check className="h-12 w-12 mb-2" />
+          <p className="font-semibold">No errors found!</p>
+          <p className="text-sm">Your text looks great.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="font-bold text-lg mb-2">Error Breakdown:</h3>
+          {result.errors.map((error: any, index: number) => (
+            <div key={index} className="p-4 border rounded-lg mb-4 bg-muted/50">
+              <div className="flex items-center gap-4 text-destructive">
+                <X className="h-5 w-5 shrink-0" />
+                <p className="line-through">{error.original}</p>
+              </div>
+              <div className="flex items-center gap-4 text-green-600 mt-2">
+                <Check className="h-5 w-5 shrink-0" />
+                <p>{error.correction}</p>
+              </div>
+              <div className="mt-2 pl-9 text-sm text-muted-foreground">
+                <p>{error.explanation}</p>
+              </div>
             </div>
-          );
-      }
-      switch(mode) {
-          case 'gemini':
-            return result.errors ? renderGeminiResults() : <p className="text-green-600">No errors found!</p>;
-          case 'sapling':
-            return result.edits && result.edits.length > 0 ? renderSaplingResults() : <p className="text-green-600">No errors found!</p>;
-          case 'languagetool':
-             return result.matches && result.matches.length > 0 ? renderLanguageToolResults() : <p className="text-green-600">No errors found!</p>;
-          default:
-            return null;
-      }
-  }
-
+          ))}
+        </div>
+        <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+          <h3 className="font-bold text-lg">Final Polished Version:</h3>
+          <p className="mt-2 text-primary/90">{result.corrected_text}</p>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="grid md:grid-cols-2 gap-6 h-full">
       <Card className="flex flex-col">
         <CardHeader>
           <CardTitle>Input Text</CardTitle>
-           <div className="flex justify-between items-center">
-              <CardDescription>Enter the text you want to have reviewed.</CardDescription>
-                <div className="flex items-center gap-2">
-                    <Label htmlFor="mode-toggle">Mode</Label>
-                    <ToggleGroup id="mode-toggle" type="single" variant="outline" value={mode} onValueChange={(value: Mode) => value && setMode(value)} size="sm">
-                        <ToggleGroupItem value="gemini">Gemini</ToggleGroupItem>
-                        <ToggleGroupItem value="languagetool">LanguageTool</ToggleGroupItem>
-                        <ToggleGroupItem value="sapling">Sapling</ToggleGroupItem>
-                    </ToggleGroup>
-                </div>
-            </div>
+          <CardDescription>Enter the text you want to have reviewed.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col">
           <Textarea
@@ -254,7 +109,7 @@ export function GrammarCoach() {
         <CardFooter>
           <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
             <Sparkles className="mr-2 h-4 w-4" />
-            {isLoading ? 'Analyzing...' : `Check with ${mode.charAt(0).toUpperCase() + mode.slice(1)}`}
+            {isLoading ? 'Analyzing...' : 'Check My Grammar'}
           </Button>
         </CardFooter>
       </Card>
