@@ -85,10 +85,10 @@ export function DocListCardView({ docs, folders, onDelete, onMove }: DocListCard
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {docs.map(document => (
-        <a key={document.id} href={`/docs/${document.id}`} onClick={(e) => handleNavigate(e, document.id)} className="block cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
-              <CardHeader className="flex-row items-start justify-between w-full relative">
-                <div>
+        <a key={document.id} href={`/docs/${document.id}`} onClick={(e) => handleNavigate(e, document.id)} className="block cursor-pointer group">
+            <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
+              <div className="p-6 flex flex-col items-center text-center">
+                  <FileSignature className="h-24 w-24 mb-4 text-primary" />
                   {editingDocId === document.id ? (
                     <Input 
                       ref={inputRef}
@@ -96,19 +96,17 @@ export function DocListCardView({ docs, folders, onDelete, onMove }: DocListCard
                       onChange={(e) => setEditingDocName(e.target.value)}
                       onKeyDown={(e) => handleKeyDown(e, document.id)}
                       onBlur={() => handleFinishEdit(document.id)}
-                      className="text-lg font-headline"
-                      onClick={(e) => e.preventDefault()}
+                      className="text-lg font-headline text-center bg-transparent"
+                      onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
-                    <CardTitle className="font-headline hover:underline text-xl flex items-center gap-2">
-                        <FileSignature className="h-5 w-5 text-primary" />
-                        {document.title}
-                    </CardTitle>
+                    <h3 className="text-lg font-bold font-headline text-foreground">{document.title}</h3>
                   )}
-                  <CardDescription className="mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {document.updatedAt && typeof document.updatedAt.toDate === 'function' ? `Updated on ${document.updatedAt.toDate().toLocaleDateString()}` : 'Just now'}
-                  </CardDescription>
+                  </p>
                 </div>
+
                 <div className="absolute top-2 right-2">
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -159,7 +157,6 @@ export function DocListCardView({ docs, folders, onDelete, onMove }: DocListCard
                     </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-              </CardHeader>
             </Card>
           </a>
         ))}

@@ -69,11 +69,10 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
   };
 
   return (
-    <Link href={`/docs/folder/${folder.id}`} onClick={handleCardClick}>
-        <Card className="hover:shadow-lg transition-shadow duration-300 group">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                <Folder className="h-6 w-6 text-primary shrink-0"/>
+    <Link href={`/docs/folder/${folder.id}`} onClick={handleCardClick} className="group block h-full">
+        <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
+            <div className="p-6 flex flex-col items-center text-center">
+                 <Folder className="h-24 w-24 mb-4 text-primary" />
                 {isEditing ? (
                   <Input 
                     ref={inputRef}
@@ -81,15 +80,19 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onBlur={handleRename}
-                    className="text-lg font-headline h-9"
+                    className="text-lg font-headline text-center bg-transparent"
+                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
-                  <CardTitle className="font-headline text-xl truncate">{folder.name}</CardTitle>
+                  <h3 className="text-lg font-bold font-headline text-foreground">{folder.name}</h3>
                 )}
+                 <p className="text-xs text-muted-foreground mt-1">
+                    Folder
+                </p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -116,7 +119,6 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
                 </AlertDialog>
               </DropdownMenuContent>
             </DropdownMenu>
-          </CardHeader>
         </Card>
     </Link>
   );
