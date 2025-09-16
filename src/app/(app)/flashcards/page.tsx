@@ -1,12 +1,13 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Layers, FolderPlus } from 'lucide-react';
+import { PlusCircle, Layers, FolderPlus, GripHorizontal, Minus, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Deck, FlashcardFolder } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy, addDoc, Timestamp, updateDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, addDoc, Timestamp, updateDoc, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DeckCard } from '@/components/flashcards/deck-card';
 import { useToast } from '@/hooks/use-toast';
@@ -19,13 +20,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { FolderCard } from '@/components/flashcards/folder-card';
 import { FlashcardsIcon } from '@/components/icons/tools/flashcards-icon';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type CardSize = 'small' | 'medium' | 'large';
 
 export default function FlashcardsDashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, settings } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [decks, setDecks] = useState<Deck[]>([]);
   const [folders, setFolders] = useState<FlashcardFolder[]>([]);
+  const [cardSize, setCardSize] = useState<CardSize>(settings.flashcardsCardSize || 'large');
+  
+  useEffect(() => {
+    if(settings.flashcardsCardSize) {
+        setCardSize(settings.flashcardsCardSize);
+    }
+  }, [settings.flashcardsCardSize]);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -53,6 +65,14 @@ export default function FlashcardsDashboardPage() {
     }
   }, [user]);
   
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize && user) {
+        setCardSize(newSize);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { flashcardsCardSize: newSize }, { merge: true });
+    }
+  }
+
   const handleAddDeck = async () => {
     if (!user) return;
     try {
@@ -133,21 +153,28 @@ export default function FlashcardsDashboardPage() {
             <p className="text-muted-foreground">Organize your flashcards into decks for focused studying.</p>
           </div>
         </div>
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button>
-                  <PlusCircle /> New
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuItem onSelect={handleAddDeck}>
-                    <Layers /> New Deck
-                </DropdownMenuItem>
-                 <DropdownMenuItem onSelect={handleAddFolder}>
-                    <FolderPlus/> New Folder
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+            </ToggleGroup>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button>
+                      <PlusCircle /> New
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={handleAddDeck}>
+                        <Layers /> New Deck
+                    </DropdownMenuItem>
+                     <DropdownMenuItem onSelect={handleAddFolder}>
+                        <FolderPlus/> New Folder
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
       </div>
       
        {decks.length === 0 && folders.length === 0 ? (
@@ -179,6 +206,7 @@ export default function FlashcardsDashboardPage() {
                                 folders={folders}
                                 onDelete={() => handleDeleteDeck(deck.id)} 
                                 onMove={handleMoveDeckToFolder}
+                                size={cardSize}
                             />
                         ))}
                     </div>

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, GripHorizontal, Minus, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { MindMap } from '@/lib/types';
@@ -16,18 +16,29 @@ import {
   orderBy,
   deleteDoc,
   doc,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { MindMapCard } from '@/components/mind-map/mind-map-card';
 import { deleteMindMap } from '@/lib/mind-maps';
 import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type CardSize = 'small' | 'medium' | 'large';
 
 export default function MindMapDashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, settings } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [mindMaps, setMindMaps] = useState<MindMap[]>([]);
+  const [cardSize, setCardSize] = useState<CardSize>(settings.mindMapCardSize || 'large');
+
+  useEffect(() => {
+    if(settings.mindMapCardSize) {
+        setCardSize(settings.mindMapCardSize);
+    }
+  }, [settings.mindMapCardSize]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -50,6 +61,14 @@ export default function MindMapDashboardPage() {
       return () => unsubscribe();
     }
   }, [user]);
+
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize && user) {
+        setCardSize(newSize);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { mindMapCardSize: newSize }, { merge: true });
+    }
+  }
 
   const handleAddMindMap = async () => {
     if (!user) return;
@@ -107,6 +126,11 @@ export default function MindMapDashboardPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+            </ToggleGroup>
           <Button onClick={handleAddMindMap}>
             <PlusCircle />
             New Mind Map
@@ -129,6 +153,7 @@ export default function MindMapDashboardPage() {
               key={map.id}
               mindMap={map}
               onDelete={() => handleDeleteMindMap(map.id)}
+              size={cardSize}
             />
           ))}
         </div>

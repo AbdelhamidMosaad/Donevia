@@ -250,6 +250,10 @@ export interface UserSettings {
     meetingNotesCardSize?: 'small' | 'medium' | 'large';
     notesView?: 'board' | 'canvas';
     studyTrackerView?: 'card' | 'list';
+    goalsCardSize?: 'small' | 'medium' | 'large';
+    flashcardsCardSize?: 'small' | 'medium' | 'large';
+    whiteboardCardSize?: 'small' | 'medium' | 'large';
+    mindMapCardSize?: 'small' | 'medium' | 'large';
     bookmarksView?: 'card' | 'list';
     bookmarkCardSize?: 'x-small' |'small' | 'large';
     homeCardSize?: 'small' | 'medium' | 'large';

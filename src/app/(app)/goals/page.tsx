@@ -3,24 +3,34 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Minus, Plus, GripHorizontal } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Goal } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, setDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AddGoalDialog } from '@/components/goals/add-goal-dialog';
 import { GoalCard } from '@/components/goals/goal-card';
 import { deleteGoal } from '@/lib/goals';
 import { useToast } from '@/hooks/use-toast';
 import { GoalsIcon } from '@/components/icons/tools/goals-icon';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type CardSize = 'small' | 'medium' | 'large';
 
 export default function GoalsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, settings } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [cardSize, setCardSize] = useState<CardSize>(settings.goalsCardSize || 'large');
+  
+  useEffect(() => {
+    if(settings.goalsCardSize) {
+        setCardSize(settings.goalsCardSize);
+    }
+  }, [settings.goalsCardSize]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -49,6 +59,14 @@ export default function GoalsPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete goal.' });
     }
   };
+  
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize && user) {
+        setCardSize(newSize);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { goalsCardSize: newSize }, { merge: true });
+    }
+  }
 
   if (loading || !user) {
     return <div>Loading...</div>;
@@ -65,6 +83,11 @@ export default function GoalsPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+            </ToggleGroup>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle />
               New Goal
@@ -81,7 +104,7 @@ export default function GoalsPage() {
       ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {goals.map(goal => (
-                <GoalCard key={goal.id} goal={goal} onDelete={handleDeleteGoal} />
+                <GoalCard key={goal.id} goal={goal} onDelete={handleDeleteGoal} size={cardSize}/>
             ))}
         </div>
       )}

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, GripHorizontal, Minus, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Whiteboard } from '@/lib/types';
@@ -22,12 +22,22 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { WhiteboardCard } from '@/components/whiteboard/whiteboard-card';
 import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type CardSize = 'small' | 'medium' | 'large';
 
 export default function WhiteboardDashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, settings } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [whiteboards, setWhiteboards] = useState<Whiteboard[]>([]);
+  const [cardSize, setCardSize] = useState<CardSize>(settings.whiteboardCardSize || 'large');
+
+  useEffect(() => {
+    if(settings.whiteboardCardSize) {
+        setCardSize(settings.whiteboardCardSize);
+    }
+  }, [settings.whiteboardCardSize]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -50,6 +60,14 @@ export default function WhiteboardDashboardPage() {
       return () => unsubscribe();
     }
   }, [user]);
+
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize && user) {
+        setCardSize(newSize);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { whiteboardCardSize: newSize }, { merge: true });
+    }
+  }
 
   const handleAddWhiteboard = async () => {
     if (!user) return;
@@ -113,6 +131,11 @@ export default function WhiteboardDashboardPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+            </ToggleGroup>
           <Button onClick={handleAddWhiteboard}>
             <PlusCircle />
             New Whiteboard
@@ -135,6 +158,7 @@ export default function WhiteboardDashboardPage() {
               key={board.id}
               whiteboard={board}
               onDelete={() => handleDeleteWhiteboard(board.id)}
+              size={cardSize}
             />
           ))}
         </div>

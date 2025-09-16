@@ -2,16 +2,15 @@
 'use client';
 
 import type { Goal } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, Calendar } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import moment from 'moment';
-import Link from 'next/link';
 import { AddGoalDialog } from './add-goal-dialog';
 import { collection, onSnapshot, query, where, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -20,13 +19,15 @@ import { GoalsIcon } from '../icons/tools/goals-icon';
 import { useRouter } from 'next/navigation';
 import { Input } from '../ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface GoalCardProps {
   goal: Goal;
   onDelete: (goalId: string) => void;
+  size?: 'small' | 'medium' | 'large';
 }
 
-export function GoalCard({ goal, onDelete }: GoalCardProps) {
+export function GoalCard({ goal, onDelete, size = 'large' }: GoalCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -100,8 +101,8 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
     <>
       <div onClick={handleCardClick} className="group block h-full">
         <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
-           <div className="p-6 flex flex-col items-center text-center">
-                <GoalsIcon className="h-24 w-24 mb-4" />
+           <div className={cn("p-6 flex flex-col items-center text-center h-full justify-center", size === 'medium' && 'p-4', size === 'small' && 'p-3')}>
+                <GoalsIcon className={cn("mb-4", size === 'large' && "h-24 w-24", size === 'medium' && "h-16 w-16", size === 'small' && "h-12 w-12 mb-2")} />
                 {isEditing ? (
                   <Input
                     ref={inputRef}
@@ -113,13 +114,16 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
-                  <h3 className="text-lg font-bold font-headline text-foreground">{goal.title}</h3>
+                  <h3 className={cn("font-bold font-headline text-foreground", size === 'large' && 'text-lg', size === 'medium' && 'text-base', size === 'small' && 'text-sm')}>{goal.title}</h3>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Target: {moment(goal.targetDate.toDate()).format('MMM D, YYYY')}</p>
-                <div className="w-full mt-4">
-                    <Progress value={progressPercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground mt-1">{Math.round(progressPercentage)}% complete</p>
-                </div>
+                {size !== 'small' && <p className="text-xs text-muted-foreground mt-1">Target: {moment(goal.targetDate.toDate()).format('MMM D, YYYY')}</p>}
+                
+                {size === 'large' && (
+                    <div className="w-full mt-4">
+                        <Progress value={progressPercentage} className="h-2" />
+                        <p className="text-xs text-muted-foreground mt-1">{Math.round(progressPercentage)}% complete</p>
+                    </div>
+                )}
             </div>
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
