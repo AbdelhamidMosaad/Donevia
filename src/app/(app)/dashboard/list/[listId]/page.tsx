@@ -12,10 +12,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { AddTaskDialog } from '@/components/add-task-dialog';
-import { collection, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
 import { useTasks } from '@/hooks/use-tasks';
+import { BoardSettings } from '@/components/board-settings';
 
 type View = 'calendar' | 'list' | 'board' | 'table';
 
@@ -98,7 +99,7 @@ export default function TaskListPage() {
       return (
         <div className="flex items-center justify-center h-full">
           <Loader2 className="animate-spin h-8 w-8 text-primary" />
-          <p className="ml-2">Loading board...</p>
+          <p className="ml-2">Loading tasks...</p>
         </div>
       );
     }
@@ -106,7 +107,7 @@ export default function TaskListPage() {
       case 'list':
         return <TaskList tasks={tasks} stages={stages} onDeleteTask={deleteTask} onUpdateTask={updateTask} />;
       case 'board':
-        return <TaskBoard listId={listId} tasks={tasks} stages={stages} />;
+        return <TaskBoard listId={listId} />;
       case 'table':
         return <TaskTable listId={listId} tasks={tasks} stages={stages} />;
       case 'calendar':
@@ -129,6 +130,7 @@ export default function TaskListPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
+            {view === 'board' && <BoardSettings listId={listId} currentStages={stages} />}
            <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
               <ToggleGroupItem value="board" aria-label="Board view">
                 <LayoutGrid />
