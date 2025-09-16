@@ -23,7 +23,7 @@ function highlightStory(story: string): React.ReactNode {
     const parts = story.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={index} className="bg-yellow-200 dark:bg-yellow-400 dark:text-gray-900 p-1 rounded">{part.slice(2, -2)}</strong>;
+            return <strong key={index} className="bg-yellow-200 dark:bg-yellow-400 dark:text-black p-1 rounded">{part.slice(2, -2)}</strong>;
         }
         return part;
     });
@@ -347,3 +347,5 @@ export function VocabularyCoach() {
     </>
   );
 }
+
+  
