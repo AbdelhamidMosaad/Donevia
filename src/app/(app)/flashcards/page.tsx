@@ -21,6 +21,7 @@ import {
 import { FolderCard } from '@/components/flashcards/folder-card';
 import { FlashcardsIcon } from '@/components/icons/tools/flashcards-icon';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { cn } from '@/lib/utils';
 
 type CardSize = 'small' | 'medium' | 'large';
 
@@ -188,9 +189,14 @@ export default function FlashcardsDashboardPage() {
             {folders.length > 0 && (
                 <div>
                     <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div className={cn(
+                        "grid gap-6",
+                        cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                        cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+                        cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+                    )}>
                         {folders.map(folder => (
-                            <FolderCard key={folder.id} folder={folder} onDelete={() => handleDeleteFolder(folder.id)} />
+                            <FolderCard key={folder.id} folder={folder} onDelete={() => handleDeleteFolder(folder.id)} size={cardSize} />
                         ))}
                     </div>
                 </div>
@@ -198,7 +204,12 @@ export default function FlashcardsDashboardPage() {
              <div>
                 <h2 className="text-2xl font-bold font-headline mb-4">Decks</h2>
                 {unfiledDecks.length > 0 ? (
-                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                     <div className={cn(
+                        "grid gap-6",
+                        cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                        cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+                        cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+                    )}>
                         {unfiledDecks.map(deck => (
                             <DeckCard 
                                 key={deck.id} 

@@ -12,13 +12,15 @@ import { useToast } from '@/hooks/use-toast';
 import { updateFlashcardFolder } from '@/lib/flashcards';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 interface FolderCardProps {
   folder: FlashcardFolder;
   onDelete: () => void;
+  size?: 'small' | 'medium' | 'large';
 }
 
-export function FolderCard({ folder, onDelete }: FolderCardProps) {
+export function FolderCard({ folder, onDelete, size = 'large' }: FolderCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(folder.name);
   const { user } = useAuth();
@@ -73,8 +75,15 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
   return (
     <Link href={`/flashcards/folder/${folder.id}`} onClick={handleCardClick} className="group block h-full">
         <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
-            <div className="p-6 flex flex-col items-center text-center">
-                 <Folder className="h-24 w-24 mb-4 text-primary" />
+            <div className={cn("p-6 flex flex-col items-center text-center h-full justify-center",
+                size === 'medium' && 'p-4',
+                size === 'small' && 'p-3'
+            )}>
+                 <Folder className={cn("mb-4 text-primary",
+                    size === 'large' && 'h-24 w-24',
+                    size === 'medium' && 'h-16 w-16',
+                    size === 'small' && 'h-12 w-12 mb-2'
+                 )} />
                 {isEditing ? (
                   <Input 
                     ref={inputRef}
@@ -86,11 +95,15 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
                      onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
-                  <h3 className="text-lg font-bold font-headline text-foreground">{folder.name}</h3>
+                  <h3 className={cn("font-bold font-headline text-foreground",
+                    size === 'large' && 'text-lg',
+                    size === 'medium' && 'text-base',
+                    size === 'small' && 'text-sm'
+                  )}>{folder.name}</h3>
                 )}
-                 <p className="text-xs text-muted-foreground mt-1">
+                 {size !== 'small' && <p className="text-xs text-muted-foreground mt-1">
                     Folder
-                </p>
+                </p>}
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
