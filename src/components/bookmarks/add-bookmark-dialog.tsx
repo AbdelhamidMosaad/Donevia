@@ -32,7 +32,9 @@ interface AddBookmarkDialogProps {
   focusColorPicker?: boolean;
 }
 
-const colorPalette = ['#FFFFFF', '#FEE2E2', '#D1C4E9', '#BBDEFB', '#C8E6C9', '#FFF9C4', '#FFE0B2', '#F5F5F5'];
+const lightColorPalette = ['#FFFFFF', '#FEE2E2', '#D1C4E9', '#BBDEFB', '#C8E6C9', '#FFF9C4', '#FFE0B2', '#F5F5F5'];
+const darkColorPalette = ['#1F2937', '#7F1D1D', '#4C1D95', '#1E3A8A', '#064E3B', '#713F12', '#7C2D12', '#374151'];
+
 
 export function AddBookmarkDialog({
   bookmark,
@@ -41,25 +43,28 @@ export function AddBookmarkDialog({
   categories,
   focusColorPicker,
 }: AddBookmarkDialogProps) {
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   const isEditMode = !!bookmark;
+  const isDarkMode = settings.theme?.includes('dark') || settings.theme?.includes('theme-');
 
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<BookmarkCategory>('work');
   const [color, setColor] = useState<string | undefined>();
+  
+  const colorPalette = isDarkMode ? darkColorPalette : lightColorPalette;
 
   const resetForm = () => {
     setTitle('');
     setUrl('');
     setDescription('');
-    setColor(undefined);
+    setColor(isDarkMode ? darkColorPalette[0] : lightColorPalette[0]);
     setCategory(categories[0] as BookmarkCategory || 'other');
   };
 
@@ -107,7 +112,7 @@ export function AddBookmarkDialog({
       url: formatUrl(url),
       description,
       category,
-      color: color === '#FFFFFF' ? undefined : color,
+      color: color === lightColorPalette[0] || color === darkColorPalette[0] ? undefined : color,
     };
     
     try {
@@ -179,11 +184,11 @@ export function AddBookmarkDialog({
                     <button
                         key={c}
                         type="button"
-                        className={cn("h-8 w-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110", color === c || (!color && c === '#FFFFFF') ? 'ring-2 ring-offset-2 ring-primary' : '')}
+                        className={cn("h-8 w-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110", color === c || (!color && c === colorPalette[0]) ? 'ring-2 ring-offset-2 ring-primary' : '')}
                         style={{ backgroundColor: c }}
                         onClick={() => setColor(c)}
                     >
-                       {(color === c || (!color && c === '#FFFFFF')) && <Check className="h-4 w-4" style={{color: c === '#FFFFFF' ? 'black' : 'white'}} />}
+                       {(color === c || (!color && c === colorPalette[0])) && <Check className="h-4 w-4" style={{color: isDarkMode ? 'white' : 'black'}} />}
                     </button>
                 ))}
              </div>
