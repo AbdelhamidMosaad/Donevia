@@ -79,7 +79,7 @@ export function ClientList({ clients }: ClientListProps) {
 
   return (
     <>
-      <Card>
+      <Card className="h-full flex flex-col">
           <CardHeader>
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -101,7 +101,7 @@ export function ClientList({ clients }: ClientListProps) {
                 </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <div className="border rounded-lg">
                 <Table>
                 <TableHeader>
@@ -142,7 +142,7 @@ export function ClientList({ clients }: ClientListProps) {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={(e) => handleDelete(client.id, e)}>Delete</AlertDialogAction>
+                                    <AlertDialogAction onClick={(e) => handleDelete(client.id, e)} variant="destructive">Delete</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                             </AlertDialog>

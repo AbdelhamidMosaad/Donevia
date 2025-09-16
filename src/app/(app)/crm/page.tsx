@@ -64,7 +64,7 @@ export default function CrmPage() {
         unsubscribeRequests();
       };
     }
-  }, [user]);
+  }, [user, dataLoading]);
 
   if (loading || !user || dataLoading) {
     return <div>Loading CRM...</div>;
@@ -72,13 +72,11 @@ export default function CrmPage() {
 
   return (
     <div className="flex flex-col h-full">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-4">
-                <CrmIcon className="h-10 w-10 text-primary"/>
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Client Relationship Management</h1>
-                    <p className="text-muted-foreground">Manage your clients, pipeline, invoices, and analytics.</p>
-                </div>
+        <div className="flex items-center gap-4 mb-6">
+            <CrmIcon className="h-10 w-10 text-primary"/>
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Client Relationship Management</h1>
+                <p className="text-muted-foreground">Manage your clients, pipeline, invoices, and analytics.</p>
             </div>
         </div>
       
@@ -90,7 +88,7 @@ export default function CrmPage() {
                 <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/> Sales Analytics</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="contacts" className="flex-1 mt-4">
+            <TabsContent value="contacts" className="flex-1 mt-4 min-h-0">
                 <ClientList clients={clients} />
             </TabsContent>
             <TabsContent value="pipeline" className="flex-1 mt-4 overflow-hidden">

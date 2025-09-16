@@ -143,8 +143,8 @@ export function RequestBoard() {
           <PlusCircle /> New Deal
         </Button>
       </div>
-      <ScrollArea className="flex-1">
-        <div className="flex pb-4">
+      <ScrollArea className="flex-1 -mx-4">
+        <div className="flex px-4 pb-4">
         <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-6 items-start">
             {stages.map(stage => (

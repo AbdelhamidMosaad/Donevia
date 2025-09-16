@@ -28,11 +28,11 @@ export function RequestCard({ request, clients, onDelete, onEdit }: RequestCardP
   return (
     <>
       <Card 
-        className="hover:shadow-md transition-shadow duration-200 cursor-pointer group"
+        className="bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer group"
         onClick={onEdit}
       >
         <CardHeader className="p-3 pb-2 flex-row justify-between items-start">
-          <CardTitle className="text-sm font-semibold leading-tight">{request.title}</CardTitle>
+          <CardTitle className="text-sm font-bold font-headline leading-tight">{request.title}</CardTitle>
            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100" onClick={handleMenuClick}>
@@ -52,7 +52,7 @@ export function RequestCard({ request, clients, onDelete, onEdit }: RequestCardP
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+                          <AlertDialogAction onClick={onDelete} variant="destructive">Delete</AlertDialogAction>
                       </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -64,7 +64,7 @@ export function RequestCard({ request, clients, onDelete, onEdit }: RequestCardP
             {client && (
               <div className="flex items-center gap-1">
                 <Building className="h-3 w-3"/>
-                <span>{client.name}</span>
+                <span>{client.company}</span>
               </div>
             )}
             {request.value && (

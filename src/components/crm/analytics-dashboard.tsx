@@ -58,26 +58,26 @@ export function AnalyticsDashboard({ requests }: AnalyticsDashboardProps) {
   return (
     <div className="grid gap-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader><CardTitle>Total Deals</CardTitle></CardHeader>
                 <CardContent><p className="text-4xl font-bold">{totalDeals}</p></CardContent>
             </Card>
-             <Card>
+             <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader><CardTitle>Win Rate</CardTitle></CardHeader>
                 <CardContent><p className="text-4xl font-bold">{winRate.toFixed(1)}%</p></CardContent>
             </Card>
-             <Card>
+             <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader><CardTitle>Total Value Won</CardTitle></CardHeader>
                 <CardContent><p className="text-4xl font-bold">{currencySymbol}{totalValueWon.toLocaleString()}</p></CardContent>
             </Card>
-             <Card>
+             <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader><CardTitle>Avg. Deal Size</CardTitle></CardHeader>
                 <CardContent><p className="text-4xl font-bold">{currencySymbol}{averageDealSize.toLocaleString()}</p></CardContent>
             </Card>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+            <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader>
                 <CardTitle>Deals by Stage</CardTitle>
                 <CardDescription>A breakdown of all deals by their current stage.</CardDescription>
@@ -99,7 +99,7 @@ export function AnalyticsDashboard({ requests }: AnalyticsDashboardProps) {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card/60 backdrop-blur-sm">
                 <CardHeader>
                 <CardTitle>Deals Won This Week</CardTitle>
                 <CardDescription>Number of deals won over the last 7 days.</CardDescription>
@@ -112,7 +112,7 @@ export function AnalyticsDashboard({ requests }: AnalyticsDashboardProps) {
                         <XAxis dataKey="date" />
                         <YAxis allowDecimals={false} />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="won" fill="var(--color-primary)" radius={4} />
+                        <Bar dataKey="won" fill="hsl(var(--primary))" radius={4} />
                     </BarChart>
                     </ResponsiveContainer>
                 </ChartContainer>

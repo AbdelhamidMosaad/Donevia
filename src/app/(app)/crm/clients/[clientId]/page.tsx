@@ -52,15 +52,17 @@ export default function ClientDetailPage() {
 
   return (
     <div className="flex flex-col h-full gap-6">
-       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+       <div className="flex items-center justify-between gap-4">
         <div className='flex items-center gap-4'>
             <Button variant="outline" size="icon" onClick={() => router.push('/crm')}><ArrowLeft className="h-4 w-4" /></Button>
-            <div>
-                <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+                <div className="p-3 rounded-lg bg-card/80 border">
                     <Building className="h-7 w-7 text-primary" />
-                    <h1 className="text-3xl font-bold font-headline">{client.name}</h1>
                 </div>
-                <p className="text-muted-foreground">{client.company}</p>
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">{client.name}</h1>
+                    <p className="text-muted-foreground">{client.company}</p>
+                </div>
             </div>
         </div>
         <Button variant="outline" onClick={() => setIsEditClientOpen(true)}><Edit/> Edit Client</Button>
