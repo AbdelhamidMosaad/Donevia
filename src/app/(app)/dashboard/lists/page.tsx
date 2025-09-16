@@ -10,9 +10,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import type { TaskList, Stage } from '@/lib/types';
 import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, writeBatch, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 import { TaskListCardView } from '@/components/task-list-card-view';
 import { TaskListListView } from '@/components/task-list-list-view';
-import { useToast } from '@/hooks/use-toast';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -109,17 +109,26 @@ export default function TaskListsPage() {
   const handleAddList = async () => {
     if (!user) return;
     try {
-      const docRef = await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
+      const newListRef = await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
         name: 'Untitled List',
         ownerId: user.uid,
         createdAt: Timestamp.now(),
         stages: defaultStages,
       });
+
+      // Set the default view for this new list to 'board'
+      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      await setDoc(settingsRef, { 
+          listViews: {
+              [newListRef.id]: 'board'
+          }
+      }, { merge: true });
+
       toast({
         title: '✓ List Added',
         description: `"Untitled List" has been added.`,
       });
-      router.push(`/dashboard/list/${docRef.id}`);
+      router.push(`/dashboard/list/${newListRef.id}`);
     } catch (e) {
       console.error("Error adding document: ", e);
       toast({
