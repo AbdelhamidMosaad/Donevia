@@ -23,7 +23,7 @@ function highlightStory(story: string): React.ReactNode {
     const parts = story.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={index} className="bg-yellow-200 dark:bg-yellow-400 dark:text-gray-900 p-1 rounded">{part.slice(2, -2)}</strong>;
+            return <strong key={index} className="bg-yellow-200 dark:bg-yellow-500/80 dark:text-black p-1 rounded">{part.slice(2, -2)}</strong>;
         }
         return part;
     });
@@ -272,7 +272,7 @@ export function VocabularyCoach() {
             <div className="grid lg:grid-cols-2 gap-6 h-full min-h-0">
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">Your Story (Level: {level})</h3>
+                        <h3 className="text-lg font-semibold">Your Story (Level: ${level})</h3>
                          {isStoryPlaying ? (
                             <Button variant="destructive" size="sm" onClick={stopStoryAudio}>
                                 <StopCircle /> Stop
