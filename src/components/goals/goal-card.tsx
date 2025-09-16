@@ -7,16 +7,19 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Edit, Trash2, Calendar } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import moment from 'moment';
 import Link from 'next/link';
 import { AddGoalDialog } from './add-goal-dialog';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Milestone } from '@/lib/types';
 import { GoalsIcon } from '../icons/tools/goals-icon';
+import { useRouter } from 'next/navigation';
+import { Input } from '../ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 interface GoalCardProps {
   goal: Goal;
@@ -25,8 +28,12 @@ interface GoalCardProps {
 
 export function GoalCard({ goal, onDelete }: GoalCardProps) {
   const { user } = useAuth();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [editingName, setEditingName] = useState(goal.title);
+  const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user && goal.id) {
@@ -37,43 +44,96 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
         return () => unsubscribe();
     }
   }, [user, goal.id]);
+  
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+    }
+  }, [isEditing]);
 
   const progressPercentage = useMemo(() => {
     if (milestones.length === 0) return goal.status === 'Completed' ? 100 : 0;
     const completedCount = milestones.filter(m => m.isCompleted).length;
     return (completedCount / milestones.length) * 100;
   }, [milestones, goal.status]);
+  
+  const handleRename = async () => {
+    if (!user || !editingName.trim() || editingName === goal.title) {
+        setIsEditing(false);
+        setEditingName(goal.title);
+        return;
+    }
+    const goalRef = doc(db, 'users', user.uid, 'goals', goal.id);
+    try {
+        await updateDoc(goalRef, { title: editingName.trim() });
+        toast({ title: '✓ Goal Renamed' });
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Error renaming goal' });
+        setEditingName(goal.title);
+    } finally {
+        setIsEditing(false);
+    }
+  };
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleRename();
+    else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditingName(goal.title);
+    }
+  };
+
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if(isEditing) return;
+    router.push(`/goals/${goal.id}`);
+  };
+
+  const handleActionClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
   };
 
   return (
     <>
-      <Link href={`/goals/${goal.id}`} className="group">
-        <Card className="bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer h-full flex flex-col">
-          <CardHeader className="flex-row items-start justify-between">
-            <div className="flex items-center gap-4">
-              <GoalsIcon className="h-12 w-12" />
-              <div>
-                  <CardTitle className="font-headline group-hover:underline">{goal.title}</CardTitle>
-                  <CardDescription className="mt-1 line-clamp-2">{goal.description}</CardDescription>
-              </div>
+      <div onClick={handleCardClick} className="group block h-full">
+        <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
+           <div className="p-6 flex flex-col items-center text-center">
+                <GoalsIcon className="h-24 w-24 mb-4" />
+                {isEditing ? (
+                  <Input
+                    ref={inputRef}
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onBlur={handleRename}
+                    className="text-lg font-headline text-center bg-transparent"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <h3 className="text-lg font-bold font-headline text-foreground">{goal.title}</h3>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">Target: {moment(goal.targetDate.toDate()).format('MMM D, YYYY')}</p>
+                <div className="w-full mt-4">
+                    <Progress value={progressPercentage} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-1">{Math.round(progressPercentage)}% complete</p>
+                </div>
             </div>
-            <DropdownMenu>
+             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={handleActionClick}>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-                <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+              <DropdownMenuContent onClick={handleActionClick}>
+                <DropdownMenuItem onSelect={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={handleDeleteClick} className="text-destructive focus:text-destructive w-full"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={handleActionClick} className="text-destructive focus:text-destructive w-full"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                   </AlertDialogTrigger>
-                  <AlertDialogContent onClick={handleDeleteClick}>
+                  <AlertDialogContent onClick={handleActionClick}>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                       <AlertDialogDescription>This will permanently delete the goal "{goal.title}" and all its milestones and progress updates.</AlertDialogDescription>
@@ -86,22 +146,8 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
                 </AlertDialog>
               </DropdownMenuContent>
             </DropdownMenu>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <div className="space-y-2">
-                <Progress value={progressPercentage} aria-label={`${Math.round(progressPercentage)}% complete`} />
-                <p className="text-xs text-muted-foreground">{milestones.filter(m => m.isCompleted).length} of {milestones.length} milestones complete.</p>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <div className="flex items-center text-xs text-muted-foreground gap-2">
-                <Calendar className="h-4 w-4"/>
-                <span>Target: {moment(goal.targetDate.toDate()).format('MMM D, YYYY')}</span>
-            </div>
-          </CardFooter>
         </Card>
-      </Link>
-      <AddGoalDialog goal={goal} open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
+      </div>
     </>
   );
 }
