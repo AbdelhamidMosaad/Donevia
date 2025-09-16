@@ -21,55 +21,14 @@ interface TaskBoardProps {
 export function TaskBoard({ listId }: TaskBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [stages, setStages] = useState<Stage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tasks, stages: allStages, isLoading, updateTask: updateTaskInDb, updateStages: updateStagesInDb } = useTasks(listId);
+  const [stages, setStages] = useState<Stage[]>(allStages);
 
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
-
-  // Fetch stages for the current list
-  useEffect(() => {
-    if (user && listId) {
-      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-      const unsubscribe = onSnapshot(listRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const listData = docSnap.data();
-          setStages(listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || []);
-        }
-      });
-      return () => unsubscribe();
-    }
-  }, [user, listId]);
   
-  // Fetch tasks for the current list with proper loading and error handling
   useEffect(() => {
-    if (user && listId) {
-      console.log('Fetching tasks for list:', listId);
-      setIsLoading(true); // Set loading true at the start of the fetch
-      setError(null);
-
-      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId));
-      
-      const unsubscribe = onSnapshot(q, 
-        (snapshot) => {
-          const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)).filter(task => !task.deleted);
-          console.log(`Successfully fetched ${tasksData.length} tasks.`);
-          setTasks(tasksData);
-          setIsLoading(false); // Set loading false on successful data retrieval
-        }, 
-        (err) => {
-          console.error("Error fetching tasks: ", err);
-          toast({ variant: 'destructive', title: 'Error loading tasks.'});
-          setError('Failed to load tasks. Please try again.');
-          setIsLoading(false); // Also set loading false on error
-        }
-      );
-      
-      return () => unsubscribe();
-    }
-  }, [user, listId, toast]);
-
+    setStages(allStages);
+  }, [allStages]);
 
   useEffect(() => {
       const storedCollapsedState = localStorage.getItem(`collapsed-stages-${listId}`);
@@ -102,15 +61,12 @@ export function TaskBoard({ listId }: TaskBoardProps) {
 
         const updatedStages = newStages.map((stage, index) => ({ ...stage, order: index }));
         
-        // Optimistic UI update for stages
         setStages(updatedStages);
         
         try {
-            const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-            await updateDoc(listRef, { stages: updatedStages });
+            updateStagesInDb(updatedStages);
             toast({ title: "Board updated", description: "Column order saved." });
         } catch (error) {
-            // Revert on failure
             setStages(sortedStages);
             toast({ variant: 'destructive', title: 'Error updating board order.' });
         }
@@ -127,24 +83,14 @@ export function TaskBoard({ listId }: TaskBoardProps) {
         
         const newStatus = destination.droppableId;
         
-        // --- Optimistic UI Update ---
-        const originalTasks = tasks;
-        const updatedTask = { ...task, status: newStatus };
-        const newTasks = tasks.map(t => t.id === draggableId ? updatedTask : t);
-        setTasks(newTasks);
-        // --- End Optimistic UI Update ---
-
         try {
-            const taskRef = doc(db, 'users', user.uid, 'tasks', draggableId);
-            await updateDoc(taskRef, { status: newStatus });
+            await updateTaskInDb(draggableId, { status: newStatus });
             const stageName = stages.find(s => s.id === newStatus)?.name || newStatus;
             toast({
                 title: 'Task Updated',
                 description: `Task "${task.title}" moved to ${stageName}.`,
             });
         } catch (error) {
-            // Revert on failure
-            setTasks(originalTasks);
             toast({ variant: 'destructive', title: 'Error updating task.' });
         }
     }
@@ -173,24 +119,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
         <p className="mt-2 text-muted-foreground">Loading board...</p>
       </div>
     );
-  }
-
-  if (error) {
-    return (
-        <div className="flex flex-col items-center justify-center h-64 text-destructive">
-            <p>{error}</p>
-        </div>
-    );
-  }
-
-  if (tasks.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center h-64 text-center p-8 border rounded-lg bg-muted/50">
-            <Kanban className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold font-headline">This board is empty</h3>
-            <p className="text-muted-foreground">Add your first task to get started.</p>
-        </div>
-      );
   }
   
   return (
