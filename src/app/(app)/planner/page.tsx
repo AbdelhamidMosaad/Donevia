@@ -55,6 +55,17 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
   );
 };
 
+// Helper function to get contrasting text color
+const getContrastYIQ = (hexcolor: string) => {
+    hexcolor = hexcolor.replace("#", "");
+    const r = parseInt(hexcolor.substr(0, 2), 16);
+    const g = parseInt(hexcolor.substr(2, 2), 16);
+    const b = parseInt(hexcolor.substr(4, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? 'black' : 'white';
+}
+
+
 export default function PlannerPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -150,12 +161,14 @@ export default function PlannerPage() {
         }
     }
     
+    const textColor = getContrastYIQ(backgroundColor);
+    
     return {
       style: {
         backgroundColor,
         borderRadius: '5px',
-        opacity: 0.8,
-        color: 'white',
+        opacity: 0.9,
+        color: textColor,
         border: '0px',
         display: 'block'
       }
