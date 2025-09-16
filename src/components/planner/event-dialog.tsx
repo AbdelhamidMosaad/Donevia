@@ -55,6 +55,7 @@ const getInitialFormData = (event: Partial<PlannerEvent> | null): Partial<Planne
         end: event.end || new Date(),
         attachments: event.attachments || [],
         reminder: event.reminder || 'none',
+        recurring: event.recurring || 'none',
     };
 };
 
@@ -147,14 +148,18 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
         }
     }
 
-    const eventData = { 
+    const eventData: Partial<PlannerEvent> & { [key: string]: any } = { 
         ...formData, 
         taskId: formData.taskId || null,
         attachments: uploadedAttachments,
-        recurring: formData.recurring === 'none' ? undefined : formData.recurring,
         recurringEndDate: formData.recurring === 'none' ? null : (formData.recurringEndDate ? formData.recurringEndDate : null),
         color: formData.color,
     };
+    
+    if (eventData.recurring === 'none' || !eventData.recurring) {
+        delete eventData.recurring; // Remove the field if it's not set
+    }
+
 
     try {
         if(eventData.id) {
