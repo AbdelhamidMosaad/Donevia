@@ -358,6 +358,7 @@ export interface PomodoroState extends PomodoroSettingsData {
     isActive: boolean;
     sessionsCompleted: number;
     targetEndTime: Timestamp | null;
+    hasSessionStarted?: boolean;
 }
 
 /** Goals */

@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 export function PomodoroHeaderWidget() {
-    const { mode, secondsLeft, isActive, toggleTimer, resetTimer, setMode, isEndingSoon, sessionEnded } = usePomodoro();
+    const { mode, secondsLeft, isActive, setMode, isEndingSoon, sessionEnded, toggleTimer, resetTimer, hasSessionStarted } = usePomodoro();
     const router = useRouter();
 
     const minutes = Math.floor(secondsLeft / 60);
@@ -38,6 +38,10 @@ export function PomodoroHeaderWidget() {
         }
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
+
+    if (!hasSessionStarted) {
+        return null;
+    }
 
     return (
         <DropdownMenu>

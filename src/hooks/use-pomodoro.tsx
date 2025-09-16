@@ -15,6 +15,7 @@ interface PomodoroContextType {
     settings: PomodoroSettingsData;
     isEndingSoon: boolean;
     sessionEnded: boolean;
+    hasSessionStarted: boolean;
     toggleTimer: () => void;
     resetTimer: (switchToWork?: boolean) => void;
     setMode: (newMode: PomodoroMode) => void;
@@ -51,6 +52,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     const [secondsLeft, setSecondsLeft] = useState(defaultSettings.workMinutes * 60);
     const [isEndingSoon, setIsEndingSoon] = useState(false);
     const [sessionEnded, setSessionEnded] = useState(false);
+    const [hasSessionStarted, setHasSessionStarted] = useState(false);
 
     const getTimerDuration = useCallback((mode: PomodoroMode, settings: PomodoroSettingsData) => {
         switch (mode) {
@@ -68,6 +70,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
                 if (docSnap.exists()) {
                     const data = docSnap.data() as PomodoroState;
                     setState(data);
+                    setHasSessionStarted(data.hasSessionStarted || false);
                     
                     if (data.isActive && data.targetEndTime) {
                         const remaining = Math.max(0, data.targetEndTime.toMillis() - Date.now()) / 1000;
@@ -77,7 +80,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
                     }
                 } else {
                     // No state saved, initialize with defaults
-                    const initial = { ...defaultSettings, mode: 'work', isActive: false, sessionsCompleted: 0, targetEndTime: null };
+                    const initial = { ...defaultSettings, mode: 'work', isActive: false, sessionsCompleted: 0, targetEndTime: null, hasSessionStarted: false };
                     setDoc(stateRef, initial);
                     setState(initial);
                     setSecondsLeft(defaultSettings.workMinutes * 60);
@@ -171,15 +174,22 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
             setSessionEnded(false);
         }
 
+        const newState: Partial<PomodoroState> = { isActive: newIsActive };
+
         if (newIsActive) {
             // Starting the timer
+            if (!hasSessionStarted) {
+                newState.hasSessionStarted = true;
+                setHasSessionStarted(true);
+            }
             const duration = secondsLeft > 0 ? secondsLeft : getTimerDuration(state.mode!, state as PomodoroSettingsData);
             const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-            updateStateInFirestore({ isActive: true, targetEndTime: endTime });
+            newState.targetEndTime = endTime;
         } else {
             // Pausing the timer
-            updateStateInFirestore({ isActive: false, targetEndTime: null }); //seconds are already updated
+            newState.targetEndTime = null; //seconds are already updated
         }
+        updateStateInFirestore(newState);
     };
     
     const resetTimer = (switchToWork = false) => {
@@ -225,6 +235,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         settings: state as PomodoroSettingsData,
         isEndingSoon,
         sessionEnded,
+        hasSessionStarted,
         toggleTimer,
         resetTimer,
         setMode: setModeHandler,
