@@ -9,7 +9,6 @@ import { db } from '@/lib/firebase';
 import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Lightbulb, BookOpen, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
@@ -21,6 +20,7 @@ import moment from 'moment';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/use-window-size';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 
 
 export default function StudyGoalDetailPage() {
@@ -325,7 +325,7 @@ export default function StudyGoalDetailPage() {
           <TabsTrigger value="overview"><BarChart3 className="mr-2 h-4 w-4" /> Progress Overview</TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="flex-1 mt-4">
-            <Card className="flex flex-col flex-1 min-h-0">
+            <Card className="flex flex-col flex-1 min-h-0 bg-card/60 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Content Breakdown</CardTitle>
@@ -367,7 +367,7 @@ export default function StudyGoalDetailPage() {
         </TabsContent>
          <TabsContent value="overview" className="flex-1 mt-4">
            <div className="grid md:grid-cols-2 gap-6">
-                <Card className="md:col-span-2">
+                <Card className="md:col-span-2 bg-card/60 backdrop-blur-sm">
                     <CardHeader>
                         <CardTitle>Progress Track</CardTitle>
                         <CardDescription>{subtopics.filter(s => s.isCompleted).length} of {subtopics.length} subtopics completed</CardDescription>
@@ -383,7 +383,7 @@ export default function StudyGoalDetailPage() {
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-card/60 backdrop-blur-sm">
                     <CardHeader>
                         <CardTitle className="flex items-center justify-between">
                             <span>Total Time Studied</span>

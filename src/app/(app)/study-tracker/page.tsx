@@ -136,7 +136,7 @@ export default function StudyTrackerPage() {
                 </div>
 
                 {goals.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-card/60 backdrop-blur-sm">
                         <StudyTrackerIcon className="h-24 w-24 text-muted-foreground mb-4" />
                         <h3 className="text-xl font-semibold font-headline">No Study Goals Yet</h3>
                         <p className="text-muted-foreground">Click "New Study Goal" to set your first one.</p>
