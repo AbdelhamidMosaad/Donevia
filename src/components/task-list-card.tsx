@@ -3,8 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { TaskList } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import Link from 'next/link';
+import { Card } from '@/components/ui/card';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -31,13 +30,15 @@ import {
 } from './ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
 import { TasksIcon } from './icons/tools/tasks-icon';
+import { cn } from '@/lib/utils';
 
 interface TaskListCardProps {
   list: TaskList;
   onDelete: () => void;
+  size?: 'small' | 'medium' | 'large';
 }
 
-export function TaskListCard({ list, onDelete }: TaskListCardProps) {
+export function TaskListCard({ list, onDelete, size = 'large' }: TaskListCardProps) {
   const [editingName, setEditingName] = useState(list.name);
   const [isEditing, setIsEditing] = useState(false);
   const { user } = useAuth();
@@ -85,12 +86,26 @@ export function TaskListCard({ list, onDelete }: TaskListCardProps) {
     if(isEditing) return;
     router.push(`/dashboard/list/${list.id}`);
   }
+  
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
 
   return (
     <div onClick={handleCardClick} className="group block h-full">
       <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
-        <div className="p-6 flex flex-col items-center text-center">
-            <TasksIcon className="h-24 w-24 mb-4" />
+        <div className={cn(
+            "p-6 flex flex-col items-center text-center h-full justify-center",
+            size === 'medium' && 'p-4',
+            size === 'small' && 'p-3'
+        )}>
+            <TasksIcon className={cn(
+                "mb-4",
+                size === 'large' && 'h-24 w-24',
+                size === 'medium' && 'h-16 w-16',
+                size === 'small' && 'h-12 w-12 mb-2'
+            )} />
             {isEditing ? (
               <Input
                 ref={inputRef}
@@ -102,23 +117,27 @@ export function TaskListCard({ list, onDelete }: TaskListCardProps) {
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <h3 className="text-lg font-bold font-headline text-foreground">{list.name}</h3>
+              <h3 className={cn("font-bold font-headline text-foreground capitalize", 
+                    size === 'large' && 'text-lg',
+                    size === 'medium' && 'text-base',
+                    size === 'small' && 'text-sm'
+                )}>{list.name}</h3>
             )}
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">Created on {list.createdAt.toDate().toLocaleDateString()}</p>
+            {size === 'large' && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">Created on {list.createdAt.toDate().toLocaleDateString()}</p>}
         </div>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={handleActionClick}>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuContent onClick={handleActionClick}>
                 <DropdownMenuItem onSelect={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive w-full"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent onClick={handleActionClick}>
                       <AlertDialogHeader>
                           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                           <AlertDialogDescription>

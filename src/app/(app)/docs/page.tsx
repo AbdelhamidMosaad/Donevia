@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, FolderPlus } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, FolderPlus, Minus, Plus, GripHorizontal } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -23,12 +23,14 @@ import {
 import { DocsIcon } from '@/components/icons/tools/docs-icon';
 
 type View = 'card' | 'list';
+type CardSize = 'small' | 'medium' | 'large';
 
 export default function DocsDashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [view, setView] = useState<View>('card');
+  const [cardSize, setCardSize] = useState<CardSize>('large');
   const [docs, setDocs] = useState<Doc[]>([]);
   const [folders, setFolders] = useState<DocFolder[]>([]);
 
@@ -42,8 +44,14 @@ export default function DocsDashboardPage() {
     if (user) {
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
       getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists() && docSnap.data().docsView) {
-          setView(docSnap.data().docsView);
+        if (docSnap.exists()) {
+            const userSettings = docSnap.data();
+            if (userSettings.docsView) {
+                setView(userSettings.docsView);
+            }
+             if (userSettings.docsCardSize) {
+                setCardSize(userSettings.docsCardSize);
+            }
         }
       });
 
@@ -68,12 +76,22 @@ export default function DocsDashboardPage() {
     }
   }, [user]);
 
-  const handleViewChange = (newView: View) => {
+  const handleViewChange = async (newView: View) => {
     if (newView) {
         setView(newView);
         if (user) {
             const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            setDoc(settingsRef, { docsView: newView }, { merge: true });
+            await setDoc(settingsRef, { docsView: newView }, { merge: true });
+        }
+    }
+  }
+
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize) {
+        setCardSize(newSize);
+        if (user) {
+            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+            await setDoc(settingsRef, { docsCardSize: newSize }, { merge: true });
         }
     }
   }
@@ -184,6 +202,13 @@ export default function DocsDashboardPage() {
                 <List />
               </ToggleGroupItem>
             </ToggleGroup>
+            {view === 'card' && (
+                 <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                    <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                    <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                    <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+                </ToggleGroup>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button>
@@ -214,7 +239,7 @@ export default function DocsDashboardPage() {
             {folders.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                   {folders.map(folder => (
                     <FolderCard key={folder.id} folder={folder} onDelete={() => handleDeleteFolder(folder.id)} />
                   ))}
@@ -225,7 +250,7 @@ export default function DocsDashboardPage() {
             <div>
               <h2 className="text-2xl font-bold font-headline mb-4">Documents</h2>
               {view === 'card' ? (
-                <DocListCardView docs={unfiledDocs} folders={folders} onDelete={handleDeleteDoc} onMove={handleMoveToFolder} />
+                <DocListCardView docs={unfiledDocs} folders={folders} onDelete={handleDeleteDoc} onMove={handleMoveToFolder} cardSize={cardSize}/>
               ) : (
                 <DocListListView docs={unfiledDocs} folders={folders} onDelete={handleDeleteDoc} onMove={handleMoveToFolder} />
               )}

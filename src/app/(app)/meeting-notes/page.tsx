@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Minus, Plus, GripHorizontal } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { MeetingNote } from '@/lib/types';
@@ -26,6 +26,7 @@ import { MeetingNoteListView } from '@/components/meeting-notes/meeting-note-lis
 import { MeetingNotesIcon } from '@/components/icons/tools/meeting-notes-icon';
 
 type View = 'card' | 'list';
+type CardSize = 'small' | 'medium' | 'large';
 
 export default function MeetingNotesDashboardPage() {
   const { user, loading } = useAuth();
@@ -34,6 +35,7 @@ export default function MeetingNotesDashboardPage() {
   const [meetingNotes, setMeetingNotes] = useState<MeetingNote[]>([]);
   const [isNewNoteDialogOpen, setIsNewNoteDialogOpen] = useState(false);
   const [view, setView] = useState<View>('card');
+  const [cardSize, setCardSize] = useState<CardSize>('large');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,8 +47,14 @@ export default function MeetingNotesDashboardPage() {
     if (user) {
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
       getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists() && docSnap.data().meetingNotesView) {
-          setView(docSnap.data().meetingNotesView);
+        if (docSnap.exists()) {
+            const userSettings = docSnap.data();
+            if (userSettings.meetingNotesView) {
+              setView(userSettings.meetingNotesView);
+            }
+             if (userSettings.meetingNotesCardSize) {
+                setCardSize(userSettings.meetingNotesCardSize);
+            }
         }
       });
     }
@@ -69,12 +77,22 @@ export default function MeetingNotesDashboardPage() {
     }
   }, [user]);
   
-  const handleViewChange = (newView: View) => {
+  const handleViewChange = async (newView: View) => {
     if (newView) {
         setView(newView);
         if (user) {
             const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            setDoc(settingsRef, { meetingNotesView: newView }, { merge: true });
+            await setDoc(settingsRef, { meetingNotesView: newView }, { merge: true });
+        }
+    }
+  }
+
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize) {
+        setCardSize(newSize);
+        if (user) {
+            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+            await setDoc(settingsRef, { meetingNotesCardSize: newSize }, { merge: true });
         }
     }
   }
@@ -117,6 +135,13 @@ export default function MeetingNotesDashboardPage() {
                 <List />
               </ToggleGroupItem>
             </ToggleGroup>
+             {view === 'card' && (
+                 <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                    <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                    <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                    <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+                </ToggleGroup>
+            )}
           <Button onClick={() => setIsNewNoteDialogOpen(true)}>
             <PlusCircle />
             New Meeting Note
@@ -125,7 +150,11 @@ export default function MeetingNotesDashboardPage() {
       </div>
       
       <div className="flex-1">
-        <MeetingNoteCardView notes={meetingNotes} onDelete={handleDeleteNote} />
+        {view === 'card' ? (
+          <MeetingNoteCardView notes={meetingNotes} onDelete={handleDeleteNote} cardSize={cardSize} />
+        ) : (
+           <MeetingNoteListView notes={meetingNotes} onDelete={handleDeleteNote} />
+        )}
       </div>
 
       <NewMeetingNoteDialog open={isNewNoteDialogOpen} onOpenChange={setIsNewNoteDialogOpen} />

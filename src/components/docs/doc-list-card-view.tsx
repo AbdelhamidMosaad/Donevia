@@ -1,7 +1,6 @@
 
 'use client';
 import type { Doc, DocFolder } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MoreHorizontal, Edit, Trash2, FileSignature, Move, Folder as FolderIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
@@ -13,15 +12,18 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import { Card } from '../ui/card';
+import { cn } from '@/lib/utils';
 
 interface DocListCardViewProps {
   docs: Doc[];
   folders: DocFolder[];
   onDelete: (docId: string) => void;
   onMove: (docId: string, folderId: string | null) => void;
+  cardSize?: 'small' | 'medium' | 'large';
 }
 
-export function DocListCardView({ docs, folders, onDelete, onMove }: DocListCardViewProps) {
+export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'large' }: DocListCardViewProps) {
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editingDocName, setEditingDocName] = useState('');
   const { user } = useAuth();
@@ -83,12 +85,26 @@ export function DocListCardView({ docs, folders, onDelete, onMove }: DocListCard
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+     <div className={cn(
+        "grid gap-6",
+        cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+        cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6",
+        cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7"
+    )}>
       {docs.map(document => (
         <a key={document.id} href={`/docs/${document.id}`} onClick={(e) => handleNavigate(e, document.id)} className="block cursor-pointer group">
             <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
-              <div className="p-6 flex flex-col items-center text-center">
-                  <FileSignature className="h-24 w-24 mb-4 text-primary" />
+              <div className={cn(
+                    "p-6 flex flex-col items-center text-center h-full justify-center",
+                    cardSize === 'medium' && 'p-4',
+                    cardSize === 'small' && 'p-3'
+                )}>
+                  <FileSignature className={cn(
+                    "mb-4 text-primary",
+                    cardSize === 'large' && 'h-24 w-24',
+                    cardSize === 'medium' && 'h-16 w-16',
+                    cardSize === 'small' && 'h-12 w-12 mb-2'
+                  )} />
                   {editingDocId === document.id ? (
                     <Input 
                       ref={inputRef}
@@ -100,11 +116,15 @@ export function DocListCardView({ docs, folders, onDelete, onMove }: DocListCard
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
-                    <h3 className="text-lg font-bold font-headline text-foreground">{document.title}</h3>
+                    <h3 className={cn("font-bold font-headline text-foreground", 
+                        cardSize === 'large' && 'text-lg',
+                        cardSize === 'medium' && 'text-base',
+                        cardSize === 'small' && 'text-sm'
+                    )}>{document.title}</h3>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">
+                  {cardSize === 'large' && <p className="text-xs text-muted-foreground mt-1">
                     {document.updatedAt && typeof document.updatedAt.toDate === 'function' ? `Updated on ${document.updatedAt.toDate().toLocaleDateString()}` : 'Just now'}
-                  </p>
+                  </p>}
                 </div>
 
                 <div className="absolute top-2 right-2">

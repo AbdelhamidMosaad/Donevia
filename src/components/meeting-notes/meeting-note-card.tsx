@@ -4,7 +4,6 @@
 import { useState } from 'react';
 import type { MeetingNote } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import Link from 'next/link';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
@@ -27,13 +26,15 @@ import {
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
 import { MeetingNotesIcon } from '../icons/tools/meeting-notes-icon';
+import { cn } from '@/lib/utils';
 
 interface MeetingNoteCardProps {
   note: MeetingNote;
   onDelete: () => void;
+  size?: 'small' | 'medium' | 'large';
 }
 
-export function MeetingNoteCard({ note, onDelete }: MeetingNoteCardProps) {
+export function MeetingNoteCard({ note, onDelete, size = 'large' }: MeetingNoteCardProps) {
   const router = useRouter();
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -41,80 +42,71 @@ export function MeetingNoteCard({ note, onDelete }: MeetingNoteCardProps) {
     router.push(`/meeting-notes/${note.id}`);
   };
 
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
   return (
-    <a href={`/meeting-notes/${note.id}`} onClick={handleCardClick} className="block cursor-pointer">
-      <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
-        <CardHeader className="flex-row items-start justify-between w-full relative">
-          <div>
-            <CardTitle className="font-headline hover:underline text-xl flex items-center gap-2">
-              <MeetingNotesIcon className="h-6 w-6 text-primary" />
-              {note.title}
-            </CardTitle>
-            <CardDescription className="mt-1">
-              {note.date ? `Meeting on ${moment(note.date.toDate()).format('ll')}` : 'No date set'}
-            </CardDescription>
-          </div>
-          <div className="absolute top-2 right-2">
+    <a href={`/meeting-notes/${note.id}`} onClick={handleCardClick} className="block cursor-pointer group">
+      <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
+        <div className={cn(
+            "p-6 flex flex-col items-center text-center h-full justify-center",
+            size === 'medium' && 'p-4',
+            size === 'small' && 'p-3'
+        )}>
+           <MeetingNotesIcon className={cn(
+                "mb-4",
+                size === 'large' && 'h-24 w-24',
+                size === 'medium' && 'h-16 w-16',
+                size === 'small' && 'h-12 w-12 mb-2'
+            )} />
+            <h3 className={cn("font-bold font-headline text-foreground", 
+                size === 'large' && 'text-lg',
+                size === 'medium' && 'text-base',
+                size === 'small' && 'text-sm'
+            )}>{note.title}</h3>
+            {size !== 'small' && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{note.date ? `Meeting on ${moment(note.date.toDate()).format('ll')}` : 'No date set'}</p>}
+        </div>
+        <div className="absolute top-2 right-2">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={handleActionClick}>
+                <MoreHorizontal className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-              >
+            </DropdownMenuTrigger>
+            <DropdownMenuContent onClick={handleActionClick}>
                 <AlertDialog>
-                  <AlertDialogTrigger asChild>
+                <AlertDialogTrigger asChild>
                     <DropdownMenuItem
-                      onSelect={(e) => e.preventDefault()}
-                      className="text-destructive focus:text-destructive w-full"
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-destructive focus:text-destructive w-full"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                  >
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={handleActionClick}>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
                         This will permanently delete the "{note.title}"
                         meeting note. This action cannot be undone.
-                      </AlertDialogDescription>
+                    </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
                         onClick={onDelete}
                         className="bg-destructive hover:bg-destructive/90"
-                      >
+                    >
                         Delete
-                      </AlertDialogAction>
+                    </AlertDialogAction>
                     </AlertDialogFooter>
-                  </AlertDialogContent>
+                </AlertDialogContent>
                 </AlertDialog>
-              </DropdownMenuContent>
+            </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </CardHeader>
-        <CardFooter>
-            <p className="text-xs text-muted-foreground">Updated: {moment(note.updatedAt.toDate()).fromNow()}</p>
-        </CardFooter>
+        </div>
       </Card>
     </a>
   );

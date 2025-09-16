@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Minus, Plus, GripHorizontal } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 
 type View = 'card' | 'list';
+type CardSize = 'small' | 'medium' | 'large';
 
 const defaultStages: Stage[] = [
     { id: uuidv4(), name: 'Backlog', order: 0 },
@@ -27,10 +28,11 @@ const defaultStages: Stage[] = [
 ];
 
 export default function TaskListsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, settings } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [view, setView] = useState<View>('card');
+  const [cardSize, setCardSize] = useState<CardSize>(settings.homeCardSize || 'large');
   const [taskLists, setTaskLists] = useState<TaskListType[]>([]);
   
   useEffect(() => {
@@ -43,8 +45,14 @@ export default function TaskListsPage() {
     if (user) {
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
       getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists() && docSnap.data().taskListsView) {
-          setView(docSnap.data().taskListsView);
+        if (docSnap.exists()) {
+          const userSettings = docSnap.data();
+          if (userSettings.taskListsView) {
+            setView(userSettings.taskListsView);
+          }
+          if (userSettings.taskListsCardSize) {
+            setCardSize(userSettings.taskListsCardSize);
+          }
         }
       });
     }
@@ -61,12 +69,22 @@ export default function TaskListsPage() {
     }
   }, [user]);
 
-  const handleViewChange = (newView: View) => {
+  const handleViewChange = async (newView: View) => {
     if (newView) {
         setView(newView);
         if (user) {
             const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            setDoc(settingsRef, { taskListsView: newView }, { merge: true });
+            await setDoc(settingsRef, { taskListsView: newView }, { merge: true });
+        }
+    }
+  }
+
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize) {
+        setCardSize(newSize);
+        if (user) {
+            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+            await setDoc(settingsRef, { taskListsCardSize: newSize }, { merge: true });
         }
     }
   }
@@ -163,6 +181,13 @@ export default function TaskListsPage() {
                 <List />
               </ToggleGroupItem>
             </ToggleGroup>
+            {view === 'card' && (
+                 <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                    <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                    <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                    <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+                </ToggleGroup>
+            )}
             <Button onClick={handleAddList}>
               <PlusCircle />
               New List
@@ -172,7 +197,7 @@ export default function TaskListsPage() {
       
       <div className="flex-1">
         {view === 'card' ? (
-          <TaskListCardView taskLists={taskLists} onDelete={handleDeleteList} />
+          <TaskListCardView taskLists={taskLists} onDelete={handleDeleteList} cardSize={cardSize} />
         ) : (
           <TaskListListView taskLists={taskLists} onDelete={handleDeleteList} />
         )}

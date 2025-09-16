@@ -243,9 +243,12 @@ export interface UserSettings {
     sidebarOpen: boolean;
     notificationSound: boolean;
     taskListsView?: 'card' | 'list';
+    taskListsCardSize?: 'small' | 'medium' | 'large';
     docsView?: 'card' | 'list';
-    notesView?: 'board' | 'canvas';
+    docsCardSize?: 'small' | 'medium' | 'large';
     meetingNotesView?: 'card' | 'list';
+    meetingNotesCardSize?: 'small' | 'medium' | 'large';
+    notesView?: 'board' | 'canvas';
     studyTrackerView?: 'card' | 'list';
     bookmarksView?: 'card' | 'list';
     bookmarkCardSize?: 'x-small' |'small' | 'large';
