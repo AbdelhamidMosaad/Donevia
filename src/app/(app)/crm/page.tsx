@@ -35,7 +35,6 @@ export default function CrmPage() {
 
   useEffect(() => {
     if (user) {
-      setDataLoading(true);
       const clientsQuery = query(collection(db, 'users', user.uid, 'clients'), orderBy('createdAt', 'desc'));
       const unsubscribeClients = onSnapshot(clientsQuery, (snapshot) => {
         const clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client));
@@ -51,12 +50,18 @@ export default function CrmPage() {
         setInvoices(allInvoices);
         
         if(dataLoading) setDataLoading(false); // Only set loading to false once after initial load
+      }, (error) => {
+        console.error("Error fetching clients:", error);
+        setDataLoading(false);
       });
       
       const requestsQuery = query(collection(db, 'users', user.uid, 'clientRequests'));
       const unsubscribeRequests = onSnapshot(requestsQuery, (snapshot) => {
         const requestsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClientRequest));
         setRequests(requestsData);
+      }, (error) => {
+        console.error("Error fetching client requests:", error);
+        // We can still function without requests, so don't block loading
       });
 
       return () => {
@@ -64,7 +69,7 @@ export default function CrmPage() {
         unsubscribeRequests();
       };
     }
-  }, [user, dataLoading]);
+  }, [user]);
 
   if (loading || !user || dataLoading) {
     return <div>Loading CRM...</div>;
