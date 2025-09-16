@@ -3,8 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { Whiteboard } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import Link from 'next/link';
+import { Card } from '@/components/ui/card';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -31,6 +30,7 @@ import {
 } from '../ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
 import { WhiteboardIcon } from '../icons/tools/whiteboard-icon';
+import moment from 'moment';
 
 interface WhiteboardCardProps {
   whiteboard: Whiteboard;
@@ -86,11 +86,16 @@ export function WhiteboardCard({ whiteboard, onDelete }: WhiteboardCardProps) {
     router.push(`/whiteboard/${whiteboard.id}`);
   };
 
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
   return (
-    <a href={`/whiteboard/${whiteboard.id}`} onClick={handleCardClick} className="block cursor-pointer">
-      <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col group">
-        <CardHeader className="flex-row items-start justify-between w-full relative">
-          <div>
+    <a href={`/whiteboard/${whiteboard.id}`} onClick={handleCardClick} className="group block h-full">
+      <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
+        <div className="p-6 flex flex-col items-center text-center">
+            <WhiteboardIcon className="h-24 w-24 mb-4" />
             {isEditing ? (
               <Input
                 ref={inputRef}
@@ -98,82 +103,63 @@ export function WhiteboardCard({ whiteboard, onDelete }: WhiteboardCardProps) {
                 onChange={(e) => setEditingName(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={handleRename}
-                className="text-lg font-headline"
-                onClick={(e) => e.preventDefault()}
+                className="text-lg font-headline text-center bg-transparent"
+                onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <CardTitle className="font-headline hover:underline text-xl flex items-center gap-2">
-                <WhiteboardIcon className="h-6 w-6 text-primary" />
-                {whiteboard.name}
-              </CardTitle>
+              <h3 className="text-lg font-bold font-headline text-foreground">{whiteboard.name}</h3>
             )}
-            <CardDescription className="mt-1">
-              {whiteboard.updatedAt && typeof whiteboard.updatedAt.toDate === 'function'
-                ? `Updated on ${whiteboard.updatedAt.toDate().toLocaleDateString()}`
+            <p className="text-xs text-muted-foreground mt-1">
+                {whiteboard.updatedAt && typeof whiteboard.updatedAt.toDate === 'function'
+                ? `Updated ${moment(whiteboard.updatedAt.toDate()).fromNow()}`
                 : 'Just now'}
-            </CardDescription>
-          </div>
-          <div className="absolute top-2 right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
+            </p>
+        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                onClick={handleActionClick}
+            >
+                <MoreHorizontal className="h-4 w-4" />
+            </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent onClick={handleActionClick}>
+            <DropdownMenuItem onSelect={() => setIsEditing(true)}>
+                <Edit className="mr-2 h-4 w-4" /> Rename
+            </DropdownMenuItem>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-destructive focus:text-destructive w-full"
                 >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-              >
-                <DropdownMenuItem onSelect={() => setIsEditing(true)}>
-                  <Edit className="mr-2 h-4 w-4" /> Rename
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
                 </DropdownMenuItem>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem
-                      onSelect={(e) => e.preventDefault()}
-                      className="text-destructive focus:text-destructive w-full"
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={handleActionClick}>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    This will permanently delete the "{whiteboard.name}"
+                    whiteboard. This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                    onClick={onDelete}
+                    className="bg-destructive hover:bg-destructive/90"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                  >
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete the "{whiteboard.name}"
-                        whiteboard. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={onDelete}
-                        className="bg-destructive hover:bg-destructive/90"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </CardHeader>
+                    Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </Card>
     </a>
   );
