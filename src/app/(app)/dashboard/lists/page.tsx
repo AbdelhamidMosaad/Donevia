@@ -7,7 +7,7 @@ import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import type { TaskList, Stage } from '@/lib/types';
+import type { TaskList as TaskListType, Stage } from '@/lib/types';
 import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, writeBatch, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -31,7 +31,7 @@ export default function TaskListsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [view, setView] = useState<View>('card');
-  const [taskLists, setTaskLists] = useState<TaskList[]>([]);
+  const [taskLists, setTaskLists] = useState<TaskListType[]>([]);
   
   useEffect(() => {
     if (!loading && !user) {
@@ -54,7 +54,7 @@ export default function TaskListsPage() {
     if (user) {
       const q = query(collection(db, 'users', user.uid, 'taskLists'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const listsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TaskList));
+        const listsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TaskListType));
         setTaskLists(listsData);
       });
       return () => unsubscribe();
