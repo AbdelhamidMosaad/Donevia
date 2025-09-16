@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { AddTaskDialog } from '@/components/add-task-dialog';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
 import { useTasks } from '@/hooks/use-tasks';
