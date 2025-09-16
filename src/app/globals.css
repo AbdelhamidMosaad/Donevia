@@ -450,8 +450,16 @@ body {
 
 .rbc-calendar {
   height: 100% !important;
+  --rbc-border-color: hsl(var(--border));
+  --rbc-today-bg: hsl(var(--accent) / 0.1);
+  --rbc-text-color: hsl(var(--foreground));
+  --rbc-secondary-text-color: hsl(var(--muted-foreground));
+  --rbc-off-range-bg: hsl(var(--card));
+  --rbc-header-bg: hsl(var(--card));
 }
-
+.dark .rbc-calendar {
+  --rbc-today-bg: hsl(var(--accent) / 0.2);
+}
 .rbc-toolbar {
     margin-bottom: 0px;
     padding: 0;
@@ -462,8 +470,6 @@ body {
 .rbc-event {
     border: none;
     border-radius: var(--radius);
-    background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
     padding: 4px 6px;
     font-size: 0.75rem;
     line-height: 1.2;
@@ -474,31 +480,42 @@ body {
 }
 
 .rbc-day-bg {
-    border-left: 1px solid hsl(var(--border));
+    border-left: 1px solid var(--rbc-border-color);
 }
 .rbc-month-view {
     border: none;
 }
 .rbc-month-row {
-    border-color: hsl(var(--border));
+    border-color: var(--rbc-border-color);
 }
 .rbc-header {
-    border-bottom: 1px solid hsl(var(--border));
+    border-bottom: 1px solid var(--rbc-border-color);
     padding: 8px;
     text-align: left;
+    color: var(--rbc-text-color);
 }
 .rbc-header + .rbc-header {
-    border-left: 1px solid hsl(var(--border));
+    border-left: 1px solid var(--rbc-border-color);
 }
 .rbc-time-view, .rbc-month-view {
-    border-top: 1px solid hsl(var(--border));
+    border-top: 1px solid var(--rbc-border-color);
 }
 .rbc-time-header-content {
-    border-left: 1px solid hsl(var(--border));
+    border-left: 1px solid var(--rbc-border-color);
 }
 .rbc-today {
-    background-color: hsl(var(--secondary));
+    background-color: var(--rbc-today-bg);
 }
+.rbc-off-range-bg {
+    background-color: var(--rbc-off-range-bg);
+}
+.rbc-button-link {
+    color: var(--rbc-text-color);
+}
+.rbc-month-view, .rbc-time-view, .rbc-agenda-view {
+  color: var(--rbc-text-color) !important;
+}
+
 
 .bg-landing-gradient {
     background: linear-gradient(135deg, hsl(270, 70%, 96%), hsl(210, 100%, 96%));
