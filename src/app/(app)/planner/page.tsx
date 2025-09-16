@@ -115,38 +115,12 @@ export default function PlannerPage() {
         setTasks(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as Task)));
     });
 
-
-    // Import tasks with due dates as events
-    const importTasks = async () => {
-        const tasksWithDueDatesQuery = query(collection(db, 'users', user.uid, 'tasks'), where('dueDate', '!=', null));
-        const tasksSnapshot = await getDocs(tasksWithDueDatesQuery);
-        
-        const existingEventTaskIds = new Set(events.map(e => e.taskId));
-        
-        const newEventsFromTasks: Partial<PlannerEvent>[] = [];
-        tasksSnapshot.forEach(doc => {
-            const task = {id: doc.id, ...doc.data()} as Task;
-            if(!existingEventTaskIds.has(task.id)) {
-                newEventsFromTasks.push({
-                    title: task.title,
-                    start: task.dueDate.toDate(),
-                    end: task.dueDate.toDate(),
-                    allDay: true,
-                    taskId: task.id,
-                    ownerId: user.uid,
-                });
-            }
-        });
-    };
-    // Uncomment the line below to enable automatic task import on page load
-    // importTasks();
-
     return () => {
         unsubscribeEvents();
         unsubscribeCategories();
         unsubscribeTasks();
     };
-  }, [user, router, events]);
+  }, [user, router]);
 
   const handleSelectSlot = useCallback(({ start, end }: { start: Date, end: Date }) => {
     setSelectedEvent({ start, end, allDay: false });

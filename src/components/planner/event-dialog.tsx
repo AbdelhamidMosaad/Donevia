@@ -32,11 +32,37 @@ interface EventDialogProps {
 
 const colorPalette = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'];
 
+const getInitialFormData = (event: Partial<PlannerEvent> | null): Partial<PlannerEvent> => {
+    if (!event) {
+        return {
+            title: '',
+            description: '',
+            start: new Date(),
+            end: moment(new Date()).add(1, 'hour').toDate(),
+            allDay: false,
+            attachments: [],
+            reminder: 'none',
+            recurring: 'none',
+            recurringEndDate: null,
+            color: undefined,
+            taskId: undefined,
+            categoryId: undefined,
+        };
+    }
+    return {
+        ...event,
+        start: event.start || new Date(),
+        end: event.end || new Date(),
+        attachments: event.attachments || [],
+        reminder: event.reminder || 'none',
+    };
+};
+
 
 export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [formData, setFormData] = useState<Partial<PlannerEvent>>({});
+  const [formData, setFormData] = useState<Partial<PlannerEvent>>(getInitialFormData(event));
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
 
@@ -55,23 +81,27 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
   }, [user]);
 
   useEffect(() => {
-    if (event) {
-      setFormData({
-        ...event,
-        start: event.start || new Date(),
-        end: event.end || new Date(),
-        attachments: event.attachments || [],
-        reminder: event.reminder || 'none',
-        color: event.color,
-      });
-    } else {
-      setFormData({});
+    if (isOpen) {
+      setFormData(getInitialFormData(event));
+      setFilesToUpload([]);
     }
-     setFilesToUpload([]);
-  }, [event]);
+  }, [event, isOpen]);
 
   const handleChange = (field: keyof PlannerEvent, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    let newFormData = { ...formData, [field]: value };
+    
+    if (field === 'allDay') {
+        const isAllDay = !!value;
+        const currentStart = moment(newFormData.start);
+        if (isAllDay) {
+            newFormData.start = currentStart.startOf('day').toDate();
+            newFormData.end = currentStart.endOf('day').toDate();
+        } else {
+             newFormData.end = moment(newFormData.start).add(1, 'hour').toDate();
+        }
+    }
+    
+    setFormData(newFormData);
   };
   
   const handleDateChange = (field: 'start' | 'end', date: string, time: string) => {
@@ -121,7 +151,8 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
         ...formData, 
         taskId: formData.taskId || null,
         attachments: uploadedAttachments,
-        recurringEndDate: formData.recurringEndDate ? formData.recurringEndDate : null,
+        recurring: formData.recurring === 'none' ? undefined : formData.recurring,
+        recurringEndDate: formData.recurring === 'none' ? null : (formData.recurringEndDate ? formData.recurringEndDate : null),
         color: formData.color,
     };
 
@@ -140,6 +171,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
         }
         onOpenChange(false);
     } catch(e) {
+        console.error("Error saving event:", e);
         toast({ variant: 'destructive', title: "Error saving event" });
     }
   };
@@ -278,7 +310,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
            <div>
             <Label>Recurring</Label>
             <div className="flex items-center gap-4">
-               <Select value={formData.recurring} onValueChange={(value) => handleChange('recurring', value === 'none' ? undefined : value)}>
+               <Select value={formData.recurring || 'none'} onValueChange={(value) => handleChange('recurring', value)}>
                 <SelectTrigger><SelectValue placeholder="Does not repeat" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="none">Does not repeat</SelectItem>
