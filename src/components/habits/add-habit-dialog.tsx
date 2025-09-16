@@ -16,14 +16,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { addHabit } from '@/lib/habits';
+import { addHabit, updateHabit } from '@/lib/habits';
+import type { Habit } from '@/lib/types';
 
 interface AddHabitDialogProps {
+  habit?: Habit | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
 export function AddHabitDialog({
+  habit,
   open,
   onOpenChange,
 }: AddHabitDialogProps) {
@@ -31,16 +34,18 @@ export function AddHabitDialog({
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState('');
-
-  const resetForm = () => {
-    setName('');
-  };
+  
+  const isEditMode = !!habit;
 
   useEffect(() => {
-    if (!open) {
-      resetForm();
+    if (open) {
+        if (isEditMode && habit) {
+            setName(habit.name);
+        } else {
+            setName('');
+        }
     }
-  }, [open]);
+  }, [open, habit, isEditMode]);
 
   const handleSave = async () => {
     if (!user) {
@@ -52,12 +57,16 @@ export function AddHabitDialog({
         return;
     }
 
-    console.log('Attempting to save habit:', name);
     setIsSaving(true);
     
     try {
-      await addHabit(user.uid, { name });
-      toast({ title: 'Habit Added', description: `"${name}" has been added.` });
+      if (isEditMode && habit) {
+        await updateHabit(user.uid, habit.id, { name });
+        toast({ title: 'Habit Updated', description: `"${name}" has been updated.`});
+      } else {
+        await addHabit(user.uid, { name });
+        toast({ title: 'Habit Added', description: `"${name}" has been added.` });
+      }
       onOpenChange?.(false);
     } catch (e) {
       console.error("Error saving habit: ", e);
@@ -71,8 +80,10 @@ export function AddHabitDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Habit</DialogTitle>
-          <DialogDescription>What new habit do you want to track?</DialogDescription>
+          <DialogTitle>{isEditMode ? 'Edit Habit' : 'Add New Habit'}</DialogTitle>
+          <DialogDescription>
+              {isEditMode ? 'Update the name of your habit.' : 'What new habit do you want to track?'}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -87,7 +98,7 @@ export function AddHabitDialog({
             </Button>
           </DialogClose>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Habit'}
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

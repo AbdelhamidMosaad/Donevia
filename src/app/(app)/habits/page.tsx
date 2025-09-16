@@ -12,14 +12,16 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Habit } from '@/lib/types';
 import { HabitsIcon } from '@/components/icons/tools/habits-icon';
-
+import { useToast } from '@/hooks/use-toast';
+import { deleteHabit } from '@/lib/habits';
 
 export default function HabitsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [habits, setHabits] = useState<Habit[]>([]);
-
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -38,6 +40,25 @@ export default function HabitsPage() {
     }
   }, [user]);
 
+  const handleOpenAddDialog = () => {
+    setEditingHabit(null);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleEditHabit = (habit: Habit) => {
+    setEditingHabit(habit);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleDeleteHabit = async (habitId: string) => {
+    if (!user) return;
+    try {
+        await deleteHabit(user.uid, habitId);
+        toast({ title: "Habit deleted" });
+    } catch(e) {
+        toast({ variant: 'destructive', title: "Error deleting habit" });
+    }
+  };
 
   if (loading || !user) {
     return <div>Loading...</div>;
@@ -54,7 +75,7 @@ export default function HabitsPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Button onClick={handleOpenAddDialog}>
               <PlusCircle />
               New Habit
             </Button>
@@ -68,10 +89,23 @@ export default function HabitsPage() {
             <p className="text-muted-foreground">Click "New Habit" to start tracking your first one.</p>
         </div>
       ) : (
-         <HabitTracker habits={habits} />
+         <HabitTracker 
+            habits={habits}
+            onEdit={handleEditHabit}
+            onDelete={handleDeleteHabit}
+          />
       )}
 
-      <AddHabitDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+      <AddHabitDialog 
+        open={isAddDialogOpen} 
+        onOpenChange={(open) => {
+            if (!open) {
+                setEditingHabit(null);
+            }
+            setIsAddDialogOpen(open);
+        }}
+        habit={editingHabit}
+      />
     </div>
   );
 }
