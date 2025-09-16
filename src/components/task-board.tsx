@@ -8,7 +8,6 @@ import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/f
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useToast } from '@/hooks/use-toast';
-import { BoardSettings } from './board-settings';
 import { BoardTaskCreator } from './board-task-creator';
 import { Button } from './ui/button';
 import { ChevronDown, ChevronRight, Loader2, Kanban } from 'lucide-react';
@@ -24,7 +23,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Start in loading state
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
@@ -94,7 +93,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
 
-    if (!destination) return;
+    if (!destination || !user) return;
 
     if (type === 'COLUMN') {
         const newStages = Array.from(sortedStages);
@@ -103,10 +102,17 @@ export function TaskBoard({ listId }: TaskBoardProps) {
 
         const updatedStages = newStages.map((stage, index) => ({ ...stage, order: index }));
         
-        if (user) {
+        // Optimistic UI update for stages
+        setStages(updatedStages);
+        
+        try {
             const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
             await updateDoc(listRef, { stages: updatedStages });
             toast({ title: "Board updated", description: "Column order saved." });
+        } catch (error) {
+            // Revert on failure
+            setStages(sortedStages);
+            toast({ variant: 'destructive', title: 'Error updating board order.' });
         }
         return;
     }
@@ -117,14 +123,29 @@ export function TaskBoard({ listId }: TaskBoardProps) {
         }
 
         const task = tasks.find(t => t.id === draggableId);
-        if (task && user) {
-            const newStatus = destination.droppableId;
+        if (!task) return;
+        
+        const newStatus = destination.droppableId;
+        
+        // --- Optimistic UI Update ---
+        const originalTasks = tasks;
+        const updatedTask = { ...task, status: newStatus };
+        const newTasks = tasks.map(t => t.id === draggableId ? updatedTask : t);
+        setTasks(newTasks);
+        // --- End Optimistic UI Update ---
+
+        try {
             const taskRef = doc(db, 'users', user.uid, 'tasks', draggableId);
             await updateDoc(taskRef, { status: newStatus });
-             toast({
+            const stageName = stages.find(s => s.id === newStatus)?.name || newStatus;
+            toast({
                 title: 'Task Updated',
-                description: `Task "${task.title}" moved to ${stages.find(s => s.id === newStatus)?.name}.`,
+                description: `Task "${task.title}" moved to ${stageName}.`,
             });
+        } catch (error) {
+            // Revert on failure
+            setTasks(originalTasks);
+            toast({ variant: 'destructive', title: 'Error updating task.' });
         }
     }
   };
@@ -174,9 +195,6 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-        <div className="mb-4 flex justify-end items-center gap-2">
-             <BoardSettings listId={listId} currentStages={stages} />
-        </div>
       <Droppable droppableId="board" direction="horizontal" type="COLUMN">
         {(provided) => (
             <div
@@ -194,7 +212,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                             {...provided.draggableProps}
                             className={cn(
                                 "flex flex-col transition-all duration-300",
-                                isCollapsed ? 'w-16' : 'flex-1 min-w-[220px]'
+                                isCollapsed ? 'w-16' : 'w-72'
                             )}
                         >
                             <Droppable droppableId={stage.id} type="TASK" isDropDisabled={isCollapsed}>
