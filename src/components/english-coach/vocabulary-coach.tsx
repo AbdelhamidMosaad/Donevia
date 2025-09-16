@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -18,12 +17,13 @@ import { db } from '@/lib/firebase';
 import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
 import { generateAudio } from '@/ai/flows/tts-flow';
 import { addUserVocabularyWords } from '@/lib/vocabulary';
+import { cn } from '@/lib/utils';
 
-function highlightStory(story: string): React.ReactNode {
+function highlightStory(story: string, isDarkMode: boolean): React.ReactNode {
     const parts = story.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={index} className="bg-yellow-200 dark:bg-yellow-400 dark:text-black p-1 rounded">{part.slice(2, -2)}</strong>;
+            return <strong key={index} className={cn("p-1 rounded", isDarkMode ? "bg-yellow-400 text-black" : "bg-yellow-200")}>{part.slice(2, -2)}</strong>;
         }
         return part;
     });
@@ -37,7 +37,7 @@ export function VocabularyCoach() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaveToDeckOpen, setIsSaveToDeckOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -213,6 +213,8 @@ export function VocabularyCoach() {
       setIsSaving(false);
     }
   };
+  
+  const isDarkMode = settings.theme !== 'light';
 
   return (
     <>
@@ -285,7 +287,7 @@ export function VocabularyCoach() {
                         )}
                     </div>
                     <ScrollArea className="border rounded-lg p-4 bg-background h-full">
-                       <p className="whitespace-pre-wrap leading-relaxed">{highlightStory(result.story)}</p>
+                       <p className="whitespace-pre-wrap leading-relaxed">{highlightStory(result.story, isDarkMode)}</p>
                     </ScrollArea>
                 </div>
                 <div className="flex flex-col gap-4">
