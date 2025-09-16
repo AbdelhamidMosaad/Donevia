@@ -4,29 +4,74 @@ import type { Task, Stage } from '@/lib/types';
 import { TaskCard } from './task-card';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect, useMemo } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useToast } from '@/hooks/use-toast';
 import { BoardSettings } from './board-settings';
 import { BoardTaskCreator } from './board-task-creator';
 import { Button } from './ui/button';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, Kanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTasks } from '@/hooks/use-tasks';
 
 interface TaskBoardProps {
   listId: string;
-  tasks: Task[];
-  stages: Stage[];
 }
 
-export function TaskBoard({ listId, tasks, stages }: TaskBoardProps) {
+export function TaskBoard({ listId }: TaskBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { updateTask } = useTasks(listId);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Start in loading state
+  const [error, setError] = useState<string | null>(null);
+
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
+
+  // Fetch stages for the current list
+  useEffect(() => {
+    if (user && listId) {
+      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
+      const unsubscribe = onSnapshot(listRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const listData = docSnap.data();
+          setStages(listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || []);
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [user, listId]);
   
+  // Fetch tasks for the current list with proper loading and error handling
+  useEffect(() => {
+    if (user && listId) {
+      console.log('Fetching tasks for list:', listId);
+      setIsLoading(true); // Set loading true at the start of the fetch
+      setError(null);
+
+      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId));
+      
+      const unsubscribe = onSnapshot(q, 
+        (snapshot) => {
+          const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)).filter(task => !task.deleted);
+          console.log(`Successfully fetched ${tasksData.length} tasks.`);
+          setTasks(tasksData);
+          setIsLoading(false); // Set loading false on successful data retrieval
+        }, 
+        (err) => {
+          console.error("Error fetching tasks: ", err);
+          toast({ variant: 'destructive', title: 'Error loading tasks.'});
+          setError('Failed to load tasks. Please try again.');
+          setIsLoading(false); // Also set loading false on error
+        }
+      );
+      
+      return () => unsubscribe();
+    }
+  }, [user, listId, toast]);
+
+
   useEffect(() => {
       const storedCollapsedState = localStorage.getItem(`collapsed-stages-${listId}`);
       if (storedCollapsedState) {
@@ -74,7 +119,8 @@ export function TaskBoard({ listId, tasks, stages }: TaskBoardProps) {
         const task = tasks.find(t => t.id === draggableId);
         if (task && user) {
             const newStatus = destination.droppableId;
-            updateTask(draggableId, { status: newStatus });
+            const taskRef = doc(db, 'users', user.uid, 'tasks', draggableId);
+            await updateDoc(taskRef, { status: newStatus });
              toast({
                 title: 'Task Updated',
                 description: `Task "${task.title}" moved to ${stages.find(s => s.id === newStatus)?.name}.`,
@@ -98,6 +144,34 @@ export function TaskBoard({ listId, tasks, stages }: TaskBoardProps) {
       }, {} as Record<string, (Task & {order: number})[]>);
     }, [sortedStages, tasks]);
 
+  // Conditional Rendering Logic
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-2 text-muted-foreground">Loading board...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+        <div className="flex flex-col items-center justify-center h-64 text-destructive">
+            <p>{error}</p>
+        </div>
+    );
+  }
+
+  if (tasks.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-center p-8 border rounded-lg bg-muted/50">
+            <Kanban className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold font-headline">This board is empty</h3>
+            <p className="text-muted-foreground">Add your first task to get started.</p>
+        </div>
+      );
+  }
+  
   return (
     <DragDropContext onDragEnd={onDragEnd}>
         <div className="mb-4 flex justify-end items-center gap-2">
