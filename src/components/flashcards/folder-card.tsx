@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import type { FlashcardFolder } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 import { Folder, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -65,13 +64,17 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
       e.preventDefault();
     }
   };
+  
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
 
   return (
-    <Link href={`/flashcards/folder/${folder.id}`} onClick={handleCardClick}>
-        <Card className="hover:shadow-lg transition-shadow duration-300 group">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                <Folder className="h-6 w-6 text-primary shrink-0"/>
+    <Link href={`/flashcards/folder/${folder.id}`} onClick={handleCardClick} className="group block h-full">
+        <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
+            <div className="p-6 flex flex-col items-center text-center">
+                 <Folder className="h-24 w-24 mb-4 text-primary" />
                 {isEditing ? (
                   <Input 
                     ref={inputRef}
@@ -79,19 +82,23 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onBlur={handleRename}
-                    className="text-lg font-headline h-9"
+                    className="text-lg font-headline text-center bg-transparent"
+                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
-                  <CardTitle className="font-headline text-xl truncate">{folder.name}</CardTitle>
+                  <h3 className="text-lg font-bold font-headline text-foreground">{folder.name}</h3>
                 )}
+                 <p className="text-xs text-muted-foreground mt-1">
+                    Folder
+                </p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={handleActionClick}>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+              <DropdownMenuContent onClick={handleActionClick}>
                 <DropdownMenuItem onSelect={() => setIsEditing(true)}>
                   <Edit className="mr-2 h-4 w-4" /> Rename
                 </DropdownMenuItem>
@@ -101,7 +108,7 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
                       <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
-                  <AlertDialogContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                  <AlertDialogContent onClick={handleActionClick}>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                       <AlertDialogDescription>This will delete the folder "{folder.name}". Decks inside will not be deleted.</AlertDialogDescription>
@@ -114,7 +121,6 @@ export function FolderCard({ folder, onDelete }: FolderCardProps) {
                 </AlertDialog>
               </DropdownMenuContent>
             </DropdownMenu>
-          </CardHeader>
         </Card>
     </Link>
   );

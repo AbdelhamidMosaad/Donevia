@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -152,7 +151,7 @@ export default function FlashcardsDashboardPage() {
       </div>
       
        {decks.length === 0 && folders.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-card/60 backdrop-blur-sm">
           <FlashcardsIcon className="h-24 w-24 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold font-headline">No Decks Yet</h3>
           <p className="text-muted-foreground">Click "New" to create your first deck or folder.</p>
@@ -172,7 +171,7 @@ export default function FlashcardsDashboardPage() {
              <div>
                 <h2 className="text-2xl font-bold font-headline mb-4">Decks</h2>
                 {unfiledDecks.length > 0 ? (
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {unfiledDecks.map(deck => (
                             <DeckCard 
                                 key={deck.id} 
