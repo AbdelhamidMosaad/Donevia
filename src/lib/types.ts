@@ -248,7 +248,7 @@ export interface UserSettings {
     meetingNotesView?: 'card' | 'list';
     studyTrackerView?: 'card' | 'list';
     bookmarksView?: 'card' | 'list';
-    bookmarkCardSize?: 'small' | 'large';
+    bookmarkCardSize?: 'x-small' |'small' | 'large';
     listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
     tableColumns?: { [listId: string]: string[] };
     sidebarOrder?: string[];
@@ -715,3 +715,5 @@ export type InterviewFeedback = {
     suggestions: string[];
     overallAssessment: string;
 };
+
+    

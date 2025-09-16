@@ -14,7 +14,7 @@ interface BookmarkCardProps {
   bookmark: Bookmark;
   onEdit: (focusColor?: boolean) => void;
   onDelete: () => void;
-  size?: 'small' | 'large';
+  size?: 'x-small' | 'small' | 'large';
 }
 
 export function BookmarkCard({ bookmark, onEdit, onDelete, size = 'large' }: BookmarkCardProps) {
@@ -31,12 +31,25 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, size = 'large' }: Boo
         >
             <div className={cn(
                 "p-6 flex flex-col items-center text-center h-full justify-center",
-                size === 'small' && 'p-4'
+                size === 'small' && 'p-4',
+                size === 'x-small' && 'p-3'
             )}>
-                <BookmarksIcon className={cn("mb-4", size === 'large' ? 'h-24 w-24' : 'h-16 w-16')} />
-                <h3 className={cn("font-bold font-headline text-foreground", size === 'large' ? 'text-lg' : 'text-sm')}>{bookmark.title}</h3>
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{bookmark.url}</p>
-                 <p className="text-xs text-muted-foreground mt-2 px-2 py-1 bg-black/5 rounded-full capitalize">{bookmark.category}</p>
+                <BookmarksIcon className={cn(
+                  "mb-4", 
+                  size === 'large' && 'h-24 w-24', 
+                  size === 'small' && 'h-16 w-16',
+                  size === 'x-small' && 'h-12 w-12 mb-2'
+                )} />
+                <h3 className={cn("font-bold font-headline text-foreground", 
+                    size === 'large' ? 'text-lg' : 'text-sm',
+                    size === 'x-small' && 'text-xs'
+                )}>{bookmark.title}</h3>
+                {size !== 'x-small' && (
+                  <>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{bookmark.url}</p>
+                    <p className="text-xs text-muted-foreground mt-2 px-2 py-1 bg-black/5 rounded-full capitalize">{bookmark.category}</p>
+                  </>
+                )}
             </div>
 
             <div className="absolute top-2 right-2">
@@ -71,3 +84,5 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, size = 'large' }: Boo
     </a>
   );
 }
+
+    

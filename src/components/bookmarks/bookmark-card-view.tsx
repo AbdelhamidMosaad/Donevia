@@ -8,14 +8,16 @@ interface BookmarkCardViewProps {
     bookmarks: Bookmark[];
     onEdit: (bookmark: Bookmark, focusColor?: boolean) => void;
     onDelete: (bookmarkId: string) => void;
-    cardSize?: 'small' | 'large';
+    cardSize?: 'x-small' | 'small' | 'large';
 }
 
 export function BookmarkCardView({ bookmarks, onEdit, onDelete, cardSize = 'large' }: BookmarkCardViewProps) {
     return (
         <div className={cn(
-            "grid gap-6",
-            cardSize === 'large' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
+            "grid gap-4",
+             cardSize === 'large' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
+             : cardSize === 'small' ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
+             : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9"
         )}>
           {bookmarks.map(bookmark => (
             <BookmarkCard
