@@ -52,14 +52,14 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
   return (
     <>
       <Link href={`/goals/${goal.id}`} className="group">
-        <Card className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
+        <Card className="bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer h-full flex flex-col">
           <CardHeader className="flex-row items-start justify-between">
-            <div>
-              <CardTitle className="font-headline group-hover:underline flex items-center gap-2">
-                <GoalsIcon className="h-6 w-6" />
-                {goal.title}
-              </CardTitle>
-              <CardDescription className="mt-1 line-clamp-2">{goal.description}</CardDescription>
+            <div className="flex items-center gap-4">
+              <GoalsIcon className="h-12 w-12" />
+              <div>
+                  <CardTitle className="font-headline group-hover:underline">{goal.title}</CardTitle>
+                  <CardDescription className="mt-1 line-clamp-2">{goal.description}</CardDescription>
+              </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -71,7 +71,7 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
                 <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={handleDeleteClick} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={handleDeleteClick} className="text-destructive focus:text-destructive w-full"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                   </AlertDialogTrigger>
                   <AlertDialogContent onClick={handleDeleteClick}>
                     <AlertDialogHeader>
@@ -80,7 +80,7 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onDelete(goal.id)}>Delete</AlertDialogAction>
+                      <AlertDialogAction onClick={() => onDelete(goal.id)} variant="destructive">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
