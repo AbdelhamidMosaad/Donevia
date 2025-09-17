@@ -44,7 +44,7 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
             return (
                 <Button
                     key={view}
-                    variant={toolbar.view === view ? 'secondary' : 'ghost'}
+                    variant={toolbar.view === view ? 'default' : 'ghost'}
                     onClick={() => toolbar.onView(view)}
                     className="capitalize"
                 >
@@ -71,11 +71,14 @@ const getContrastYIQ = (hexcolor: string) => {
 
 const CustomEvent = ({ event }: EventProps<PlannerEvent>) => {
     const isAllDay = event.allDay;
+    const title = event.title;
+    const timeString = !isAllDay ? moment(event.start).format('ha') : ''; // '9am' format
+    
+    const displayText = [title, timeString].filter(Boolean).join(', ');
+
     return (
-        <div className="flex flex-col h-full p-1 text-xs">
-            <strong className="font-semibold truncate">{event.title}</strong>
-            {!isAllDay && <span className="text-xs">{moment(event.start).format('h:mm A')}</span>}
-            {event.description && <p className="text-xs truncate">{event.description}</p>}
+        <div className="flex items-center justify-start h-full px-2 text-xs truncate">
+            <span className="font-medium">{displayText}</span>
         </div>
     );
 };
