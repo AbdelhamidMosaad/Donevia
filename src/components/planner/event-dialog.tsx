@@ -20,8 +20,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase/firestore';
 import { useDropzone } from 'react-dropzone';
 import { getAuth } from 'firebase/auth';
-import { Paperclip, Trash2, Check } from 'lucide-react';
+import { Paperclip, Trash2, Check, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 
 
 interface EventDialogProps {
@@ -302,23 +303,30 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
             </div>
            </div>
            <div>
-            <Label>Event Color</Label>
-            <div className="flex flex-wrap gap-2 pt-2">
-                {colorPalette.map(c => (
-                    <button
-                        key={c}
-                        type="button"
-                        className={cn("h-8 w-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110", formData.color === c ? 'ring-2 ring-offset-2 ring-primary' : '')}
-                        style={{ backgroundColor: c }}
-                        onClick={() => handleChange('color', c)}
-                    >
-                       {formData.color === c && <Check className="h-4 w-4 text-white" />}
-                    </button>
-                ))}
-                 <Button variant="ghost" size="sm" onClick={() => handleChange('color', undefined)}>
-                    Use category color
-                </Button>
-             </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline"><Palette className="mr-2 h-4 w-4"/> Event Color</Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                <Label>Event Color</Label>
+                <div className="flex flex-wrap gap-2 pt-2">
+                    {colorPalette.map(c => (
+                        <button
+                            key={c}
+                            type="button"
+                            className={cn("h-8 w-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110", formData.color === c ? 'ring-2 ring-offset-2 ring-primary' : '')}
+                            style={{ backgroundColor: c }}
+                            onClick={() => handleChange('color', c)}
+                        >
+                          {formData.color === c && <Check className="h-4 w-4 text-white" />}
+                        </button>
+                    ))}
+                    <Button variant="ghost" size="sm" onClick={() => handleChange('color', undefined)}>
+                        Use category color
+                    </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
            </div>
            <div>
             <Label>Link to Task</Label>

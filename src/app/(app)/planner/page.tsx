@@ -1,22 +1,25 @@
+
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, query, doc, updateDoc, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { PlannerEvent, PlannerCategory, Task } from '@/lib/types';
 import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Settings, PlusCircle } from 'lucide-react';
+import { Settings, PlusCircle, Maximize, Minimize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { EventDialog } from '@/components/planner/event-dialog';
 import { CategoryManager } from '@/components/planner/category-manager';
 import { useEventReminders } from '@/hooks/use-planner-reminders';
-import { getDocs } from 'firebase/firestore';
 import { PlannerIcon } from '@/components/icons/tools/planner-icon';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+
 
 const localizer = momentLocalizer(moment);
 
@@ -56,7 +59,9 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
 
 // Helper function to get contrasting text color
 const getContrastYIQ = (hexcolor: string) => {
+    if (!hexcolor) return 'black';
     hexcolor = hexcolor.replace("#", "");
+    if (hexcolor.length !== 6) return 'black';
     const r = parseInt(hexcolor.substr(0, 2), 16);
     const g = parseInt(hexcolor.substr(2, 2), 16);
     const b = parseInt(hexcolor.substr(4, 2), 16);
@@ -64,10 +69,20 @@ const getContrastYIQ = (hexcolor: string) => {
     return (yiq >= 128) ? 'black' : 'white';
 }
 
+const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value: Date }) => {
+    const isToday = moment(value).isSame(new Date(), 'day');
+    return (
+        <div className={cn("rbc-day-bg", isToday && 'rbc-today-custom')}>
+            {children}
+        </div>
+    );
+};
+
 
 export default function PlannerPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [events, setEvents] = useState<PlannerEvent[]>([]);
   const [categories, setCategories] = useState<PlannerCategory[]>([]);
   
@@ -78,6 +93,9 @@ export default function PlannerPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
 
   // Initialize reminder hook
   useEventReminders(events);
@@ -176,9 +194,32 @@ export default function PlannerPage() {
   
   const handleNavigate = useCallback((newDate: Date) => setCurrentDate(newDate), [setCurrentDate]);
 
+  const toggleFullscreen = useCallback(() => {
+    const elem = calendarContainerRef.current;
+    if (!elem) return;
+
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch(err => {
+        toast({ variant: 'destructive', title: 'Error entering fullscreen.', description: err.message });
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, [toast]);
+  
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+
   return (
-    <div className="flex flex-col h-full gap-6">
-       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div className={cn("flex flex-col h-full gap-6", isFullscreen ? "p-4 bg-background" : "")}>
+       <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between gap-4", isFullscreen && "hidden")}>
         <div className="flex items-center gap-4">
             <PlannerIcon className="h-10 w-10 text-primary"/>
             <div>
@@ -194,10 +235,13 @@ export default function PlannerPage() {
               <PlusCircle className="mr-2 h-4 w-4" />
               New Event
             </Button>
+            <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                <Maximize />
+            </Button>
         </div>
       </div>
 
-       <div className="h-[calc(100vh-220px)] bg-card rounded-lg border">
+       <div ref={calendarContainerRef} className={cn("h-[calc(100vh-220px)] bg-card rounded-lg border", isFullscreen && "h-full")}>
             <BigCalendar
                 localizer={localizer}
                 events={combinedEvents}
@@ -210,7 +254,20 @@ export default function PlannerPage() {
                 onSelectEvent={handleSelectEvent}
                 onEventDrop={handleEventDrop}
                 eventPropGetter={eventStyleGetter}
-                components={{ toolbar: CustomToolbar }}
+                components={{ 
+                    toolbar: CustomToolbar,
+                    month: {
+                        dateHeader: ({ label, date }) => {
+                            const isToday = moment(date).isSame(new Date(), 'day');
+                            return (
+                                <div className="rbc-header-custom">
+                                    <span>{label}</span>
+                                </div>
+                            )
+                        },
+                         dayWrapper: DayCellWrapper,
+                    },
+                }}
                 view={currentView}
                 onView={(view) => setCurrentView(view)}
                 date={currentDate}
