@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -597,7 +598,6 @@ export type FlashcardProgress = {
     lastReviewedAt: string | null; // ISO string
 };
 
-
 /** Planner */
 export type PlannerCategory = {
     id: string;
@@ -605,6 +605,8 @@ export type PlannerCategory = {
     color: string;
     ownerId: string;
 }
+
+export type Reminder = 'none' | '5m' | '15m' | '30m' | '1h' | '1d';
 
 export type PlannerEvent = {
     id: string;
@@ -619,7 +621,7 @@ export type PlannerEvent = {
     recurring?: 'daily' | 'weekly' | 'monthly' | 'none';
     recurringEndDate?: Date | null;
     attachments: Attachment[];
-    reminder: 'none' | '5m' | '15m' | '30m' | '1h' | '1d';
+    reminders: Reminder[];
     googleEventId?: string;
     color?: string;
 };

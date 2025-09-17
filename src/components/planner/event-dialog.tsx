@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, onSnapshot, writeBatch } from 'firebase/firestore';
-import type { PlannerEvent, PlannerCategory, Task, Attachment } from '@/lib/types';
+import type { PlannerEvent, PlannerCategory, Task, Attachment, Reminder } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +32,13 @@ interface EventDialogProps {
 }
 
 const colorPalette = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'];
+const reminderOptions: { value: Reminder; label: string }[] = [
+    { value: '5m', label: '5 minutes before' },
+    { value: '15m', label: '15 minutes before' },
+    { value: '30m', label: '30 minutes before' },
+    { value: '1h', label: '1 hour before' },
+    { value: '1d', label: '1 day before' },
+];
 
 const getInitialFormData = (event: Partial<PlannerEvent> | null): Partial<PlannerEvent> => {
     if (!event) {
@@ -41,7 +49,7 @@ const getInitialFormData = (event: Partial<PlannerEvent> | null): Partial<Planne
             end: moment(new Date()).add(1, 'hour').toDate(),
             allDay: false,
             attachments: [],
-            reminder: 'none',
+            reminders: [],
             recurring: 'none',
             recurringEndDate: null,
             color: undefined,
@@ -54,7 +62,7 @@ const getInitialFormData = (event: Partial<PlannerEvent> | null): Partial<Planne
         start: event.start || new Date(),
         end: event.end || new Date(),
         attachments: event.attachments || [],
-        reminder: event.reminder || 'none',
+        reminders: event.reminders || [],
         recurring: event.recurring || 'none',
     };
 };
@@ -108,6 +116,14 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
   const handleDateChange = (field: 'start' | 'end', date: string, time: string) => {
     const combined = moment(`${date} ${time}`).toDate();
     handleChange(field, combined);
+  };
+
+  const handleReminderChange = (reminderValue: Reminder, checked: boolean) => {
+      const currentReminders = formData.reminders || [];
+      const newReminders = checked
+          ? [...currentReminders, reminderValue]
+          : currentReminders.filter(r => r !== reminderValue);
+      handleChange('reminders', newReminders);
   };
   
   const handleSave = async () => {
@@ -268,18 +284,21 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
               </Select>
             </div>
              <div>
-              <Label>Reminder</Label>
-              <Select value={formData.reminder} onValueChange={(value) => handleChange('reminder', value)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="5m">5 minutes before</SelectItem>
-                        <SelectItem value="15m">15 minutes before</SelectItem>
-                        <SelectItem value="30m">30 minutes before</SelectItem>
-                        <SelectItem value="1h">1 hour before</SelectItem>
-                        <SelectItem value="1d">1 day before</SelectItem>
-                  </SelectContent>
-              </Select>
+                <Label>Reminders</Label>
+                <div className="space-y-2 mt-2">
+                    {reminderOptions.map(option => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                            <Checkbox
+                                id={`reminder-${option.value}`}
+                                checked={formData.reminders?.includes(option.value)}
+                                onCheckedChange={(checked) => handleReminderChange(option.value, !!checked)}
+                            />
+                            <Label htmlFor={`reminder-${option.value}`} className="font-normal">
+                                {option.label}
+                            </Label>
+                        </div>
+                    ))}
+                </div>
             </div>
            </div>
            <div>

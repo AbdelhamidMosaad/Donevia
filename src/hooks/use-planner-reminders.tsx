@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import type { PlannerEvent, UserSettings } from '@/lib/types';
+import type { PlannerEvent, UserSettings, Reminder } from '@/lib/types';
 import moment from 'moment';
 import { useReminderDialog } from './use-reminder-dialog';
 
@@ -75,35 +76,42 @@ export function PlannerReminderProvider({ children }: { children: ReactNode }) {
     const checkReminders = useCallback((events: PlannerEvent[]) => {
         const now = moment();
         events.forEach(event => {
-            if (!event.reminder || event.reminder === 'none' || remindedEvents.current.has(event.id)) {
+            if (!event.reminders || event.reminders.length === 0) {
                 return;
             }
 
             const startTime = moment(event.start);
-            let reminderTime: moment.Moment | null = null;
-            
-            switch (event.reminder) {
-                case '5m': reminderTime = startTime.clone().subtract(5, 'minutes'); break;
-                case '15m': reminderTime = startTime.clone().subtract(15, 'minutes'); break;
-                case '30m': reminderTime = startTime.clone().subtract(30, 'minutes'); break;
-                case '1h': reminderTime = startTime.clone().subtract(1, 'hour'); break;
-                case '1d': reminderTime = startTime.clone().subtract(1, 'day'); break;
-            }
 
-            if (reminderTime && now.isSame(reminderTime, 'minute')) { // Check if it's the exact minute
-                if (settings.notificationSound) {
-                    audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
+            event.reminders.forEach(reminder => {
+                if (reminder === 'none') return;
+                
+                const reminderId = `${event.id}-${reminder}-${startTime.format('YYYYMMDDHHmm')}`;
+                if (remindedEvents.current.has(reminderId)) {
+                    return;
                 }
-                showBrowserNotification(event);
-                showReminder({
-                    title: `Reminder: ${event.title}`,
-                    description: `Starts ${startTime.fromNow()}.`,
-                });
-                remindedEvents.current.add(event.id);
-                 // The reminder for this specific event time has fired.
-                // A more complex system would handle recurring events by calculating the next reminder time.
-                // For simplicity, we just mark this one as done.
-            }
+
+                let reminderTime: moment.Moment | null = null;
+                
+                switch (reminder) {
+                    case '5m': reminderTime = startTime.clone().subtract(5, 'minutes'); break;
+                    case '15m': reminderTime = startTime.clone().subtract(15, 'minutes'); break;
+                    case '30m': reminderTime = startTime.clone().subtract(30, 'minutes'); break;
+                    case '1h': reminderTime = startTime.clone().subtract(1, 'hour'); break;
+                    case '1d': reminderTime = startTime.clone().subtract(1, 'day'); break;
+                }
+
+                if (reminderTime && now.isSame(reminderTime, 'minute')) {
+                    if (settings.notificationSound) {
+                        audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
+                    }
+                    showBrowserNotification(event);
+                    showReminder({
+                        title: `Reminder: ${event.title}`,
+                        description: `Starts ${startTime.fromNow()}.`,
+                    });
+                    remindedEvents.current.add(reminderId);
+                }
+            });
         });
     }, [settings.notificationSound, showReminder]);
 
