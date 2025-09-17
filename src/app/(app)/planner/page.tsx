@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const localizer = momentLocalizer(moment);
 
-const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA];
+const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.AGENDA];
 
 const CustomToolbar = (toolbar: ToolbarProps) => {
   const goToBack = () => toolbar.onNavigate('PREV');
@@ -69,18 +69,18 @@ const getContrastYIQ = (hexcolor: string) => {
     return (yiq >= 128) ? 'black' : 'white';
 }
 
-const CustomEvent = ({ event, isAllDay: isAllDayProp }: EventProps<PlannerEvent>) => {
-    const isAllDay = isAllDayProp ?? event.allDay;
+const CustomEvent = ({ event }: EventProps<PlannerEvent>) => {
     const title = event.title;
 
     let timeString = '';
-    if (!isAllDay) {
+    if (!event.allDay) {
         const start = moment(event.start);
         const end = moment(event.end);
-        if (end.diff(start, 'minutes') > 0) {
-            timeString = `${start.format('h:mma')} - ${end.format('h:mma')}`;
+        // Only show end time if it's different from start time, typical for multi-hour events in month view
+        if (end.diff(start, 'minutes') > 0 && !end.isSame(start, 'day')) {
+             timeString = `${start.format('h:mma')} - ${end.format('h:mma')}`;
         } else {
-            timeString = start.format('h:mma');
+             timeString = start.format('h:mma');
         }
     }
 
@@ -277,6 +277,7 @@ export default function PlannerPage() {
                 onSelectEvent={handleSelectEvent}
                 onEventDrop={handleEventDrop}
                 eventPropGetter={eventStyleGetter}
+                views={standardViews}
                 components={{ 
                     toolbar: CustomToolbar,
                     event: CustomEvent,
