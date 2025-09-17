@@ -506,6 +506,10 @@ body {
 .rbc-today {
     background-color: var(--rbc-today-bg);
 }
+.rbc-month-view .rbc-today .rbc-button-link {
+    color: hsl(var(--primary));
+    font-weight: bold;
+}
 .rbc-off-range-bg {
     background-color: var(--rbc-off-range-bg);
 }
