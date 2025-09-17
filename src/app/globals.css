@@ -493,6 +493,9 @@ body {
     color: var(--rbc-text-color);
     font-weight: 500;
 }
+.rbc-time-view .rbc-header, .rbc-month-view .rbc-header {
+  padding: 16px 4px;
+}
 .rbc-header + .rbc-header {
     border-left: 1px solid var(--rbc-border-color);
 }
@@ -546,7 +549,7 @@ body {
 }
 
 .rbc-event-label {
-    display: none;
+    display: none !important;
 }
 
 .rbc-time-indicator {
@@ -665,4 +668,3 @@ body {
 .rbc-today {
     background-color: transparent !important;
 }
-
