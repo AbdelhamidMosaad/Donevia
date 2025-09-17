@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const localizer = momentLocalizer(moment);
 
-const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.AGENDA];
+const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA];
 
 const CustomToolbar = (toolbar: ToolbarProps) => {
   const goToBack = () => toolbar.onNavigate('PREV');

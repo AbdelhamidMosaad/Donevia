@@ -488,7 +488,7 @@ body {
 }
 .rbc-header {
     border-bottom: 1px solid var(--rbc-border-color);
-    padding: 12px 4px;
+    padding: 16px 4px;
     text-align: left;
     color: var(--rbc-text-color);
     font-weight: 500;
@@ -544,13 +544,10 @@ body {
   border-top: 1px solid hsl(var(--border) / 0.1);
 }
 
-.rbc-timeslot-group:nth-child(2n) {
-  border-top: none;
+.rbc-timeslot-group {
+  min-height: 80px; /* Adjust this value to increase/decrease row height */
 }
 
-.rbc-event-label {
-    display: none !important;
-}
 
 .rbc-time-indicator {
     background-color: #EA4335;
@@ -667,4 +664,8 @@ body {
 
 .rbc-today {
     background-color: transparent !important;
+}
+
+.rbc-event-label {
+    display: none !important;
 }
