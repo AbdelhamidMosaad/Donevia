@@ -673,3 +673,8 @@ body {
 .rbc-time-header-content .rbc-allday-cell {
     display: none;
 }
+
+.rbc-time-header.rbc-overflowing {
+    border-right: none;
+}
+

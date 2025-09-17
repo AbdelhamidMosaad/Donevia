@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const localizer = momentLocalizer(moment);
 
-const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.AGENDA];
+const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA];
 
 const CustomToolbar = (toolbar: ToolbarProps) => {
   const goToBack = () => toolbar.onNavigate('PREV');
@@ -106,10 +106,11 @@ const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value:
     );
 };
 
-const WeekDateHeader = ({ label, date }: DateHeaderProps) => {
+const WeekDateHeader = ({ label, date, view }: DateHeaderProps & { view?: string }) => {
     const isToday = moment(date).isSame(new Date(), 'day');
     const dayOfMonth = moment(date).format('D');
-    const dayOfWeek = label.replace(/[0-9]/g, '').trim();
+    const dayOfWeek = view === 'day' ? moment(date).format('dddd') : label.replace(/[0-9]/g, '').trim();
+
     return (
         <div className="flex flex-col items-center gap-2">
             <span className="text-xs uppercase text-muted-foreground">{dayOfWeek}</span>
@@ -311,10 +312,10 @@ export default function PlannerPage() {
                          dayWrapper: DayCellWrapper,
                     },
                     week: {
-                        header: WeekDateHeader,
+                        header: (props) => <WeekDateHeader {...props} view='week' />,
                     },
                     day: {
-                        header: WeekDateHeader,
+                        header: (props) => <WeekDateHeader {...props} view='day' />,
                     }
                 }}
                 view={currentView}
