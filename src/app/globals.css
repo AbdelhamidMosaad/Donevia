@@ -565,6 +565,9 @@ body {
     background-color: #EA4335;
 }
 
+.rbc-timeslot-group {
+  min-height: 80px; /* Adjust this value to increase/decrease row height */
+}
 
 
 .bg-landing-gradient {
