@@ -293,6 +293,7 @@ export default function PlannerPage() {
                 onSelectEvent={handleSelectEvent}
                 onEventDrop={handleEventDrop}
                 eventPropGetter={eventStyleGetter}
+                popup={false}
                 views={standardViews}
                 components={{ 
                     toolbar: CustomToolbar,
