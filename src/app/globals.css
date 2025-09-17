@@ -450,12 +450,13 @@ body {
 
 .rbc-calendar {
   height: 100% !important;
-  --rbc-border-color: hsl(var(--border) / 0.5);
+  --rbc-border-color: hsl(var(--border) / 0.2);
   --rbc-today-bg: transparent;
   --rbc-text-color: hsl(var(--foreground));
   --rbc-secondary-text-color: hsl(var(--muted-foreground));
-  --rbc-off-range-bg: hsl(var(--card));
+  --rbc-off-range-bg: hsl(var(--card) / 0.5);
   --rbc-header-bg: hsl(var(--card));
+  --rbc-header-border: hsl(var(--border));
 }
 .rbc-toolbar {
     margin-bottom: 0px;
@@ -472,7 +473,7 @@ body {
     white-space: normal;
 }
 .rbc-day-slot .rbc-event {
-    border: 1px solid hsl(var(--border));
+    border: 1px solid hsl(var(--border) / 0.5);
 }
 
 .rbc-day-bg {
@@ -501,11 +502,8 @@ body {
 .rbc-time-header-content {
     border-left: 1px solid var(--rbc-border-color);
 }
-.rbc-today-custom .rbc-button-link {
-    @apply h-7 w-7 flex items-center justify-center rounded-full;
-    background-color: hsl(var(--primary)) !important;
-    color: hsl(var(--primary-foreground)) !important;
-    font-weight: bold;
+.rbc-today .rbc-button-link {
+    @apply h-7 w-7 flex items-center justify-center rounded-full bg-primary text-primary-foreground font-bold;
 }
 .rbc-off-range-bg {
     background-color: var(--rbc-off-range-bg);
@@ -524,6 +522,18 @@ body {
 }
 .rbc-month-row + .rbc-month-row {
     border-top: 1px solid var(--rbc-border-color);
+}
+.rbc-time-view .rbc-time-gutter, .rbc-time-view .rbc-day-slot {
+    border-color: var(--rbc-border-color);
+}
+.rbc-time-slot {
+    border-top: 1px solid hsl(var(--border) / 0.1) !important;
+}
+.rbc-time-header-content > .rbc-row > .rbc-header {
+    border-color: var(--rbc-border-color);
+}
+.rbc-day-slot .rbc-time-slot {
+    border-top: 1px solid hsl(var(--border)/0.2);
 }
 
 
@@ -604,4 +614,21 @@ body {
         background: rgba(22, 22, 38, 0.2);
         border: 1px solid rgba(255, 255, 255, 0.08);
     }
+}
+
+.perspective-1000 {
+    perspective: 1000px;
+}
+.transform-style-3d {
+    transform-style: preserve-3d;
+}
+.backface-hidden {
+    backface-visibility: hidden;
+}
+.rotate-y-180 {
+    transform: rotateY(180deg);
+}
+
+.rbc-today {
+    background-color: transparent !important;
 }
