@@ -451,14 +451,14 @@ body {
 .rbc-calendar {
   height: 100% !important;
   --rbc-border-color: hsl(var(--border));
-  --rbc-today-bg: hsl(var(--accent) / 0.1);
+  --rbc-today-bg: transparent;
   --rbc-text-color: hsl(var(--foreground));
   --rbc-secondary-text-color: hsl(var(--muted-foreground));
   --rbc-off-range-bg: hsl(var(--card));
   --rbc-header-bg: hsl(var(--card));
 }
 .dark .rbc-calendar {
-  --rbc-today-bg: hsl(var(--accent) / 0.2);
+  --rbc-today-bg: transparent;
 }
 .rbc-toolbar {
     margin-bottom: 0px;
