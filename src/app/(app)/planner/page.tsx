@@ -32,19 +32,20 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
   const label = () => moment(toolbar.date).format('MMMM YYYY');
 
   return (
-    <div className="flex items-center justify-between p-4 bg-card rounded-t-lg border-b">
-      <div className="flex items-center gap-2">
-        <Button variant="outline" onClick={goToCurrent}>Today</Button>
-        <Button variant="ghost" size="icon" onClick={goToBack}><ChevronLeft className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={goToNext}><ChevronRight className="h-4 w-4" /></Button>
-        <h2 className="text-xl font-headline">{label()}</h2>
+    <div className="flex items-center justify-between p-2 bg-card rounded-t-lg border-b">
+      <div className="flex items-center gap-1">
+        <Button variant="outline" size="sm" onClick={goToCurrent}>Today</Button>
+        <Button variant="ghost" size="icon" onClick={goToBack} className="h-8 w-8"><ChevronLeft className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={goToNext} className="h-8 w-8"><ChevronRight className="h-4 w-4" /></Button>
+        <h2 className="text-lg font-headline">{label()}</h2>
       </div>
-       <div className="hidden md:flex items-center gap-2">
+       <div className="hidden md:flex items-center gap-1">
         {standardViews.map((view) => {
             return (
                 <Button
                     key={view}
                     variant={toolbar.view === view ? 'default' : 'ghost'}
+                    size="sm"
                     onClick={() => toolbar.onView(view)}
                     className="capitalize"
                 >
