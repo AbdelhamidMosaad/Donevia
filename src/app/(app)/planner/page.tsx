@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const localizer = momentLocalizer(moment);
 
-const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA];
+const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.AGENDA];
 
 const CustomToolbar = (toolbar: ToolbarProps) => {
   const goToBack = () => toolbar.onNavigate('PREV');
@@ -109,9 +109,10 @@ const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value:
 const WeekDateHeader = ({ label, date }: DateHeaderProps) => {
     const isToday = moment(date).isSame(new Date(), 'day');
     const dayOfMonth = moment(date).format('D');
+    const dayOfWeek = label.replace(/[0-9]/g, '').trim();
     return (
         <div className="flex flex-col items-center gap-2">
-            <span className="text-xs uppercase text-muted-foreground">{label}</span>
+            <span className="text-xs uppercase text-muted-foreground">{dayOfWeek}</span>
             <span className={cn("flex items-center justify-center w-7 h-7 rounded-full text-sm", isToday && 'bg-primary text-primary-foreground')}>{dayOfMonth}</span>
         </div>
     );
