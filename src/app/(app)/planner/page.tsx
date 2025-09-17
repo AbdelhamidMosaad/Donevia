@@ -70,14 +70,23 @@ const getContrastYIQ = (hexcolor: string) => {
 }
 
 const CustomEvent = ({ event, isAllDay: isAllDayProp }: EventProps<PlannerEvent>) => {
-    // For some reason, react-big-calendar doesn't pass isAllDay for month view, so we get it from the event itself
     const isAllDay = isAllDayProp ?? event.allDay; 
     const title = event.title;
-    const timeString = !isAllDay ? moment(event.start).format('ha') : ''; // '9am' format
+    
+    let timeString = '';
+    if (!isAllDay) {
+        const start = moment(event.start);
+        const end = moment(event.end);
+        if (end.diff(start, 'minutes') > 0) {
+            timeString = `${start.format('h:mma')} - ${end.format('h:mma')}`;
+        } else {
+            timeString = start.format('h:mma');
+        }
+    }
     
     return (
         <div className="flex items-center h-full px-2 text-xs truncate">
-            <span className="font-medium">{[timeString, title].filter(Boolean).join(' ')}</span>
+            <span className="font-medium whitespace-nowrap">{[timeString, title].filter(Boolean).join(' ')}</span>
         </div>
     );
 };
