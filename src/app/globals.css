@@ -669,3 +669,7 @@ body {
 .rbc-event-label {
     display: none !important;
 }
+
+.rbc-time-header-content .rbc-allday-cell {
+    display: none;
+}
