@@ -3,7 +3,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GrammarCoach } from '@/components/english-coach/grammar-coach';
-import { BookOpen, Mail, Mic, MessageSquareQuote, BookMarked, Waves, Repeat as RephraseIcon } from 'lucide-react';
+import { BookOpen, Mail, Mic, MessageSquareQuote, BookMarked, Waves, Repeat as RephraseIcon, Linkedin } from 'lucide-react';
 import { VocabularyCoach } from '@/components/english-coach/vocabulary-coach';
 import { EmailCoach } from '@/components/english-coach/email-coach';
 import { ShadowingCoach } from '@/components/english-coach/shadowing-coach';
@@ -12,6 +12,7 @@ import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
 import { ReadingCoach } from '@/components/english-coach/reading-coach';
 import { PronunciationCoach } from '@/components/english-coach/pronunciation-coach';
 import { RephraseCoach } from '@/components/english-coach/rephrase-coach';
+import { LinkedInEnhancer } from '@/components/english-coach/linkedin-enhancer';
 
 export default function EnglishCoachPage() {
   return (
@@ -35,6 +36,10 @@ export default function EnglishCoachPage() {
           <TabsTrigger value="rephrase">
             <RephraseIcon className="mr-2 h-4 w-4" />
             Rephrase
+          </TabsTrigger>
+          <TabsTrigger value="linkedin">
+            <Linkedin className="mr-2 h-4 w-4" />
+            LinkedIn
           </TabsTrigger>
           <TabsTrigger value="vocabulary">
             <BookOpen className="mr-2 h-4 w-4" />
@@ -67,6 +72,9 @@ export default function EnglishCoachPage() {
         </TabsContent>
         <TabsContent value="rephrase" className="flex-1 mt-4">
             <RephraseCoach />
+        </TabsContent>
+        <TabsContent value="linkedin" className="flex-1 mt-4">
+            <LinkedInEnhancer />
         </TabsContent>
         <TabsContent value="vocabulary" className="flex-1 mt-4">
             <VocabularyCoach />
