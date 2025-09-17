@@ -488,7 +488,7 @@ body {
 }
 .rbc-header {
     border-bottom: 1px solid var(--rbc-border-color);
-    padding: 8px 4px;
+    padding: 12px 4px;
     text-align: left;
     color: var(--rbc-text-color);
     font-weight: 500;
@@ -665,3 +665,4 @@ body {
 .rbc-today {
     background-color: transparent !important;
 }
+
