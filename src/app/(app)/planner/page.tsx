@@ -70,9 +70,9 @@ const getContrastYIQ = (hexcolor: string) => {
 }
 
 const CustomEvent = ({ event, isAllDay: isAllDayProp }: EventProps<PlannerEvent>) => {
-    const isAllDay = isAllDayProp ?? event.allDay; 
+    const isAllDay = isAllDayProp ?? event.allDay;
     const title = event.title;
-    
+
     let timeString = '';
     if (!isAllDay) {
         const start = moment(event.start);
@@ -83,9 +83,9 @@ const CustomEvent = ({ event, isAllDay: isAllDayProp }: EventProps<PlannerEvent>
             timeString = start.format('h:mma');
         }
     }
-    
+
     return (
-        <div className="flex items-center h-full px-2 text-xs truncate">
+        <div className="flex items-center h-full px-2 text-xs truncate min-h-[20px]">
             <span className="font-medium whitespace-nowrap">{[timeString, title].filter(Boolean).join(' ')}</span>
         </div>
     );
