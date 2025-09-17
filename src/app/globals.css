@@ -503,7 +503,8 @@ body {
     border-left: 1px solid var(--rbc-border-color);
 }
 .rbc-today .rbc-button-link {
-    @apply h-7 w-7 flex items-center justify-center rounded-full bg-primary text-primary-foreground font-bold;
+    color: hsl(var(--primary)) !important;
+    font-weight: bold;
 }
 .rbc-off-range-bg {
     background-color: var(--rbc-off-range-bg);
@@ -532,13 +533,38 @@ body {
 .rbc-time-header-content > .rbc-row > .rbc-header {
     border-color: var(--rbc-border-color);
 }
-.rbc-day-slot .rbc-time-slot {
-    border-top: 1px solid hsl(var(--border)/0.2);
+.rbc-time-view .rbc-time-slot {
+  border-top: 1px solid hsl(var(--border) / 0.2);
+}
+
+.rbc-time-view .rbc-day-slot .rbc-time-slot:not(:first-child) {
+  border-top: 1px solid hsl(var(--border) / 0.1);
+}
+
+.rbc-timeslot-group:nth-child(2n) {
+  border-top: none;
 }
 
 .rbc-event-label {
     display: none;
 }
+
+.rbc-time-indicator {
+    background-color: #EA4335;
+    height: 2px;
+}
+
+.rbc-time-indicator:before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #EA4335;
+}
+
 
 
 .bg-landing-gradient {

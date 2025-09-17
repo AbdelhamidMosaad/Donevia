@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { PlannerEvent, PlannerCategory, Task } from '@/lib/types';
-import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps, EventProps } from 'react-big-calendar';
+import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps, EventProps, DateHeaderProps } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Settings, PlusCircle, Maximize, Minimize } from 'lucide-react';
@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const localizer = momentLocalizer(moment);
 
-const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.AGENDA];
+const standardViews: (typeof Views[keyof typeof Views])[] = [Views.MONTH, Views.WEEK, Views.AGENDA];
 
 const CustomToolbar = (toolbar: ToolbarProps) => {
   const goToBack = () => toolbar.onNavigate('PREV');
@@ -69,24 +69,25 @@ const getContrastYIQ = (hexcolor: string) => {
     return (yiq >= 128) ? 'black' : 'white';
 }
 
-const CustomEvent = ({ event }: EventProps<PlannerEvent>) => {
+const CustomEvent = ({ event, view }: EventProps<PlannerEvent> & { view?: string }) => {
     const title = event.title;
 
     let timeString = '';
     if (!event.allDay) {
         const start = moment(event.start);
         const end = moment(event.end);
-        // Only show end time if it's different from start time, typical for multi-hour events in month view
-        if (end.diff(start, 'minutes') > 0 && !end.isSame(start, 'day')) {
-             timeString = `${start.format('h:mma')} - ${end.format('h:mma')}`;
-        } else {
-             timeString = start.format('h:mma');
+        
+        if (view === 'month' || view === 'agenda') {
+            timeString = start.format('h:mma');
+        } else { // week or day view
+             timeString = `${start.format('h:mm')} - ${end.format('h:mma')}`;
         }
     }
 
     return (
-        <div className="flex items-center h-full px-2 text-xs truncate min-h-[20px]">
-            <span className="font-medium whitespace-nowrap">{[timeString, title].filter(Boolean).join(' ')}</span>
+        <div className="flex items-center h-full px-2 text-xs truncate min-h-[20px] whitespace-nowrap">
+            {timeString && <span className="font-medium mr-1.5">{timeString}</span>}
+            <span className="font-medium">{title}</span>
         </div>
     );
 };
@@ -97,6 +98,16 @@ const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value:
     return (
         <div className={cn("rbc-day-bg", isToday && 'rbc-today-custom')}>
             {children}
+        </div>
+    );
+};
+
+const WeekDateHeader = ({ label, date }: DateHeaderProps) => {
+    const isToday = moment(date).isSame(new Date(), 'day');
+    return (
+        <div className="flex flex-col items-center gap-2 p-2">
+            <span className="text-xs uppercase text-muted-foreground">{moment(date).format('ddd')}</span>
+            <span className={cn("flex items-center justify-center w-7 h-7 rounded-full text-sm", isToday && 'bg-primary text-primary-foreground')}>{label}</span>
         </div>
     );
 };
@@ -112,7 +123,7 @@ export default function PlannerPage() {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Partial<PlannerEvent> | null>(null);
-  const [currentView, setCurrentView] = useState<any>(Views.MONTH);
+  const [currentView, setCurrentView] = useState<any>(Views.WEEK);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -280,7 +291,7 @@ export default function PlannerPage() {
                 views={standardViews}
                 components={{ 
                     toolbar: CustomToolbar,
-                    event: CustomEvent,
+                    event: (props) => <CustomEvent {...props} view={currentView} />,
                     month: {
                         dateHeader: ({ label, date }) => {
                             const isToday = moment(date).isSame(new Date(), 'day');
@@ -292,6 +303,12 @@ export default function PlannerPage() {
                         },
                          dayWrapper: DayCellWrapper,
                     },
+                    week: {
+                        header: WeekDateHeader,
+                    },
+                    day: {
+                        header: WeekDateHeader,
+                    }
                 }}
                 view={currentView}
                 onView={(view) => setCurrentView(view)}
