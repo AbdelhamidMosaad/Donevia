@@ -501,9 +501,9 @@ body {
 .rbc-time-header-content {
     border-left: 1px solid var(--rbc-border-color);
 }
-.rbc-today a.rbc-button-link {
+.rbc-today-custom .rbc-button-link {
     @apply h-7 w-7 flex items-center justify-center rounded-full;
-    background-color: hsl(var(--primary));
+    background-color: hsl(var(--primary)) !important;
     color: hsl(var(--primary-foreground)) !important;
     font-weight: bold;
 }

@@ -260,7 +260,7 @@ export default function PlannerPage() {
                         dateHeader: ({ label, date }) => {
                             const isToday = moment(date).isSame(new Date(), 'day');
                             return (
-                                <div className="rbc-header-custom">
+                                <div className={cn("rbc-header-custom", isToday && 'text-primary font-bold')}>
                                     <span>{label}</span>
                                 </div>
                             )
