@@ -257,12 +257,12 @@ export default function PlannerPage() {
 
   return (
     <div className={cn("flex flex-col h-full gap-6", isFullscreen ? "p-4 bg-background" : "")}>
-       <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between gap-4", isFullscreen && "hidden")}>
+       <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between", isFullscreen && "hidden")}>
         <div className="flex items-center gap-4">
-            <PlannerIcon className="h-10 w-10 text-primary"/>
+            <PlannerIcon className="h-8 w-8 text-primary"/>
             <div>
-                <h1 className="text-3xl font-bold font-headline">Planner</h1>
-                <p className="text-muted-foreground">Organize your time, events, and tasks.</p>
+                <h1 className="text-2xl font-bold font-headline">Planner</h1>
+                <p className="text-muted-foreground text-sm">Organize your time, events, and tasks.</p>
             </div>
         </div>
         <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export default function PlannerPage() {
         </div>
       </div>
 
-       <div ref={calendarContainerRef} className={cn("h-[calc(100vh-220px)] bg-card rounded-lg border", isFullscreen && "h-full")}>
+       <div ref={calendarContainerRef} className={cn("h-[calc(100vh-200px)] bg-card rounded-lg border", isFullscreen && "h-full")}>
             <BigCalendar
                 localizer={localizer}
                 events={combinedEvents}
