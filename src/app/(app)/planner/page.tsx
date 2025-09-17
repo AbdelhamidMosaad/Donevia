@@ -107,10 +107,11 @@ const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value:
 
 const WeekDateHeader = ({ label, date }: DateHeaderProps) => {
     const isToday = moment(date).isSame(new Date(), 'day');
+    const dayOfMonth = moment(date).format('D');
     return (
         <div className="flex flex-col items-center gap-2 p-2">
-            <span className="text-xs uppercase text-muted-foreground">{moment(date).format('ddd')}</span>
-            <span className={cn("flex items-center justify-center w-7 h-7 rounded-full text-sm", isToday && 'bg-primary text-primary-foreground')}>{label}</span>
+            <span className="text-xs uppercase text-muted-foreground">{label}</span>
+            <span className={cn("flex items-center justify-center w-7 h-7 rounded-full text-sm", isToday && 'bg-primary text-primary-foreground')}>{dayOfMonth}</span>
         </div>
     );
 };
