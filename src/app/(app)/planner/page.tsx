@@ -85,7 +85,10 @@ const CustomEvent = ({ event, view }: EventProps<PlannerEvent> & { view?: string
     }
 
     return (
-        <div className="flex items-center h-full px-2 text-xs truncate min-h-[20px] whitespace-nowrap">
+        <div className={cn(
+            "flex items-center h-full px-2 truncate min-h-[20px] whitespace-nowrap",
+            view === 'week' || view === 'day' ? "text-[10px]" : "text-xs"
+        )}>
             {timeString && <span className="font-medium mr-1.5">{timeString}</span>}
             <span className="font-medium">{title}</span>
         </div>
