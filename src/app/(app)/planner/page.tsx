@@ -74,7 +74,7 @@ const CustomEvent = ({ event }: EventProps<PlannerEvent>) => {
     const title = event.title;
     const timeString = !isAllDay ? moment(event.start).format('ha') : ''; // '9am' format
     
-    const displayText = [title, timeString].filter(Boolean).join(', ');
+    const displayText = [timeString, title].filter(Boolean).join(' ');
 
     return (
         <div className="flex items-center justify-start h-full px-2 text-xs truncate">
