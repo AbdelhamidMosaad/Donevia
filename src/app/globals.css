@@ -504,15 +504,9 @@ body {
 .rbc-time-header-content {
     border-left: 1px solid var(--rbc-border-color);
 }
-.rbc-today-custom .rbc-button-link {
-    color: white !important;
-    background-color: hsl(var(--primary));
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+.rbc-today .rbc-button-link {
+    color: hsl(var(--primary));
+    font-weight: bold;
 }
 .rbc-off-range-bg {
     background-color: var(--rbc-off-range-bg);
