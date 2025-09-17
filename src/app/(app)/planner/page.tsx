@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { PlannerEvent, PlannerCategory, Task } from '@/lib/types';
-import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps } from 'react-big-calendar';
+import { Calendar as BigCalendar, momentLocalizer, Views, ToolbarProps, EventProps } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Settings, PlusCircle, Maximize, Minimize } from 'lucide-react';
@@ -68,6 +68,18 @@ const getContrastYIQ = (hexcolor: string) => {
     const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
     return (yiq >= 128) ? 'black' : 'white';
 }
+
+const CustomEvent = ({ event }: EventProps<PlannerEvent>) => {
+    const isAllDay = event.allDay;
+    return (
+        <div className="flex flex-col h-full p-1 text-xs">
+            <strong className="font-semibold truncate">{event.title}</strong>
+            {!isAllDay && <span className="text-xs">{moment(event.start).format('h:mm A')}</span>}
+            {event.description && <p className="text-xs truncate">{event.description}</p>}
+        </div>
+    );
+};
+
 
 const DayCellWrapper = ({ children, value }: { children: React.ReactNode, value: Date }) => {
     const isToday = moment(value).isSame(new Date(), 'day');
@@ -256,6 +268,7 @@ export default function PlannerPage() {
                 eventPropGetter={eventStyleGetter}
                 components={{ 
                     toolbar: CustomToolbar,
+                    event: CustomEvent,
                     month: {
                         dateHeader: ({ label, date }) => {
                             const isToday = moment(date).isSame(new Date(), 'day');
