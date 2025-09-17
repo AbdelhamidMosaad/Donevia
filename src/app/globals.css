@@ -457,9 +457,6 @@ body {
   --rbc-off-range-bg: hsl(var(--card));
   --rbc-header-bg: hsl(var(--card));
 }
-.dark .rbc-calendar {
-  --rbc-today-bg: transparent;
-}
 .rbc-toolbar {
     margin-bottom: 0px;
     padding: 0;
@@ -505,7 +502,9 @@ body {
     border-left: 1px solid var(--rbc-border-color);
 }
 .rbc-today .rbc-button-link {
-    color: hsl(var(--primary));
+    @apply h-7 w-7 flex items-center justify-center rounded-full;
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground)) !important;
     font-weight: bold;
 }
 .rbc-off-range-bg {
