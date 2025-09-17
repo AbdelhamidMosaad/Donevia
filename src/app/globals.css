@@ -450,7 +450,7 @@ body {
 
 .rbc-calendar {
   height: 100% !important;
-  --rbc-border-color: hsl(var(--border));
+  --rbc-border-color: hsl(var(--border) / 0.5);
   --rbc-today-bg: transparent;
   --rbc-text-color: hsl(var(--foreground));
   --rbc-secondary-text-color: hsl(var(--muted-foreground));
