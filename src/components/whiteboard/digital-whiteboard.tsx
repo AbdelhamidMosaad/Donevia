@@ -4,8 +4,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   MousePointer,
-  PlusCircle,
-  Link as LinkIcon,
+  Pen,
+  Type,
+  StickyNote,
+  RectangleHorizontal,
   Undo,
   Redo,
   Download,
@@ -20,17 +22,18 @@ import {
   Expand,
   Maximize,
   Minimize,
-  Users,
   ArrowLeft,
   ArrowUpRight,
-  Move,
   PanelLeftClose,
   PanelLeftOpen,
-  Square,
   Circle,
   ArrowDown,
   ArrowRight,
   ArrowUp,
+  Layers,
+  FlipVertical,
+  Copy,
+  Map,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -45,8 +48,6 @@ import {
   writeBatch,
   addDoc,
   setDoc,
-  getDocs,
-  query,
 } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -114,7 +115,7 @@ export default function DigitalWhiteboard() {
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [fontSize, setFontSize] = useState(16);
 
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   
   const [history, setHistory] = useState<{ nodes: Record<string, WhiteboardNode> }[]>([]);
@@ -126,6 +127,7 @@ export default function DigitalWhiteboard() {
   const whiteboardContainerRef = useRef<HTMLDivElement>(null);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [layoutDirection, setLayoutDirection] = useState<LayoutDirection>('right');
+  const [showMinimap, setShowMinimap] = useState(true);
 
   // Firestore Refs
   const getBoardDocRef = useCallback(() => {
@@ -190,10 +192,11 @@ export default function DigitalWhiteboard() {
     setHistoryIndex(newHistory.length - 1);
   }
 
-  const createNode = async (newNode: Omit<WhiteboardNode, 'id' | 'userId'>): Promise<WhiteboardNode> => {
+  const createNode = async (newNode: Omit<WhiteboardNode, 'id' | 'userId'| 'createdAt' | 'updatedAt' | 'zIndex'>): Promise<WhiteboardNode> => {
     if(!user) throw new Error("User not authenticated");
     const nodeRef = doc(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
-    const finalNode = { ...newNode, id: nodeRef.id, userId: user.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+    const maxZIndex = Math.max(0, ...Object.values(nodes).map(n => n.zIndex || 0));
+    const finalNode = { ...newNode, id: nodeRef.id, userId: user.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), zIndex: maxZIndex + 1 };
     const cleanedNode = deepCleanUndefined(finalNode);
     await setDoc(nodeRef, cleanedNode);
 
@@ -241,36 +244,92 @@ export default function DigitalWhiteboard() {
         pushToHistory({ nodes });
     };
 
-    const deleteSelectedNode = () => {
-        if (!selectedNodeId || !user) return;
-        const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', selectedNodeId);
-        updateDoc(nodeRef, { isDeleted: true, updatedAt: serverTimestamp() });
+    const deleteSelectedNodes = () => {
+        if (!user || selectedNodeIds.length === 0) return;
+        
+        const batch = writeBatch(db);
+        selectedNodeIds.forEach(nodeId => {
+            const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', nodeId);
+            batch.update(nodeRef, { isDeleted: true, updatedAt: serverTimestamp() });
+        });
+
+        batch.commit();
         
         const newNodes = { ...nodes };
-        delete newNodes[selectedNodeId];
+        selectedNodeIds.forEach(id => delete newNodes[id]);
         pushToHistory({ nodes: newNodes });
 
-        setSelectedNodeId(null);
+        setSelectedNodeIds([]);
+    };
+
+    const handleLayerAction = (direction: 'front' | 'back') => {
+        if (selectedNodeIds.length !== 1) return;
+        const nodeId = selectedNodeIds[0];
+        const node = nodes[nodeId];
+        if (!node) return;
+
+        const sortedNodes = Object.values(nodes).sort((a,b) => (a.zIndex || 0) - (b.zIndex || 0));
+        let newZIndex = node.zIndex || 0;
+
+        if (direction === 'front') {
+            newZIndex = (sortedNodes[sortedNodes.length - 1]?.zIndex || 0) + 1;
+        } else { // back
+            newZIndex = (sortedNodes[0]?.zIndex || 0) - 1;
+        }
+
+        handleNodeChange(nodeId, { zIndex: newZIndex });
+        handleNodeChangeComplete();
+    };
+
+    const duplicateSelectedNodes = async () => {
+        if (!user || selectedNodeIds.length === 0) return;
+
+        const newNodes: Record<string, WhiteboardNode> = { ...nodes };
+        const batch = writeBatch(db);
+
+        for (const nodeId of selectedNodeIds) {
+            const originalNode = nodes[nodeId];
+            if (originalNode) {
+                const newNodeRef = doc(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
+                const newNodeData: WhiteboardNode = {
+                    ...originalNode,
+                    id: newNodeRef.id,
+                    x: originalNode.x + 20,
+                    y: originalNode.y + 20,
+                    createdAt: serverTimestamp() as any,
+                    updatedAt: serverTimestamp() as any,
+                };
+                const cleanedNode = deepCleanUndefined(newNodeData);
+                batch.set(newNodeRef, cleanedNode);
+                newNodes[newNodeRef.id] = cleanedNode as WhiteboardNode;
+            }
+        }
+
+        await batch.commit();
+        pushToHistory({ nodes: newNodes });
+        toast({ title: `${selectedNodeIds.length} object(s) duplicated` });
     };
 
     const undo = () => {
         if (historyIndex > 0) {
             const newIndex = historyIndex - 1;
             setHistoryIndex(newIndex);
-            setNodes(history[newIndex].nodes);
+            const nodesToRestore = history[newIndex].nodes;
+            setNodes(nodesToRestore);
             
             const batch = writeBatch(db);
-            const currentIds = Object.keys(history[newIndex].nodes);
-            const nextIds = Object.keys(history[newIndex + 1].nodes);
-            
-            nextIds.filter(id => !currentIds.includes(id)).forEach(id => {
+            const currentIds = Object.keys(nodes);
+            const restoredIds = Object.keys(nodesToRestore);
+
+            const deletedIds = currentIds.filter(id => !restoredIds.includes(id));
+            deletedIds.forEach(id => {
                 const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', id);
                 batch.update(nodeRef, { isDeleted: true });
             });
             
-            Object.values(history[newIndex].nodes).forEach(node => {
+            Object.values(nodesToRestore).forEach(node => {
                  const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', node.id);
-                 batch.set(nodeRef, deepCleanUndefined(node));
+                 batch.set(nodeRef, deepCleanUndefined(node), { merge: true });
             });
 
             batch.commit();
@@ -281,12 +340,13 @@ export default function DigitalWhiteboard() {
         if (historyIndex < history.length - 1) {
             const newIndex = historyIndex + 1;
             setHistoryIndex(newIndex);
-            setNodes(history[newIndex].nodes);
+            const nodesToRedo = history[newIndex].nodes;
+            setNodes(nodesToRedo);
 
             const batch = writeBatch(db);
-            Object.values(history[newIndex].nodes).forEach(node => {
+            Object.values(nodesToRedo).forEach(node => {
                  const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', node.id);
-                 batch.set(nodeRef, deepCleanUndefined(node));
+                 batch.set(nodeRef, deepCleanUndefined(node), { merge: true });
             });
             batch.commit();
         }
@@ -300,7 +360,7 @@ export default function DigitalWhiteboard() {
             if (isEditingText) return;
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
-                deleteSelectedNode();
+                deleteSelectedNodes();
             }
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 e.preventDefault();
@@ -310,11 +370,15 @@ export default function DigitalWhiteboard() {
                 e.preventDefault();
                 redo();
             }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                duplicateSelectedNodes();
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedNodeId, undo, redo]);
+    }, [selectedNodeIds, undo, redo]);
 
 
   const toggleFullscreen = () => {
@@ -367,8 +431,7 @@ export default function DigitalWhiteboard() {
     const drawOffsetX = -minX + padding;
     const drawOffsetY = -minY + padding;
 
-    // This is a simplified render. A full implementation would need to re-render all node types.
-    nodeList.forEach(node => {
+    nodeList.sort((a,b) => (a.zIndex || 0) - (b.zIndex || 0)).forEach(node => {
       const x = node.x + drawOffsetX;
       const y = node.y + drawOffsetY;
       
@@ -379,10 +442,12 @@ export default function DigitalWhiteboard() {
           exportCtx.lineJoin = 'round';
           exportCtx.beginPath();
           for(let i = 0; i < node.points.length; i += 2) {
+              const pointX = (node.points[i] - minX) + padding;
+              const pointY = (node.points[i+1] - minY) + padding;
               if (i === 0) {
-                  exportCtx.moveTo(node.points[i] + drawOffsetX, node.points[i+1] + drawOffsetY);
+                  exportCtx.moveTo(pointX, pointY);
               } else {
-                  exportCtx.lineTo(node.points[i] + drawOffsetX, node.points[i+1] + drawOffsetY);
+                  exportCtx.lineTo(pointX, pointY);
               }
           }
           exportCtx.stroke();
@@ -438,8 +503,7 @@ export default function DigitalWhiteboard() {
       }
   }
 
-
-  const selectedNode = selectedNodeId ? nodes[selectedNodeId] : null;
+  const selectedNodes = selectedNodeIds.map(id => nodes[id]).filter(Boolean);
 
   if (!boardData) {
       return (
@@ -529,39 +593,42 @@ export default function DigitalWhiteboard() {
                 </div>
             )}
             
-            {selectedNode && (
+            {selectedNodes.length > 0 && (
                  <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border items-center">
                     <Popover>
-                        <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: selectedNode.color}}><Palette/></Button></PopoverTrigger>
+                        <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: selectedNodes[0].color}}><Palette/></Button></PopoverTrigger>
                         <PopoverContent className="w-auto p-2">
                            <div className="flex gap-1">
                             {colorPalette.map(c => (
-                                <button key={c} style={{backgroundColor: c}} className="h-6 w-6 rounded-full border" onClick={() => handleNodeChange(selectedNodeId!, { color: c})} />
+                                <button key={c} style={{backgroundColor: c}} className="h-6 w-6 rounded-full border" onClick={() => selectedNodeIds.forEach(id => handleNodeChange(id, { color: c}))} />
                             ))}
                            </div>
                         </PopoverContent>
                     </Popover>
                     <Separator orientation="vertical" className="h-6 mx-1" />
-                    {selectedNode.type !== 'pen' && (
+                    {selectedNodes[0].type !== 'pen' && (
                         <>
                            <Slider
-                                value={[selectedNode.fontSize || 16]}
-                                onValueChange={(v) => handleNodeChange(selectedNodeId!, { fontSize: v[0] })}
+                                value={[selectedNodes[0].fontSize || 16]}
+                                onValueChange={(v) => selectedNodeIds.forEach(id => handleNodeChange(id, { fontSize: v[0] }))}
                                 onValueCommit={handleNodeChangeComplete}
                                 max={64} min={8} step={1} className="w-24"
                             />
                         </>
                     )}
-                     {selectedNode.type === 'pen' && (
+                     {selectedNodes[0].type === 'pen' && (
                         <Slider
-                            value={[selectedNode.strokeWidth || 4]}
-                            onValueChange={(v) => handleNodeChange(selectedNodeId!, { strokeWidth: v[0] })}
+                            value={[selectedNodes[0].strokeWidth || 4]}
+                            onValueChange={(v) => selectedNodeIds.forEach(id => handleNodeChange(id, { strokeWidth: v[0] }))}
                             onValueCommit={handleNodeChangeComplete}
                             max={20} min={1} step={1} className="w-24"
                         />
                     )}
                     <Separator orientation="vertical" className="h-6 mx-1" />
-                    <Button variant="ghost" size="icon" onClick={() => deleteSelectedNode()}><Trash2 /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleLayerAction('front')}><FlipVertical className="transform rotate-180" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleLayerAction('back')}><FlipVertical /></Button>
+                     <Button variant="ghost" size="icon" onClick={() => duplicateSelectedNodes()}><Copy /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteSelectedNodes()}><Trash2 /></Button>
                  </div>
             )}
 
@@ -570,6 +637,30 @@ export default function DigitalWhiteboard() {
                 <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
                 <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1}><Redo/></Button>
             </div>
+            
+            <div className="absolute bottom-4 right-4 z-20 flex items-end gap-2">
+                 {showMinimap && (
+                    <div className="w-48 h-36 bg-card/80 border rounded-lg overflow-hidden relative">
+                         <WhiteboardCanvas 
+                            boardData={boardData} nodes={Object.values(nodes)} tool={'select'} shapeType={shapeType} currentColor={currentColor} strokeWidth={strokeWidth} fontSize={fontSize}
+                            selectedNodeId={null} editingNodeId={null} presence={{}} onNodeCreate={async() => ({} as any)} onNodeChange={() => {}} onNodeChangeComplete={() => {}}
+                            onNodeDelete={() => {}} onSelectNode={() => {}} onEditNode={() => {}} onUpdatePresence={() => {}} 
+                            isMinimap={true}
+                        />
+                    </div>
+                 )}
+                 <div className="bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex flex-col gap-1 border">
+                    <Button variant="ghost" size="icon" onClick={() => setShowMinimap(!showMinimap)}><Map/></Button>
+                    <Separator />
+                    <Button variant="ghost" size="icon" onClick={() => handleSettingChange({scale: (boardData.scale || 1) * 1.2})}><Plus/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleSettingChange({scale: (boardData.scale || 1) / 1.2})}><Minus/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => {}}><Expand/></Button>
+                    <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                        {isFullscreen ? <Minimize/> : <Maximize/>}
+                    </Button>
+                </div>
+            </div>
+
 
             <WhiteboardCanvas 
                 boardData={boardData}
@@ -579,14 +670,25 @@ export default function DigitalWhiteboard() {
                 currentColor={currentColor}
                 strokeWidth={strokeWidth}
                 fontSize={fontSize}
-                selectedNodeId={selectedNodeId}
+                selectedNodeId={selectedNodeIds.length === 1 ? selectedNodeIds[0] : null}
                 editingNodeId={editingNodeId}
                 presence={presence}
                 onNodeCreate={createNode}
                 onNodeChange={handleNodeChange}
                 onNodeChangeComplete={handleNodeChangeComplete}
                 onNodeDelete={(nodeId) => updateDoc(doc(db, 'users', user!.uid, 'whiteboards', whiteboardId, 'nodes', nodeId), { isDeleted: true })}
-                onSelectNode={setSelectedNodeId}
+                onSelectNode={(id) => {
+                    if(id) {
+                        setSelectedNodeIds(prev =>
+                            window.event?.shiftKey ?
+                                prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+                            : [id]
+                        );
+                    } else {
+                        setSelectedNodeIds([]);
+                    }
+                    setEditingNodeId(null);
+                }}
                 onEditNode={setEditingNodeId}
                 onUpdatePresence={updatePresence}
             />

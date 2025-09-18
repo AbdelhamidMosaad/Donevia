@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Whiteboard as WhiteboardType, WhiteboardNode } from '@/lib/types';
@@ -27,13 +27,14 @@ interface WhiteboardCanvasProps {
   selectedNodeId: string | null;
   editingNodeId: string | null;
   presence: Record<string, Presence>;
-  onNodeCreate: (node: Omit<WhiteboardNode, 'id'>) => Promise<WhiteboardNode>;
+  onNodeCreate: (node: Omit<WhiteboardNode, 'id'|'userId'|'createdAt'|'updatedAt'|'zIndex'>) => Promise<WhiteboardNode>;
   onNodeChange: (id: string, newAttrs: Partial<WhiteboardNode>) => void;
   onNodeChangeComplete: () => void;
   onNodeDelete: (id: string) => void;
   onSelectNode: (id: string | null) => void;
   onEditNode: (id: string | null) => void;
   onUpdatePresence: (pos: {x:number, y:number}) => void;
+  isMinimap?: boolean;
 }
 
 export function WhiteboardCanvas({
@@ -54,25 +55,26 @@ export function WhiteboardCanvas({
   onSelectNode,
   onEditNode,
   onUpdatePresence,
+  isMinimap = false,
 }: WhiteboardCanvasProps) {
   const stageRef = useRef<any>(null);
-  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
-  const [scale, setScale] = useState(1);
   const [isDrawing, setIsDrawing] = useState(false);
   const currentLineId = useRef<string | null>(null);
 
   const handleStageClick = async (e: KonvaEventObject<MouseEvent>) => {
+    if (isMinimap) return;
     const clickedOnEmpty = e.target === e.target.getStage() || (e.target.attrs.id === 'canvas-bg');
     if (!clickedOnEmpty) return;
 
     if (['text', 'sticky', 'shape', 'arrow'].includes(tool)) {
         const pos = e.target.getStage()?.getPointerPosition();
         if (!pos) return;
-        const x = (pos.x - stagePos.x) / scale;
-        const y = (pos.y - stagePos.y) / scale;
+        const stage = e.target.getStage();
+        const x = (pos.x - stage.x()) / stage.scaleX();
+        const y = (pos.y - stage.y()) / stage.scaleY();
 
-        let newNodeData: Omit<WhiteboardNode, 'id' | 'userId'> = {
-            type: tool,
+        let newNodeData: Omit<WhiteboardNode, 'id'|'userId'|'createdAt'|'updatedAt'|'zIndex'> = {
+            type: tool as any,
             x: x,
             y: y,
             rotation: 0,
@@ -86,11 +88,11 @@ export function WhiteboardCanvas({
         } else if (tool === 'shape') {
             newNodeData = {...newNodeData, width: 100, height: 100, shape: shapeType as any, strokeWidth: strokeWidth};
         } else if (tool === 'arrow') {
-            newNodeData = {...newNodeData, type: 'pen', points: [x,y,x+100,y+100], strokeWidth: strokeWidth, isArrow: true}
+            newNodeData = {...newNodeData, type: 'pen', points: [0,0,100,0], strokeWidth: strokeWidth, isArrow: true}
         }
         
-        await onNodeCreate(newNodeData);
-        onSelectNode(null);
+        const newNode = await onNodeCreate(newNodeData);
+        onSelectNode(newNode.id);
     } else {
       onSelectNode(null);
       onEditNode(null);
@@ -98,6 +100,7 @@ export function WhiteboardCanvas({
   };
 
   const handleMouseDown = async (e: KonvaEventObject<MouseEvent>) => {
+    if (isMinimap) return;
     const clickedOnEmpty = e.target === e.target.getStage() || (e.target.attrs.id === 'canvas-bg');
     if (!clickedOnEmpty) return;
 
@@ -105,8 +108,9 @@ export function WhiteboardCanvas({
       setIsDrawing(true);
       const pos = e.target.getStage()?.getPointerPosition();
       if (!pos) return;
-      const x = (pos.x - stagePos.x) / scale;
-      const y = (pos.y - stagePos.y) / scale;
+      const stage = e.target.getStage();
+      const x = (pos.x - stage.x()) / stage.scaleX();
+      const y = (pos.y - stage.y()) / stage.scaleY();
 
       const newPenNode = await onNodeCreate({
         type: 'pen',
@@ -120,67 +124,78 @@ export function WhiteboardCanvas({
   };
 
   const handleMouseMove = (e: KonvaEventObject<MouseEvent>) => {
+    if (isMinimap) return;
     const pos = e.target.getStage()?.getPointerPosition();
     if(pos) onUpdatePresence(pos);
 
     if (tool === 'pen' && isDrawing && currentLineId.current) {
       if (!pos) return;
-      const x = (pos.x - stagePos.x) / scale;
-      const y = (pos.y - stagePos.y) / scale;
+      const stage = e.target.getStage();
+      const x = (pos.x - stage.x()) / stage.scaleX();
+      const y = (pos.y - stage.y()) / stage.scaleY();
       
-      onNodeChange(currentLineId.current, { points: [...(nodes.find(n => n.id === currentLineId.current)?.points || []), x, y] });
+      const currentNode = nodes.find(n => n.id === currentLineId.current);
+      if (currentNode) {
+          onNodeChange(currentLineId.current, { points: [...(currentNode.points || []), x, y] });
+      }
     }
   };
 
   const handleMouseUp = () => {
+    if (isMinimap) return;
     if (tool === 'pen' && isDrawing) {
       setIsDrawing(false);
       onNodeChangeComplete();
       currentLineId.current = null;
     }
   };
+  
+  const sortedNodes = React.useMemo(() => Object.values(nodes).sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)), [nodes]);
+
+  const canvasSize = {
+    width: isMinimap ? 192 : window.innerWidth,
+    height: isMinimap ? 144 : window.innerHeight - 150
+  };
 
   return (
     <Stage
       ref={stageRef}
-      width={window.innerWidth}
-      height={window.innerHeight - 150} 
-      draggable={tool === 'select'}
+      width={canvasSize.width}
+      height={canvasSize.height}
+      draggable={tool === 'select' || tool === 'pan'}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onClick={handleStageClick}
+      onDragEnd={(e) => boardData && onNodeChange(boardData.id, { x: e.target.x(), y: e.target.y() })}
       onWheel={(e) => {
+        if(isMinimap) return;
         e.evt.preventDefault();
         const stage = stageRef.current;
+        if(!stage) return;
         const oldScale = stage.scaleX();
         const pointer = stage.getPointerPosition();
         const scaleBy = 1.05;
         const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
-        setScale(newScale);
-
-        const mousePointTo = {
-            x: (pointer.x - stage.x()) / oldScale,
-            y: (pointer.y - stage.y()) / oldScale,
-        };
+        
         const newPos = {
-            x: pointer.x - mousePointTo.x * newScale,
-            y: pointer.y - mousePointTo.y * newScale,
+            x: pointer.x - ((pointer.x - stage.x()) / oldScale) * newScale,
+            y: pointer.y - ((pointer.y - stage.y()) / oldScale) * newScale,
         };
-        setStagePos(newPos);
+        onNodeChange(boardData.id, { scale: newScale, x: newPos.x, y: newPos.y });
       }}
-      scaleX={scale}
-      scaleY={scale}
-      x={stagePos.x}
-      y={stagePos.y}
+      scaleX={boardData.scale || 1}
+      scaleY={boardData.scale || 1}
+      x={boardData.x || 0}
+      y={boardData.y || 0}
     >
       <Layer>
         <Rect id="canvas-bg" x={-10000} y={-10000} width={20000} height={20000} fill={boardData.backgroundColor || '#FFFFFF'} />
-        {nodes.map((node) => (
+        {sortedNodes.map((node) => (
           <WhiteboardNodeComponent
             key={node.id}
             node={node}
-            isSelected={node.id === selectedNodeId}
+            isSelected={selectedNodeId === node.id}
             isEditing={node.id === editingNodeId}
             onSelect={() => {
               if (tool === 'select') {
@@ -195,7 +210,6 @@ export function WhiteboardCanvas({
             }}
             onChange={(newAttrs) => onNodeChange(node.id, newAttrs)}
             onDragEnd={onNodeChangeComplete}
-            onDelete={() => onNodeDelete(node.id)}
           />
         ))}
       </Layer>

@@ -15,7 +15,6 @@ interface WhiteboardNodeComponentProps {
   onDoubleClick: () => void;
   onChange: (newAttrs: Partial<WhiteboardNode>) => void;
   onDragEnd: () => void;
-  onDelete: () => void;
 }
 
 export function WhiteboardNodeComponent({
@@ -26,7 +25,6 @@ export function WhiteboardNodeComponent({
   onDoubleClick,
   onChange,
   onDragEnd,
-  onDelete,
 }: WhiteboardNodeComponentProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<any>(null);
@@ -69,7 +67,7 @@ export function WhiteboardNodeComponent({
 
     if (type === 'pen' && points) {
         if(node.isArrow) {
-            return <Arrow points={points} stroke={color} strokeWidth={strokeWidth} lineCap="round" lineJoin="round" pointerLength={strokeWidth * 2} pointerWidth={strokeWidth * 2} />
+            return <Arrow points={points} stroke={color} strokeWidth={strokeWidth} lineCap="round" lineJoin="round" pointerLength={strokeWidth ? strokeWidth * 2 : 8} pointerWidth={strokeWidth ? strokeWidth * 2 : 8} />
         }
       return (
         <Line

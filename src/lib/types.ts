@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -324,6 +325,7 @@ export type WhiteboardNode = {
     points?: number[];
     isDeleted?: boolean;
     isArrow?: boolean;
+    zIndex?: number;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
 };
@@ -336,6 +338,9 @@ export type Whiteboard = {
   updatedAt: Timestamp;
   backgroundColor?: string;
   backgroundGrid?: 'dotted' | 'lined' | 'plain';
+  scale?: number;
+  x?: number;
+  y?: number;
 };
 
 
