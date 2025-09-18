@@ -1,67 +1,61 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Pen,
-  Eraser,
-  Type,
   MousePointer,
+  PlusCircle,
+  Link as LinkIcon,
   Undo,
   Redo,
+  Download,
+  Plus,
   Trash2,
-  ZoomIn,
-  ZoomOut,
-  RefreshCcw,
+  Palette,
+  Bold,
+  Italic,
+  Underline,
+  GitBranch,
+  Save,
+  Expand,
+  Minus,
+  Move,
+  Maximize,
+  Minimize,
+  PanelLeftOpen,
+  PanelLeftClose,
   Square,
   Circle,
-  Minus,
-  ArrowRight,
-  Star,
-  Heart,
-  GitBranch,
-  StickyNote,
-  PenSquare,
-  Save,
   Settings,
-  Palette,
   Grid3x3,
   List,
   Baseline,
-  Move,
-  PanelLeftClose,
-  PanelLeftOpen,
   ArrowLeft,
-  Maximize,
-  Minimize,
+  Pen,
+  Eraser,
+  Type,
+  StickyNote,
 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, onSnapshot, getDoc, updateDoc } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import type { Whiteboard, WhiteboardNode } from '@/lib/types';
+import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
-import type { Whiteboard } from '@/lib/types';
+import { useDebouncedCallback } from 'use-debounce';
 import { Input } from '../ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { useDebouncedCallback } from 'use-debounce';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { WhiteboardNodeComponent } from './whiteboard-node';
 
-type Tool = 'pen' | 'eraser' | 'text' | 'select' | 'shape' | 'pan';
-type Shape =
-  | 'rectangle'
-  | 'circle'
-  | 'line'
-  | 'arrow'
-  | 'triangle'
-  | 'star'
-  | 'heart';
+type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape';
+type ShapeType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'triangle' | 'star' | 'heart';
 
-const backgroundColors = [
-    '#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'
-];
+const backgroundColors = ['#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'];
 
 export function DigitalWhiteboard() {
   const { user } = useAuth();
@@ -70,69 +64,28 @@ export function DigitalWhiteboard() {
   const router = useRouter();
   const whiteboardId = params.whiteboardId as string;
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
   const [whiteboard, setWhiteboard] = useState<Whiteboard | null>(null);
+  const [nodes, setNodes] = useState<WhiteboardNode[]>([]);
   const [boardName, setBoardName] = useState('');
-  
-  const [currentTool, setCurrentTool] = useState<Tool>('pen');
+
+  const [currentTool, setCurrentTool] = useState<Tool>('select');
+  const [currentShape, setCurrentShape] = useState<ShapeType>('rectangle');
   const [currentColor, setCurrentColor] = useState('#000000');
   const [brushSize, setBrushSize] = useState(4);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [history, setHistory] = useState<ImageData[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-
+  
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
-  const isPanning = useRef(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const whiteboardContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // --- Initialization and Canvas Setup ---
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const context = canvas.getContext('2d');
-      setCtx(context);
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-      return () => window.removeEventListener('resize', resizeCanvas);
-    }
-  }, []);
-
-  const resizeCanvas = () => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const container = canvas.parentElement;
-      if (container) {
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-        redrawCanvas();
-      }
-    }
-  };
-
-  const redrawCanvas = useCallback(() => {
-    if (!ctx || !canvasRef.current) return;
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    if (history.length > 0 && historyIndex >= 0) {
-      ctx.putImageData(history[historyIndex], 0, 0);
-    }
-  }, [ctx, history, historyIndex]);
-
   // --- Firestore Integration ---
-  const getDocRef = useCallback(() => {
-    if (!user || !whiteboardId) return null;
-    return doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'data', 'main');
-  }, [user, whiteboardId]);
-
   const getWhiteboardDocRef = useCallback(() => {
     if (!user || !whiteboardId) return null;
     return doc(db, 'users', user.uid, 'whiteboards', whiteboardId);
   }, [user, whiteboardId]);
-
 
   useEffect(() => {
     const boardRef = getWhiteboardDocRef();
@@ -141,6 +94,7 @@ export function DigitalWhiteboard() {
         if(doc.exists()) {
           const boardData = { id: doc.id, ...doc.data() } as Whiteboard;
           setWhiteboard(boardData);
+          setNodes(boardData.nodes || []);
           setBoardName(boardData.name);
         } else {
           toast({ variant: 'destructive', title: 'Whiteboard not found.' });
@@ -151,144 +105,17 @@ export function DigitalWhiteboard() {
     }
   }, [user, whiteboardId, getWhiteboardDocRef, router, toast]);
 
-  // Save state
-  const saveState = useCallback(async () => {
-    const docRef = getDocRef();
-    const canvas = canvasRef.current;
-    if (!docRef || !canvas) return;
-    const dataUrl = canvas.toDataURL();
-    try {
-      await setDoc(docRef, { data: dataUrl, timestamp: new Date() }, { merge: true });
-    } catch (e) {
-      console.error('Failed to save whiteboard state:', e);
-    }
-  }, [getDocRef]);
-
-  // Load state
-  useEffect(() => {
-    const docRef = getDocRef();
-    if (!docRef || !ctx || !canvasRef.current) return;
-
-    const unsubscribe = onSnapshot(
-      docRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.data) {
-            const img = new Image();
-            img.onload = () => {
-              ctx.clearRect(0,0,canvasRef.current!.width,canvasRef.current!.height);
-              ctx.drawImage(img, 0, 0);
-              saveToHistory(true); // save without re-saving to firestore
-            };
-            img.src = data.data;
-          }
-        }
-      },
-      (error) => {
-        console.error('Failed to load whiteboard state:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Could not load whiteboard state.',
-        });
+  const saveBoard = useDebouncedCallback(async (updatedNodes?: WhiteboardNode[], updatedSettings?: Partial<Whiteboard>) => {
+    const boardRef = getWhiteboardDocRef();
+    if (boardRef) {
+      const dataToSave: Partial<Whiteboard> = { ...updatedSettings };
+      if (updatedNodes) {
+        dataToSave.nodes = updatedNodes;
       }
-    );
-
-    return () => unsubscribe();
-  }, [user, ctx, whiteboardId, getDocRef, saveState, toast]);
-
-  // --- Drawing Logic ---
-  const getCoords = (e: MouseEvent | React.MouseEvent) => {
-    if (!canvasRef.current) return { x: 0, y: 0 };
-    const rect = canvasRef.current.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-  };
-
-  const startDrawing = (e: React.MouseEvent) => {
-    const { x, y } = getCoords(e);
-    if (currentTool === 'pan') {
-      isPanning.current = true;
-      lastMousePos.current = { x, y };
-      return;
+      await updateDoc(boardRef, dataToSave);
+      toast({ title: "✓ Saved", description: "Your whiteboard has been saved."});
     }
-    if (!ctx) return;
-    setIsDrawing(true);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  };
-
-  const draw = (e: React.MouseEvent) => {
-    if (isPanning.current && currentTool === 'pan') {
-      // Panning logic would go here if we were transforming the canvas view
-      // For now, we just move the cursor.
-      return;
-    }
-    if (!isDrawing || !ctx) return;
-    const { x, y } = getCoords(e);
-    const bgColor = whiteboard?.backgroundColor || '#FFFFFF';
-    ctx.strokeStyle = currentTool === 'eraser' ? bgColor : currentColor;
-    ctx.lineWidth = brushSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  };
-
-  const stopDrawing = () => {
-    isPanning.current = false;
-    if (!isDrawing || !ctx) return;
-    ctx.closePath();
-    setIsDrawing(false);
-    saveToHistory();
-  };
-
-  const saveToHistory = useCallback((fromLoad = false) => {
-    if (!ctx || !canvasRef.current) return;
-    const imageData = ctx.getImageData(
-      0,
-      0,
-      canvasRef.current.width,
-      canvasRef.current.height
-    );
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(imageData);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-    if (!fromLoad) {
-      saveState();
-    }
-  }, [ctx, history, historyIndex, saveState]);
-
-  const undo = () => {
-    if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1);
-      ctx?.putImageData(history[historyIndex - 1], 0, 0);
-      saveState();
-    }
-  };
-
-  const redo = () => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(historyIndex + 1);
-      ctx?.putImageData(history[historyIndex + 1], 0, 0);
-      saveState();
-    }
-  };
-
-  const clearCanvas = () => {
-    if (!ctx || !canvasRef.current) return;
-    if (window.confirm('Are you sure you want to clear the entire board?')) {
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      const blankImageData = ctx.createImageData(canvasRef.current.width, canvasRef.current.height);
-      setHistory([blankImageData]);
-      setHistoryIndex(0);
-      saveState();
-    }
-  };
+  }, 1000);
 
   const handleNameChange = useDebouncedCallback(async (newName: string) => {
     const boardRef = getWhiteboardDocRef();
@@ -298,58 +125,70 @@ export function DigitalWhiteboard() {
     }
   }, 1000);
   
-  const handleSettingChange = async (setting: Partial<Whiteboard>) => {
-      const boardRef = getWhiteboardDocRef();
-      if(boardRef && whiteboard) {
-          await updateDoc(boardRef, setting);
-      }
-  }
+  const handleSettingChange = (setting: Partial<Whiteboard>) => {
+    setWhiteboard(prev => ({ ...(prev || {name:''}), ...setting }));
+    saveBoard(nodes, setting);
+  };
+  
+   const handleNodeChange = (nodeId: string, updates: Partial<WhiteboardNode>) => {
+    const newNodes = nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n);
+    setNodes(newNodes);
+    saveBoard(newNodes);
+  };
+  
+   const addNode = (type: WhiteboardNode['type'], options?: Partial<WhiteboardNode>) => {
+    const canvasContainer = whiteboardContainerRef.current;
+    if (!canvasContainer) return;
+    
+    const viewCenterX = (canvasContainer.clientWidth / 2 - offset.x) / scale;
+    const viewCenterY = (canvasContainer.clientHeight / 2 - offset.y) / scale;
 
-
-  // --- Tools ---
-  const handleToolClick = (tool: Tool) => {
-    setCurrentTool(tool);
+    const newNode: WhiteboardNode = {
+      id: uuidv4(),
+      type,
+      x: viewCenterX - 75,
+      y: viewCenterY - 50,
+      width: 150,
+      height: 100,
+      rotation: 0,
+      color: type === 'sticky' ? '#ffd166' : '#000000',
+      text: type === 'sticky' || type === 'text' ? 'Text' : '',
+      shape: type === 'shape' ? currentShape : undefined,
+      ...options,
+    };
+    const newNodes = [...nodes, newNode];
+    setNodes(newNodes);
+    saveBoard(newNodes);
+  };
+  
+  const deleteNode = (nodeId: string) => {
+    const newNodes = nodes.filter(n => n.id !== nodeId);
+    setNodes(newNodes);
+    saveBoard(newNodes);
   };
 
-  const drawShape = (shape: Shape) => {
-    if (!ctx || !canvasRef.current) return;
-    const centerX = canvasRef.current.width / 2;
-    const centerY = canvasRef.current.height / 2;
-    const size = 100;
-    ctx.strokeStyle = currentColor;
-    ctx.lineWidth = brushSize;
-    ctx.beginPath();
-    switch (shape) {
-      case 'rectangle':
-        ctx.strokeRect(centerX - size / 2, centerY - size / 2, size, size);
-        break;
-      case 'circle':
-        ctx.arc(centerX, centerY, size / 2, 0, 2 * Math.PI);
-        break;
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button === 1 || (e.button === 0 && currentTool === 'pan')) { // Middle mouse or pan tool
+      setIsPanning(true);
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
-    ctx.stroke();
-    saveToHistory();
   };
 
-  const addStickyNote = (color: string) => {
-    if (!ctx || !canvasRef.current) return;
-    const noteText = prompt('Enter your note text:');
-    if (noteText) {
-      const x = 100;
-      const y = 100;
-      const width = 150;
-      const height = 120;
-      ctx.fillStyle = color;
-      ctx.fillRect(x, y, width, height);
-      ctx.fillStyle = '#000000';
-      ctx.font = '14px sans-serif';
-      ctx.fillText(noteText, x + 10, y + 20);
-      saveToHistory();
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isPanning) {
+      const dx = e.clientX - lastMousePos.current.x;
+      const dy = e.clientY - lastMousePos.current.y;
+      setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
   };
 
-  const toggleFullscreen = useCallback(() => {
-    const elem = whiteboardContainerRef.current;
+  const handleCanvasMouseUp = () => {
+    setIsPanning(false);
+  };
+
+   const toggleFullscreen = useCallback(() => {
+    const elem = whiteboardContainerRef.current?.parentElement;
     if (!elem) return;
 
     if (!document.fullscreenElement) {
@@ -360,179 +199,114 @@ export function DigitalWhiteboard() {
       document.exitFullscreen();
     }
   }, [toast]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  // --- UI Components ---
-  const ToolButton = ({
-    tool,
-    label,
-    icon: Icon,
-  }: {
-    tool: Tool;
-    label: string;
-    icon: React.ElementType;
-  }) => (
-    <Button
-      variant={currentTool === tool ? 'secondary' : 'ghost'}
-      onClick={() => handleToolClick(tool)}
-      size="sm"
-      className="w-full justify-start"
-    >
-      <Icon />
-      {!isToolbarCollapsed && label}
-    </Button>
-  );
-
+  
   if (!whiteboard) {
     return <div>Loading whiteboard...</div>;
   }
-
+  
   return (
     <div ref={whiteboardContainerRef} className={cn("flex flex-col h-full gap-4", isFullscreen && "bg-background")}>
-      <div className="flex items-center justify-between gap-4">
-         <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><ArrowLeft /></Button>
-            <Input 
-                value={boardName}
-                onChange={(e) => {
-                    setBoardName(e.target.value);
-                    handleNameChange(e.target.value);
-                }}
-                className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
-         </div>
-         <div className="flex items-center gap-2">
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon"><Settings/></Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                    <div className="grid gap-4">
-                        <div className="space-y-2">
-                            <h4 className="font-medium leading-none">Settings</h4>
-                            <p className="text-sm text-muted-foreground">Customize your whiteboard.</p>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>Background Color</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {backgroundColors.map(color => (
-                                    <button 
-                                        key={color} 
-                                        onClick={() => handleSettingChange({ backgroundColor: color })}
-                                        className={cn("w-8 h-8 rounded-full border", whiteboard.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
-                                        style={{ backgroundColor: color }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                             <Label>Background Style</Label>
-                             <ToggleGroup
-                                type="single"
-                                value={whiteboard.backgroundGrid || 'dotted'}
-                                onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}
-                            >
+        <div className="flex items-center justify-between gap-4">
+           <div className="flex items-center gap-4">
+              <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><ArrowLeft /></Button>
+              <Input 
+                  value={boardName}
+                  onChange={(e) => {
+                      setBoardName(e.target.value);
+                      handleNameChange(e.target.value);
+                  }}
+                  className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+           </div>
+           <div className="flex items-center gap-2">
+              <Popover>
+                  <PopoverTrigger asChild><Button variant="outline" size="icon"><Settings/></Button></PopoverTrigger>
+                  <PopoverContent className="w-80">
+                      <div className="grid gap-4">
+                          <h4 className="font-medium leading-none">Settings</h4>
+                          <div className="grid gap-2">
+                              <Label>Background Color</Label>
+                              <div className="flex flex-wrap gap-2">
+                                  {backgroundColors.map(color => (
+                                      <button key={color} onClick={() => handleSettingChange({ backgroundColor: color })}
+                                          className={cn("w-8 h-8 rounded-full border", whiteboard.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
+                                          style={{ backgroundColor: color }} />
+                                  ))}
+                              </div>
+                          </div>
+                           <div className="grid gap-2">
+                             <Label>Grid Style</Label>
+                             <ToggleGroup type="single" value={whiteboard.backgroundGrid || 'dotted'} onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}>
                                 <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
                                 <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
                                 <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
-                            </ToggleGroup>
-                        </div>
-                    </div>
-                </PopoverContent>
-            </Popover>
-            <Button onClick={saveState}><Save/> Save</Button>
-            <Button variant="outline" size="icon" onClick={toggleFullscreen}>
-                {isFullscreen ? <Minimize/> : <Maximize/>}
-            </Button>
-         </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
-        {/* Toolbar */}
-        <div className={cn(
-          "flex flex-col gap-4 p-2 border rounded-lg bg-card transition-all duration-300",
-          isToolbarCollapsed ? 'md:w-16 items-center' : 'md:w-64'
-        )}>
-          <div className="flex flex-col gap-2 w-full">
-             <Button variant="ghost" size="sm" onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)} className="w-full justify-start">
-               {isToolbarCollapsed ? <PanelLeftOpen/> : <PanelLeftClose />}
-               {!isToolbarCollapsed && 'Collapse'}
-            </Button>
-            <h3 className={cn("font-semibold px-2", isToolbarCollapsed && "hidden")}>Tools</h3>
-            <ToolButton tool="pen" label="Pen" icon={Pen} />
-            <ToolButton tool="eraser" label="Eraser" icon={Eraser} />
-            <ToolButton tool="pan" label="Pan" icon={Move} />
-            <ToolButton tool="text" label="Text" icon={Type} />
-            <ToolButton tool="select" label="Select" icon={MousePointer} />
-          </div>
-          <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
-            <h3 className="font-semibold px-2">Color</h3>
-            <input
-              type="color"
-              value={currentColor}
-              onChange={(e) => setCurrentColor(e.target.value)}
-              className="w-full h-10 p-1 bg-card border rounded-md cursor-pointer"
-            />
-          </div>
-           <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
-            <h3 className="font-semibold px-2">Brush Size</h3>
-            <input
-              type="range"
-              min="1"
-              max="50"
-              value={brushSize}
-              onChange={(e) => setBrushSize(Number(e.target.value))}
-            />
-          </div>
-          <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
-             <h3 className="font-semibold px-2">Shapes</h3>
-             <Button variant="outline" size="sm" onClick={() => drawShape('rectangle')} className="justify-start"><Square/> Rectangle</Button>
-             <Button variant="outline" size="sm" onClick={() => drawShape('circle')} className="justify-start"><Circle/> Circle</Button>
-          </div>
-           <div className={cn("flex flex-col gap-2 w-full", isToolbarCollapsed && "hidden")}>
-             <h3 className="font-semibold px-2">Notes</h3>
-             <Button variant="outline" size="sm" onClick={() => addStickyNote('#FFF9C4')} className="justify-start"><StickyNote/> Sticky Note</Button>
-          </div>
-          <div className="flex flex-col gap-2 mt-auto w-full">
-            <Button variant="outline" size="sm" onClick={undo} disabled={historyIndex <= 0} className="justify-start">
-              <Undo/> {!isToolbarCollapsed && 'Undo'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1} className="justify-start">
-              <Redo/> {!isToolbarCollapsed && 'Redo'}
-            </Button>
-            <Button variant="destructive" size="sm" onClick={clearCanvas} className="justify-start">
-              <Trash2/> {!isToolbarCollapsed && 'Clear All'}
-            </Button>
-          </div>
+                             </ToggleGroup>
+                          </div>
+                      </div>
+                  </PopoverContent>
+              </Popover>
+              <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                  {isFullscreen ? <Minimize/> : <Maximize/>}
+              </Button>
+           </div>
         </div>
 
-        {/* Canvas */}
-        <div className="flex-1 border rounded-lg overflow-hidden relative" style={{ backgroundColor: whiteboard.backgroundColor || '#FFFFFF' }}>
-          <canvas
-            ref={canvasRef}
-            className={cn('absolute inset-0',
-             {
-                'whiteboard-bg-dotted': whiteboard.backgroundGrid === 'dotted' || !whiteboard.backgroundGrid,
-                'whiteboard-bg-lined': whiteboard.backgroundGrid === 'lined',
-                'whiteboard-bg-plain': whiteboard.backgroundGrid === 'plain',
-                'cursor-crosshair': currentTool === 'pen',
-                'cursor-text': currentTool === 'text',
-                'cursor-grab': currentTool === 'pan',
-             })}
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-          />
+        <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
+             <div className={cn("flex flex-col gap-4 p-2 border rounded-lg bg-card transition-all duration-300", isToolbarCollapsed ? 'md:w-16 items-center' : 'md:w-64')}>
+                <div className="flex flex-col gap-2 w-full">
+                     <Button variant="ghost" size="sm" onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)} className="w-full justify-start">
+                        {isToolbarCollapsed ? <PanelLeftOpen/> : <PanelLeftClose />}
+                        {!isToolbarCollapsed && 'Collapse'}
+                    </Button>
+                    <h3 className={cn("font-semibold px-2", isToolbarCollapsed && "hidden")}>Tools</h3>
+                    <ToggleGroup type="single" value={currentTool} onValueChange={(v) => v && setCurrentTool(v as Tool)} className="flex-col gap-1 items-start">
+                        <ToggleGroupItem value="select" className="w-full justify-start gap-2"><MousePointer/> {!isToolbarCollapsed && 'Select'}</ToggleGroupItem>
+                        <ToggleGroupItem value="pan" className="w-full justify-start gap-2"><Move/> {!isToolbarCollapsed && 'Pan'}</ToggleGroupItem>
+                        <ToggleGroupItem value="pen" className="w-full justify-start gap-2"><Pen/> {!isToolbarCollapsed && 'Pen'}</ToggleGroupItem>
+                        <ToggleGroupItem value="text" className="w-full justify-start gap-2"><Type/> {!isToolbarCollapsed && 'Text'}</ToggleGroupItem>
+                        <ToggleGroupItem value="sticky" className="w-full justify-start gap-2"><StickyNote/> {!isToolbarCollapsed && 'Sticky Note'}</ToggleGroupItem>
+                        <ToggleGroupItem value="shape" className="w-full justify-start gap-2"><Square/> {!isToolbarCollapsed && 'Shape'}</ToggleGroupItem>
+                    </ToggleGroup>
+                     <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => currentTool === 'sticky' ? addNode('sticky') : currentTool === 'text' ? addNode('text') : addNode('shape')}><PlusCircle/> Add {currentTool}</Button>
+                </div>
+                 <div className="flex flex-col gap-2 mt-auto w-full">
+                    <Button variant="outline" size="sm" onClick={() => {}} disabled><Undo/> {!isToolbarCollapsed && 'Undo'}</Button>
+                    <Button variant="outline" size="sm" onClick={() => {}} disabled><Redo/> {!isToolbarCollapsed && 'Redo'}</Button>
+                 </div>
+            </div>
+             <div
+                className={cn('flex-1 border rounded-lg overflow-hidden relative cursor-auto',
+                    {
+                        'whiteboard-bg-dotted': whiteboard.backgroundGrid === 'dotted' || !whiteboard.backgroundGrid,
+                        'whiteboard-bg-lined': whiteboard.backgroundGrid === 'lined',
+                        'whiteboard-bg-plain': whiteboard.backgroundGrid === 'plain',
+                    }
+                )}
+                style={{ backgroundColor: whiteboard.backgroundColor }}
+                onMouseDown={handleCanvasMouseDown}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseUp={handleCanvasMouseUp}
+                onMouseLeave={handleCanvasMouseUp}
+            >
+                <div
+                    className="absolute top-0 left-0"
+                    style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}
+                >
+                    {nodes.map(node => (
+                        <WhiteboardNodeComponent
+                            key={node.id}
+                            node={node}
+                            onNodeChange={handleNodeChange}
+                            onDelete={deleteNode}
+                            scale={scale}
+                            isSelected={false} // Add selection logic later
+                        />
+                    ))}
+                </div>
+            </div>
         </div>
-      </div>
     </div>
   );
 }
+
+```
