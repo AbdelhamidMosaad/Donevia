@@ -352,6 +352,15 @@ export type Whiteboard = {
   y?: number;
 };
 
+export type WhiteboardTemplate = {
+    id: string;
+    name: string;
+    ownerId: string;
+    createdAt: Timestamp;
+    nodes: Omit<WhiteboardNode, 'id'>[];
+    connections: WhiteboardConnection[];
+};
+
 
 /** Mind Map */
 export type MindMapNode = {
@@ -760,3 +769,4 @@ export type InterviewFeedback = {
     suggestions: string[];
     overallAssessment: string;
 };
+

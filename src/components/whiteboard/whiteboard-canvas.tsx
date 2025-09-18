@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useEffect } from 'react';
@@ -24,7 +25,7 @@ interface WhiteboardCanvasProps {
   currentColor: string;
   strokeWidth: number;
   fontSize: number;
-  selectedNodeId: string | null;
+  selectedNodeIds: string[];
   editingNodeId: string | null;
   presence: Record<string, Presence>;
   onNodeCreate: (node: Omit<WhiteboardNode, 'id'|'userId'|'createdAt'|'updatedAt'|'zIndex'>) => Promise<WhiteboardNode>;
@@ -48,7 +49,7 @@ export function WhiteboardCanvas({
   currentColor,
   strokeWidth,
   fontSize,
-  selectedNodeId,
+  selectedNodeIds,
   editingNodeId,
   presence,
   onNodeCreate,
@@ -66,6 +67,7 @@ export function WhiteboardCanvas({
   const stageRef = useRef<any>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const currentLineId = useRef<string | null>(null);
+  const [selectionRect, setSelectionRect] = useState({ x: 0, y: 0, width: 0, height: 0, visible: false });
 
   const handleStageClick = async (e: KonvaEventObject<MouseEvent>) => {
     if (isMinimap) return;
@@ -106,6 +108,16 @@ export function WhiteboardCanvas({
   const handleMouseDown = async (e: KonvaEventObject<MouseEvent>) => {
     if (isMinimap) return;
     const clickedOnEmpty = e.target === e.target.getStage() || (e.target.attrs.id === 'canvas-bg');
+    
+    if (tool === 'select' && clickedOnEmpty) {
+        const pos = e.target.getStage()?.getPointerPosition();
+        if (pos) {
+            setSelectionRect({ x: pos.x, y: pos.y, width: 0, height: 0, visible: true });
+        }
+        onSelectNode(null);
+        return;
+    }
+
     if (!clickedOnEmpty) return;
 
     if (tool === 'pen' || tool === 'arrow') {
@@ -133,6 +145,16 @@ export function WhiteboardCanvas({
     const pos = e.target.getStage()?.getPointerPosition();
     if(pos) onUpdatePresence(pos);
 
+    if (selectionRect.visible) {
+        if (!pos) return;
+        setSelectionRect(prev => ({
+            ...prev,
+            width: pos.x - prev.x,
+            height: pos.y - prev.y,
+        }));
+        return;
+    }
+
     if ((tool === 'pen' || tool === 'arrow') && isDrawing && currentLineId.current) {
       if (!pos) return;
       const stage = e.target.getStage();
@@ -141,9 +163,7 @@ export function WhiteboardCanvas({
       
       const currentNode = nodes.find(n => n.id === currentLineId.current);
       if (currentNode && currentNode.points) {
-          const newPoints = [...currentNode.points];
-          newPoints[2] = x;
-          newPoints[3] = y;
+          const newPoints = [...currentNode.points, x, y];
           onNodeChange(currentLineId.current, { points: newPoints });
       }
     }
@@ -151,6 +171,35 @@ export function WhiteboardCanvas({
 
   const handleMouseUp = () => {
     if (isMinimap) return;
+    
+    if (selectionRect.visible) {
+        const stage = stageRef.current;
+        const scale = stage.scaleX();
+        const selBox = {
+            x1: (selectionRect.x - stage.x())/scale,
+            y1: (selectionRect.y - stage.y())/scale,
+            x2: (selectionRect.x + selectionRect.width - stage.x())/scale,
+            y2: (selectionRect.y + selectionRect.height - stage.y())/scale,
+        };
+
+        const selected = nodes.filter(node => {
+            const nodeBox = {
+                x1: node.x - (node.width ?? 0) / 2,
+                y1: node.y - (node.height ?? 0) / 2,
+                x2: node.x + (node.width ?? 0) / 2,
+                y2: node.y + (node.height ?? 0) / 2,
+            };
+            return (
+                Math.max(selBox.x1, nodeBox.x1) < Math.min(selBox.x2, nodeBox.x2) &&
+                Math.max(selBox.y1, nodeBox.y1) < Math.min(selBox.y2, nodeBox.y2)
+            );
+        }).map(node => node.id);
+        
+        setSelectedNodeIds(selected);
+        setSelectionRect({ x: 0, y: 0, width: 0, height: 0, visible: false });
+        return;
+    }
+
     if ((tool === 'pen' || tool === 'arrow') && isDrawing) {
       setIsDrawing(false);
       onNodeChangeComplete();
@@ -191,7 +240,7 @@ export function WhiteboardCanvas({
       ref={stageRef}
       width={isMinimap ? 192 : window.innerWidth}
       height={isMinimap ? 144 : window.innerHeight - 200}
-      draggable={tool === 'select'}
+      draggable={tool === 'select' && !selectionRect.visible}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -241,7 +290,7 @@ export function WhiteboardCanvas({
           <WhiteboardNodeComponent
             key={node.id}
             node={node}
-            isSelected={selectedNodeId === node.id}
+            isSelected={selectedNodeIds.includes(node.id)}
             isEditing={node.id === editingNodeId}
             tool={tool}
             onSelect={() => {
@@ -259,6 +308,17 @@ export function WhiteboardCanvas({
             onDragEnd={onNodeChangeComplete}
           />
         ))}
+         {selectionRect.visible && (
+            <Rect
+                x={selectionRect.x}
+                y={selectionRect.y}
+                width={selectionRect.width}
+                height={selectionRect.height}
+                fill="rgba(0, 120, 255, 0.1)"
+                stroke="rgba(0, 120, 255, 0.5)"
+                strokeWidth={1}
+            />
+        )}
         {!isMinimap && Object.values(presence).map(p => (
             <Group key={p.userId} x={p.x} y={p.y}>
                  <Rect width={8} height={8} fill={p.color} offsetX={4} offsetY={4} cornerRadius={4} />
@@ -269,3 +329,4 @@ export function WhiteboardCanvas({
     </Stage>
   );
 }
+

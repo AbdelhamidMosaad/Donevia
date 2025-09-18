@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -44,6 +45,8 @@ import {
   AlignVerticalJustifyStart,
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
+  LayoutTemplate,
+  Save,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -58,11 +61,12 @@ import {
   writeBatch,
   addDoc,
   setDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
-import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
+import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection, WhiteboardTemplate } from '@/lib/types';
 import { WhiteboardCanvas } from './whiteboard-canvas';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
@@ -75,6 +79,7 @@ import throttle from 'lodash.throttle';
 import { jsPDF } from 'jspdf';
 import { v4 as uuidv4 } from 'uuid';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { TemplateDialog } from './template-dialog';
 
 
 type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
@@ -143,6 +148,7 @@ export default function DigitalWhiteboard() {
   const [layoutDirection, setLayoutDirection] = useState<LayoutDirection>('right');
   const [showMinimap, setShowMinimap] = useState(true);
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
 
   // Firestore Refs
   const getBoardDocRef = useCallback(() => {
@@ -658,6 +664,7 @@ export default function DigitalWhiteboard() {
   }
 
   return (
+    <>
     <div ref={whiteboardContainerRef} className={cn("flex flex-col h-full gap-4", isFullscreen && "bg-background")}>
         <div className={cn("flex justify-between items-center", isFullscreen && "hidden")}>
             <div className="flex items-center gap-4">
@@ -680,6 +687,21 @@ export default function DigitalWhiteboard() {
                         </Avatar>
                     ))}
                  </div>
+                <TemplateDialog 
+                    isOpen={isTemplateDialogOpen}
+                    onOpenChange={setIsTemplateDialogOpen}
+                    onUseTemplate={async (template) => {
+                        const batch = writeBatch(db);
+                        template.nodes.forEach(node => {
+                            const nodeRef = doc(collection(db, 'users', user!.uid, 'whiteboards', whiteboardId, 'nodes'));
+                            batch.set(nodeRef, {...node, id: nodeRef.id});
+                        });
+                        await batch.commit();
+                        await updateDoc(getBoardDocRef()!, { connections: template.connections });
+                        toast({title: 'Template applied!'});
+                    }}
+                />
+                 <Button variant="outline" onClick={() => setIsTemplateDialogOpen(true)}><LayoutTemplate /> Templates</Button>
                 <Popover>
                     <PopoverTrigger asChild><Button variant="outline"><Settings /> Settings</Button></PopoverTrigger>
                     <PopoverContent className="w-80">
@@ -846,7 +868,7 @@ export default function DigitalWhiteboard() {
                 currentColor={currentColor}
                 strokeWidth={strokeWidth}
                 fontSize={fontSize}
-                selectedNodeId={selectedNodeIds.length === 1 ? selectedNodeIds[0] : null}
+                selectedNodeIds={selectedNodeIds}
                 editingNodeId={editingNodeId}
                 presence={presence}
                 onNodeCreate={createNode}
@@ -928,5 +950,40 @@ export default function DigitalWhiteboard() {
             />
         </div>
     </div>
+    <TemplateDialog 
+      isOpen={isTemplateDialogOpen}
+      onOpenChange={setIsTemplateDialogOpen}
+      onSaveTemplate={async (name) => {
+          if (!user) return;
+          const templateRef = doc(collection(db, 'users', user.uid, 'whiteboardTemplates'));
+          await setDoc(templateRef, {
+              name,
+              ownerId: user.uid,
+              createdAt: serverTimestamp(),
+              nodes: Object.values(nodes),
+              connections,
+          });
+          toast({ title: 'Template saved!' });
+      }}
+       onUseTemplate={async (template) => {
+          if(!user) return;
+          const batch = writeBatch(db);
+          // Clear existing nodes first
+          const currentNodesSnap = await getDocs(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
+          currentNodesSnap.forEach(doc => batch.delete(doc.ref));
+
+          // Add new nodes from template
+          template.nodes.forEach(node => {
+              const nodeRef = doc(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
+              batch.set(nodeRef, {...node, id: nodeRef.id});
+          });
+          await batch.commit();
+
+          // Update connections
+          await updateDoc(getBoardDocRef()!, { connections: template.connections });
+          toast({title: 'Template applied!'});
+      }}
+    />
+    </>
   );
 }
