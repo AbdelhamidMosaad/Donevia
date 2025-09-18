@@ -8,7 +8,7 @@ import { collection, onSnapshot, query, orderBy, doc, setDoc, getDoc } from 'fir
 import { db } from '@/lib/firebase';
 import type { WorkActivity, WorkTrackerSettingItem, WorkTrackerSettings as WorkTrackerSettingsType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { List, Calendar, Settings, PlusCircle, FileText, Maximize, Minimize } from 'lucide-react';
+import { List, Calendar, Settings, PlusCircle, FileText, Maximize, Minimize, BarChart3 } from 'lucide-react';
 import { ActivityForm } from '@/components/work-tracker/activity-form';
 import { ActivityTable } from '@/components/work-tracker/activity-table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
 import { ActivityCalendar } from '@/components/work-tracker/activity-calendar';
 import { cn } from '@/lib/utils';
+import { AnalyticsDashboard } from '@/components/work-tracker/analytics-dashboard';
 
 type View = 'table' | 'calendar';
 const colorPalette = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FED766", "#2AB7CA", "#F0CF65", "#9B59B6", "#3498DB", "#1ABC9C", "#E74C3C"];
@@ -162,6 +163,7 @@ export default function WorkTrackerPage() {
             <TabsList className={cn(isFullscreen && 'hidden')}>
                 <TabsTrigger value="log"><PlusCircle /> Log Activity</TabsTrigger>
                 <TabsTrigger value="records"><FileText /> View Records</TabsTrigger>
+                <TabsTrigger value="analytics"><BarChart3 /> Analytics</TabsTrigger>
             </TabsList>
             
             <TabsContent value="log" className={cn("flex-1 mt-4", isFullscreen && 'hidden')}>
@@ -196,6 +198,9 @@ export default function WorkTrackerPage() {
                         )}
                     </div>
                  </div>
+            </TabsContent>
+             <TabsContent value="analytics" className="flex-1 mt-4">
+                <AnalyticsDashboard activities={filteredActivities} settings={settings} />
             </TabsContent>
         </Tabs>
     </div>
