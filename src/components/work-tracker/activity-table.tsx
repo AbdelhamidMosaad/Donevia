@@ -138,21 +138,15 @@ export function ActivityTable({ activities, settings, onFilteredTradesChange }: 
         }
     };
     
-    const handleDuplicate = async (activity: WorkActivity) => {
-        if (!user) return;
-        try {
-            const { id, createdAt, updatedAt, ...rest } = activity;
-            await addDoc(collection(db, 'users', user.uid, 'workActivities'), {
-                ...rest,
-                date: Timestamp.now(), // Set to current date
-                createdAt: Timestamp.now(),
-                updatedAt: Timestamp.now(),
-            });
-            toast({ title: 'Activity duplicated successfully!' });
-        } catch (e) {
-             console.error("Error duplicating activity:", e);
-            toast({ variant: 'destructive', title: 'Failed to duplicate activity.' });
-        }
+    const handleDuplicate = (activity: WorkActivity) => {
+        const { id, createdAt, updatedAt, ownerId, ...rest } = activity;
+        const newActivity = {
+            ...rest,
+            date: Timestamp.now(), // Default to today, user can change it in the dialog
+        } as Omit<WorkActivity, 'id'>;
+
+        // We can create a temporary ID for the key, but the dialog will handle creating a new doc
+        setEditingActivity({ ...newActivity, id: 'new-duplicate' } as WorkActivity);
     };
 
     const handleExport = () => {

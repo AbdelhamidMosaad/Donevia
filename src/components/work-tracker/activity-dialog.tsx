@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { updateDoc, doc, Timestamp } from 'firebase/firestore';
+import { updateDoc, doc, Timestamp, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +34,7 @@ const activitySchema = z.object({
 type ActivityFormData = z.infer<typeof activitySchema>;
 
 interface ActivityDialogProps {
-    activity: WorkActivity;
+    activity: Partial<WorkActivity>;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     settings: WorkTrackerSettings;
@@ -49,11 +49,11 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
     const form = useForm<ActivityFormData>({
         resolver: zodResolver(activitySchema),
         defaultValues: {
-            date: moment(activity.date.toDate()).format('YYYY-MM-DD'),
-            appointment: activity.appointment,
-            category: activity.category,
-            customer: activity.customer,
-            description: activity.description,
+            date: activity.date ? moment(activity.date.toDate()).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD'),
+            appointment: activity.appointment || '',
+            category: activity.category || '',
+            customer: activity.customer || '',
+            description: activity.description || '',
             invoiceNumber: activity.invoiceNumber || '',
             notes: activity.notes || '',
             amount: activity.amount || 0,
@@ -65,11 +65,11 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
 
     useEffect(() => {
         form.reset({
-            date: moment(activity.date.toDate()).format('YYYY-MM-DD'),
-            appointment: activity.appointment,
-            category: activity.category,
-            customer: activity.customer,
-            description: activity.description,
+            date: activity.date ? moment(activity.date.toDate()).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD'),
+            appointment: activity.appointment || '',
+            category: activity.category || '',
+            customer: activity.customer || '',
+            description: activity.description || '',
             invoiceNumber: activity.invoiceNumber || '',
             notes: activity.notes || '',
             amount: activity.amount || 0,
@@ -83,17 +83,28 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
         if (!user) return;
         setIsSaving(true);
         try {
-            const activityRef = doc(db, 'users', user.uid, 'workActivities', activity.id);
-            await updateDoc(activityRef, {
-                ...data,
-                date: Timestamp.fromDate(new Date(data.date)),
-                updatedAt: Timestamp.now(),
-            });
-            toast({ title: 'Activity updated successfully!' });
+            if (activity.id) { // If it's an existing activity (or a duplicate with a temp ID)
+                 const activityRef = doc(db, 'users', user.uid, 'workActivities', activity.id);
+                 await updateDoc(activityRef, {
+                    ...data,
+                    date: Timestamp.fromDate(new Date(data.date)),
+                    updatedAt: Timestamp.now(),
+                });
+                toast({ title: 'Activity updated successfully!' });
+            } else { // It's a new duplicated activity
+                 await addDoc(collection(db, 'users', user.uid, 'workActivities'), {
+                    ...data,
+                    ownerId: user.uid,
+                    date: Timestamp.fromDate(new Date(data.date)),
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                });
+                toast({ title: 'Duplicated activity created!' });
+            }
             onOpenChange(false);
         } catch (e) {
-            console.error("Error updating activity: ", e);
-            toast({ variant: 'destructive', title: 'Failed to update activity.' });
+            console.error("Error saving activity: ", e);
+            toast({ variant: 'destructive', title: 'Failed to save activity.' });
         } finally {
             setIsSaving(false);
         }
@@ -103,8 +114,8 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Edit Activity</DialogTitle>
-                    <DialogDescription>Update the details of your logged activity.</DialogDescription>
+                    <DialogTitle>{activity.id ? 'Edit Activity' : 'Duplicate Activity'}</DialogTitle>
+                    <DialogDescription>{activity.id ? 'Update the details of your logged activity.' : 'Modify the details for the new duplicated activity.'}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto pr-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-1">
