@@ -8,11 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import type { Flashcard } from '@/ai/flows/learning-tool-flow';
-import { addCard } from '@/lib/flashcards';
-import { writeBatch } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { doc, collection } from 'firebase/firestore';
+import type { StudyMaterialRequest, Flashcard } from '@/lib/types';
+import { addCardsToDeck } from '@/lib/flashcards';
+import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 
 
 interface AIGeneratorProps {
@@ -36,33 +34,21 @@ export function AIGenerator({ deckId }: AIGeneratorProps) {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/flashcards/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
-        body: JSON.stringify({ sourceText: text }),
-      });
+      const requestPayload: StudyMaterialRequest = {
+        sourceText: text,
+        generationType: 'flashcards',
+        flashcardsOptions: {
+            numCards: 10,
+            style: 'basic',
+        }
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate flashcards.');
-      }
+      const result = await generateStudyMaterial(requestPayload);
 
-      const { cards } = await response.json() as { cards: Flashcard[] };
+      const cards = result.flashcardContent;
 
       if (cards && cards.length > 0) {
-        const batch = writeBatch(db);
-        cards.forEach(cardData => {
-            const cardRef = doc(collection(db, 'users', user.uid, 'flashcardDecks', deckId, 'cards'));
-            batch.set(cardRef, {
-                deckId,
-                front: cardData.front,
-                back: cardData.back,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-        });
-        await batch.commit();
-
+        await addCardsToDeck(user.uid, deckId, cards);
         toast({
           title: `✓ ${cards.length} Cards Added!`,
           description: "AI-generated cards have been added to your deck.",

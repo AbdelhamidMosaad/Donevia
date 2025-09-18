@@ -6,11 +6,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { StudyMaterialRequest, StudyMaterialResponse, QuizQuestion } from '@/ai/flows/learning-tool-flow';
+import type { StudyMaterialRequest, StudyMaterialResponse, QuizQuestion } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Loader2, Copy, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SaveToDeckDialog } from './shared/save-to-deck-dialog';
+import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 
 export function QuizGenerator() {
   const { user } = useAuth();
@@ -51,18 +52,7 @@ export function QuizGenerator() {
         },
       };
 
-      const response = await fetch('/api/learning-tool/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
-        body: JSON.stringify(requestPayload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate quiz.');
-      }
-
-      const data: StudyMaterialResponse = await response.json();
+      const data = await generateStudyMaterial(requestPayload);
       setResult(data);
 
     } catch (error) {

@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 
 function InlineMarkdown({ text }: { text: string }) {
     const parts = text.split(/(\*\*.*?\*\*)/g);
@@ -58,18 +59,7 @@ export function LectureNotesGenerator() {
         },
       };
 
-      const response = await fetch('/api/learning-tool/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
-        body: JSON.stringify(requestPayload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate notes.');
-      }
-
-      const data: StudyMaterialResponse = await response.json();
+      const data = await generateStudyMaterial(requestPayload);
       setResult(data);
 
     } catch (error) {

@@ -6,11 +6,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { StudyMaterialRequest, StudyMaterialResponse, Flashcard } from '@/ai/flows/learning-tool-flow';
+import type { StudyMaterialRequest, StudyMaterialResponse, Flashcard } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Loader2, Copy, Download, ChevronLeft, ChevronRight, RefreshCw, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SaveToDeckDialog } from './shared/save-to-deck-dialog';
+import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 
 export function FlashcardGenerator() {
   const { user } = useAuth();
@@ -43,18 +44,7 @@ export function FlashcardGenerator() {
         },
       };
 
-      const response = await fetch('/api/learning-tool/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
-        body: JSON.stringify(requestPayload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate flashcards.');
-      }
-
-      const data: StudyMaterialResponse = await response.json();
+      const data = await generateStudyMaterial(requestPayload);
       setResult(data);
 
     } catch (error) {
