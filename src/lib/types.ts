@@ -313,16 +313,24 @@ export type WhiteboardNode = {
     type: 'text' | 'sticky' | 'shape' | 'pen';
     x: number;
     y: number;
-    width: number;
-    height: number;
+    width?: number;
+    height?: number;
     rotation?: number;
-    color?: string; // Fill for shapes/stickies, stroke for pen, text color for text
-    strokeColor?: string;
+    color?: string; 
     strokeWidth?: number;
     text?: string;
+    fontSize?: number;
+    isBold?: boolean;
+    isItalic?: boolean;
+    isUnderline?: boolean;
     shape?: 'rectangle' | 'circle';
-    points?: [number, number][]; // For pen tool
-}
+    points?: number[];
+};
+
+export type WhiteboardConnection = {
+    from: string;
+    to: string;
+};
 
 export type Whiteboard = {
   id: string;
@@ -333,6 +341,7 @@ export type Whiteboard = {
   backgroundColor?: string;
   backgroundGrid?: 'dotted' | 'lined' | 'plain';
   nodes?: WhiteboardNode[];
+  connections?: WhiteboardConnection[];
 };
 
 

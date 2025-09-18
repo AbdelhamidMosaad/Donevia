@@ -1,18 +1,18 @@
+
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
-import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
+import type { Whiteboard as WhiteboardType, WhiteboardNode } from '@/lib/types';
 import { WhiteboardNodeComponent } from './whiteboard-node';
+import { v4 as uuidv4 } from 'uuid';
 
 interface WhiteboardCanvasProps {
   boardData: WhiteboardType;
   nodes: WhiteboardNode[];
   setNodes: React.Dispatch<React.SetStateAction<WhiteboardNode[]>>;
-  connections: WhiteboardConnection[];
-  setConnections: React.Dispatch<React.SetStateAction<WhiteboardConnection[]>>;
-  tool: string;
+  tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape';
   setTool: (tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape') => void;
   shapeType: string;
   currentColor: string;
@@ -22,10 +22,10 @@ interface WhiteboardCanvasProps {
   setSelectedNodeId: (id: string | null) => void;
   editingNodeId: string | null;
   setEditingNodeId: (id: string | null) => void;
-  saveToHistory: (nodes: WhiteboardNode[], connections: WhiteboardConnection[]) => void;
+  saveToHistory: (nodes: WhiteboardNode[]) => void;
 }
 
-export default function WhiteboardCanvas({
+export function WhiteboardCanvas({
   boardData,
   nodes,
   setNodes,
@@ -47,24 +47,53 @@ export default function WhiteboardCanvas({
   const [isDrawing, setIsDrawing] = useState(false);
   const lastLine = useRef<any>(null);
 
+  const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
+    const clickedOnEmpty = e.target === e.target.getStage() || (e.target.attrs.id === 'canvas-bg');
+    if (clickedOnEmpty) {
+      if (tool === 'text' || tool === 'sticky' || tool === 'shape') {
+        const pos = e.target.getStage()?.getPointerPosition();
+        if (!pos) return;
+
+        const newNode: WhiteboardNode = {
+          id: uuidv4(),
+          type: tool,
+          x: pos.x,
+          y: pos.y,
+          width: tool === 'text' ? 150 : 200,
+          height: tool === 'text' ? 50 : 120,
+          rotation: 0,
+          color: tool === 'sticky' ? '#ffd166' : currentColor,
+          text: tool === 'text' ? 'New Text' : 'New Note',
+          fontSize: fontSize,
+          shape: tool === 'shape' ? shapeType as any : undefined,
+        };
+
+        const newNodes = [...nodes, newNode];
+        setNodes(newNodes);
+        saveToHistory(newNodes);
+        setTool('select');
+      } else {
+        setSelectedNodeId(null);
+        setEditingNodeId(null);
+      }
+    }
+  };
+
   const handleMouseDown = (e: KonvaEventObject<MouseEvent>) => {
     if (tool === 'pen') {
       setIsDrawing(true);
       const pos = e.target.getStage()?.getPointerPosition();
       if (!pos) return;
-      const newLineNode: WhiteboardNode = {
-        id: `line-${Date.now()}`,
+      const newPenNode: WhiteboardNode = {
+        id: uuidv4(),
         type: 'pen',
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
+        x:0, y:0, width:0, height:0, // Not used for pen
         points: [pos.x, pos.y],
         color: currentColor,
         strokeWidth: strokeWidth,
       };
-      lastLine.current = newLineNode;
-      setNodes((prev) => [...prev, newLineNode]);
+      lastLine.current = newPenNode;
+      setNodes((prev) => [...prev, newPenNode]);
     }
   };
 
@@ -88,18 +117,11 @@ export default function WhiteboardCanvas({
   const handleMouseUp = () => {
     if (tool === 'pen' && isDrawing) {
       setIsDrawing(false);
-      saveToHistory(nodes, []);
+      saveToHistory(nodes);
       lastLine.current = null;
     }
   };
 
-  const handleDeselect = (e: KonvaEventObject<MouseEvent>) => {
-    const clickedOnEmpty = e.target === e.target.getStage() || (e.target.attrs.id === 'canvas-bg');
-    if (clickedOnEmpty) {
-      setSelectedNodeId(null);
-      setEditingNodeId(null);
-    }
-  };
 
   return (
     <Stage
@@ -107,7 +129,12 @@ export default function WhiteboardCanvas({
       width={window.innerWidth}
       height={window.innerHeight - 150} 
       draggable={tool === 'select'}
-      onMouseDown={handleDeselect}
+      onMouseDown={(e) => {
+        handleMouseDown(e);
+        handleStageClick(e);
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
       onWheel={(e) => {
         // zoom logic here if needed
       }}
@@ -125,11 +152,15 @@ export default function WhiteboardCanvas({
             isSelected={node.id === selectedNodeId}
             isEditing={node.id === editingNodeId}
             onSelect={() => {
-              setSelectedNodeId(node.id);
-              setEditingNodeId(null);
+              if (tool !== 'pen') {
+                setSelectedNodeId(node.id);
+                setEditingNodeId(null);
+              }
             }}
             onDoubleClick={() => {
-              setEditingNodeId(node.id)
+              if (tool === 'select' && (node.type === 'text' || node.type === 'sticky')) {
+                setEditingNodeId(node.id);
+              }
             }}
             onChange={(newAttrs) => {
               const newNodes = nodes.map((n) =>
@@ -137,11 +168,11 @@ export default function WhiteboardCanvas({
               );
               setNodes(newNodes);
             }}
-            onDragEnd={() => saveToHistory(nodes, [])}
+            onDragEnd={() => saveToHistory(nodes)}
             onDelete={() => {
               const newNodes = nodes.filter(n => n.id !== node.id);
               setNodes(newNodes);
-              saveToHistory(newNodes, []);
+              saveToHistory(newNodes);
             }}
           />
         ))}
