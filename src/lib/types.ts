@@ -311,7 +311,7 @@ export type DocFolder = {
 export type WhiteboardNode = {
     id: string;
     userId: string;
-    type: 'pen' | 'text' | 'sticky' | 'shape';
+    type: 'pen' | 'text' | 'sticky' | 'shape' | 'image';
     x: number;
     y: number;
     width?: number;
@@ -326,8 +326,16 @@ export type WhiteboardNode = {
     isDeleted?: boolean;
     isArrow?: boolean;
     zIndex?: number;
+    src?: string; // For images
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
+};
+
+export type WhiteboardConnection = {
+    from: string;
+    to: string;
+    color?: string;
+    strokeWidth?: number;
 };
 
 export type Whiteboard = {
@@ -336,6 +344,7 @@ export type Whiteboard = {
   ownerId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  connections: WhiteboardConnection[];
   backgroundColor?: string;
   backgroundGrid?: 'dotted' | 'lined' | 'plain';
   scale?: number;

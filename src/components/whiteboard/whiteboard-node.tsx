@@ -2,10 +2,11 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { Rect, Text, Line, Group, Transformer, Arrow } from 'react-konva';
+import { Rect, Text, Line, Group, Transformer, Arrow, Image as KonvaImage } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { WhiteboardNode } from '@/lib/types';
 import { Html } from 'react-konva-utils';
+import useImage from 'use-image';
 
 interface WhiteboardNodeComponentProps {
   node: WhiteboardNode;
@@ -28,6 +29,7 @@ export function WhiteboardNodeComponent({
 }: WhiteboardNodeComponentProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<any>(null);
+  const [image] = useImage(node.src || '', 'anonymous');
 
   useEffect(() => {
     if (isSelected && trRef.current) {
@@ -63,7 +65,7 @@ export function WhiteboardNodeComponent({
   };
   
   const renderShape = () => {
-    const { type, shape, points, color, strokeWidth, width = 0, height = 0, text, fontSize } = node;
+    const { type, shape, points, color, strokeWidth, width = 0, height = 0, text, fontSize, src } = node;
 
     if (type === 'pen' && points) {
         if(node.isArrow) {
@@ -99,7 +101,8 @@ export function WhiteboardNodeComponent({
                     width={width}
                     height={height}
                     padding={10}
-                    verticalAlign="top"
+                    verticalAlign="middle"
+                    align="center"
                 />
             </Group>
         )
@@ -114,7 +117,8 @@ export function WhiteboardNodeComponent({
                 width={width}
                 height={height}
                 padding={5}
-                verticalAlign="top"
+                verticalAlign="middle"
+                align="center"
             />
         )
     }
@@ -142,6 +146,9 @@ export function WhiteboardNodeComponent({
         />
       );
     }
+    if (type === 'image' && src) {
+      return <KonvaImage image={image} width={width} height={height} />;
+    }
     return null;
   }
 
@@ -167,6 +174,7 @@ export function WhiteboardNodeComponent({
         color: node.type === 'sticky' ? '#333333' : node.color,
         padding: '10px',
         lineHeight: 1.5,
+        textAlign: 'center',
     }
   }
 

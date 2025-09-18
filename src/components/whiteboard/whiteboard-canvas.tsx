@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useRef } from 'react';
-import { Stage, Layer, Rect, Arrow, Line } from 'react-konva';
+import { Stage, Layer, Rect, Arrow, Line, Group, Text } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
 import { WhiteboardNodeComponent } from './whiteboard-node';
@@ -19,7 +20,7 @@ type Presence = {
 interface WhiteboardCanvasProps {
   boardData: WhiteboardType;
   nodes: WhiteboardNode[];
-  tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect';
+  tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image';
   shapeType: string;
   currentColor: string;
   strokeWidth: number;

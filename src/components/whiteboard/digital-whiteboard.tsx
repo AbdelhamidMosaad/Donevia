@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -35,6 +36,7 @@ import {
   FlipVertical,
   Copy,
   Map,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -65,8 +67,10 @@ import { cn } from '@/lib/utils';
 import throttle from 'lodash.throttle';
 import { jsPDF } from 'jspdf';
 import { v4 as uuidv4 } from 'uuid';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect';
+
+type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image';
 type ShapeType = 'rectangle' | 'circle';
 type Presence = {
     userId: string;
@@ -127,6 +131,7 @@ export default function DigitalWhiteboard() {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const whiteboardContainerRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [layoutDirection, setLayoutDirection] = useState<LayoutDirection>('right');
   const [showMinimap, setShowMinimap] = useState(true);
@@ -419,7 +424,7 @@ export default function DigitalWhiteboard() {
 
     if (!document.fullscreenElement) {
         elem.requestFullscreen().catch(err => {
-            alert(`Error attempting to enable full-screen mode: ${'\'' + '\'' + '\''}${err.message} (${err.name})${'\'' + '\'' + '\''}`);
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
         });
     } else {
         document.exitFullscreen();
@@ -547,6 +552,28 @@ export default function DigitalWhiteboard() {
       }
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !user) return;
+    const file = e.target.files[0];
+    const storage = getStorage();
+    const filePath = `users/${user.uid}/whiteboards/${whiteboardId}/images/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, filePath);
+
+    try {
+        await uploadBytes(fileRef, file);
+        const downloadURL = await getDownloadURL(fileRef);
+        await createNode({
+            type: 'image',
+            x: 200, y: 200,
+            width: 200, height: 200,
+            src: downloadURL,
+        });
+        toast({ title: 'Image uploaded successfully!' });
+    } catch(err) {
+        toast({ variant: 'destructive', title: 'Image upload failed' });
+    }
+  }
+
   const selectedNode = selectedNodeIds.length === 1 ? nodes[selectedNodeIds[0]] : null;
 
   if (!boardData) {
@@ -625,6 +652,8 @@ export default function DigitalWhiteboard() {
                         <ToggleGroupItem value="shape"><RectangleHorizontal/></ToggleGroupItem>
                         <ToggleGroupItem value="arrow"><ArrowUpRight/></ToggleGroupItem>
                         <ToggleGroupItem value="connect"><LinkIcon/></ToggleGroupItem>
+                         <ToggleGroupItem value="image" onClick={() => imageInputRef.current?.click()}><ImageIcon/></ToggleGroupItem>
+                         <input type="file" ref={imageInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                     </ToggleGroup>
                 )}
             </div>
