@@ -2,30 +2,10 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  doc,
-  onSnapshot,
-  updateDoc,
-  serverTimestamp,
-  addDoc,
-  writeBatch,
-  query,
-  getDocs,
-  setDoc,
-} from 'firebase/firestore';
-import { useParams, useRouter } from 'next/navigation';
-import { useDebouncedCallback } from 'use-debounce';
-import { jsPDF } from 'jspdf';
 import {
   MousePointer,
-  Pen,
-  Circle as CircleIcon,
-  RectangleHorizontal,
-  Type,
-  StickyNote,
+  PlusCircle,
+  Link as LinkIcon,
   Undo,
   Redo,
   Download,
@@ -43,23 +23,46 @@ import {
   Users,
   ArrowLeft,
   ArrowUpRight,
+  Move,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Square,
+  Circle,
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
 } from 'lucide-react';
-import throttle from 'lodash.throttle';
-
-import type { Whiteboard as WhiteboardType, WhiteboardNode } from '@/lib/types';
-
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '../ui/input';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import {
+  doc,
+  onSnapshot,
+  updateDoc,
+  serverTimestamp,
+  collection,
+  writeBatch,
+  addDoc,
+  setDoc,
+  getDocs,
+  query,
+} from 'firebase/firestore';
+import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { v4 as uuidv4 } from 'uuid';
+import { useDebouncedCallback } from 'use-debounce';
+import type { Whiteboard as WhiteboardType, WhiteboardNode } from '@/lib/types';
+import { WhiteboardCanvas } from './whiteboard-canvas';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Separator } from '../ui/separator';
-import { WhiteboardCanvas } from './whiteboard-canvas';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Slider } from '../ui/slider';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { cn } from '@/lib/utils';
+import throttle from 'lodash.throttle';
+import { jsPDF } from 'jspdf';
+import { v4 as uuidv4 } from 'uuid';
 
 type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow';
 type ShapeType = 'rectangle' | 'circle';
@@ -72,6 +75,7 @@ type Presence = {
     y: number;
     lastSeen: any;
 };
+type LayoutDirection = 'right' | 'bottom' | 'left' | 'top';
 
 const colorPalette = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#333333'];
 const backgroundColors = ['#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'];
@@ -118,6 +122,12 @@ export default function DigitalWhiteboard() {
 
   const [presence, setPresence] = useState<Record<string, Presence>>({});
 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const whiteboardContainerRef = useRef<HTMLDivElement>(null);
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
+  const [layoutDirection, setLayoutDirection] = useState<LayoutDirection>('right');
+
+  // Firestore Refs
   const getBoardDocRef = useCallback(() => {
     if (!user || !whiteboardId) return null;
     return doc(db, 'users', user.uid, 'whiteboards', whiteboardId);
@@ -173,13 +183,6 @@ export default function DigitalWhiteboard() {
     }
   }, [user, whiteboardId, toast, router, getBoardDocRef, historyIndex]);
   
-  const saveNode = useDebouncedCallback(async (nodeId: string, updatedAttrs: Partial<WhiteboardNode>) => {
-    if (!user) return;
-    const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', nodeId);
-    const cleanedAttrs = deepCleanUndefined({ ...updatedAttrs, updatedAt: serverTimestamp() });
-    await updateDoc(nodeRef, cleanedAttrs);
-  }, 300);
-  
   const pushToHistory = (newNodes: Record<string, WhiteboardNode>) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newNodes);
@@ -219,25 +222,30 @@ export default function DigitalWhiteboard() {
            x: pos.x,
            y: pos.y,
            lastSeen: serverTimestamp()
-       });
+       }, { merge: true });
    }, 200), [user, whiteboardId]);
 
-    const handleNodeChange = (id: string, newAttrs: Partial<WhiteboardNode>) => {
+    const handleNodeChange = useDebouncedCallback((id: string, newAttrs: Partial<WhiteboardNode>) => {
         setNodes(prev => ({
             ...prev,
             [id]: { ...prev[id], ...newAttrs } as WhiteboardNode,
         }));
-        saveNode(id, newAttrs);
-    };
+        
+        if (!user) return;
+        const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', id);
+        const cleanedAttrs = deepCleanUndefined({ ...newAttrs, updatedAt: serverTimestamp() });
+        updateDoc(nodeRef, cleanedAttrs);
+    }, 50);
 
     const handleNodeChangeComplete = () => {
-         pushToHistory({ nodes });
+        pushToHistory({ nodes });
     };
 
     const deleteSelectedNode = () => {
-        if (!selectedNodeId) return;
-        saveNode(selectedNodeId, { isDeleted: true });
-
+        if (!selectedNodeId || !user) return;
+        const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', selectedNodeId);
+        updateDoc(nodeRef, { isDeleted: true, updatedAt: serverTimestamp() });
+        
         const newNodes = { ...nodes };
         delete newNodes[selectedNodeId];
         pushToHistory({ nodes: newNodes });
@@ -309,6 +317,130 @@ export default function DigitalWhiteboard() {
     }, [selectedNodeId, undo, redo]);
 
 
+  const toggleFullscreen = () => {
+    const elem = whiteboardContainerRef.current;
+    if (!elem) return;
+
+    if (!document.fullscreenElement) {
+        elem.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+  
+  const createExportCanvas = (padding = 100): HTMLCanvasElement | null => {
+    const nodeList = Object.values(nodes);
+    if (nodeList.length === 0) {
+      toast({ variant: "destructive", title: "Cannot export an empty whiteboard." });
+      return null;
+    }
+
+    const minX = Math.min(...nodeList.map(n => n.x - (n.width || 0) / 2));
+    const minY = Math.min(...nodeList.map(n => n.y - (n.height || 0) / 2));
+    const maxX = Math.max(...nodeList.map(n => n.x + (n.width || 0) / 2));
+    const maxY = Math.max(...nodeList.map(n => n.y + (n.height || 0) / 2));
+
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = contentWidth + padding * 2;
+    exportCanvas.height = contentHeight + padding * 2;
+    const exportCtx = exportCanvas.getContext('2d');
+
+    if (!exportCtx) {
+      toast({ variant: "destructive", title: "Failed to create export canvas." });
+      return null;
+    }
+
+    exportCtx.fillStyle = boardData?.backgroundColor || '#FFFFFF';
+    exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    const drawOffsetX = -minX + padding;
+    const drawOffsetY = -minY + padding;
+
+    // This is a simplified render. A full implementation would need to re-render all node types.
+    nodeList.forEach(node => {
+      const x = node.x + drawOffsetX;
+      const y = node.y + drawOffsetY;
+      
+      if(node.type === 'pen' && node.points) {
+          exportCtx.strokeStyle = node.color || '#333';
+          exportCtx.lineWidth = node.strokeWidth || 4;
+          exportCtx.lineCap = 'round';
+          exportCtx.lineJoin = 'round';
+          exportCtx.beginPath();
+          for(let i = 0; i < node.points.length; i += 2) {
+              if (i === 0) {
+                  exportCtx.moveTo(node.points[i] + drawOffsetX, node.points[i+1] + drawOffsetY);
+              } else {
+                  exportCtx.lineTo(node.points[i] + drawOffsetX, node.points[i+1] + drawOffsetY);
+              }
+          }
+          exportCtx.stroke();
+      } else {
+          exportCtx.fillStyle = node.color || '#333';
+          exportCtx.fillRect(x - (node.width || 0) / 2, y - (node.height || 0) / 2, node.width || 0, node.height || 0);
+          if (node.text) {
+              exportCtx.fillStyle = node.type === 'sticky' ? '#333' : '#fff';
+              exportCtx.font = `${node.fontSize || 16}px sans-serif`;
+              exportCtx.textAlign = 'center';
+              exportCtx.textBaseline = 'middle';
+              exportCtx.fillText(node.text, x, y);
+          }
+      }
+    });
+
+    return exportCanvas;
+  };
+  
+  const handleExportPNG = () => {
+    const exportCanvas = createExportCanvas();
+    if (!exportCanvas) return;
+
+    const dataURL = exportCanvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `${boardName || 'whiteboard'}.png`;
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "Export Successful", description: "Your whiteboard is being downloaded as a PNG." });
+  };
+  
+  const handleExportPDF = () => {
+    const exportCanvas = createExportCanvas();
+    if (!exportCanvas) return;
+    
+    const imgData = exportCanvas.toDataURL('image/jpeg', 0.8);
+    const pdf = new jsPDF({
+        orientation: exportCanvas.width > exportCanvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [exportCanvas.width, exportCanvas.height]
+    });
+    pdf.addImage(imgData, 'JPEG', 0, 0, exportCanvas.width, exportCanvas.height);
+    pdf.save(`${boardName || 'whiteboard'}.pdf`);
+    toast({ title: "Export Successful", description: "Your whiteboard is being downloaded as a PDF." });
+  };
+  
+  const handleSettingChange = async (setting: Partial<WhiteboardType>) => {
+      const boardRef = getBoardDocRef();
+      if(boardRef && boardData) {
+          await updateDoc(boardRef, setting);
+      }
+  }
+
+
+  const selectedNode = selectedNodeId ? nodes[selectedNodeId] : null;
+
   if (!boardData) {
       return (
           <div className="flex items-center justify-center h-full">
@@ -316,12 +448,10 @@ export default function DigitalWhiteboard() {
           </div>
       );
   }
-  
-  const selectedNode = selectedNodeId ? nodes[selectedNodeId] : null;
 
   return (
-    <div className="flex flex-col h-full gap-4">
-        <div className="flex justify-between items-center">
+    <div ref={whiteboardContainerRef} className={cn("flex flex-col h-full gap-4", isFullscreen && "bg-background")}>
+        <div className={cn("flex justify-between items-center", isFullscreen && "hidden")}>
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><ArrowLeft /></Button>
                 <Input 
@@ -342,27 +472,59 @@ export default function DigitalWhiteboard() {
                         </Avatar>
                     ))}
                  </div>
-                <Button variant="outline"><Download /> Export</Button>
+                <Popover>
+                    <PopoverTrigger asChild><Button variant="outline"><Settings /> Settings</Button></PopoverTrigger>
+                    <PopoverContent className="w-80">
+                        <div className="grid gap-4">
+                            <div className="space-y-2"><h4 className="font-medium leading-none">Settings</h4></div>
+                            <div className="grid gap-2">
+                                <Label>Background Color</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {backgroundColors.map(color => (
+                                        <button key={color} onClick={() => handleSettingChange({ backgroundColor: color })}
+                                            className={cn("w-8 h-8 rounded-full border", boardData.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
+                                            style={{ backgroundColor: color }} />
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Grid Style</Label>
+                                <ToggleGroup type="single" value={boardData.backgroundGrid || 'dotted'} onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}>
+                                    <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
+                                    <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
+                                    <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
+                                </ToggleGroup>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+                 <Button variant="outline" onClick={handleExportPNG}><Download /> Export PNG</Button>
+                <Button variant="outline" onClick={handleExportPDF}><Download /> Export PDF</Button>
             </div>
         </div>
 
         <div className="flex-1 relative">
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border">
-                <ToggleGroup type="single" value={tool} onValueChange={(t: Tool) => t && setTool(t)}>
-                    <ToggleGroupItem value="select"><MousePointer/></ToggleGroupItem>
-                    <ToggleGroupItem value="pen"><Pen/></ToggleGroupItem>
-                    <ToggleGroupItem value="text"><Type/></ToggleGroupItem>
-                    <ToggleGroupItem value="sticky"><StickyNote/></ToggleGroupItem>
-                    <ToggleGroupItem value="shape"><RectangleHorizontal/></ToggleGroupItem>
-                    <ToggleGroupItem value="arrow"><ArrowUpRight/></ToggleGroupItem>
-                </ToggleGroup>
+            <div className={cn("absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border", isToolbarCollapsed && 'items-center')}>
+                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)}>
+                    {isToolbarCollapsed ? <PanelLeftOpen/> : <PanelLeftClose />}
+                 </Button>
+                {!isToolbarCollapsed && (
+                    <ToggleGroup type="single" value={tool} onValueChange={(t: Tool) => t && setTool(t)}>
+                        <ToggleGroupItem value="select"><MousePointer/></ToggleGroupItem>
+                        <ToggleGroupItem value="pen"><Pen/></ToggleGroupItem>
+                        <ToggleGroupItem value="text"><Type/></ToggleGroupItem>
+                        <ToggleGroupItem value="sticky"><StickyNote/></ToggleGroupItem>
+                        <ToggleGroupItem value="shape"><RectangleHorizontal/></ToggleGroupItem>
+                        <ToggleGroupItem value="arrow"><ArrowUpRight/></ToggleGroupItem>
+                    </ToggleGroup>
+                )}
             </div>
             
-            {tool === 'shape' && (
+            {(tool === 'shape' && !isToolbarCollapsed) && (
                  <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border">
                     <ToggleGroup type="single" value={shapeType} onValueChange={(s: ShapeType) => s && setShapeType(s)}>
                         <ToggleGroupItem value="rectangle"><RectangleHorizontal/></ToggleGroupItem>
-                        <ToggleGroupItem value="circle"><CircleIcon/></ToggleGroupItem>
+                        <ToggleGroupItem value="circle"><Circle/></ToggleGroupItem>
                     </ToggleGroup>
                 </div>
             )}
@@ -423,7 +585,7 @@ export default function DigitalWhiteboard() {
                 onNodeCreate={createNode}
                 onNodeChange={handleNodeChange}
                 onNodeChangeComplete={handleNodeChangeComplete}
-                onNodeDelete={(nodeId) => saveNode(nodeId, { isDeleted: true })}
+                onNodeDelete={(nodeId) => updateDoc(doc(db, 'users', user!.uid, 'whiteboards', whiteboardId, 'nodes', nodeId), { isDeleted: true })}
                 onSelectNode={setSelectedNodeId}
                 onEditNode={setEditingNodeId}
                 onUpdatePresence={updatePresence}
