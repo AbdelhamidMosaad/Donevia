@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Stage, Layer, Rect, Arrow, Line, Group, Text } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
@@ -20,7 +19,7 @@ type Presence = {
 interface WhiteboardCanvasProps {
   boardData: WhiteboardType;
   nodes: WhiteboardNode[];
-  tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image';
+  tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
   shapeType: string;
   currentColor: string;
   strokeWidth: number;
@@ -162,6 +161,27 @@ export function WhiteboardCanvas({
     height: isMinimap ? 144 : window.innerHeight - 150
   };
 
+  const handleSettingChange = (newSettings: Partial<WhiteboardType>) => {
+    // This function will be provided by the parent component
+  };
+  
+  const getConnectorPoints = (fromNode: WhiteboardNode, toNode: WhiteboardNode) => {
+    const dx = toNode.x - fromNode.x;
+    const dy = toNode.y - fromNode.y;
+    const angle = Math.atan2(dy, dx);
+    const fromRadiusX = (fromNode.width ?? 0) / 2;
+    const fromRadiusY = (fromNode.height ?? 0) / 2;
+    const toRadiusX = (toNode.width ?? 0) / 2;
+    const toRadiusY = (toNode.height ?? 0) / 2;
+
+    const fromX = fromNode.x + fromRadiusX * Math.cos(angle);
+    const fromY = fromNode.y + fromRadiusY * Math.sin(angle);
+    const toX = toNode.x - toRadiusX * Math.cos(angle);
+    const toY = toNode.y - toRadiusY * Math.sin(angle);
+    
+    return [fromX, fromY, toX, toY];
+  };
+
   return (
     <Stage
       ref={stageRef}
@@ -201,10 +221,11 @@ export function WhiteboardCanvas({
             const fromNode = nodes.find(n => n.id === conn.from);
             const toNode = nodes.find(n => n.id === conn.to);
             if (!fromNode || !toNode) return null;
+            const points = getConnectorPoints(fromNode, toNode);
             return (
                 <Arrow 
                     key={`${conn.from}-${conn.to}`}
-                    points={[fromNode.x, fromNode.y, toNode.x, toNode.y]}
+                    points={points}
                     stroke={conn.color || '#333333'}
                     strokeWidth={conn.strokeWidth || 2}
                     pointerLength={10}
@@ -218,6 +239,7 @@ export function WhiteboardCanvas({
             node={node}
             isSelected={selectedNodeId === node.id}
             isEditing={node.id === editingNodeId}
+            tool={tool}
             onSelect={() => {
               if (tool === 'select') {
                 onSelectNode(node.id);
@@ -242,8 +264,4 @@ export function WhiteboardCanvas({
       </Layer>
     </Stage>
   );
-}
-
-function handleSettingChange(arg0: { scale: number; x: number; y: number; }) {
-    throw new Error('Function not implemented.');
 }

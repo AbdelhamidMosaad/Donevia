@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -70,7 +69,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
-type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image';
+type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
 type ShapeType = 'rectangle' | 'circle';
 type Presence = {
     userId: string;
@@ -192,7 +191,7 @@ export default function DigitalWhiteboard() {
         unsubPresence();
       };
     }
-  }, [user, whiteboardId, toast, router, getBoardDocRef, historyIndex]);
+  }, [user, whiteboardId, toast, router, getBoardDocRef, historyIndex, boardData?.connections]);
   
   const pushToHistory = (newNodes: Record<string, WhiteboardNode>, newConnections: WhiteboardConnection[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -391,6 +390,7 @@ export default function DigitalWhiteboard() {
             if (e.key === 'r') { setTool('shape'); setShapeType('rectangle'); }
             if (e.key === 'o') { setTool('shape'); setShapeType('circle'); }
             if (e.key === 'c') setTool('connect');
+            if (e.key === 'm') setTool('mindmap');
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 deleteSelectedNodes();
@@ -630,6 +630,15 @@ export default function DigitalWhiteboard() {
                                     <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
                                 </ToggleGroup>
                             </div>
+                             <div className="grid gap-2">
+                                <Label>Layout Direction</Label>
+                                <ToggleGroup type="single" value={layoutDirection} onValueChange={(value: LayoutDirection) => value && setLayoutDirection(value)}>
+                                    <ToggleGroupItem value="right" aria-label="Layout Right"><ArrowRight /></ToggleGroupItem>
+                                    <ToggleGroupItem value="bottom" aria-label="Layout Down"><ArrowDown /></ToggleGroupItem>
+                                    <ToggleGroupItem value="left" aria-label="Layout Left"><ArrowLeft /></ToggleGroupItem>
+                                    <ToggleGroupItem value="top" aria-label="Layout Up"><ArrowUp /></ToggleGroupItem>
+                                </ToggleGroup>
+                            </div>
                         </div>
                     </PopoverContent>
                 </Popover>
@@ -652,7 +661,8 @@ export default function DigitalWhiteboard() {
                         <ToggleGroupItem value="shape"><RectangleHorizontal/></ToggleGroupItem>
                         <ToggleGroupItem value="arrow"><ArrowUpRight/></ToggleGroupItem>
                         <ToggleGroupItem value="connect"><LinkIcon/></ToggleGroupItem>
-                         <ToggleGroupItem value="image" onClick={() => imageInputRef.current?.click()}><ImageIcon/></ToggleGroupItem>
+                        <ToggleGroupItem value="image" onClick={() => imageInputRef.current?.click()}><ImageIcon/></ToggleGroupItem>
+                        <ToggleGroupItem value="mindmap"><Map/></ToggleGroupItem>
                          <input type="file" ref={imageInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                     </ToggleGroup>
                 )}
@@ -767,6 +777,42 @@ export default function DigitalWhiteboard() {
                             updateDoc(getBoardDocRef()!, { connections: newConnections });
                             setConnectingNodeId(null);
                         }
+                    } else if (tool === 'mindmap' && id) {
+                         const parentNode = nodes[id];
+                         if (parentNode) {
+                            // Calculate new node position
+                            const children = connections.filter(c => c.from === parentNode.id);
+                            const siblingGap = 20;
+                            const childGap = 120;
+                            let newX = parentNode.x, newY = parentNode.y;
+
+                            if (layoutDirection === 'right') {
+                                newX += childGap;
+                                newY += children.length * (50 + siblingGap);
+                            } else if (layoutDirection === 'left') {
+                                newX -= childGap;
+                                newY += children.length * (50 + siblingGap);
+                            } else if (layoutDirection === 'bottom') {
+                                newY += childGap;
+                                newX += children.length * (150 + siblingGap);
+                            } else { // top
+                                newY -= childGap;
+                                newX += children.length * (150 + siblingGap);
+                            }
+
+                            createNode({
+                                type: 'text', x: newX, y: newY,
+                                width: 150, height: 40,
+                                text: 'New Idea', color: '#333333', fontSize: 16
+                            }).then(newNode => {
+                                const newConnections = [...connections, { from: parentNode.id, to: newNode.id, color: '#9ca3af', strokeWidth: 2 }];
+                                setConnections(newConnections);
+                                updateDoc(getBoardDocRef()!, { connections: newConnections });
+                                onSelectNode(newNode.id);
+                                onEditNode(newNode.id);
+                            });
+                         }
+
                     } else {
                         if(id) {
                             setSelectedNodeIds(prev =>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useEffect } from 'react';
@@ -12,6 +11,7 @@ interface WhiteboardNodeComponentProps {
   node: WhiteboardNode;
   isSelected: boolean;
   isEditing: boolean;
+  tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
   onSelect: () => void;
   onDoubleClick: () => void;
   onChange: (newAttrs: Partial<WhiteboardNode>) => void;
@@ -22,6 +22,7 @@ export function WhiteboardNodeComponent({
   node,
   isSelected,
   isEditing,
+  tool,
   onSelect,
   onDoubleClick,
   onChange,
@@ -197,6 +198,14 @@ export function WhiteboardNodeComponent({
         rotation={node.rotation || 0}
       >
         {renderShape()}
+        {tool === 'connect' && (
+          <>
+            <Rect x={-5} y={node.height! / 2 - 5} width={10} height={10} fill="dodgerblue" cornerRadius={5} />
+            <Rect x={node.width! / 2 - 5} y={-5} width={10} height={10} fill="dodgerblue" cornerRadius={5} />
+            <Rect x={node.width! - 5} y={node.height! / 2 - 5} width={10} height={10} fill="dodgerblue" cornerRadius={5} />
+            <Rect x={node.width! / 2 - 5} y={node.height! - 5} width={10} height={10} fill="dodgerblue" cornerRadius={5} />
+          </>
+        )}
       </Group>
       {isSelected && !isEditing && (
         <Transformer
