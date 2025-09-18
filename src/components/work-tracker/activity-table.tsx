@@ -52,7 +52,7 @@ export function ActivityTable({ activities, settings, onFilteredTradesChange }: 
     const [sortColumn, setSortColumn] = useState<SortableColumn>('date');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-    const [editingActivity, setEditingActivity] = useState<WorkActivity | null>(null);
+    const [editingActivity, setEditingActivity] = useState<Partial<WorkActivity> | null>(null);
     const [isFiltersOpen, setIsFiltersOpen] = useState(true);
 
     const filteredAndSortedActivities = useMemo(() => {
@@ -145,8 +145,8 @@ export function ActivityTable({ activities, settings, onFilteredTradesChange }: 
             date: Timestamp.now(), // Default to today, user can change it in the dialog
         } as Omit<WorkActivity, 'id'>;
 
-        // We can create a temporary ID for the key, but the dialog will handle creating a new doc
-        setEditingActivity({ ...newActivity, id: 'new-duplicate' } as WorkActivity);
+        // Pass the data without an ID to signify it's a new record based on an existing one
+        setEditingActivity(newActivity);
     };
 
     const handleExport = () => {

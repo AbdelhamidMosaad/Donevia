@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -46,6 +47,8 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     
+    const isEditMode = 'id' in activity;
+    
     const form = useForm<ActivityFormData>({
         resolver: zodResolver(activitySchema),
         defaultValues: {
@@ -83,7 +86,7 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
         if (!user) return;
         setIsSaving(true);
         try {
-            if (activity.id) { // If it's an existing activity (or a duplicate with a temp ID)
+            if (isEditMode && activity.id) {
                  const activityRef = doc(db, 'users', user.uid, 'workActivities', activity.id);
                  await updateDoc(activityRef, {
                     ...data,
@@ -91,7 +94,7 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
                     updatedAt: Timestamp.now(),
                 });
                 toast({ title: 'Activity updated successfully!' });
-            } else { // It's a new duplicated activity
+            } else { // New or duplicated activity
                  await addDoc(collection(db, 'users', user.uid, 'workActivities'), {
                     ...data,
                     ownerId: user.uid,
@@ -99,7 +102,7 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp(),
                 });
-                toast({ title: 'Duplicated activity created!' });
+                toast({ title: 'Activity created!' });
             }
             onOpenChange(false);
         } catch (e) {
@@ -114,8 +117,8 @@ export function ActivityDialog({ activity, isOpen, onOpenChange, settings, onAdd
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>{activity.id ? 'Edit Activity' : 'Duplicate Activity'}</DialogTitle>
-                    <DialogDescription>{activity.id ? 'Update the details of your logged activity.' : 'Modify the details for the new duplicated activity.'}</DialogDescription>
+                    <DialogTitle>{isEditMode ? 'Edit Activity' : 'Create/Duplicate Activity'}</DialogTitle>
+                    <DialogDescription>{isEditMode ? 'Update the details of your logged activity.' : 'Modify the details for the new activity.'}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto pr-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-1">
