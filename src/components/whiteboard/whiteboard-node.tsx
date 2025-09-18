@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { Rect, Text, Line, Group, Transformer } from 'react-konva';
+import { Rect, Text, Line, Group, Transformer, Arrow } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { WhiteboardNode } from '@/lib/types';
 import { Html } from 'react-konva-utils';
@@ -68,6 +68,9 @@ export function WhiteboardNodeComponent({
     const { type, shape, points, color, strokeWidth, width = 0, height = 0, text, fontSize } = node;
 
     if (type === 'pen' && points) {
+        if(node.isArrow) {
+            return <Arrow points={points} stroke={color} strokeWidth={strokeWidth} lineCap="round" lineJoin="round" pointerLength={strokeWidth * 2} pointerWidth={strokeWidth * 2} />
+        }
       return (
         <Line
           points={points}
@@ -110,9 +113,6 @@ export function WhiteboardNodeComponent({
                 text={isEditing ? '' : text}
                 fontSize={fontSize}
                 fill={color}
-                fontStyle={node.isItalic ? 'italic' : 'normal'}
-                textDecoration={node.isUnderline ? 'underline' : 'none'}
-                fontFamily='sans-serif'
                 width={width}
                 height={height}
                 padding={5}
@@ -134,13 +134,13 @@ export function WhiteboardNodeComponent({
     }
      if (type === 'shape' && shape === 'circle') {
       return (
-        <Rect // Using Rect to make resizing more predictable
+        <Rect
           width={width}
           height={height}
           fill={color}
           stroke="#333333"
           strokeWidth={strokeWidth}
-          cornerRadius={width/2} // Makes it a circle
+          cornerRadius={width/2}
         />
       );
     }
@@ -210,8 +210,8 @@ export function WhiteboardNodeComponent({
                 onChange={handleTextChange}
                 onKeyDown={(e) => {
                     if(e.key === 'Escape') {
-                        setEditingNodeId(null);
-                        onDragEnd(); // Save changes
+                        onEditNode(null);
+                        onDragEnd();
                     }
                 }}
                 style={getTextAreaStyle()}
