@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -24,7 +23,7 @@ const activitySchema = z.object({
     date: z.string().nonempty('Date is required.'),
     appointment: z.string().nonempty('Appointment type is required.'),
     category: z.string().nonempty('Task category is required.'),
-    description: z.string().nonempty('Description is required.'),
+    description: z.string().optional(),
     customer: z.string().nonempty('Customer is required.'),
     invoiceNumber: z.string().optional(),
     amount: z.coerce.number().optional(),
