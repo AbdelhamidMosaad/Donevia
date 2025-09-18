@@ -79,18 +79,29 @@ export function AnalyticsDashboard({ activities, settings }: AnalyticsDashboardP
   
   const renderPieChart = (data: {name: string, value: number}[], title: string) => {
       if (data.length === 0) return <p className="text-muted-foreground text-center py-8">No revenue data for {title.toLowerCase()}.</p>;
+      
+      const chartConfig = data.reduce((acc, item, index) => {
+        acc[item.name] = {
+            label: item.name,
+            color: COLORS[index % COLORS.length],
+        };
+        return acc;
+      }, {} as any);
+
       return (
-          <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                  <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                      {data.map((entry, index) => (
-                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value) => `${currencySymbol}${Number(value).toFixed(2)}`} />} />
-                  <Legend />
-              </PieChart>
-          </ResponsiveContainer>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                    <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent formatter={(value) => `${currencySymbol}${Number(value).toFixed(2)}`} />} />
+                    <Legend />
+                </PieChart>
+            </ResponsiveContainer>
+        </ChartContainer>
       );
   }
 
