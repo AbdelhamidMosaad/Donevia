@@ -108,9 +108,16 @@ export function AddStudyChapterDialog({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Chapter' : 'Add New Chapter'}</DialogTitle>
           <DialogDescription>{isEditMode ? 'Update this chapter.' : 'Add a new chapter to your study goal.'}</DialogDescription>

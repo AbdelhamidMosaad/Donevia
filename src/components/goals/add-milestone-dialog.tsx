@@ -102,7 +102,7 @@ export function AddMilestoneDialog({
     }
   };
   
-   const handleKeyDown = (e: React.KeyboardEvent) => {
+   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSave();

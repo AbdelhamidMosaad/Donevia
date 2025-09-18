@@ -76,15 +76,16 @@ export function AddHabitDialog({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleSave();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Habit' : 'Add New Habit'}</DialogTitle>
           <DialogDescription>
@@ -94,7 +95,7 @@ export function AddHabitDialog({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={handleKeyDown} className="col-span-3" />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
           </div>
         </div>
         <DialogFooter>
