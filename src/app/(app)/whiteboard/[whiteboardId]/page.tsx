@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { DigitalWhiteboard } from '@/components/whiteboard/digital-whiteboard';
