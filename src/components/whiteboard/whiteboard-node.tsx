@@ -4,10 +4,9 @@
 import React, { useRef, useEffect } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { WhiteboardNode } from '@/lib/types';
-import { Html } from 'react-konva-utils';
 import useImage from 'use-image';
 
-// Dynamically import react-konva components
+// Dynamically import react-konva components to ensure they only run on the client
 const Group = React.lazy(() => import('react-konva').then(m => ({ default: m.Group })));
 const Rect = React.lazy(() => import('react-konva').then(m => ({ default: m.Rect })));
 const Text = React.lazy(() => import('react-konva').then(m => ({ default: m.Text })));
@@ -16,6 +15,8 @@ const Arrow = React.lazy(() => import('react-konva').then(m => ({ default: m.Arr
 const Transformer = React.lazy(() => import('react-konva').then(m => ({ default: m.Transformer })));
 const RegularPolygon = React.lazy(() => import('react-konva').then(m => ({ default: m.RegularPolygon })));
 const KonvaImage = React.lazy(() => import('react-konva').then(m => ({ default: m.Image })));
+const Html = React.lazy(() => import('react-konva-utils').then(m => ({ default: m.Html })));
+
 
 interface WhiteboardNodeComponentProps {
   node: WhiteboardNode;
