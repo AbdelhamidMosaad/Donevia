@@ -1,102 +1,144 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import type { WhiteboardNode } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Trash2 } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Rnd } from 'react-rnd';
 
 interface WhiteboardNodeComponentProps {
   node: WhiteboardNode;
   onNodeChange: (nodeId: string, updates: Partial<WhiteboardNode>) => void;
   onDelete: (nodeId: string) => void;
   isSelected: boolean;
+  onSelect: (nodeId: string) => void;
   scale: number;
 }
 
-export function WhiteboardNodeComponent({ node, onNodeChange, onDelete, isSelected, scale }: WhiteboardNodeComponentProps) {
+export function WhiteboardNodeComponent({ node, onNodeChange, onDelete, isSelected, onSelect, scale }: WhiteboardNodeComponentProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [text, setText] = useState(node.text);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  const nodeRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setText(node.text);
-  }, [node.text]);
+    if (isEditing && textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [isEditing]);
+  
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onNodeChange(node.id, { text: e.target.value });
+       if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = `${e.target.scrollHeight}px`;
+    }
+  }
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      const dx = (e.clientX - dragStart.x) / scale;
-      const dy = (e.clientY - dragStart.y) / scale;
-      onNodeChange(node.id, { x: node.x + dx, y: node.y + dy });
-      setDragStart({ x: e.clientX, y: e.clientY });
+  const handleDoubleClick = () => {
+    if (node.type === 'text' || node.type === 'sticky') {
+      setIsEditing(true);
     }
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  const handleBlur = () => {
+    setIsEditing(false);
+    // The parent's debounced save will handle persisting the final state.
   };
 
   const renderContent = () => {
     switch (node.type) {
+        case 'pen':
+            const pathData = node.points?.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]} ${p[1]}`).join(' ');
+            return (
+                <svg
+                    className="absolute"
+                    style={{
+                        left: -node.x,
+                        top: -node.y,
+                        width: '100vw', // Arbitrarily large to not clip
+                        height: '100vh',
+                    }}
+                    pointerEvents="none"
+                >
+                    <path
+                        d={pathData}
+                        stroke={node.color}
+                        strokeWidth={node.strokeWidth}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            )
       case 'sticky':
       case 'text':
         if (isEditing) {
           return (
             <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onBlur={() => {
-                setIsEditing(false);
-                if (text !== node.text) {
-                  onNodeChange(node.id, { text });
-                }
-              }}
-              className="w-full h-full bg-transparent border-none focus:outline-none resize-none text-center"
-              autoFocus
+              ref={textareaRef}
+              value={node.text || ''}
+              onChange={handleTextChange}
+              onBlur={handleBlur}
+              className="w-full h-full bg-transparent border-none focus:outline-none resize-none text-center p-2"
+              style={{ color: node.color }}
             />
           );
         }
-        return <p onDoubleClick={() => setIsEditing(true)}>{node.text}</p>;
+        return <p className="p-2 whitespace-pre-wrap break-words">{node.text}</p>;
       case 'shape':
-        // Shape rendering would go here, for now, just a colored box
-        return <div className="w-full h-full" />;
+        if(node.shape === 'circle') {
+            return <div className="w-full h-full rounded-full" style={{backgroundColor: node.color, border: `${node.strokeWidth}px solid ${node.strokeColor}`}}/>;
+        }
+        return <div className="w-full h-full rounded-md" style={{backgroundColor: node.color, border: `${node.strokeWidth}px solid ${node.strokeColor}`}}/>;
       default:
         return null;
     }
   };
+  
+  if (node.type === 'pen') {
+      return renderContent();
+  }
 
   return (
-    <div
-      ref={nodeRef}
+    <Rnd
+      size={{ width: node.width, height: node.height }}
+      position={{ x: node.x, y: node.y }}
+      onDragStart={() => onSelect(node.id)}
+      onDragStop={(e, d) => onNodeChange(node.id, { x: d.x, y: d.y })}
+      onResizeStop={(e, direction, ref, delta, position) => {
+        onNodeChange(node.id, {
+          width: parseInt(ref.style.width, 10),
+          height: parseInt(ref.style.height, 10),
+          ...position,
+        });
+      }}
+      scale={scale}
       className={cn(
-        "absolute p-2 rounded-md shadow-lg flex items-center justify-center transition-all duration-100",
-        isSelected ? 'ring-2 ring-primary ring-offset-2' : 'ring-1 ring-gray-300',
-        isDragging && 'cursor-grabbing shadow-2xl'
+        "flex items-center justify-center transition-all duration-100",
+        isSelected && 'ring-2 ring-primary ring-offset-2 z-10',
+        node.type === 'sticky' && 'shadow-lg',
       )}
       style={{
-        left: node.x,
-        top: node.y,
-        width: node.width,
-        height: node.height,
-        transform: `translate(-50%, -50%) rotate(${node.rotation || 0}deg)`,
-        backgroundColor: node.color,
-        color: '#000000', // Assuming black text for now for simplicity
-        cursor: 'grab'
+          backgroundColor: node.type === 'sticky' ? node.color : 'transparent',
+          color: node.type === 'sticky' ? '#000000' : node.color,
+          borderRadius: node.type === 'sticky' || node.shape === 'rectangle' ? '0.5rem' : node.shape === 'circle' ? '50%' : '0'
       }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onDoubleClick={handleDoubleClick}
+      onClick={() => onSelect(node.id)}
     >
       {renderContent()}
-    </div>
+      {isSelected && (
+        <Button
+            variant="destructive"
+            size="icon"
+            className="absolute -top-3 -right-3 h-6 w-6 rounded-full z-20"
+            onClick={(e) => { e.stopPropagation(); onDelete(node.id); }}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
+    </Rnd>
   );
 }

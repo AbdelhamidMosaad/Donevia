@@ -308,6 +308,22 @@ export type DocFolder = {
 };
 
 /** Whiteboard */
+export type WhiteboardNode = {
+    id: string;
+    type: 'text' | 'sticky' | 'shape' | 'pen';
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation?: number;
+    color?: string; // Fill for shapes/stickies, stroke for pen, text color for text
+    strokeColor?: string;
+    strokeWidth?: number;
+    text?: string;
+    shape?: 'rectangle' | 'circle';
+    points?: [number, number][]; // For pen tool
+}
+
 export type Whiteboard = {
   id: string;
   name: string;
@@ -316,7 +332,9 @@ export type Whiteboard = {
   updatedAt: Timestamp;
   backgroundColor?: string;
   backgroundGrid?: 'dotted' | 'lined' | 'plain';
+  nodes?: WhiteboardNode[];
 };
+
 
 /** Mind Map */
 export type MindMapNode = {
@@ -725,5 +743,3 @@ export type InterviewFeedback = {
     suggestions: string[];
     overallAssessment: string;
 };
-
-    

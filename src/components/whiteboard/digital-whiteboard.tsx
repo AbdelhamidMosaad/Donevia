@@ -1,40 +1,27 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   MousePointer,
-  PlusCircle,
-  Link as LinkIcon,
-  Undo,
-  Redo,
-  Download,
-  Plus,
-  Trash2,
-  Palette,
-  Bold,
-  Italic,
-  Underline,
-  GitBranch,
-  Save,
-  Expand,
-  Minus,
-  Move,
-  Maximize,
-  Minimize,
-  PanelLeftOpen,
-  PanelLeftClose,
+  Pen,
+  Eraser,
+  Type,
+  StickyNote,
   Square,
   Circle,
+  Move,
+  Undo,
+  Redo,
+  ZoomIn,
+  ZoomOut,
+  Expand,
+  Save,
+  Download,
   Settings,
   Grid3x3,
   List,
   Baseline,
   ArrowLeft,
-  Pen,
-  Eraser,
-  Type,
-  StickyNote,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -47,15 +34,18 @@ import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { Input } from '../ui/input';
+import { WhiteboardNodeComponent } from './whiteboard-node';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { WhiteboardNodeComponent } from './whiteboard-node';
+import { Slider } from '../ui/slider';
 
-type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape';
-type ShapeType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'triangle' | 'star' | 'heart';
+type Tool = 'select' | 'pan' | 'pen' | 'eraser' | 'text' | 'sticky' | 'shape';
+type ShapeType = 'rectangle' | 'circle';
 
 const backgroundColors = ['#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'];
+const toolColors = ['#000000', '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6'];
+
 
 export function DigitalWhiteboard() {
   const { user } = useAuth();
@@ -67,21 +57,22 @@ export function DigitalWhiteboard() {
   const [whiteboard, setWhiteboard] = useState<Whiteboard | null>(null);
   const [nodes, setNodes] = useState<WhiteboardNode[]>([]);
   const [boardName, setBoardName] = useState('');
-
+  
   const [currentTool, setCurrentTool] = useState<Tool>('select');
-  const [currentShape, setCurrentShape] = useState<ShapeType>('rectangle');
   const [currentColor, setCurrentColor] = useState('#000000');
   const [brushSize, setBrushSize] = useState(4);
+  const [currentShape, setCurrentShape] = useState<ShapeType>('rectangle');
   
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
-  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
-  const whiteboardContainerRef = useRef<HTMLDivElement>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
 
-  // --- Firestore Integration ---
+  const whiteboardContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Firestore Integration
   const getWhiteboardDocRef = useCallback(() => {
     if (!user || !whiteboardId) return null;
     return doc(db, 'users', user.uid, 'whiteboards', whiteboardId);
@@ -108,10 +99,10 @@ export function DigitalWhiteboard() {
   const saveBoard = useDebouncedCallback(async (updatedNodes?: WhiteboardNode[], updatedSettings?: Partial<Whiteboard>) => {
     const boardRef = getWhiteboardDocRef();
     if (boardRef) {
-      const dataToSave: Partial<Whiteboard> = { ...updatedSettings };
-      if (updatedNodes) {
-        dataToSave.nodes = updatedNodes;
-      }
+      const dataToSave: Partial<Whiteboard> & { updatedAt: Date } = { updatedAt: new Date() };
+      if (updatedNodes) dataToSave.nodes = updatedNodes;
+      if (updatedSettings) Object.assign(dataToSave, updatedSettings);
+      
       await updateDoc(boardRef, dataToSave);
       toast({ title: "✓ Saved", description: "Your whiteboard has been saved."});
     }
@@ -126,7 +117,7 @@ export function DigitalWhiteboard() {
   }, 1000);
   
   const handleSettingChange = (setting: Partial<Whiteboard>) => {
-    setWhiteboard(prev => ({ ...(prev || {name:''}), ...setting }));
+    setWhiteboard(prev => ({ ...(prev || {name:'', createdAt: new Date(), updatedAt: new Date(), ownerId: ''}), ...setting }));
     saveBoard(nodes, setting);
   };
   
@@ -146,31 +137,73 @@ export function DigitalWhiteboard() {
     const newNode: WhiteboardNode = {
       id: uuidv4(),
       type,
-      x: viewCenterX - 75,
-      y: viewCenterY - 50,
-      width: 150,
-      height: 100,
+      x: viewCenterX,
+      y: viewCenterY,
+      width: type === 'text' ? 200 : 150,
+      height: type === 'text' ? 50 : 100,
       rotation: 0,
-      color: type === 'sticky' ? '#ffd166' : '#000000',
-      text: type === 'sticky' || type === 'text' ? 'Text' : '',
+      color: type === 'sticky' ? '#ffd166' : type === 'pen' ? currentColor : '#ffffff',
+      strokeColor: type === 'shape' ? currentColor : undefined,
+      strokeWidth: type === 'shape' ? brushSize : undefined,
+      text: type === 'sticky' || type === 'text' ? 'Text' : undefined,
       shape: type === 'shape' ? currentShape : undefined,
+      points: type === 'pen' ? [] : undefined,
       ...options,
     };
     const newNodes = [...nodes, newNode];
     setNodes(newNodes);
     saveBoard(newNodes);
+    setSelectedNodeId(newNode.id);
+    if (type === 'text' || type === 'sticky') {
+        // We'll need a way to focus the input inside the new node
+    }
   };
   
   const deleteNode = (nodeId: string) => {
     const newNodes = nodes.filter(n => n.id !== nodeId);
     setNodes(newNodes);
     saveBoard(newNodes);
+    if (selectedNodeId === nodeId) {
+      setSelectedNodeId(null);
+    }
+  };
+  
+  const getCanvasCoordinates = (e: React.MouseEvent) => {
+    const rect = whiteboardContainerRef.current!.getBoundingClientRect();
+    const x = (e.clientX - rect.left - offset.x) / scale;
+    const y = (e.clientY - rect.top - offset.y) / scale;
+    return { x, y };
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button === 1 || (e.button === 0 && currentTool === 'pan')) { // Middle mouse or pan tool
+    if ((e.target as HTMLElement) !== e.currentTarget) return;
+
+    if (e.button === 1 || currentTool === 'pan') {
       setIsPanning(true);
       lastMousePos.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
+    
+    setSelectedNodeId(null); // Deselect nodes when clicking on canvas
+
+    if (currentTool === 'pen') {
+        setIsDrawing(true);
+        const {x, y} = getCanvasCoordinates(e);
+        const newNode: WhiteboardNode = {
+            id: uuidv4(),
+            type: 'pen',
+            points: [[x, y]],
+            x, y, width: 0, height: 0,
+            color: currentColor,
+            strokeWidth: brushSize,
+        };
+        setNodes(prev => [...prev, newNode]);
+        setSelectedNodeId(newNode.id);
+    }
+     if (currentTool === 'text' || currentTool === 'sticky' || currentTool === 'shape') {
+        const { x, y } = getCanvasCoordinates(e);
+        addNode(currentTool, { x, y, color: currentTool === 'sticky' ? currentColor : undefined });
+        setCurrentTool('select');
     }
   };
 
@@ -181,31 +214,65 @@ export function DigitalWhiteboard() {
       setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
+    
+    if (isDrawing && currentTool === 'pen' && selectedNodeId) {
+        const {x, y} = getCanvasCoordinates(e);
+        setNodes(prevNodes => prevNodes.map(n => {
+            if (n.id === selectedNodeId) {
+                const newPoints = [...(n.points || []), [x,y]];
+                // Update bounds for the drawing path
+                const minX = Math.min(...newPoints.map(p => p[0]));
+                const minY = Math.min(...newPoints.map(p => p[1]));
+                const maxX = Math.max(...newPoints.map(p => p[0]));
+                const maxY = Math.max(...newPoints.map(p => p[1]));
+
+                return {
+                    ...n,
+                    points: newPoints,
+                    x: minX,
+                    y: minY,
+                    width: maxX - minX,
+                    height: maxY - minY,
+                };
+            }
+            return n;
+        }));
+    }
   };
 
   const handleCanvasMouseUp = () => {
     setIsPanning(false);
-  };
-
-   const toggleFullscreen = useCallback(() => {
-    const elem = whiteboardContainerRef.current?.parentElement;
-    if (!elem) return;
-
-    if (!document.fullscreenElement) {
-      elem.requestFullscreen().catch(err => {
-        toast({ variant: 'destructive', title: 'Error entering fullscreen.', description: err.message });
-      });
-    } else {
-      document.exitFullscreen();
+    if (isDrawing) {
+      setIsDrawing(false);
+      setSelectedNodeId(null);
+      saveBoard(nodes);
     }
-  }, [toast]);
+  };
   
-  if (!whiteboard) {
-    return <div>Loading whiteboard...</div>;
-  }
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const zoomSpeed = 0.1;
+    const newScale = e.deltaY > 0 ? scale * (1 - zoomSpeed) : scale * (1 + zoomSpeed);
+    const clampedScale = Math.min(Math.max(newScale, 0.1), 5);
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const pointX = (mouseX - offset.x) / scale;
+    const pointY = (mouseY - offset.y) / scale;
+
+    const newOffsetX = mouseX - pointX * clampedScale;
+    const newOffsetY = mouseY - pointY * clampedScale;
+
+    setScale(clampedScale);
+    setOffset({ x: newOffsetX, y: newOffsetY });
+  };
+  
+  if (!whiteboard) return <div>Loading whiteboard...</div>;
   
   return (
-    <div ref={whiteboardContainerRef} className={cn("flex flex-col h-full gap-4", isFullscreen && "bg-background")}>
+    <div className="flex flex-col h-full gap-4">
         <div className="flex items-center justify-between gap-4">
            <div className="flex items-center gap-4">
               <Button variant="outline" size="icon" onClick={() => router.push('/whiteboard')}><ArrowLeft /></Button>
@@ -215,94 +282,67 @@ export function DigitalWhiteboard() {
                       setBoardName(e.target.value);
                       handleNameChange(e.target.value);
                   }}
-                  className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="text-lg font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
-           </div>
-           <div className="flex items-center gap-2">
-              <Popover>
-                  <PopoverTrigger asChild><Button variant="outline" size="icon"><Settings/></Button></PopoverTrigger>
-                  <PopoverContent className="w-80">
-                      <div className="grid gap-4">
-                          <h4 className="font-medium leading-none">Settings</h4>
-                          <div className="grid gap-2">
-                              <Label>Background Color</Label>
-                              <div className="flex flex-wrap gap-2">
-                                  {backgroundColors.map(color => (
-                                      <button key={color} onClick={() => handleSettingChange({ backgroundColor: color })}
-                                          className={cn("w-8 h-8 rounded-full border", whiteboard.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
-                                          style={{ backgroundColor: color }} />
-                                  ))}
-                              </div>
-                          </div>
-                           <div className="grid gap-2">
-                             <Label>Grid Style</Label>
-                             <ToggleGroup type="single" value={whiteboard.backgroundGrid || 'dotted'} onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}>
-                                <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
-                                <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
-                                <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
-                             </ToggleGroup>
-                          </div>
-                      </div>
-                  </PopoverContent>
-              </Popover>
-              <Button variant="outline" size="icon" onClick={toggleFullscreen}>
-                  {isFullscreen ? <Minimize/> : <Maximize/>}
-              </Button>
            </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
-             <div className={cn("flex flex-col gap-4 p-2 border rounded-lg bg-card transition-all duration-300", isToolbarCollapsed ? 'md:w-16 items-center' : 'md:w-64')}>
-                <div className="flex flex-col gap-2 w-full">
-                     <Button variant="ghost" size="sm" onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)} className="w-full justify-start">
-                        {isToolbarCollapsed ? <PanelLeftOpen/> : <PanelLeftClose />}
-                        {!isToolbarCollapsed && 'Collapse'}
-                    </Button>
-                    <h3 className={cn("font-semibold px-2", isToolbarCollapsed && "hidden")}>Tools</h3>
-                    <ToggleGroup type="single" value={currentTool} onValueChange={(v) => v && setCurrentTool(v as Tool)} className="flex-col gap-1 items-start">
-                        <ToggleGroupItem value="select" className="w-full justify-start gap-2"><MousePointer/> {!isToolbarCollapsed && 'Select'}</ToggleGroupItem>
-                        <ToggleGroupItem value="pan" className="w-full justify-start gap-2"><Move/> {!isToolbarCollapsed && 'Pan'}</ToggleGroupItem>
-                        <ToggleGroupItem value="pen" className="w-full justify-start gap-2"><Pen/> {!isToolbarCollapsed && 'Pen'}</ToggleGroupItem>
-                        <ToggleGroupItem value="text" className="w-full justify-start gap-2"><Type/> {!isToolbarCollapsed && 'Text'}</ToggleGroupItem>
-                        <ToggleGroupItem value="sticky" className="w-full justify-start gap-2"><StickyNote/> {!isToolbarCollapsed && 'Sticky Note'}</ToggleGroupItem>
-                        <ToggleGroupItem value="shape" className="w-full justify-start gap-2"><Square/> {!isToolbarCollapsed && 'Shape'}</ToggleGroupItem>
-                    </ToggleGroup>
-                     <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => currentTool === 'sticky' ? addNode('sticky') : currentTool === 'text' ? addNode('text') : addNode('shape')}><PlusCircle/> Add {currentTool}</Button>
-                </div>
-                 <div className="flex flex-col gap-2 mt-auto w-full">
-                    <Button variant="outline" size="sm" onClick={() => {}} disabled><Undo/> {!isToolbarCollapsed && 'Undo'}</Button>
-                    <Button variant="outline" size="sm" onClick={() => {}} disabled><Redo/> {!isToolbarCollapsed && 'Redo'}</Button>
-                 </div>
-            </div>
-             <div
-                className={cn('flex-1 border rounded-lg overflow-hidden relative cursor-auto',
-                    {
-                        'whiteboard-bg-dotted': whiteboard.backgroundGrid === 'dotted' || !whiteboard.backgroundGrid,
-                        'whiteboard-bg-lined': whiteboard.backgroundGrid === 'lined',
-                        'whiteboard-bg-plain': whiteboard.backgroundGrid === 'plain',
-                    }
-                )}
-                style={{ backgroundColor: whiteboard.backgroundColor }}
-                onMouseDown={handleCanvasMouseDown}
-                onMouseMove={handleCanvasMouseMove}
-                onMouseUp={handleCanvasMouseUp}
-                onMouseLeave={handleCanvasMouseUp}
+         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 flex gap-1 bg-card p-2 rounded-lg shadow-lg border">
+            <ToggleGroup type="single" value={currentTool} onValueChange={(v) => v && setCurrentTool(v as Tool)} className="flex-row gap-1">
+                <ToggleGroupItem value="select" aria-label="Select"><MousePointer/></ToggleGroupItem>
+                <ToggleGroupItem value="pan" aria-label="Pan"><Move/></ToggleGroupItem>
+                <ToggleGroupItem value="pen" aria-label="Pen"><Pen/></ToggleGroupItem>
+                <ToggleGroupItem value="eraser" aria-label="Eraser"><Eraser/></ToggleGroupItem>
+                <ToggleGroupItem value="text" aria-label="Text"><Type/></ToggleGroupItem>
+                <ToggleGroupItem value="sticky" aria-label="Sticky Note"><StickyNote/></ToggleGroupItem>
+                <ToggleGroupItem value="shape" aria-label="Shape"><Square/></ToggleGroupItem>
+            </ToggleGroup>
+            
+            <Separator orientation="vertical" className="h-auto mx-2" />
+
+            <Popover>
+                <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: currentColor}}><Palette/></Button></PopoverTrigger>
+                <PopoverContent className="w-auto p-2">
+                    <div className="flex gap-1">
+                        {toolColors.map(c => <button key={c} onClick={() => setCurrentColor(c)} className="h-6 w-6 rounded-full border" style={{backgroundColor: c}}/>)}
+                    </div>
+                </PopoverContent>
+            </Popover>
+            <Popover>
+                <PopoverTrigger asChild><Button variant="ghost" size="sm" className="w-24">{brushSize}px</Button></PopoverTrigger>
+                <PopoverContent className="w-40 p-2"><Slider value={[brushSize]} onValueChange={([v]) => setBrushSize(v)} max={50} step={1} /></PopoverContent>
+            </Popover>
+        </div>
+
+        <div
+            ref={whiteboardContainerRef}
+            className={cn('flex-1 border rounded-lg overflow-hidden relative cursor-auto',
+                currentTool === 'pan' && 'cursor-grab', isPanning && 'cursor-grabbing',
+                {'whiteboard-bg-dotted': whiteboard.backgroundGrid === 'dotted' || !whiteboard.backgroundGrid},
+                {'whiteboard-bg-lined': whiteboard.backgroundGrid === 'lined'},
+                {'whiteboard-bg-plain': whiteboard.backgroundGrid === 'plain'}
+            )}
+            style={{ backgroundColor: whiteboard.backgroundColor }}
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseUp={handleCanvasMouseUp}
+            onWheel={handleWheel}
+        >
+            <div
+                className="absolute top-0 left-0 w-full h-full"
+                style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}
             >
-                <div
-                    className="absolute top-0 left-0"
-                    style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}
-                >
-                    {nodes.map(node => (
-                        <WhiteboardNodeComponent
-                            key={node.id}
-                            node={node}
-                            onNodeChange={handleNodeChange}
-                            onDelete={deleteNode}
-                            scale={scale}
-                            isSelected={false} // Add selection logic later
-                        />
-                    ))}
-                </div>
+                {nodes.map(node => (
+                    <WhiteboardNodeComponent
+                        key={node.id}
+                        node={node}
+                        onNodeChange={handleNodeChange}
+                        onDelete={deleteNode}
+                        scale={scale}
+                        isSelected={selectedNodeId === node.id}
+                        onSelect={() => setSelectedNodeId(node.id)}
+                    />
+                ))}
             </div>
         </div>
     </div>

@@ -77,10 +77,9 @@ export default function WhiteboardDashboardPage() {
         ownerId: user.uid,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-      });
-      // Also create the data subdocument
-      await setDoc(doc(db, 'users', user.uid, 'whiteboards', docRef.id, 'data', 'main'), {
-        data: null
+        nodes: [],
+        backgroundColor: '#FFFFFF',
+        backgroundGrid: 'dotted',
       });
 
       toast({
@@ -101,10 +100,7 @@ export default function WhiteboardDashboardPage() {
    const handleDeleteWhiteboard = async (boardId: string) => {
     if (!user) return;
     try {
-      // Note: This doesn't delete subcollections. A more robust solution
-      // would use a Firebase Function to handle cascading deletes.
       await deleteDoc(doc(db, 'users', user.uid, 'whiteboards', boardId));
-      await deleteDoc(doc(db, 'users', user.uid, 'whiteboards', boardId, 'data', 'main'));
       toast({ title: 'Whiteboard deleted' });
     } catch (e) {
       console.error('Error deleting whiteboard: ', e);
