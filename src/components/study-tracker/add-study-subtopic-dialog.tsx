@@ -132,6 +132,13 @@ export function AddStudySubtopicDialog({
       setResources(resources.filter(r => r.id !== resourceId));
   }
 
+  const handleResourceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddResource();
+    }
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -173,11 +180,11 @@ export function AddStudySubtopicDialog({
                     <div className="flex items-end gap-2 border-t pt-4">
                         <div className="flex-1">
                             <Label htmlFor="new-res-title" className="text-xs">Resource Title</Label>
-                            <Input id="new-res-title" value={newResourceTitle} onChange={(e) => setNewResourceTitle(e.target.value)} placeholder="e.g. YouTube Video" />
+                            <Input id="new-res-title" value={newResourceTitle} onChange={(e) => setNewResourceTitle(e.target.value)} placeholder="e.g. YouTube Video" onKeyDown={handleResourceKeyDown} />
                         </div>
                          <div className="flex-1">
                              <Label htmlFor="new-res-url" className="text-xs">Resource URL</Label>
-                            <Input id="new-res-url" value={newResourceUrl} onChange={(e) => setNewResourceUrl(e.target.value)} placeholder="https://..." />
+                            <Input id="new-res-url" value={newResourceUrl} onChange={(e) => setNewResourceUrl(e.target.value)} placeholder="https://..." onKeyDown={handleResourceKeyDown} />
                         </div>
                         <Button onClick={handleAddResource}><PlusCircle/></Button>
                     </div>

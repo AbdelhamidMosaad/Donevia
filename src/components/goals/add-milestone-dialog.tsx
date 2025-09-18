@@ -111,12 +111,12 @@ export function AddMilestoneDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Milestone' : 'Add New Milestone'}</DialogTitle>
           <DialogDescription>{isEditMode ? 'Update this milestone.' : 'Add a new milestone to your goal.'}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4" onKeyDown={handleKeyDown}>
+        <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">Title</Label>
             <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />

@@ -39,12 +39,20 @@ export function AddProgressUpdate({ goalId, milestoneId }: AddProgressUpdateProp
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   return (
     <div className="space-y-2">
       <Textarea
         placeholder="What's your progress?"
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
         className="min-h-[100px]"
       />
       <div className="flex justify-end">

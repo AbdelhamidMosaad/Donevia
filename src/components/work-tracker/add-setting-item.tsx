@@ -14,7 +14,7 @@ interface AddSettingItemProps {
 export function AddSettingItem({ type, onAdd }: AddSettingItemProps) {
   const [value, setValue] = useState('');
 
-  const handleAdd = (e?: React.MouseEvent) => {
+  const handleAdd = (e?: React.MouseEvent | React.KeyboardEvent) => {
     e?.stopPropagation();
     e?.preventDefault();
     if (value.trim()) {
@@ -25,9 +25,7 @@ export function AddSettingItem({ type, onAdd }: AddSettingItemProps) {
   
   const handleKeyDown = (e: React.KeyboardEvent) => {
       if(e.key === 'Enter') {
-          e.stopPropagation();
-          e.preventDefault();
-          handleAdd();
+          handleAdd(e);
       }
   }
 

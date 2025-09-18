@@ -7,7 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Input } from './ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, setDoc, getDocs, collection, addDoc, query, where, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, getDocs, collection, addDoc, query, where, writeBatch } from 'firebase/firestore';
 import type { Stage, BoardTemplate } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -192,7 +192,7 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
                             </Droppable>
                         </DragDropContext>
                         <div className="flex items-center gap-2 mt-4">
-                            <Input placeholder="New stage name" value={newStageName} onChange={(e) => setNewStageName(e.target.value)} />
+                            <Input placeholder="New stage name" value={newStageName} onChange={(e) => setNewStageName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddStage()} />
                             <Button onClick={handleAddStage}><PlusCircle /> Add Stage</Button>
                         </div>
                     </div>
@@ -200,7 +200,7 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
                     <div className="border-t pt-4">
                          <Label>Save as New Template</Label>
                         <div className="flex items-center gap-2 mt-2">
-                            <Input placeholder="New template name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} />
+                            <Input placeholder="New template name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSaveAsTemplate()} />
                             <Button variant="outline" onClick={handleSaveAsTemplate}><Save /> Save Template</Button>
                         </div>
                     </div>
