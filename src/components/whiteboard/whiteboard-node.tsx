@@ -4,9 +4,9 @@
 import React, { useRef, useEffect } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { WhiteboardNode } from '@/lib/types';
+import { Html } from 'react-konva-utils';
 import useImage from 'use-image';
 import { Group, Rect, Text, Line, Arrow, Transformer, RegularPolygon, Image as KonvaImage } from 'react-konva';
-import { Html } from 'react-konva-utils';
 
 
 interface WhiteboardNodeComponentProps {

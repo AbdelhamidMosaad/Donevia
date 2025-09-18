@@ -5,7 +5,6 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
 import { WhiteboardNodeComponent } from './whiteboard-node';
-
 import { Stage, Layer, Rect, Arrow, Line, Group, Text } from 'react-konva';
 
 

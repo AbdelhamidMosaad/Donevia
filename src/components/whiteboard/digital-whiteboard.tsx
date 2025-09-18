@@ -870,7 +870,7 @@ export default function DigitalWhiteboard() {
                     <div className="w-48 h-36 bg-card/80 border rounded-lg overflow-hidden relative">
                          <WhiteboardCanvas 
                             boardData={boardData} nodes={Object.values(nodes)} tool={'select'} shapeType={shapeType} currentColor={currentColor} strokeWidth={strokeWidth} fontSize={fontSize}
-                            selectedNodeIds={[]} editingNodeId={null} presence={{}} onNodeCreate={async () => ({} as any)} onNodeChange={() => {}} onNodeChangeComplete={() => {}}
+                            selectedNodeIds={[]} editingNodeId={null} presence={{}} onNodeCreate={async() => ({} as any)} onNodeChange={() => {}} onNodeChangeComplete={() => {}}
                             onNodeDelete={() => {}} onSelectNode={() => {}}
                             onEditNode={() => {}}
                             onUpdatePresence={() => {}}
