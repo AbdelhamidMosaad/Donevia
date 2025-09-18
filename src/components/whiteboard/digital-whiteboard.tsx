@@ -83,7 +83,7 @@ import { TemplateDialog } from './template-dialog';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '../ui/skeleton';
 
-const WhiteboardCanvas = dynamic(() => import('./whiteboard-canvas'), {
+const WhiteboardCanvas = dynamic(() => import('./whiteboard-canvas').then(m => m.WhiteboardCanvas), {
   ssr: false,
   loading: () => <Skeleton className="w-full h-full" />,
 });

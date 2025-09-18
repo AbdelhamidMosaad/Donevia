@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
 import { WhiteboardNodeComponent } from './whiteboard-node';
 
 // Dynamically import react-konva components to ensure they only run on the client
+import dynamic from 'next/dynamic';
 const Stage = dynamic(() => import('react-konva').then(m => m.Stage), { ssr: false });
 const Layer = dynamic(() => import('react-konva').then(m => m.Layer), { ssr: false });
 const Rect = dynamic(() => import('react-konva').then(m => m.Rect), { ssr: false });
@@ -13,7 +14,6 @@ const Arrow = dynamic(() => import('react-konva').then(m => m.Arrow), { ssr: fal
 const Line = dynamic(() => import('react-konva').then(m => m.Line), { ssr: false });
 const Group = dynamic(() => import('react-konva').then(m => m.Group), { ssr: false });
 const Text = dynamic(() => import('react-konva').then(m => m.Text), { ssr: false });
-import dynamic from 'next/dynamic';
 
 
 type Presence = {
