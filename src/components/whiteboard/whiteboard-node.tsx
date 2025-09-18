@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { Rect, Text, Line, Group, Transformer, Arrow, Image as KonvaImage } from 'react-konva';
+import { Rect, Text, Line, Group, Transformer, Arrow, Image as KonvaImage, Path, RegularPolygon } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { WhiteboardNode } from '@/lib/types';
 import { Html } from 'react-konva-utils';
@@ -124,28 +125,30 @@ export function WhiteboardNodeComponent({
         )
     }
 
-    if (type === 'shape' && shape === 'rectangle') {
-      return (
-        <Rect
-          width={width}
-          height={height}
-          fill={color}
-          stroke="#333333"
-          strokeWidth={strokeWidth}
-        />
-      );
-    }
-     if (type === 'shape' && shape === 'circle') {
-      return (
-        <Rect
-          width={width}
-          height={height}
-          fill={color}
-          stroke="#333333"
-          strokeWidth={strokeWidth}
-          cornerRadius={width/2}
-        />
-      );
+    if (type === 'shape') {
+        const commonProps = {
+            width: width,
+            height: height,
+            fill: color,
+            stroke: "#333333",
+            strokeWidth: strokeWidth,
+        };
+        switch(shape) {
+            case 'rectangle':
+                return <Rect {...commonProps} />;
+            case 'circle':
+                 return <Rect {...commonProps} cornerRadius={width / 2} />;
+            case 'triangle':
+                return <RegularPolygon {...commonProps} sides={3} radius={width / 2} />;
+            case 'diamond':
+                 return <RegularPolygon {...commonProps} sides={4} radius={width / 2} />;
+            case 'arrow-right':
+                 return <Arrow points={[0, height/2, width - 10, height/2]} pointerLength={10} pointerWidth={10} fill={color} stroke={color} strokeWidth={height / 2} />;
+            case 'arrow-left':
+                 return <Arrow points={[width, height/2, 10, height/2]} pointerLength={10} pointerWidth={10} fill={color} stroke={color} strokeWidth={height / 2} />;
+            default:
+                return null;
+        }
     }
     if (type === 'image' && src) {
       return <KonvaImage image={image} width={width} height={height} />;

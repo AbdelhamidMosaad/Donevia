@@ -321,12 +321,15 @@ export type WhiteboardNode = {
     strokeWidth?: number;
     text?: string;
     fontSize?: number;
-    shape?: 'rectangle' | 'circle';
+    shape?: 'rectangle' | 'circle' | 'triangle' | 'diamond' | 'arrow-right' | 'arrow-left';
     points?: number[];
     isDeleted?: boolean;
     isArrow?: boolean;
     zIndex?: number;
     src?: string; // For images
+    isBold?: boolean;
+    isItalic?: boolean;
+    isUnderline?: boolean;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
 };
@@ -769,4 +772,3 @@ export type InterviewFeedback = {
     suggestions: string[];
     overallAssessment: string;
 };
-

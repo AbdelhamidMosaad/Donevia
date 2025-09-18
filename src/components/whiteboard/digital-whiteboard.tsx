@@ -4,10 +4,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   MousePointer,
-  Pen,
-  Type,
-  StickyNote,
-  RectangleHorizontal,
   PlusCircle,
   Link as LinkIcon,
   Undo,
@@ -47,6 +43,12 @@ import {
   AlignVerticalJustifyEnd,
   LayoutTemplate,
   Save,
+  Triangle,
+  Diamond,
+  Pen,
+  Type,
+  StickyNote,
+  RectangleHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -83,7 +85,7 @@ import { TemplateDialog } from './template-dialog';
 
 
 type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
-type ShapeType = 'rectangle' | 'circle';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'diamond' | 'arrow-right' | 'arrow-left';
 type Presence = {
     userId: string;
     name: string;
@@ -231,7 +233,7 @@ export default function DigitalWhiteboard() {
   const handleMapNameChange = useDebouncedCallback(async (newName: string) => {
     const boardRef = getBoardDocRef();
     if (boardRef && boardData && newName.trim() !== boardData.name) {
-      await updateDoc(boardRef, { name: newName.trim(), updatedAt: serverTimestamp() });
+      await updateDoc(boardRef, { name: newName.trim(), updatedAt: new Date() });
       toast({ title: "Whiteboard renamed!" });
     }
   }, 1000);
@@ -690,13 +692,33 @@ export default function DigitalWhiteboard() {
                 <TemplateDialog 
                     isOpen={isTemplateDialogOpen}
                     onOpenChange={setIsTemplateDialogOpen}
+                    onSaveTemplate={async (name) => {
+                        if (!user) return;
+                        const templateRef = doc(collection(db, 'users', user.uid, 'whiteboardTemplates'));
+                        await setDoc(templateRef, {
+                            name,
+                            ownerId: user.uid,
+                            createdAt: serverTimestamp(),
+                            nodes: Object.values(nodes),
+                            connections,
+                        });
+                        toast({ title: 'Template saved!' });
+                    }}
                     onUseTemplate={async (template) => {
+                        if(!user) return;
                         const batch = writeBatch(db);
+                        // Clear existing nodes first
+                        const currentNodesSnap = await getDocs(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
+                        currentNodesSnap.forEach(doc => batch.delete(doc.ref));
+
+                        // Add new nodes from template
                         template.nodes.forEach(node => {
-                            const nodeRef = doc(collection(db, 'users', user!.uid, 'whiteboards', whiteboardId, 'nodes'));
+                            const nodeRef = doc(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
                             batch.set(nodeRef, {...node, id: nodeRef.id});
                         });
                         await batch.commit();
+
+                        // Update connections
                         await updateDoc(getBoardDocRef()!, { connections: template.connections });
                         toast({title: 'Template applied!'});
                     }}
@@ -768,6 +790,10 @@ export default function DigitalWhiteboard() {
                     <ToggleGroup type="single" value={shapeType} onValueChange={(s: ShapeType) => s && setShapeType(s)}>
                         <ToggleGroupItem value="rectangle"><RectangleHorizontal/></ToggleGroupItem>
                         <ToggleGroupItem value="circle"><Circle/></ToggleGroupItem>
+                        <ToggleGroupItem value="triangle"><Triangle/></ToggleGroupItem>
+                        <ToggleGroupItem value="diamond"><Diamond/></ToggleGroupItem>
+                        <ToggleGroupItem value="arrow-right"><ArrowRight/></ToggleGroupItem>
+                        <ToggleGroupItem value="arrow-left"><ArrowLeft/></ToggleGroupItem>
                     </ToggleGroup>
                 </div>
             )}
@@ -835,8 +861,10 @@ export default function DigitalWhiteboard() {
                     <div className="w-48 h-36 bg-card/80 border rounded-lg overflow-hidden relative">
                          <WhiteboardCanvas 
                             boardData={boardData} nodes={Object.values(nodes)} tool={'select'} shapeType={shapeType} currentColor={currentColor} strokeWidth={strokeWidth} fontSize={fontSize}
-                            selectedNodeId={null} editingNodeId={null} presence={{}} onNodeCreate={async() => ({} as any)} onNodeChange={() => {}} onNodeChangeComplete={() => {}}
-                            onNodeDelete={() => {}} onSelectNode={() => {}} onEditNode={() => {}} onUpdatePresence={() => {}}
+                            selectedNodeIds={[]} editingNodeId={null} presence={{}} onNodeCreate={async() => ({} as any)} onNodeChange={() => {}} onNodeChangeComplete={() => {}}
+                            onNodeDelete={() => {}} onSelectNode={() => {}}
+onEditNode={() => {}}
+onUpdatePresence={() => {}}
                             isMinimap={true} connections={connections} onConnectionCreate={() => {}} onConnectionDelete={() => {}}
                         />
                     </div>
@@ -852,7 +880,7 @@ export default function DigitalWhiteboard() {
                         const newScale = Math.max((boardData.scale || 1) * 0.8, 0.1);
                         handleSettingChange({scale: newScale});
                     }}><Minus/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleSettingChange({scale: 1})}><Expand/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => {}}><Expand/></Button>
                     <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
                         {isFullscreen ? <Minimize/> : <Maximize/>}
                     </Button>
@@ -987,3 +1015,7 @@ export default function DigitalWhiteboard() {
     </>
   );
 }
+
+    
+
+    
