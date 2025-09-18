@@ -5,10 +5,12 @@ import { useMemo } from 'react';
 import type { WorkActivity, WorkTrackerSettings } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { useAuth } from '@/hooks/use-auth';
 import moment from 'moment';
-import { DollarSign, Hourglass, TrendingUp } from 'lucide-react';
+import { DollarSign, Hourglass, TrendingUp, FileDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { Button } from '../ui/button';
 
 interface AnalyticsDashboardProps {
   activities: WorkActivity[];
@@ -76,6 +78,37 @@ export function AnalyticsDashboard({ activities, settings }: AnalyticsDashboardP
           revenue,
       })).reverse();
   }, [activities]);
+
+   const handleExport = () => {
+    const workbook = XLSX.utils.book_new();
+    
+    // Summary Sheet
+    const summaryData = [
+        { Metric: 'Total Revenue', Value: totalRevenue },
+        { Metric: 'Total Overtime Hours', Value: totalOvertimeHours },
+        { Metric: 'Average Revenue per Activity', Value: averageRevenue },
+    ];
+    const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summaryWs, 'Summary');
+
+    // Revenue by Category Sheet
+    const categoryWs = XLSX.utils.json_to_sheet(revenueByCategory);
+    XLSX.utils.book_append_sheet(workbook, categoryWs, 'Revenue by Category');
+    
+    // Revenue by Customer Sheet
+    const customerWs = XLSX.utils.json_to_sheet(revenueByCustomer);
+    XLSX.utils.book_append_sheet(workbook, customerWs, 'Revenue by Customer');
+    
+    // Revenue by Appointment Sheet
+    const appointmentWs = XLSX.utils.json_to_sheet(revenueByAppointment);
+    XLSX.utils.book_append_sheet(workbook, appointmentWs, 'Revenue by Appointment');
+    
+    // Monthly Revenue Sheet
+    const monthlyWs = XLSX.utils.json_to_sheet(monthlyRevenue);
+    XLSX.utils.book_append_sheet(workbook, monthlyWs, 'Monthly Revenue');
+
+    XLSX.writeFile(workbook, "work_activity_analytics.xlsx");
+  };
   
   const renderPieChart = (data: {name: string, value: number}[], title: string) => {
       if (data.length === 0) return <p className="text-muted-foreground text-center py-8">No revenue data for {title.toLowerCase()}.</p>;
@@ -115,6 +148,9 @@ export function AnalyticsDashboard({ activities, settings }: AnalyticsDashboardP
 
   return (
     <div className="grid gap-6">
+        <div className="flex justify-end">
+            <Button variant="outline" onClick={handleExport}><FileDown /> Export to Excel</Button>
+        </div>
         <div className="grid gap-6 md:grid-cols-3">
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
