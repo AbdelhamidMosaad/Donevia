@@ -2,11 +2,11 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { Rect, Text, Line, Group, Transformer, Arrow, Image as KonvaImage, Path, RegularPolygon } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { WhiteboardNode } from '@/lib/types';
 import { Html } from 'react-konva-utils';
 import useImage from 'use-image';
+import { Group, Rect, Text, Line, Arrow, Transformer, RegularPolygon, Image as KonvaImage, Path } from 'react-konva';
 
 interface WhiteboardNodeComponentProps {
   node: WhiteboardNode;
@@ -191,7 +191,7 @@ export function WhiteboardNodeComponent({
         y={node.y}
         width={node.width}
         height={node.height}
-        draggable={!isEditing}
+        draggable={tool === 'select' && !isEditing}
         onClick={onSelect}
         onTap={onSelect}
         onDblClick={onDoubleClick}
@@ -210,7 +210,7 @@ export function WhiteboardNodeComponent({
           </>
         )}
       </Group>
-      {isSelected && !isEditing && (
+      {isSelected && tool === 'select' && !isEditing && (
         <Transformer
           ref={trRef}
           boundBoxFunc={(oldBox, newBox) => {

@@ -195,7 +195,7 @@ export function WhiteboardCanvas({
             );
         }).map(node => node.id);
         
-        setSelectedNodeIds(selected);
+        onSelectNode(selected.length > 0 ? selected[0] : null); // simplified for now
         setSelectionRect({ x: 0, y: 0, width: 0, height: 0, visible: false });
         return;
     }
@@ -207,7 +207,7 @@ export function WhiteboardCanvas({
     }
   };
   
-  const sortedNodes = React.useMemo(() => Object.values(nodes).sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)), [nodes]);
+  const sortedNodes = React.useMemo(() => nodes.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)), [nodes]);
 
   const canvasSize = {
     width: isMinimap ? 192 : window.innerWidth,
@@ -329,4 +329,3 @@ export function WhiteboardCanvas({
     </Stage>
   );
 }
-
