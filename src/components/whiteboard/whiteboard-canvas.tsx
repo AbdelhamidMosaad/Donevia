@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
@@ -7,13 +6,14 @@ import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection
 import { WhiteboardNodeComponent } from './whiteboard-node';
 
 // Dynamically import react-konva components to ensure they only run on the client
-const Stage = React.lazy(() => import('react-konva').then(m => ({ default: m.Stage })));
-const Layer = React.lazy(() => import('react-konva').then(m => ({ default: m.Layer })));
-const Rect = React.lazy(() => import('react-konva').then(m => ({ default: m.Rect })));
-const Arrow = React.lazy(() => import('react-konva').then(m => ({ default: m.Arrow })));
-const Line = React.lazy(() => import('react-konva').then(m => ({ default: m.Line })));
-const Group = React.lazy(() => import('react-konva').then(m => ({ default: m.Group })));
-const Text = React.lazy(() => import('react-konva').then(m => ({ default: m.Text })));
+const Stage = dynamic(() => import('react-konva').then(m => m.Stage), { ssr: false });
+const Layer = dynamic(() => import('react-konva').then(m => m.Layer), { ssr: false });
+const Rect = dynamic(() => import('react-konva').then(m => m.Rect), { ssr: false });
+const Arrow = dynamic(() => import('react-konva').then(m => m.Arrow), { ssr: false });
+const Line = dynamic(() => import('react-konva').then(m => m.Line), { ssr: false });
+const Group = dynamic(() => import('react-konva').then(m => m.Group), { ssr: false });
+const Text = dynamic(() => import('react-konva').then(m => m.Text), { ssr: false });
+import dynamic from 'next/dynamic';
 
 
 type Presence = {

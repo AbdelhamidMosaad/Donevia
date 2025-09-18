@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -84,7 +83,7 @@ import { TemplateDialog } from './template-dialog';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '../ui/skeleton';
 
-const WhiteboardCanvas = dynamic(() => import('./whiteboard-canvas').then(m => m.WhiteboardCanvas), {
+const WhiteboardCanvas = dynamic(() => import('./whiteboard-canvas'), {
   ssr: false,
   loading: () => <Skeleton className="w-full h-full" />,
 });
@@ -446,7 +445,7 @@ export default function DigitalWhiteboard() {
 
     if (!document.fullscreenElement) {
         elem.requestFullscreen().catch(err => {
-            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            toast({ variant: 'destructive', title: 'Error attempting to enable full-screen mode.', description: err.message });
         });
     } else {
         document.exitFullscreen();
