@@ -24,20 +24,24 @@ import {
   Baseline,
   ArrowLeft,
   Palette,
+  Minus,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Whiteboard, WhiteboardNode } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { Input } from '../ui/input';
 import { WhiteboardNodeComponent } from './whiteboard-node';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Slider } from '../ui/slider';
@@ -69,9 +73,11 @@ export function DigitalWhiteboard() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
+  
+  const isPanning = useRef(false);
+  const isDrawing = useRef(false);
+  const drawingNodeId = useRef<string | null>(null);
   const lastMousePos = useRef({ x: 0, y: 0 });
-  const [isDrawing, setIsDrawing] = useState(false);
 
   const whiteboardContainerRef = useRef<HTMLDivElement>(null);
   
@@ -125,9 +131,11 @@ export function DigitalWhiteboard() {
   };
   
    const handleNodeChange = (nodeId: string, updates: Partial<WhiteboardNode>) => {
-    const newNodes = nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n);
-    setNodes(newNodes);
-    saveBoard(newNodes);
+    setNodes(prevNodes => {
+        const newNodes = prevNodes.map(n => n.id === nodeId ? { ...n, ...updates } : n);
+        saveBoard(newNodes);
+        return newNodes;
+    });
   };
   
    const addNode = (type: WhiteboardNode['type'], options?: Partial<WhiteboardNode>) => {
@@ -157,9 +165,6 @@ export function DigitalWhiteboard() {
     setNodes(newNodes);
     saveBoard(newNodes);
     setSelectedNodeId(newNode.id);
-    if (type === 'text' || type === 'sticky') {
-        // We'll need a way to focus the input inside the new node
-    }
   };
   
   const deleteNode = (nodeId: string) => {
@@ -179,20 +184,21 @@ export function DigitalWhiteboard() {
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement) !== e.currentTarget) return;
+    if ((e.target as HTMLElement).closest('.react-rnd')) return; // Ignore clicks on nodes
 
     if (e.button === 1 || currentTool === 'pan') {
-      setIsPanning(true);
+      isPanning.current = true;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
       return;
     }
     
-    setSelectedNodeId(null); // Deselect nodes when clicking on canvas
+    setSelectedNodeId(null);
+
+    const { x, y } = getCanvasCoordinates(e);
 
     if (currentTool === 'pen') {
-        setIsDrawing(true);
-        const {x, y} = getCanvasCoordinates(e);
-        const newNode: WhiteboardNode = {
+        isDrawing.current = true;
+        const newDrawingNode: WhiteboardNode = {
             id: uuidv4(),
             type: 'pen',
             points: [[x, y]],
@@ -200,30 +206,28 @@ export function DigitalWhiteboard() {
             color: currentColor,
             strokeWidth: brushSize,
         };
-        setNodes(prev => [...prev, newNode]);
-        setSelectedNodeId(newNode.id);
+        setNodes(prev => [...prev, newDrawingNode]);
+        drawingNodeId.current = newDrawingNode.id;
     }
-     if (currentTool === 'text' || currentTool === 'sticky' || currentTool === 'shape') {
-        const { x, y } = getCanvasCoordinates(e);
-        addNode(currentTool, { x, y, color: currentTool === 'sticky' ? currentColor : undefined });
+     else if (currentTool === 'text' || currentTool === 'sticky' || currentTool === 'shape') {
+        addNode(currentTool, { x, y });
         setCurrentTool('select');
     }
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isPanning) {
+    if (isPanning.current) {
       const dx = e.clientX - lastMousePos.current.x;
       const dy = e.clientY - lastMousePos.current.y;
       setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
     
-    if (isDrawing && currentTool === 'pen' && selectedNodeId) {
+    if (isDrawing.current && currentTool === 'pen' && drawingNodeId.current) {
         const {x, y} = getCanvasCoordinates(e);
         setNodes(prevNodes => prevNodes.map(n => {
-            if (n.id === selectedNodeId) {
+            if (n.id === drawingNodeId.current) {
                 const newPoints = [...(n.points || []), [x,y]];
-                // Update bounds for the drawing path
                 const minX = Math.min(...newPoints.map(p => p[0]));
                 const minY = Math.min(...newPoints.map(p => p[1]));
                 const maxX = Math.max(...newPoints.map(p => p[0]));
@@ -232,10 +236,8 @@ export function DigitalWhiteboard() {
                 return {
                     ...n,
                     points: newPoints,
-                    x: minX,
-                    y: minY,
-                    width: maxX - minX,
-                    height: maxY - minY,
+                    x: minX, y: minY,
+                    width: maxX - minX, height: maxY - minY,
                 };
             }
             return n;
@@ -244,10 +246,10 @@ export function DigitalWhiteboard() {
   };
 
   const handleCanvasMouseUp = () => {
-    setIsPanning(false);
-    if (isDrawing) {
-      setIsDrawing(false);
-      setSelectedNodeId(null);
+    isPanning.current = false;
+    if (isDrawing.current) {
+      isDrawing.current = false;
+      drawingNodeId.current = null;
       saveBoard(nodes);
     }
   };
@@ -319,8 +321,9 @@ export function DigitalWhiteboard() {
 
         <div
             ref={whiteboardContainerRef}
-            className={cn('flex-1 border rounded-lg overflow-hidden relative cursor-auto',
-                currentTool === 'pan' && 'cursor-grab', isPanning && 'cursor-grabbing',
+            className={cn('flex-1 border rounded-lg overflow-hidden relative',
+                currentTool === 'pan' && 'cursor-grab', isPanning.current && 'cursor-grabbing',
+                currentTool === 'pen' ? 'cursor-crosshair' : 'cursor-auto',
                 {'whiteboard-bg-dotted': whiteboard.backgroundGrid === 'dotted' || !whiteboard.backgroundGrid},
                 {'whiteboard-bg-lined': whiteboard.backgroundGrid === 'lined'},
                 {'whiteboard-bg-plain': whiteboard.backgroundGrid === 'plain'}
@@ -329,6 +332,7 @@ export function DigitalWhiteboard() {
             onMouseDown={handleCanvasMouseDown}
             onMouseMove={handleCanvasMouseMove}
             onMouseUp={handleCanvasMouseUp}
+            onMouseLeave={handleCanvasMouseUp}
             onWheel={handleWheel}
         >
             <div
@@ -343,7 +347,7 @@ export function DigitalWhiteboard() {
                         onDelete={deleteNode}
                         scale={scale}
                         isSelected={selectedNodeId === node.id}
-                        onSelect={() => setSelectedNodeId(node.id)}
+                        onSelect={setSelectedNodeId}
                     />
                 ))}
             </div>
@@ -351,3 +355,5 @@ export function DigitalWhiteboard() {
     </div>
   );
 }
+
+    
