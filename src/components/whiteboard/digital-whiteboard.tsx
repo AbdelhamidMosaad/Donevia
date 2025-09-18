@@ -4,10 +4,8 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   MousePointer,
-  Pen,
-  Type,
-  StickyNote,
-  RectangleHorizontal,
+  PlusCircle,
+  Link as LinkIcon,
   Undo,
   Redo,
   Download,
@@ -358,9 +356,19 @@ export default function DigitalWhiteboard() {
             const isEditingText = activeElement?.tagName === 'TEXTAREA' || (activeElement instanceof HTMLInputElement && activeElement.type === 'text');
 
             if (isEditingText) return;
+            
+            if (e.key === 'v') setTool('select');
+            if (e.key === 'p') setTool('pen');
+            if (e.key === 't') setTool('text');
+            if (e.key === 'r') { setTool('shape'); setShapeType('rectangle'); }
+            if (e.key === 'o') { setTool('shape'); setShapeType('circle'); }
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 deleteSelectedNodes();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                e.preventDefault();
+                setSelectedNodeIds(Object.keys(nodes));
             }
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 e.preventDefault();
@@ -378,7 +386,7 @@ export default function DigitalWhiteboard() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedNodeIds, undo, redo]);
+    }, [selectedNodeIds, undo, redo, nodes]);
 
 
   const toggleFullscreen = () => {
@@ -503,7 +511,7 @@ export default function DigitalWhiteboard() {
       }
   }
 
-  const selectedNodes = selectedNodeIds.map(id => nodes[id]).filter(Boolean);
+  const selectedNode = selectedNodeIds.length === 1 ? nodes[selectedNodeIds[0]] : null;
 
   if (!boardData) {
       return (
@@ -593,10 +601,10 @@ export default function DigitalWhiteboard() {
                 </div>
             )}
             
-            {selectedNodes.length > 0 && (
+            {selectedNode && (
                  <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border items-center">
                     <Popover>
-                        <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: selectedNodes[0].color}}><Palette/></Button></PopoverTrigger>
+                        <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: selectedNode.color}}><Palette/></Button></PopoverTrigger>
                         <PopoverContent className="w-auto p-2">
                            <div className="flex gap-1">
                             {colorPalette.map(c => (
@@ -606,19 +614,19 @@ export default function DigitalWhiteboard() {
                         </PopoverContent>
                     </Popover>
                     <Separator orientation="vertical" className="h-6 mx-1" />
-                    {selectedNodes[0].type !== 'pen' && (
+                    {selectedNode.type !== 'pen' && (
                         <>
                            <Slider
-                                value={[selectedNodes[0].fontSize || 16]}
+                                value={[selectedNode.fontSize || 16]}
                                 onValueChange={(v) => selectedNodeIds.forEach(id => handleNodeChange(id, { fontSize: v[0] }))}
                                 onValueCommit={handleNodeChangeComplete}
                                 max={64} min={8} step={1} className="w-24"
                             />
                         </>
                     )}
-                     {selectedNodes[0].type === 'pen' && (
+                     {selectedNode.type === 'pen' && (
                         <Slider
-                            value={[selectedNodes[0].strokeWidth || 4]}
+                            value={[selectedNode.strokeWidth || 4]}
                             onValueChange={(v) => selectedNodeIds.forEach(id => handleNodeChange(id, { strokeWidth: v[0] }))}
                             onValueCommit={handleNodeChangeComplete}
                             max={20} min={1} step={1} className="w-24"
