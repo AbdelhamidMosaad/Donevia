@@ -1,5 +1,3 @@
-
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -310,7 +308,8 @@ export type DocFolder = {
 /** Whiteboard */
 export type WhiteboardNode = {
     id: string;
-    type: 'text' | 'sticky' | 'shape' | 'pen';
+    type: 'pen' | 'text' | 'sticky' | 'shape';
+    userId: string; // The user who created this node
     x: number;
     y: number;
     width?: number;
@@ -325,11 +324,7 @@ export type WhiteboardNode = {
     isUnderline?: boolean;
     shape?: 'rectangle' | 'circle';
     points?: number[];
-};
-
-export type WhiteboardConnection = {
-    from: string;
-    to: string;
+    isDeleted?: boolean;
 };
 
 export type Whiteboard = {
@@ -340,8 +335,6 @@ export type Whiteboard = {
   updatedAt: Timestamp;
   backgroundColor?: string;
   backgroundGrid?: 'dotted' | 'lined' | 'plain';
-  nodes?: WhiteboardNode[];
-  connections?: WhiteboardConnection[];
 };
 
 

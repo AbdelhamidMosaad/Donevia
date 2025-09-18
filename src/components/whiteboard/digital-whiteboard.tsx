@@ -5,10 +5,16 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import {
+  collection,
   doc,
   onSnapshot,
   updateDoc,
   serverTimestamp,
+  addDoc,
+  writeBatch,
+  query,
+  getDocs,
+  setDoc,
 } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
@@ -20,32 +26,26 @@ import {
   RectangleHorizontal,
   Type,
   StickyNote,
-  Move,
-  Link as LinkIcon,
   Undo,
   Redo,
   Download,
   Plus,
   Trash2,
   Palette,
-  Bold,
-  Italic,
-  Underline,
   Settings,
   Grid3x3,
   List,
   Baseline,
-  ArrowRight,
-  ArrowDown,
-  ArrowLeft,
-  ArrowUp,
   Minus,
   Expand,
   Maximize,
   Minimize,
+  Users,
+  ArrowLeft,
 } from 'lucide-react';
+import throttle from 'lodash.throttle';
 
-import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
+import type { Whiteboard as WhiteboardType, WhiteboardNode } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,11 +57,20 @@ import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Separator } from '../ui/separator';
 import { WhiteboardCanvas } from './whiteboard-canvas';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape';
 type ShapeType = 'rectangle' | 'circle';
+type Presence = {
+    userId: string;
+    name: string;
+    color: string;
+    x: number;
+    y: number;
+    lastSeen: any;
+};
 
-const colorPalette = ['#4361ee', '#ef476f', '#06d6a0', '#ffd166', '#9d4edd', '#000000', '#FFFFFF'];
+const colorPalette = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#333333'];
 const backgroundColors = ['#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'];
 
 export default function DigitalWhiteboard() {
@@ -72,7 +81,7 @@ export default function DigitalWhiteboard() {
   const whiteboardId = params.whiteboardId as string;
 
   const [boardData, setBoardData] = useState<WhiteboardType | null>(null);
-  const [nodes, setNodes] = useState<WhiteboardNode[]>([]);
+  const [nodes, setNodes] = useState<Record<string, WhiteboardNode>>({});
   
   const [boardName, setBoardName] = useState('');
   
@@ -85,9 +94,10 @@ export default function DigitalWhiteboard() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   
-  const [history, setHistory] = useState<{ nodes: WhiteboardNode[] }[]>([]);
+  const [history, setHistory] = useState<{ id: string, node: Partial<WhiteboardNode> | null }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const isApplyingHistory = useRef(false);
+
+  const [presence, setPresence] = useState<Record<string, Presence>>({});
 
   const getBoardDocRef = useCallback(() => {
     if (!user || !whiteboardId) return null;
@@ -98,65 +108,63 @@ export default function DigitalWhiteboard() {
   useEffect(() => {
     const boardRef = getBoardDocRef();
     if (boardRef) {
-      const unsub = onSnapshot(boardRef, (doc) => {
+      const unsubBoard = onSnapshot(boardRef, (doc) => {
         if (doc.exists()) {
           const data = doc.data() as WhiteboardType;
           setBoardData(data);
-          const currentNodes = data.nodes || [];
-          setNodes(currentNodes);
           setBoardName(data.name);
-
-          if (history.length === 0 && currentNodes.length > 0) {
-            setHistory([{ nodes: currentNodes }]);
-            setHistoryIndex(0);
-          }
         } else {
           toast({ variant: 'destructive', title: 'Whiteboard not found.' });
           router.push('/whiteboard');
         }
       });
-      return () => unsub();
+
+      const nodesRef = collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes');
+      const unsubNodes = onSnapshot(nodesRef, (snapshot) => {
+        const newNodes: Record<string, WhiteboardNode> = {};
+        snapshot.forEach(doc => {
+            if(!doc.data().isDeleted) {
+                newNodes[doc.id] = { id: doc.id, ...doc.data() } as WhiteboardNode;
+            }
+        });
+        setNodes(newNodes);
+      });
+      
+      const presenceRef = collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'presence');
+      const unsubPresence = onSnapshot(presenceRef, (snapshot) => {
+        const newPresence: Record<string, Presence> = {};
+        snapshot.forEach(doc => {
+            if(doc.id !== user?.uid) {
+                newPresence[doc.id] = doc.data() as Presence;
+            }
+        });
+        setPresence(newPresence);
+      });
+
+      return () => {
+        unsubBoard();
+        unsubNodes();
+        unsubPresence();
+      };
     }
   }, [user, whiteboardId, toast, router, getBoardDocRef]);
   
-  const saveBoard = useDebouncedCallback(async (updatedNodes) => {
-    const boardRef = getBoardDocRef();
-    if (boardRef) {
-      const cleanedNodes = updatedNodes.map(node => JSON.parse(JSON.stringify(node, (key, value) => value === undefined ? null : value))));
-      await updateDoc(boardRef, { nodes: cleanedNodes, updatedAt: serverTimestamp() });
-    }
-  }, 1000);
+  const saveNode = useDebouncedCallback(async (nodeId: string, updatedAttrs: Partial<WhiteboardNode>) => {
+    if (!user) return;
+    const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', nodeId);
+    
+    const cleanedAttrs = Object.fromEntries(Object.entries(updatedAttrs).filter(([_, v]) => v !== undefined));
 
-  const saveToHistory = useCallback((newNodes: WhiteboardNode[]) => {
-    if (isApplyingHistory.current) return;
-    const nextHistory = history.slice(0, historyIndex + 1);
-    nextHistory.push({ nodes: newNodes });
-    setHistory(nextHistory);
-    setHistoryIndex(nextHistory.length - 1);
-    saveBoard(newNodes);
-  }, [history, historyIndex, saveBoard]);
+    await updateDoc(nodeRef, { ...cleanedAttrs, updatedAt: serverTimestamp() });
+  }, 500);
 
-  const undo = () => {
-    if (historyIndex > 0) {
-      isApplyingHistory.current = true;
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setNodes(history[newIndex].nodes);
-      saveBoard(history[newIndex].nodes);
-      setTimeout(() => isApplyingHistory.current = false, 100);
-    }
-  };
-
-  const redo = () => {
-    if (historyIndex < history.length - 1) {
-      isApplyingHistory.current = true;
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setNodes(history[newIndex].nodes);
-      saveBoard(history[newIndex].nodes);
-       setTimeout(() => isApplyingHistory.current = false, 100);
-    }
-  };
+  const createNode = async (newNode: Omit<WhiteboardNode, 'id'>) => {
+    if(!user) throw new Error("User not authenticated");
+    const nodeRef = doc(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
+    const finalNode = { ...newNode, id: nodeRef.id, userId: user.uid };
+    await setDoc(nodeRef, finalNode);
+    return finalNode;
+  }
   
   const handleMapNameChange = useDebouncedCallback(async (newName: string) => {
     const boardRef = getBoardDocRef();
@@ -165,11 +173,25 @@ export default function DigitalWhiteboard() {
       toast({ title: "Whiteboard renamed!" });
     }
   }, 1000);
+  
+   const updatePresence = useCallback(throttle(async (pos: {x:number, y:number}) => {
+       if(!user) return;
+       const presenceRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'presence', user.uid);
+       await setDoc(presenceRef, {
+           userId: user.uid,
+           name: user.displayName,
+           color: '#4361EE', // example color
+           x: pos.x,
+           y: pos.y,
+           lastSeen: serverTimestamp()
+       });
+   }, 200), [user, whiteboardId]);
+
 
   if (!boardData) {
       return (
           <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p>Loading whiteboard...</p>
           </div>
       );
   }
@@ -188,30 +210,38 @@ export default function DigitalWhiteboard() {
                     className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
             </div>
+             <div className="flex items-center gap-2">
+                 <div className="flex -space-x-2">
+                    {Object.values(presence).map(p => (
+                        <Avatar key={p.userId} className="h-8 w-8 border-2 border-background">
+                            <AvatarFallback>{p.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                    ))}
+                 </div>
+                <Button variant="outline"><Download /> Export</Button>
+            </div>
         </div>
 
         <div className="flex-1 relative">
             <WhiteboardCanvas 
                 boardData={boardData}
-                nodes={nodes}
-                setNodes={setNodes}
+                nodes={Object.values(nodes)}
                 tool={tool}
-                setTool={setTool}
                 shapeType={shapeType}
                 currentColor={currentColor}
                 strokeWidth={strokeWidth}
                 fontSize={fontSize}
                 selectedNodeId={selectedNodeId}
-                setSelectedNodeId={setSelectedNodeId}
                 editingNodeId={editingNodeId}
-                setEditingNodeId={setEditingNodeId}
-                saveToHistory={saveToHistory}
+                presence={presence}
+                onNodeCreate={createNode}
+                onNodeChange={saveNode}
+                onNodeDelete={(nodeId) => saveNode(nodeId, { isDeleted: true })}
+                onSelectNode={setSelectedNodeId}
+                onEditNode={setEditingNodeId}
+                onUpdatePresence={updatePresence}
             />
         </div>
     </div>
   );
 }
-
-const Loader2 = ({className}: {className?: string}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("lucide lucide-loader-2", className)}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-)
