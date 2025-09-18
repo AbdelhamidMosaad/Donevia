@@ -83,14 +83,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'fire
 import { TemplateDialog } from './template-dialog';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '../ui/skeleton';
-
-const WhiteboardCanvas = dynamic(
-  () => import('./whiteboard-canvas').then((mod) => mod.WhiteboardCanvas),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="w-full h-full" />,
-  }
-);
+import { WhiteboardCanvas } from './whiteboard-canvas';
 
 
 type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
@@ -1028,3 +1021,5 @@ export default function DigitalWhiteboard() {
     </>
   );
 }
+
+    
