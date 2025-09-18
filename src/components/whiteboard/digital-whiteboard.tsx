@@ -308,5 +308,3 @@ export function DigitalWhiteboard() {
     </div>
   );
 }
-
-```
