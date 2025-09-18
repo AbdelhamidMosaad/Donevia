@@ -35,7 +35,15 @@ import {
   FlipVertical,
   Copy,
   Map,
-  Image as ImageIcon,
+  ImageIcon,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -574,6 +582,71 @@ export default function DigitalWhiteboard() {
     }
   }
 
+  const handleAlign = (type: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom') => {
+    if (selectedNodeIds.length < 2) return;
+    
+    const selectedNodes = selectedNodeIds.map(id => nodes[id]).filter(Boolean);
+    const firstNode = selectedNodes[0];
+    
+    const newNodes = { ...nodes };
+
+    selectedNodes.forEach(node => {
+        let newX = node.x;
+        let newY = node.y;
+        switch (type) {
+            case 'left': newX = firstNode.x - firstNode.width! / 2 + node.width! / 2; break;
+            case 'center-h': newX = firstNode.x; break;
+            case 'right': newX = firstNode.x + firstNode.width! / 2 - node.width! / 2; break;
+            case 'top': newY = firstNode.y - firstNode.height! / 2 + node.height! / 2; break;
+            case 'center-v': newY = firstNode.y; break;
+            case 'bottom': newY = firstNode.y + firstNode.height! / 2 - node.height! / 2; break;
+        }
+        newNodes[node.id] = { ...node, x: newX, y: newY };
+    });
+    setNodes(newNodes);
+    handleNodeChangeComplete();
+  }
+
+  const handleDistribute = (type: 'horizontal' | 'vertical') => {
+      if (selectedNodeIds.length < 3) return;
+      const selectedNodes = selectedNodeIds.map(id => nodes[id]).filter(Boolean);
+      
+      const newNodes = { ...nodes };
+
+      if(type === 'horizontal') {
+        const sorted = selectedNodes.sort((a,b) => a.x - b.x);
+        const first = sorted[0];
+        const last = sorted[sorted.length - 1];
+        const totalWidth = sorted.reduce((sum, n) => sum + n.width!, 0);
+        const totalGap = (last.x - first.x) - (first.width!/2 + last.width!/2);
+        const gap = (totalGap - (totalWidth - first.width! - last.width!)) / (sorted.length - 1);
+        let currentX = first.x + first.width!/2 + gap;
+
+        for (let i = 1; i < sorted.length - 1; i++) {
+            const node = sorted[i];
+            newNodes[node.id] = { ...node, x: currentX + node.width!/2 };
+            currentX += node.width! + gap;
+        }
+      } else { // vertical
+          const sorted = selectedNodes.sort((a,b) => a.y - b.y);
+          const first = sorted[0];
+          const last = sorted[sorted.length - 1];
+          const totalHeight = sorted.reduce((sum, n) => sum + n.height!, 0);
+          const totalGap = (last.y - first.y) - (first.height!/2 + last.height!/2);
+          const gap = (totalGap - (totalHeight - first.height! - last.height!)) / (sorted.length - 1);
+          let currentY = first.y + first.height!/2 + gap;
+
+          for (let i = 1; i < sorted.length - 1; i++) {
+              const node = sorted[i];
+              newNodes[node.id] = { ...node, y: currentY + node.height!/2 };
+              currentY += node.height! + gap;
+          }
+      }
+      setNodes(newNodes);
+      handleNodeChangeComplete();
+  }
+
+
   const selectedNode = selectedNodeIds.length === 1 ? nodes[selectedNodeIds[0]] : null;
 
   if (!boardData) {
@@ -602,7 +675,7 @@ export default function DigitalWhiteboard() {
                  <div className="flex -space-x-2">
                     {Object.values(presence).map(p => (
                         <Avatar key={p.userId} className="h-8 w-8 border-2 border-background">
-                            <AvatarImage src={p.photoURL} alt={p.name} />
+                            <AvatarImage src={p.photoURL || undefined} alt={p.name} />
                             <AvatarFallback>{p.name?.[0]}</AvatarFallback>
                         </Avatar>
                     ))}
@@ -677,6 +750,21 @@ export default function DigitalWhiteboard() {
                 </div>
             )}
             
+            {selectedNodeIds.length > 1 && (
+                <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border">
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('left')}><AlignHorizontalJustifyStart/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('center-h')}><AlignHorizontalJustifyCenter/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('right')}><AlignHorizontalJustifyEnd/></Button>
+                    <Separator orientation="vertical" className="h-6 mx-1" />
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('top')}><AlignVerticalJustifyStart/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('center-v')}><AlignVerticalJustifyCenter/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('bottom')}><AlignVerticalJustifyEnd/></Button>
+                    <Separator orientation="vertical" className="h-6 mx-1" />
+                    <Button variant="ghost" size="icon" onClick={() => handleDistribute('horizontal')}><AlignHorizontalDistributeCenter/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDistribute('vertical')}><AlignVerticalDistributeCenter/></Button>
+                </div>
+            )}
+
             {selectedNode && (
                  <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border items-center">
                     <Popover>
@@ -690,15 +778,13 @@ export default function DigitalWhiteboard() {
                         </PopoverContent>
                     </Popover>
                     <Separator orientation="vertical" className="h-6 mx-1" />
-                    {selectedNode.type !== 'pen' && (
-                        <>
-                           <Slider
-                                value={[selectedNode.fontSize || 16]}
-                                onValueChange={(v) => selectedNodeIds.forEach(id => handleNodeChange(id, { fontSize: v[0] }))}
-                                onValueCommit={handleNodeChangeComplete}
-                                max={64} min={8} step={1} className="w-24"
-                            />
-                        </>
+                    {selectedNode.type !== 'pen' && selectedNode.type !== 'image' && (
+                        <Slider
+                            value={[selectedNode.fontSize || 16]}
+                            onValueChange={(v) => selectedNodeIds.forEach(id => handleNodeChange(id, { fontSize: v[0] }))}
+                            onValueCommit={handleNodeChangeComplete}
+                            max={64} min={8} step={1} className="w-24"
+                        />
                     )}
                      {selectedNode.type === 'pen' && (
                         <Slider

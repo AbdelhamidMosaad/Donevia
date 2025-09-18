@@ -59,7 +59,9 @@ export function WhiteboardCanvas({
   onEditNode,
   onUpdatePresence,
   isMinimap = false,
-  connections
+  connections,
+  onConnectionCreate,
+  onConnectionDelete,
 }: WhiteboardCanvasProps) {
   const stageRef = useRef<any>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -70,7 +72,7 @@ export function WhiteboardCanvas({
     const clickedOnEmpty = e.target === e.target.getStage() || (e.target.attrs.id === 'canvas-bg');
     if (!clickedOnEmpty) return;
 
-    if (['text', 'sticky', 'shape', 'arrow'].includes(tool)) {
+    if (['text', 'sticky', 'shape'].includes(tool)) {
         const pos = e.target.getStage()?.getPointerPosition();
         if (!pos) return;
         const stage = e.target.getStage();
@@ -91,8 +93,6 @@ export function WhiteboardCanvas({
             newNodeData = {...newNodeData, width: 200, height: 120, text: 'New Note', fontSize: fontSize};
         } else if (tool === 'shape') {
             newNodeData = {...newNodeData, width: 100, height: 100, shape: shapeType as any, strokeWidth: strokeWidth};
-        } else if (tool === 'arrow') {
-            newNodeData = {...newNodeData, type: 'pen', points: [0,0,100,0], strokeWidth: strokeWidth, isArrow: true}
         }
         
         const newNode = await onNodeCreate(newNodeData);
@@ -108,7 +108,7 @@ export function WhiteboardCanvas({
     const clickedOnEmpty = e.target === e.target.getStage() || (e.target.attrs.id === 'canvas-bg');
     if (!clickedOnEmpty) return;
 
-    if (tool === 'pen') {
+    if (tool === 'pen' || tool === 'arrow') {
       setIsDrawing(true);
       const pos = e.target.getStage()?.getPointerPosition();
       if (!pos) return;
@@ -119,9 +119,10 @@ export function WhiteboardCanvas({
       const newPenNode = await onNodeCreate({
         type: 'pen',
         x:0, y:0, width:0, height:0,
-        points: [x, y],
+        points: [x, y, x, y],
         color: currentColor,
         strokeWidth: strokeWidth,
+        isArrow: tool === 'arrow',
       });
       currentLineId.current = newPenNode.id;
     }
@@ -132,22 +133,25 @@ export function WhiteboardCanvas({
     const pos = e.target.getStage()?.getPointerPosition();
     if(pos) onUpdatePresence(pos);
 
-    if (tool === 'pen' && isDrawing && currentLineId.current) {
+    if ((tool === 'pen' || tool === 'arrow') && isDrawing && currentLineId.current) {
       if (!pos) return;
       const stage = e.target.getStage();
       const x = (pos.x - stage.x()) / stage.scaleX();
       const y = (pos.y - stage.y()) / stage.scaleY();
       
       const currentNode = nodes.find(n => n.id === currentLineId.current);
-      if (currentNode) {
-          onNodeChange(currentLineId.current, { points: [...(currentNode.points || []), x, y] });
+      if (currentNode && currentNode.points) {
+          const newPoints = [...currentNode.points];
+          newPoints[2] = x;
+          newPoints[3] = y;
+          onNodeChange(currentLineId.current, { points: newPoints });
       }
     }
   };
 
   const handleMouseUp = () => {
     if (isMinimap) return;
-    if (tool === 'pen' && isDrawing) {
+    if ((tool === 'pen' || tool === 'arrow') && isDrawing) {
       setIsDrawing(false);
       onNodeChangeComplete();
       currentLineId.current = null;
