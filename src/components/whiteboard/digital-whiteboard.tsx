@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Stage, Layer, Line, Rect, Text, Group } from 'react-konva';
 import Konva from 'konva';
@@ -63,7 +64,7 @@ function uid() {
 // -----------------------------
 // Component
 // -----------------------------
-export function DigitalWhiteboard() {
+export default function DigitalWhiteboard() {
   const { user: authUser } = useAuth();
   const params = useParams();
   const boardId = params.whiteboardId as string;
@@ -167,13 +168,14 @@ export function DigitalWhiteboard() {
   // Drawing handlers (Pen)
   // -----------------------------
   const handleMouseDown = (e: any) => {
-    if (tool !== 'pen') return;
+    if (tool !== 'pen' || !user) return;
     setIsDrawing(true);
     const pos = stageRef.current.getPointerPosition();
     currentPointsRef.current = [pos.x, pos.y];
   };
 
   const handleMouseMove = (e: any) => {
+    if(!stageRef.current) return;
     const pos = stageRef.current.getPointerPosition();
     updatePresenceThrottled(pos.x, pos.y);
 
@@ -306,6 +308,7 @@ export function DigitalWhiteboard() {
   // Export functions
   // -----------------------------
   const exportPNG = () => {
+    if(!stageRef.current) return;
     const uri = stageRef.current.toDataURL({ pixelRatio: 3 });
     const a = document.createElement('a');
     a.href = uri;
@@ -316,6 +319,7 @@ export function DigitalWhiteboard() {
   };
 
   const exportPDF = () => {
+    if(!stageRef.current) return;
     const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
     const pdf = new jsPDF({ orientation: 'landscape' });
     pdf.addImage(uri, 'PNG', 10, 10, 277, 190);
@@ -328,6 +332,7 @@ export function DigitalWhiteboard() {
   const handleWheel = (e: any) => {
     e.evt.preventDefault();
     const stage = stageRef.current;
+    if(!stage) return;
     const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
 
@@ -396,7 +401,7 @@ export function DigitalWhiteboard() {
   // UI
   // -----------------------------
   return (
-    <div className="w-full h-full flex flex-col" style={{ height: '100vh' }}>
+    <div className="w-full h-full flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
       {/* Toolbar */}
       <div className="p-2 flex items-center gap-2 bg-white shadow">
         <button className="px-3 py-1 border rounded" onClick={() => setTool('pan')}>Pan</button>
@@ -416,8 +421,8 @@ export function DigitalWhiteboard() {
       {/* Canvas */}
       <div className="flex-1 bg-gray-50">
         <Stage
-          width={typeof window !== 'undefined' ? window.innerWidth : 0}
-          height={typeof window !== 'undefined' ? window.innerHeight - 64 : 0}
+          width={typeof window !== 'undefined' ? window.innerWidth : 1200}
+          height={typeof window !== 'undefined' ? window.innerHeight - 64 : 800}
           draggable={tool === 'pan'}
           onWheel={handleWheel}
           ref={stageRef}
