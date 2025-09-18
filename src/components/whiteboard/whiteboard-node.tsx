@@ -6,7 +6,16 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 import type { WhiteboardNode } from '@/lib/types';
 import { Html } from 'react-konva-utils';
 import useImage from 'use-image';
-import { Group, Rect, Text, Line, Arrow, Transformer, RegularPolygon, Image as KonvaImage, Path } from 'react-konva';
+
+// Dynamically import react-konva components
+const Group = React.lazy(() => import('react-konva').then(m => ({ default: m.Group })));
+const Rect = React.lazy(() => import('react-konva').then(m => ({ default: m.Rect })));
+const Text = React.lazy(() => import('react-konva').then(m => ({ default: m.Text })));
+const Line = React.lazy(() => import('react-konva').then(m => ({ default: m.Line })));
+const Arrow = React.lazy(() => import('react-konva').then(m => ({ default: m.Arrow })));
+const Transformer = React.lazy(() => import('react-konva').then(m => ({ default: m.Transformer })));
+const RegularPolygon = React.lazy(() => import('react-konva').then(m => ({ default: m.RegularPolygon })));
+const KonvaImage = React.lazy(() => import('react-konva').then(m => ({ default: m.Image })));
 
 interface WhiteboardNodeComponentProps {
   node: WhiteboardNode;
@@ -183,7 +192,7 @@ export function WhiteboardNodeComponent({
   }
 
   return (
-    <>
+    <React.Suspense fallback={null}>
       <Group
         ref={shapeRef}
         id={node.id}
@@ -236,6 +245,6 @@ export function WhiteboardNodeComponent({
             />
         </Html>
       )}
-    </>
+    </React.Suspense>
   );
 }

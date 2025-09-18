@@ -2,10 +2,19 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { Stage, Layer, Rect, Arrow, Line, Group, Text } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
 import { WhiteboardNodeComponent } from './whiteboard-node';
+
+// Dynamically import react-konva components to ensure they only run on the client
+const Stage = React.lazy(() => import('react-konva').then(m => ({ default: m.Stage })));
+const Layer = React.lazy(() => import('react-konva').then(m => ({ default: m.Layer })));
+const Rect = React.lazy(() => import('react-konva').then(m => ({ default: m.Rect })));
+const Arrow = React.lazy(() => import('react-konva').then(m => ({ default: m.Arrow })));
+const Line = React.lazy(() => import('react-konva').then(m => ({ default: m.Line })));
+const Group = React.lazy(() => import('react-konva').then(m => ({ default: m.Group })));
+const Text = React.lazy(() => import('react-konva').then(m => ({ default: m.Text })));
+
 
 type Presence = {
     userId: string;
@@ -32,7 +41,7 @@ interface WhiteboardCanvasProps {
   onNodeChange: (id: string, newAttrs: Partial<WhiteboardNode>) => void;
   onNodeChangeComplete: () => void;
   onNodeDelete: (id: string) => void;
-  onSelectNode: (id: string | null) => void;
+  onSelectNode: (id: string | null | ((prev: string[]) => string[])) => void;
   onEditNode: (id: string | null) => void;
   onUpdatePresence: (pos: {x:number, y:number}) => void;
   isMinimap?: boolean;
@@ -195,7 +204,7 @@ export function WhiteboardCanvas({
             );
         }).map(node => node.id);
         
-        onSelectNode(selected.length > 0 ? selected[0] : null); // simplified for now
+        onSelectNode(selected);
         setSelectionRect({ x: 0, y: 0, width: 0, height: 0, visible: false });
         return;
     }
@@ -236,96 +245,98 @@ export function WhiteboardCanvas({
   };
 
   return (
-    <Stage
-      ref={stageRef}
-      width={isMinimap ? 192 : window.innerWidth}
-      height={isMinimap ? 144 : window.innerHeight - 200}
-      draggable={tool === 'select' && !selectionRect.visible}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onClick={handleStageClick}
-      onDragEnd={(e) => isMinimap ? {} : boardData && onNodeChange(boardData.id, { x: e.target.x(), y: e.target.y() })}
-      onWheel={(e) => {
-        if(isMinimap) return;
-        e.evt.preventDefault();
-        const stage = stageRef.current;
-        if(!stage) return;
-        const oldScale = stage.scaleX();
-        const pointer = stage.getPointerPosition();
-        if (!pointer) return;
-        const scaleBy = 1.05;
-        const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
-        
-        const newPos = {
-            x: pointer.x - ((pointer.x - stage.x()) / oldScale) * newScale,
-            y: pointer.y - ((pointer.y - stage.y()) / oldScale) * newScale,
-        };
-        handleSettingChange({scale: newScale, x: newPos.x, y: newPos.y});
-      }}
-      scaleX={boardData.scale || 1}
-      scaleY={boardData.scale || 1}
-      x={boardData.x || 0}
-      y={boardData.y || 0}
-    >
-      <Layer>
-        <Rect id="canvas-bg" x={-10000} y={-10000} width={20000} height={20000} fill={boardData.backgroundColor || '#FFFFFF'} />
-        {connections.map(conn => {
-            const fromNode = nodes.find(n => n.id === conn.from);
-            const toNode = nodes.find(n => n.id === conn.to);
-            if (!fromNode || !toNode) return null;
-            const points = getConnectorPoints(fromNode, toNode);
-            return (
-                <Arrow 
-                    key={`${conn.from}-${conn.to}`}
-                    points={points}
-                    stroke={conn.color || '#333333'}
-                    strokeWidth={conn.strokeWidth || 2}
-                    pointerLength={10}
-                    pointerWidth={10}
-                />
-            )
-        })}
-        {sortedNodes.map((node) => (
-          <WhiteboardNodeComponent
-            key={node.id}
-            node={node}
-            isSelected={selectedNodeIds.includes(node.id)}
-            isEditing={node.id === editingNodeId}
-            tool={tool}
-            onSelect={() => {
-              if (tool === 'select') {
-                onSelectNode(node.id);
-                onEditNode(null);
-              }
-            }}
-            onDoubleClick={() => {
-              if (tool === 'select' && (node.type === 'text' || node.type === 'sticky')) {
-                onEditNode(node.id);
-              }
-            }}
-            onChange={(newAttrs) => onNodeChange(node.id, newAttrs)}
-            onDragEnd={onNodeChangeComplete}
-          />
-        ))}
-         {selectionRect.visible && (
-            <Rect
-                x={selectionRect.x}
-                y={selectionRect.y}
-                width={selectionRect.width}
-                height={selectionRect.height}
-                fill="rgba(0, 120, 255, 0.1)"
-                stroke="rgba(0, 120, 255, 0.5)"
-                strokeWidth={1}
+    <React.Suspense fallback={<div>Loading Canvas...</div>}>
+      <Stage
+        ref={stageRef}
+        width={isMinimap ? 192 : window.innerWidth}
+        height={isMinimap ? 144 : window.innerHeight - 200}
+        draggable={tool === 'select' && !selectionRect.visible}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onClick={handleStageClick}
+        onDragEnd={(e) => isMinimap ? {} : boardData && onNodeChange(boardData.id, { x: e.target.x(), y: e.target.y() })}
+        onWheel={(e) => {
+          if(isMinimap) return;
+          e.evt.preventDefault();
+          const stage = stageRef.current;
+          if(!stage) return;
+          const oldScale = stage.scaleX();
+          const pointer = stage.getPointerPosition();
+          if (!pointer) return;
+          const scaleBy = 1.05;
+          const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+          
+          const newPos = {
+              x: pointer.x - ((pointer.x - stage.x()) / oldScale) * newScale,
+              y: pointer.y - ((pointer.y - stage.y()) / oldScale) * newScale,
+          };
+          handleSettingChange({scale: newScale, x: newPos.x, y: newPos.y});
+        }}
+        scaleX={boardData.scale || 1}
+        scaleY={boardData.scale || 1}
+        x={boardData.x || 0}
+        y={boardData.y || 0}
+      >
+        <Layer>
+          <Rect id="canvas-bg" x={-10000} y={-10000} width={20000} height={20000} fill={boardData.backgroundColor || '#FFFFFF'} />
+          {connections.map(conn => {
+              const fromNode = nodes.find(n => n.id === conn.from);
+              const toNode = nodes.find(n => n.id === conn.to);
+              if (!fromNode || !toNode) return null;
+              const points = getConnectorPoints(fromNode, toNode);
+              return (
+                  <Arrow 
+                      key={`${conn.from}-${conn.to}`}
+                      points={points}
+                      stroke={conn.color || '#333333'}
+                      strokeWidth={conn.strokeWidth || 2}
+                      pointerLength={10}
+                      pointerWidth={10}
+                  />
+              )
+          })}
+          {sortedNodes.map((node) => (
+            <WhiteboardNodeComponent
+              key={node.id}
+              node={node}
+              isSelected={selectedNodeIds.includes(node.id)}
+              isEditing={node.id === editingNodeId}
+              tool={tool}
+              onSelect={() => {
+                if (tool === 'select') {
+                  onSelectNode(node.id);
+                  onEditNode(null);
+                }
+              }}
+              onDoubleClick={() => {
+                if (tool === 'select' && (node.type === 'text' || node.type === 'sticky')) {
+                  onEditNode(node.id);
+                }
+              }}
+              onChange={(newAttrs) => onNodeChange(node.id, newAttrs)}
+              onDragEnd={onNodeChangeComplete}
             />
-        )}
-        {!isMinimap && Object.values(presence).map(p => (
-            <Group key={p.userId} x={p.x} y={p.y}>
-                 <Rect width={8} height={8} fill={p.color} offsetX={4} offsetY={4} cornerRadius={4} />
-                 <Text y={12} text={p.name} fontSize={12} />
-            </Group>
-        ))}
-      </Layer>
-    </Stage>
+          ))}
+          {selectionRect.visible && (
+              <Rect
+                  x={selectionRect.x}
+                  y={selectionRect.y}
+                  width={selectionRect.width}
+                  height={selectionRect.height}
+                  fill="rgba(0, 120, 255, 0.1)"
+                  stroke="rgba(0, 120, 255, 0.5)"
+                  strokeWidth={1}
+              />
+          )}
+          {!isMinimap && Object.values(presence).map(p => (
+              <Group key={p.userId} x={p.x} y={p.y}>
+                  <Rect width={8} height={8} fill={p.color} offsetX={4} offsetY={4} cornerRadius={4} />
+                  <Text y={12} text={p.name} fontSize={12} />
+              </Group>
+          ))}
+        </Layer>
+      </Stage>
+    </React.Suspense>
   );
 }
