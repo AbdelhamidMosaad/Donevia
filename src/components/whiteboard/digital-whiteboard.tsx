@@ -69,7 +69,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection, WhiteboardTemplate } from '@/lib/types';
-import { WhiteboardCanvas } from './whiteboard-canvas';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
@@ -82,6 +81,13 @@ import { jsPDF } from 'jspdf';
 import { v4 as uuidv4 } from 'uuid';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { TemplateDialog } from './template-dialog';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '../ui/skeleton';
+
+const WhiteboardCanvas = dynamic(() => import('./whiteboard-canvas').then(m => m.WhiteboardCanvas), {
+  ssr: false,
+  loading: () => <Skeleton className="w-full h-full" />,
+});
 
 
 type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
@@ -863,8 +869,8 @@ export default function DigitalWhiteboard() {
                             boardData={boardData} nodes={Object.values(nodes)} tool={'select'} shapeType={shapeType} currentColor={currentColor} strokeWidth={strokeWidth} fontSize={fontSize}
                             selectedNodeIds={[]} editingNodeId={null} presence={{}} onNodeCreate={async() => ({} as any)} onNodeChange={() => {}} onNodeChangeComplete={() => {}}
                             onNodeDelete={() => {}} onSelectNode={() => {}}
-onEditNode={() => {}}
-onUpdatePresence={() => {}}
+                            onEditNode={() => {}}
+                            onUpdatePresence={() => {}}
                             isMinimap={true} connections={connections} onConnectionCreate={() => {}} onConnectionDelete={() => {}}
                         />
                     </div>
@@ -903,18 +909,22 @@ onUpdatePresence={() => {}}
                 onNodeChange={handleNodeChange}
                 onNodeChangeComplete={handleNodeChangeComplete}
                 onNodeDelete={(nodeId) => updateDoc(doc(db, 'users', user!.uid, 'whiteboards', whiteboardId, 'nodes', nodeId), { isDeleted: true })}
-                onSelectNode={(id) => {
+                onSelectNode={(idOrFn) => {
+                    if (typeof idOrFn === 'function') {
+                        setSelectedNodeIds(idOrFn);
+                        return;
+                    }
                     if(tool === 'connect') {
                         if(!connectingNodeId) {
-                            setConnectingNodeId(id);
-                        } else if(id) {
-                            const newConnections = [...connections, { from: connectingNodeId, to: id, color: currentColor, strokeWidth: strokeWidth }];
+                            setConnectingNodeId(idOrFn);
+                        } else if(idOrFn) {
+                            const newConnections = [...connections, { from: connectingNodeId, to: idOrFn, color: currentColor, strokeWidth: strokeWidth }];
                             setConnections(newConnections);
                             updateDoc(getBoardDocRef()!, { connections: newConnections });
                             setConnectingNodeId(null);
                         }
-                    } else if (tool === 'mindmap' && id) {
-                         const parentNode = nodes[id];
+                    } else if (tool === 'mindmap' && idOrFn) {
+                         const parentNode = nodes[idOrFn];
                          if (parentNode) {
                             // Calculate new node position
                             const children = connections.filter(c => c.from === parentNode.id);
@@ -950,11 +960,11 @@ onUpdatePresence={() => {}}
                          }
 
                     } else {
-                        if(id) {
+                        if(idOrFn) {
                             setSelectedNodeIds(prev =>
                                 window.event?.shiftKey ?
-                                    prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-                                : [id]
+                                    prev.includes(idOrFn) ? prev.filter(i => i !== idOrFn) : [...prev, idOrFn]
+                                : [idOrFn]
                             );
                         } else {
                             setSelectedNodeIds([]);
@@ -1015,8 +1025,3 @@ onUpdatePresence={() => {}}
     </>
   );
 }
-
-    
-
-    
-
