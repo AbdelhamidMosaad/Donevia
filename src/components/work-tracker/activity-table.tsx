@@ -328,7 +328,7 @@ export function ActivityTable({ activities, settings, onFilteredTradesChange }: 
                     {filteredAndSortedActivities.length > 0 ? (
                         filteredAndSortedActivities.map(activity => (
                             <TableRow key={activity.id}>
-                                <TableCell>{moment(activity.date.toDate()).format('YYYY-MM-DD')}</TableCell>
+                                <TableCell>{moment(activity.date.toDate()).format('MMMM D, YYYY')}</TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         <span className="h-2 w-2 rounded-full" style={{ backgroundColor: settingsMap.appointmentOptions.get(activity.appointment) }} />
