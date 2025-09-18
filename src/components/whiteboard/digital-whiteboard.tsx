@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -22,6 +23,7 @@ import {
   List,
   Baseline,
   ArrowLeft,
+  Palette,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +41,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Slider } from '../ui/slider';
+import { Separator } from '../ui/separator';
 
 type Tool = 'select' | 'pan' | 'pen' | 'eraser' | 'text' | 'sticky' | 'shape';
 type ShapeType = 'rectangle' | 'circle';
