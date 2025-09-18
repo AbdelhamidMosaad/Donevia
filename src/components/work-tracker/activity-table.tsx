@@ -7,11 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, FileDown, RefreshCcw, ArrowUpDown, Edit, ChevronDown } from 'lucide-react';
+import { Trash2, FileDown, StickyNote, LineChart, RefreshCcw, ArrowUpDown, Edit, ChevronDown, Copy } from 'lucide-react';
 import moment from 'moment';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
@@ -135,6 +135,23 @@ export function ActivityTable({ activities, settings, onFilteredTradesChange }: 
         } catch (e) {
             console.error("Error deleting activity:", e);
             toast({ variant: 'destructive', title: 'Failed to delete activity.' });
+        }
+    };
+    
+    const handleDuplicate = async (activity: WorkActivity) => {
+        if (!user) return;
+        try {
+            const { id, createdAt, updatedAt, ...rest } = activity;
+            await addDoc(collection(db, 'users', user.uid, 'workActivities'), {
+                ...rest,
+                date: Timestamp.now(), // Set to current date
+                createdAt: Timestamp.now(),
+                updatedAt: Timestamp.now(),
+            });
+            toast({ title: 'Activity duplicated successfully!' });
+        } catch (e) {
+             console.error("Error duplicating activity:", e);
+            toast({ variant: 'destructive', title: 'Failed to duplicate activity.' });
         }
     };
 
@@ -339,26 +356,40 @@ export function ActivityTable({ activities, settings, onFilteredTradesChange }: 
                                 <TableCell>{activity.notes || '-'}</TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="icon" onClick={() => setEditingActivity(activity)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action cannot be undone. This will permanently delete the activity.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(activity.id)}>Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                         <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                                <DropdownMenuItem onSelect={() => setEditingActivity(activity)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleDuplicate(activity)}>
+                                                    <Copy className="mr-2 h-4 w-4" /> Duplicate
+                                                </DropdownMenuItem>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4"/> Delete
+                                                        </DropdownMenuItem>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete the activity.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(activity.id)}>Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -366,7 +397,7 @@ export function ActivityTable({ activities, settings, onFilteredTradesChange }: 
                     ) : (
                         <TableRow>
                             <TableCell colSpan={12} className="h-24 text-center">
-                                No activities found for the selected filters.
+                                No activities recorded for the selected filters.
                             </TableCell>
                         </TableRow>
                     )}
