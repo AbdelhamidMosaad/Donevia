@@ -53,6 +53,21 @@ type ShapeType = 'rectangle' | 'circle';
 const backgroundColors = ['#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'];
 const toolColors = ['#000000', '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6'];
 
+function deepClean(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => deepClean(v));
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).reduce((acc, key) => {
+      const value = obj[key];
+      if (value !== undefined) {
+        acc[key as keyof typeof acc] = deepClean(value);
+      }
+      return acc;
+    }, {} as {[key: string]: any});
+  }
+  return obj;
+}
+
 
 export function DigitalWhiteboard() {
   const { user } = useAuth();
@@ -112,7 +127,9 @@ export function DigitalWhiteboard() {
       if (updatedNodes) dataToSave.nodes = updatedNodes;
       if (updatedSettings) Object.assign(dataToSave, updatedSettings);
       
-      await updateDoc(boardRef, dataToSave);
+      const cleanedData = deepClean(dataToSave);
+      
+      await updateDoc(boardRef, cleanedData);
       toast({ title: "✓ Saved", description: "Your whiteboard has been saved."});
     }
   }, 1000);
@@ -355,5 +372,3 @@ export function DigitalWhiteboard() {
     </div>
   );
 }
-
-    
