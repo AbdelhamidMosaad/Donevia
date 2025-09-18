@@ -1,15 +1,15 @@
-
 'use client';
 
 import React, { useRef } from 'react';
-import { Stage, Layer, Rect } from 'react-konva';
+import { Stage, Layer, Rect, Arrow, Line } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
-import type { Whiteboard as WhiteboardType, WhiteboardNode } from '@/lib/types';
+import type { Whiteboard as WhiteboardType, WhiteboardNode, WhiteboardConnection } from '@/lib/types';
 import { WhiteboardNodeComponent } from './whiteboard-node';
 
 type Presence = {
     userId: string;
     name: string;
+    photoURL?: string;
     color: string;
     x: number;
     y: number;
@@ -19,7 +19,7 @@ type Presence = {
 interface WhiteboardCanvasProps {
   boardData: WhiteboardType;
   nodes: WhiteboardNode[];
-  tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow';
+  tool: 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect';
   shapeType: string;
   currentColor: string;
   strokeWidth: number;
@@ -35,6 +35,9 @@ interface WhiteboardCanvasProps {
   onEditNode: (id: string | null) => void;
   onUpdatePresence: (pos: {x:number, y:number}) => void;
   isMinimap?: boolean;
+  connections: WhiteboardConnection[];
+  onConnectionCreate: (from: string, to: string) => void;
+  onConnectionDelete: (from: string, to: string) => void;
 }
 
 export function WhiteboardCanvas({
@@ -56,6 +59,7 @@ export function WhiteboardCanvas({
   onEditNode,
   onUpdatePresence,
   isMinimap = false,
+  connections
 }: WhiteboardCanvasProps) {
   const stageRef = useRef<any>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -160,14 +164,14 @@ export function WhiteboardCanvas({
   return (
     <Stage
       ref={stageRef}
-      width={canvasSize.width}
-      height={canvasSize.height}
-      draggable={tool === 'select' || tool === 'pan'}
+      width={isMinimap ? 192 : window.innerWidth}
+      height={isMinimap ? 144 : window.innerHeight - 200}
+      draggable={tool === 'select'}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onClick={handleStageClick}
-      onDragEnd={(e) => boardData && onNodeChange(boardData.id, { x: e.target.x(), y: e.target.y() })}
+      onDragEnd={(e) => isMinimap ? {} : boardData && onNodeChange(boardData.id, { x: e.target.x(), y: e.target.y() })}
       onWheel={(e) => {
         if(isMinimap) return;
         e.evt.preventDefault();
@@ -175,6 +179,7 @@ export function WhiteboardCanvas({
         if(!stage) return;
         const oldScale = stage.scaleX();
         const pointer = stage.getPointerPosition();
+        if (!pointer) return;
         const scaleBy = 1.05;
         const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
         
@@ -182,7 +187,7 @@ export function WhiteboardCanvas({
             x: pointer.x - ((pointer.x - stage.x()) / oldScale) * newScale,
             y: pointer.y - ((pointer.y - stage.y()) / oldScale) * newScale,
         };
-        onNodeChange(boardData.id, { scale: newScale, x: newPos.x, y: newPos.y });
+        handleSettingChange({scale: newScale, x: newPos.x, y: newPos.y});
       }}
       scaleX={boardData.scale || 1}
       scaleY={boardData.scale || 1}
@@ -191,6 +196,21 @@ export function WhiteboardCanvas({
     >
       <Layer>
         <Rect id="canvas-bg" x={-10000} y={-10000} width={20000} height={20000} fill={boardData.backgroundColor || '#FFFFFF'} />
+        {connections.map(conn => {
+            const fromNode = nodes.find(n => n.id === conn.from);
+            const toNode = nodes.find(n => n.id === conn.to);
+            if (!fromNode || !toNode) return null;
+            return (
+                <Arrow 
+                    key={`${conn.from}-${conn.to}`}
+                    points={[fromNode.x, fromNode.y, toNode.x, toNode.y]}
+                    stroke={conn.color || '#333333'}
+                    strokeWidth={conn.strokeWidth || 2}
+                    pointerLength={10}
+                    pointerWidth={10}
+                />
+            )
+        })}
         {sortedNodes.map((node) => (
           <WhiteboardNodeComponent
             key={node.id}
@@ -212,7 +232,17 @@ export function WhiteboardCanvas({
             onDragEnd={onNodeChangeComplete}
           />
         ))}
+        {!isMinimap && Object.values(presence).map(p => (
+            <Group key={p.userId} x={p.x} y={p.y}>
+                 <Rect width={8} height={8} fill={p.color} offsetX={4} offsetY={4} cornerRadius={4} />
+                 <Text y={12} text={p.name} fontSize={12} />
+            </Group>
+        ))}
       </Layer>
     </Stage>
   );
+}
+
+function handleSettingChange(arg0: { scale: number; x: number; y: number; }) {
+    throw new Error('Function not implemented.');
 }
