@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -83,10 +84,13 @@ import { TemplateDialog } from './template-dialog';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '../ui/skeleton';
 
-const WhiteboardCanvas = dynamic(() => import('./whiteboard-canvas').then(m => m.WhiteboardCanvas), {
-  ssr: false,
-  loading: () => <Skeleton className="w-full h-full" />,
-});
+const WhiteboardCanvas = dynamic(
+  () => import('./whiteboard-canvas').then((mod) => mod.WhiteboardCanvas),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="w-full h-full" />,
+  }
+);
 
 
 type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
@@ -445,7 +449,7 @@ export default function DigitalWhiteboard() {
 
     if (!document.fullscreenElement) {
         elem.requestFullscreen().catch(err => {
-            toast({ variant: 'destructive', title: 'Error attempting to enable full-screen mode.', description: err.message });
+            toast({ variant: 'destructive', title: `Error attempting to enable full-screen mode: ${err.message}` });
         });
     } else {
         document.exitFullscreen();
@@ -866,7 +870,7 @@ export default function DigitalWhiteboard() {
                     <div className="w-48 h-36 bg-card/80 border rounded-lg overflow-hidden relative">
                          <WhiteboardCanvas 
                             boardData={boardData} nodes={Object.values(nodes)} tool={'select'} shapeType={shapeType} currentColor={currentColor} strokeWidth={strokeWidth} fontSize={fontSize}
-                            selectedNodeIds={[]} editingNodeId={null} presence={{}} onNodeCreate={async() => ({} as any)} onNodeChange={() => {}} onNodeChangeComplete={() => {}}
+                            selectedNodeIds={[]} editingNodeId={null} presence={{}} onNodeCreate={async () => ({} as any)} onNodeChange={() => {}} onNodeChangeComplete={() => {}}
                             onNodeDelete={() => {}} onSelectNode={() => {}}
                             onEditNode={() => {}}
                             onUpdatePresence={() => {}}

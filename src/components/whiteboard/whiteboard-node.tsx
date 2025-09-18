@@ -1,21 +1,12 @@
+
 'use client';
 
 import React, { useRef, useEffect } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { WhiteboardNode } from '@/lib/types';
 import useImage from 'use-image';
-import dynamic from 'next/dynamic';
-
-// Dynamically import react-konva components
-const Group = dynamic(() => import('react-konva').then(m => m.Group), { ssr: false });
-const Rect = dynamic(() => import('react-konva').then(m => m.Rect), { ssr: false });
-const Text = dynamic(() => import('react-konva').then(m => m.Text), { ssr: false });
-const Line = dynamic(() => import('react-konva').then(m => m.Line), { ssr: false });
-const Arrow = dynamic(() => import('react-konva').then(m => m.Arrow), { ssr: false });
-const Transformer = dynamic(() => import('react-konva').then(m => m.Transformer), { ssr: false });
-const RegularPolygon = dynamic(() => import('react-konva').then(m => m.RegularPolygon), { ssr: false });
-const KonvaImage = dynamic(() => import('react-konva').then(m => m.Image), { ssr: false });
-const Html = dynamic(() => import('react-konva-utils').then(m => m.Html), { ssr: false });
+import { Group, Rect, Text, Line, Arrow, Transformer, RegularPolygon, Image as KonvaImage } from 'react-konva';
+import { Html } from 'react-konva-utils';
 
 
 interface WhiteboardNodeComponentProps {
