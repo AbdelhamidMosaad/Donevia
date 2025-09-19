@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyMaterialRequest, StudyMaterialResponse, QuizQuestion } from '@/lib/types';
 import { Button } from '../ui/button';
-import { Loader2, Copy, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Copy, Download, ChevronLeft, ChevronRight, RefreshCw, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SaveToDeckDialog } from './shared/save-to-deck-dialog';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
@@ -116,9 +116,16 @@ export function QuizGenerator() {
       let correctCount = 0;
       const newCheckedAnswers: Record<number, boolean> = {};
       result.quizContent.forEach((q, index) => {
-          const userAnswer = userAnswers[index];
-          const correctOptionIndex = q.options?.findIndex(opt => opt === q.correctAnswer);
-          if (userAnswer !== undefined && userAnswer === correctOptionIndex) {
+          const userAnswerIndex = userAnswers[index];
+          let correctIndex: number | undefined;
+
+          if (q.questionType === 'true-false') {
+              correctIndex = q.correctAnswer === 'True' ? 0 : 1;
+          } else {
+              correctIndex = q.options?.findIndex(opt => opt === q.correctAnswer);
+          }
+          
+          if (userAnswerIndex !== undefined && userAnswerIndex === correctIndex) {
               correctCount++;
           }
           newCheckedAnswers[index] = true;
@@ -136,7 +143,12 @@ export function QuizGenerator() {
     if (!result || !result.quizContent || !currentQuestion) return null;
     
     const isAnswered = checkedAnswers[currentQuestionIndex];
-    const correctOptionIndex = currentQuestion.options?.findIndex(opt => opt === currentQuestion.correctAnswer);
+    
+    const options = currentQuestion.questionType === 'true-false'
+        ? ['True', 'False']
+        : currentQuestion.options || [];
+
+    const correctOptionIndex = options.findIndex(opt => opt === currentQuestion.correctAnswer);
 
     return (
       <Card className="flex-1 flex flex-col h-full">
@@ -147,7 +159,7 @@ export function QuizGenerator() {
         <CardContent className="flex-1 space-y-4">
             <p className="font-semibold text-lg">{currentQuestion.questionText}</p>
             <ul className="space-y-2">
-                {currentQuestion.options?.map((option, index) => {
+                {options.map((option, index) => {
                     const isSelected = userAnswers[currentQuestionIndex] === index;
                     const isCorrect = correctOptionIndex === index;
                     return (
