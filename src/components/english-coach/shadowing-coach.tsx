@@ -30,6 +30,8 @@ const PAUSE_DURATION_MS = 3000; // 3 seconds pause for the user to repeat
 
 type SessionState = 'idle' | 'playing' | 'paused' | 'generating';
 type TtsEngine = 'gemini' | 'browser';
+const geminiVoices = ['Algenib', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Sirius', 'Spica', 'Vega'];
+
 
 export function ShadowingCoach() {
     const { user } = useAuth();
@@ -42,6 +44,7 @@ export function ShadowingCoach() {
     const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
+    const [selectedGeminiVoice, setSelectedGeminiVoice] = useState<string>(geminiVoices[0]);
 
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -91,7 +94,7 @@ export function ShadowingCoach() {
             window.speechSynthesis.speak(utterance);
         } else { // Gemini TTS
             try {
-                const audioData = await generateAudio(text);
+                const audioData = await generateAudio({ text, voice: selectedGeminiVoice });
                 if (audioRef.current) {
                     audioRef.current.src = audioData.media;
                     audioRef.current.play();
@@ -102,7 +105,7 @@ export function ShadowingCoach() {
                  onEnd(); // proceed even if audio fails
             }
         }
-    }, [ttsEngine, voices, selectedVoice, toast]);
+    }, [ttsEngine, voices, selectedVoice, selectedGeminiVoice, toast]);
 
     const playNextPhrase = useCallback(() => {
         if (!article || currentIndex >= article.phrases.length) {
@@ -206,15 +209,27 @@ export function ShadowingCoach() {
                         </SelectContent>
                     </Select>
                 </div>
-                {ttsEngine === 'browser' && voices.length > 0 && (
+                 {ttsEngine === 'browser' && voices.length > 0 ? (
                     <div className="space-y-1 text-left">
-                        <Label htmlFor="voice-select">Voice</Label>
+                        <Label htmlFor="voice-select">Browser Voice</Label>
                         <Select value={selectedVoice} onValueChange={setSelectedVoice}>
                             <SelectTrigger id="voice-select"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 {voices.filter(v => v.lang.startsWith('en')).map(v => (
                                     <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
                                 ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                ) : ttsEngine === 'gemini' && (
+                     <div className="space-y-1 text-left">
+                        <Label htmlFor="gemini-voice-select">Gemini Voice</Label>
+                        <Select value={selectedGeminiVoice} onValueChange={setSelectedGeminiVoice}>
+                            <SelectTrigger id="gemini-voice-select"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                            {geminiVoices.map(v => (
+                                <SelectItem key={v} value={v}>{v}</SelectItem>
+                            ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -232,7 +247,7 @@ export function ShadowingCoach() {
         return (
             <div className="space-y-4">
                 <div className="flex items-center justify-center gap-2">
-                    <div className="space-y-1 text-left">
+                     <div className="space-y-1 text-left">
                         <Label htmlFor="tts-engine-select-session">TTS Engine</Label>
                         <Select value={ttsEngine} onValueChange={(v: TtsEngine) => setTtsEngine(v)}>
                             <SelectTrigger id="tts-engine-select-session" className="w-[150px]"><SelectValue /></SelectTrigger>
@@ -242,7 +257,7 @@ export function ShadowingCoach() {
                             </SelectContent>
                         </Select>
                     </div>
-                     {ttsEngine === 'browser' && voices.length > 0 && (
+                    {ttsEngine === 'browser' && voices.length > 0 ? (
                         <div className="space-y-1 text-left">
                             <Label htmlFor="voice-select-session">Voice</Label>
                             <Select value={selectedVoice} onValueChange={setSelectedVoice}>
@@ -251,6 +266,18 @@ export function ShadowingCoach() {
                                     {voices.map(v => (
                                         <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
                                     ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                     ) : ttsEngine === 'gemini' && (
+                        <div className="space-y-1 text-left">
+                            <Label htmlFor="gemini-voice-select-session">Gemini Voice</Label>
+                            <Select value={selectedGeminiVoice} onValueChange={setSelectedGeminiVoice}>
+                                <SelectTrigger id="gemini-voice-select-session"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                {geminiVoices.map(v => (
+                                    <SelectItem key={v} value={v}>{v}</SelectItem>
+                                ))}
                                 </SelectContent>
                             </Select>
                         </div>

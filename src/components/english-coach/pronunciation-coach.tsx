@@ -34,6 +34,8 @@ const topics = [
     'Word endings (-s, -ed)'
 ];
 type TtsEngine = 'gemini' | 'browser';
+const geminiVoices = ['Algenib', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Sirius', 'Spica', 'Vega'];
+
 
 function HighlightedText({ text }: { text: string }) {
     const parts = text.split(/(\*\*.*?\*\*)/g);
@@ -62,6 +64,7 @@ export function PronunciationCoach() {
   const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
+  const [selectedGeminiVoice, setSelectedGeminiVoice] = useState<string>(geminiVoices[0]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -123,7 +126,7 @@ export function PronunciationCoach() {
     } else { // Gemini TTS
         setAudioState(prev => ({...prev, [cleanText]: { loading: true, data: null }}));
         try {
-          const result = await generateAudio(cleanText);
+          const result = await generateAudio({ text: cleanText, voice: selectedGeminiVoice });
           if (audioRef.current && result.media) {
             audioRef.current.src = result.media;
             audioRef.current.play();
@@ -211,7 +214,7 @@ export function PronunciationCoach() {
               </SelectContent>
             </Select>
           </div>
-          {ttsEngine === 'browser' && voices.length > 0 && (
+          {ttsEngine === 'browser' && voices.length > 0 ? (
             <div className="space-y-1.5">
               <Label htmlFor="voice-select">Voice</Label>
               <Select value={selectedVoice} onValueChange={setSelectedVoice}>
@@ -222,6 +225,18 @@ export function PronunciationCoach() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          ) : ttsEngine === 'gemini' && (
+             <div className="space-y-1.5">
+                <Label htmlFor="gemini-voice-select">Gemini Voice</Label>
+                <Select value={selectedGeminiVoice} onValueChange={setSelectedGeminiVoice}>
+                    <SelectTrigger id="gemini-voice-select"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                    {geminiVoices.map(v => (
+                        <SelectItem key={v} value={v}>{v}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
             </div>
           )}
           <Button onClick={handleGenerate} disabled={isLoading} className="w-full">

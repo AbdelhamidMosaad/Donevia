@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -30,6 +31,8 @@ function highlightStory(story: string, isDarkMode: boolean): React.ReactNode {
 }
 
 type TtsEngine = 'gemini' | 'browser';
+const geminiVoices = ['Algenib', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Sirius', 'Spica', 'Vega'];
+
 
 export function VocabularyCoach() {
   const [level, setLevel] = useState<VocabularyLevel>('B1');
@@ -46,6 +49,7 @@ export function VocabularyCoach() {
   const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
+  const [selectedGeminiVoice, setSelectedGeminiVoice] = useState<string>(geminiVoices[0]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
    useEffect(() => {
@@ -119,7 +123,7 @@ export function VocabularyCoach() {
     } else { // Gemini TTS
       setAudioState(prev => ({ ...prev, [text]: { loading: true, data: null } }));
       try {
-        const audioResult = await generateAudio(text);
+        const audioResult = await generateAudio({ text, voice: selectedGeminiVoice });
         setAudioState(prev => ({ ...prev, [text]: { loading: false, data: audioResult.media } }));
         if (audioRef.current) {
           audioRef.current.src = audioResult.media;
@@ -251,7 +255,7 @@ export function VocabularyCoach() {
                             </SelectContent>
                         </Select>
                     </div>
-                    {ttsEngine === 'browser' && voices.length > 0 && (
+                    {ttsEngine === 'browser' && voices.length > 0 ? (
                         <div className="space-y-1 text-left">
                             <Label htmlFor="voice-select">Voice</Label>
                             <Select value={selectedVoice} onValueChange={setSelectedVoice}>
@@ -260,6 +264,18 @@ export function VocabularyCoach() {
                                     {voices.map(v => (
                                         <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
                                     ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                     ) : ttsEngine === 'gemini' && (
+                        <div className="space-y-1 text-left">
+                            <Label htmlFor="gemini-voice-select">Gemini Voice</Label>
+                            <Select value={selectedGeminiVoice} onValueChange={setSelectedGeminiVoice}>
+                                <SelectTrigger id="gemini-voice-select"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                {geminiVoices.map(v => (
+                                    <SelectItem key={v} value={v}>{v}</SelectItem>
+                                ))}
                                 </SelectContent>
                             </Select>
                         </div>

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for converting text to speech using Google AI.
@@ -34,24 +35,31 @@ async function toWav(
   });
 }
 
+const GenerateAudioRequestSchema = z.object({
+  text: z.string(),
+  voice: z.string().optional().default('Algenib'),
+});
+type GenerateAudioRequest = z.infer<typeof GenerateAudioRequestSchema>;
+
+
 const generateAudioFlow = ai.defineFlow(
   {
     name: 'generateAudioFlow',
-    inputSchema: z.string(),
+    inputSchema: GenerateAudioRequestSchema,
     outputSchema: z.object({ media: z.string() }),
   },
-  async (query) => {
+  async ({ text, voice }) => {
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' },
+            prebuiltVoiceConfig: { voiceName: voice || 'Algenib' },
           },
         },
       },
-      prompt: query,
+      prompt: text,
     });
     if (!media) {
       throw new Error('No audio data was returned from the AI.');
@@ -67,6 +75,6 @@ const generateAudioFlow = ai.defineFlow(
   }
 );
 
-export async function generateAudio(text: string): Promise<{ media: string }> {
-  return await generateAudioFlow(text);
+export async function generateAudio(request: GenerateAudioRequest): Promise<{ media: string }> {
+  return await generateAudioFlow(request);
 }
