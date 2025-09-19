@@ -81,6 +81,7 @@ const AudioRequestSchema = z.object({
     speaker: z.string(),
     line: z.string(),
   })),
+  voices: z.array(z.string()).optional(),
 });
 
 const generateAudioFlow = ai.defineFlow(
@@ -89,15 +90,16 @@ const generateAudioFlow = ai.defineFlow(
     inputSchema: AudioRequestSchema,
     outputSchema: z.object({ media: z.string() }),
   },
-  async ({ conversation }) => {
+  async ({ conversation, voices }) => {
     const speakers = Array.from(new Set(conversation.map(c => c.speaker)));
-    const voices = ['Algenib', 'Achernar', 'Sirius']; // Pre-defined voices for speakers
+    const defaultVoices = ['Algenib', 'Achernar', 'Sirius']; // Pre-defined voices for speakers
+    const selectedVoices = voices && voices.length > 0 ? voices : defaultVoices;
 
     const multiSpeakerVoiceConfig = {
       speakerVoiceConfigs: speakers.map((speaker, index) => ({
         speaker,
         voiceConfig: {
-          prebuiltVoiceConfig: { voiceName: voices[index % voices.length] },
+          prebuiltVoiceConfig: { voiceName: selectedVoices[index % selectedVoices.length] },
         },
       })),
     };

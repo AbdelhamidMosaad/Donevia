@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, Download, Save, Volume2 } from 'lucide-react';
@@ -15,6 +15,9 @@ import { generateConversation, generateConversationAudio } from '@/ai/flows/conv
 import type { ConversationCoachResponse } from '@/lib/types/conversation-coach';
 import { Input } from '../ui/input';
 import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
+
+type TtsEngine = 'gemini' | 'browser';
+const geminiVoices = ['Algenib', 'Achernar', 'Sirius', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Vega'];
 
 const topics = ['Technology', 'Health', 'Travel', 'Work', 'Movies', 'Books', 'Food', 'Hobbies'];
 
@@ -35,6 +38,30 @@ export function ConversationCoach() {
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [showAnswers, setShowAnswers] = useState(false);
 
+  const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoices, setSelectedVoices] = useState<string[]>(['Algenib', 'Achernar', 'Sirius']);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const getVoices = () => {
+            const availableVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+            setBrowserVoices(availableVoices);
+            if (selectedVoices.length === 0 && availableVoices.length > 0) {
+                setSelectedVoices(availableVoices.slice(0, 3).map(v => v.name));
+            }
+        };
+        getVoices();
+        window.speechSynthesis.onvoiceschanged = getVoices;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        audioRef.current = new Audio();
+    }
+  }, []);
 
   const handleGenerate = async () => {
     if (!user) {
@@ -54,7 +81,7 @@ export function ConversationCoach() {
       
       // Automatically trigger audio generation
       setIsAudioLoading(true);
-      const audioData = await generateConversationAudio({ conversation: data.conversation });
+      const audioData = await generateConversationAudio({ conversation: data.conversation, voices: selectedVoices });
       setAudioSrc(audioData.media);
 
     } catch (error) {
@@ -170,6 +197,40 @@ export function ConversationCoach() {
       </Card>
     );
   };
+  
+    const renderVoiceSelectors = () => {
+    return Array.from({ length: numSpeakers }).map((_, index) => (
+      <div key={index} className="space-y-1.5">
+        <Label htmlFor={`voice-select-${index}`}>Voice for Speaker {index + 1}</Label>
+        <Select
+          value={selectedVoices[index]}
+          onValueChange={(value) => {
+            const newVoices = [...selectedVoices];
+            newVoices[index] = value;
+            setSelectedVoices(newVoices);
+          }}
+        >
+          <SelectTrigger id={`voice-select-${index}`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ttsEngine === 'gemini'
+              ? geminiVoices.map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {v}
+                  </SelectItem>
+                ))
+              : browserVoices.map((v) => (
+                  <SelectItem key={v.name} value={v.name}>
+                    {v.name} ({v.lang})
+                  </SelectItem>
+                ))}
+          </SelectContent>
+        </Select>
+      </div>
+    ));
+  };
+
 
   const renderInitialState = () => (
      <Card className="flex flex-col h-full">
@@ -207,6 +268,17 @@ export function ConversationCoach() {
                         </SelectContent>
                     </Select>
                 </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="tts-engine-select">Text-to-Speech Engine</Label>
+                    <Select value={ttsEngine} onValueChange={(v: TtsEngine) => setTtsEngine(v)}>
+                        <SelectTrigger id="tts-engine-select"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="gemini">Gemini AI</SelectItem>
+                            <SelectItem value="browser">Browser-based</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                {renderVoiceSelectors()}
                 <Button onClick={handleGenerate} disabled={isLoading || !topic.trim()} className="w-full">
                     <Sparkles />
                     {isLoading ? 'Generating...' : 'Generate Conversation'}
