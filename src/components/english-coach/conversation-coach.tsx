@@ -47,7 +47,6 @@ export function ConversationCoach() {
 
   const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedBrowserVoice, setSelectedBrowserVoice] = useState<string | undefined>();
   const [selectedVoices, setSelectedVoices] = useState<string[]>(['Algenib', 'Achernar', 'Sirius']);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -60,16 +59,23 @@ export function ConversationCoach() {
         const getVoices = () => {
           const availableVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
           setBrowserVoices(availableVoices);
-          if (!selectedBrowserVoice && availableVoices.length > 0) {
-            const defaultVoice = availableVoices.find(v => v.default);
-            setSelectedBrowserVoice(defaultVoice ? defaultVoice.name : availableVoices[0].name);
+          if (selectedVoices.length === 0 && availableVoices.length > 0) {
+            const defaultVoice1 = availableVoices.find(v => v.default);
+            const defaultVoice2 = availableVoices.find(v => !v.default);
+            setSelectedVoices([
+                defaultVoice1 ? defaultVoice1.name : availableVoices[0].name,
+                defaultVoice2 ? defaultVoice2.name : (availableVoices[1] ? availableVoices[1].name : availableVoices[0].name),
+                availableVoices[2] ? availableVoices[2].name : availableVoices[0].name
+            ]);
           }
         };
         getVoices();
-        window.speechSynthesis.onvoiceschanged = getVoices;
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+          window.speechSynthesis.onvoiceschanged = getVoices;
+        }
       }
     }
-  }, [selectedBrowserVoice]);
+  }, [selectedVoices]);
 
   const handleGenerate = async () => {
     if (!user) {
@@ -95,6 +101,16 @@ export function ConversationCoach() {
   };
   
   const playAudio = useCallback(async (text: string, voice: string, onEnd: () => void) => {
+    
+    if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        const browserVoice = browserVoices.find(v => v.name === voice);
+        if(browserVoice) utterance.voice = browserVoice;
+        utterance.onend = onEnd;
+        window.speechSynthesis.speak(utterance);
+        return;
+    }
+    
     const audioKey = `${text}-${voice}`;
     if (audioState[audioKey]?.data && audioRef.current) {
       audioRef.current.src = audioState[audioKey]!.data!;
@@ -105,15 +121,6 @@ export function ConversationCoach() {
 
     setAudioState(prev => ({ ...prev, [audioKey]: { loading: true, data: null } }));
 
-    if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
-        setAudioState(prev => ({...prev, [audioKey]: { loading: false, data: null }})); // No caching for browser
-        const utterance = new SpeechSynthesisUtterance(text);
-        const browserVoice = browserVoices.find(v => v.name === voice);
-        if(browserVoice) utterance.voice = browserVoice;
-        utterance.onend = onEnd;
-        window.speechSynthesis.speak(utterance);
-        return;
-    }
     
     try {
       const audioResult = await generateAudio({ text, voice });
@@ -139,21 +146,15 @@ export function ConversationCoach() {
 
     setSessionState('playing');
     const line = result.conversation[currentIndex];
-    let voice: string;
-    
-    if (ttsEngine === 'gemini') {
-        const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
-        voice = selectedVoices[speakerIndex % selectedVoices.length];
-    } else {
-        voice = selectedBrowserVoice || '';
-    }
+    const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+    const voice = selectedVoices[speakerIndex % selectedVoices.length];
 
     playAudio(line.line, voice, () => {
       timeoutRef.current = setTimeout(() => {
         setCurrentIndex(prev => prev + 1);
       }, 1000); // 1-second pause
     });
-  }, [result, currentIndex, playAudio, selectedVoices, toast, ttsEngine, selectedBrowserVoice]);
+  }, [result, currentIndex, playAudio, selectedVoices, toast]);
 
 
   useEffect(() => {
@@ -201,13 +202,8 @@ export function ConversationCoach() {
   const handleRepeat = () => {
     if (!result) return;
     const line = result.conversation[currentIndex];
-    let voice: string;
-    if (ttsEngine === 'gemini') {
-        const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
-        voice = selectedVoices[speakerIndex % selectedVoices.length];
-    } else {
-        voice = selectedBrowserVoice || '';
-    }
+    const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+    const voice = selectedVoices[speakerIndex % selectedVoices.length];
     playAudio(line.line, voice, () => {});
   };
 
@@ -249,6 +245,12 @@ export function ConversationCoach() {
   };
   
   const VoiceSelectors = ({ inSession = false }: { inSession?: boolean }) => {
+    const handleVoiceChange = (index: number, value: string) => {
+        const newVoices = [...selectedVoices];
+        newVoices[index] = value;
+        setSelectedVoices(newVoices);
+    }
+
     return (
       <div className="space-y-4">
         <div className="space-y-1.5">
@@ -265,45 +267,24 @@ export function ConversationCoach() {
           const speakerNames = result ? Array.from(new Set(result.conversation.map(l => l.speaker))) : [];
           const speakerName = speakerNames[index] || `Speaker ${index + 1}`;
           
-          if (ttsEngine === 'gemini') {
-            return (
-              <div key={index} className="space-y-1.5">
+          return (
+             <div key={index} className="space-y-1.5">
                 <Label htmlFor={inSession ? `voice-select-session-${index}` : `voice-select-${index}`}>Voice for {speakerName}</Label>
                 <Select
                   value={selectedVoices[index]}
-                  onValueChange={(value) => {
-                    const newVoices = [...selectedVoices];
-                    newVoices[index] = value;
-                    setSelectedVoices(newVoices);
-                  }}
+                  onValueChange={(value) => handleVoiceChange(index, value)}
                 >
                   <SelectTrigger id={inSession ? `voice-select-session-${index}` : `voice-select-${index}`}><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {geminiVoices.map((v) => ( <SelectItem key={v} value={v}>{v}</SelectItem> ))}
+                    {ttsEngine === 'gemini' ? (
+                         geminiVoices.map((v) => ( <SelectItem key={v} value={v}>{v}</SelectItem> ))
+                    ) : (
+                        browserVoices.map(v => (<SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
-            )
-          } else { // browser-based
-             return (
-                <div key={index} className="space-y-1.5">
-                  <Label htmlFor={inSession ? `browser-voice-session-${index}` : `browser-voice-${index}`}>Voice for {speakerName}</Label>
-                  <Select 
-                      value={selectedVoices[index]} 
-                      onValueChange={(value) => {
-                        const newVoices = [...selectedVoices];
-                        newVoices[index] = value;
-                        setSelectedVoices(newVoices);
-                      }}
-                  >
-                    <SelectTrigger id={inSession ? `browser-voice-session-${index}` : `browser-voice-${index}`}><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      {browserVoices.map(v => (<SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-             );
-          }
+          )
         })}
       </div>
     );
@@ -319,7 +300,7 @@ export function ConversationCoach() {
           <CardDescription>Your AI-generated conversation is ready.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 min-h-0">
-          <ScrollArea className="h-full pr-4">
+          <ScrollArea className="h-full pr-4 -mr-4">
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -338,14 +319,8 @@ export function ConversationCoach() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {result.conversation.map((line, index) => {
-                        let voice: string;
-                         if (ttsEngine === 'gemini') {
-                            const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
-                            voice = selectedVoices[speakerIndex % selectedVoices.length];
-                        } else {
-                            const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
-                            voice = selectedVoices[speakerIndex % selectedVoices.length] || '';
-                        }
+                        const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+                        const voice = selectedVoices[speakerIndex % selectedVoices.length];
                         const audioKey = `${line.line}-${voice}`;
                         const lineAudioState = audioState[audioKey];
                         return (
@@ -482,4 +457,3 @@ export function ConversationCoach() {
     </div>
   );
 }
-
