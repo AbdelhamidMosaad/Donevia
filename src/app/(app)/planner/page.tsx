@@ -130,7 +130,7 @@ export default function PlannerPage() {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Partial<PlannerEvent> | null>(null);
-  const [currentView, setCurrentView] = useState<any>(Views.WEEK);
+  const [currentView, setCurrentView] = useState<any>(Views.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [tasks, setTasks] = useState<Task[]>([]);
