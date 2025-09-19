@@ -44,7 +44,7 @@ const conversationPrompt = ai.definePrompt({
     2.  **Conversation Script**:
         -   Write a natural, coherent, and interesting conversation about the specified topic.
         -   The language, vocabulary, and sentence structure must be appropriate for a **{{level}}** learner.
-        -   Use exactly **{{numSpeakers}}** speakers, labeling them as "Speaker 1", "Speaker 2", etc.
+        -   Use exactly **{{numSpeakers}}** speakers. You must assign a common, real first name to each speaker (e.g., "Sarah", "John").
         -   The conversation should have at least 8-12 turns to be meaningful.
     3.  **Extract Key Phrases**:
         -   From the conversation, identify exactly 5 common, useful English phrases or idioms that would be valuable for a **{{level}}** learner.

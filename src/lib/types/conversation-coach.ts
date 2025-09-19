@@ -12,7 +12,7 @@ export type ConversationCoachRequest = z.infer<typeof ConversationCoachRequestSc
 
 
 const ConversationLineSchema = z.object({
-  speaker: z.string().describe('The identifier for the speaker, e.g., "Speaker 1".'),
+  speaker: z.string().describe('The real name of the speaker, e.g., "Sarah".'),
   line: z.string().describe('The text of the line spoken by the speaker.'),
 });
 
