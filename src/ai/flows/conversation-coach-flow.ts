@@ -7,29 +7,10 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import wav from 'wav';
 import { ConversationCoachRequestSchema, ConversationCoachResponseSchema, type ConversationCoachRequest, type ConversationCoachResponse } from '@/lib/types/conversation-coach';
 
 const ConversationTextResponseSchema = ConversationCoachResponseSchema.omit({ audio: true });
 export type ConversationTextResponse = z.infer<typeof ConversationTextResponseSchema>;
-
-const ConversationAudioRequestSchema = z.object({
-    conversation: z.array(z.object({ speaker: z.string(), line: z.string() })),
-    voices: z.array(z.string()).optional(),
-});
-type ConversationAudioRequest = z.infer<typeof ConversationAudioRequestSchema>;
-
-async function toWav(pcmData: Buffer, channels = 1, rate = 24000, sampleWidth = 2): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({ channels, sampleRate: rate, bitDepth: sampleWidth * 8 });
-    let bufs: any[] = [];
-    writer.on('error', reject);
-    writer.on('data', (d) => bufs.push(d));
-    writer.on('end', () => resolve(Buffer.concat(bufs).toString('base64')));
-    writer.write(pcmData);
-    writer.end();
-  });
-}
 
 // ========== Text Generation Flow ==========
 
@@ -81,57 +62,8 @@ const generateConversationTextFlow = ai.defineFlow(
 );
 
 
-// ========== Audio Generation Flow ==========
-
-const generateConversationAudioFlow = ai.defineFlow(
-  {
-    name: 'generateConversationAudioFlow',
-    inputSchema: ConversationAudioRequestSchema,
-    outputSchema: z.object({ audio: z.string() }),
-  },
-  async (input) => {
-    const speakers = Array.from(new Set(input.conversation.map(c => c.speaker)));
-    const defaultVoices = ['Algenib', 'Achernar', 'Sirius'];
-    const selectedVoices = input.voices && input.voices.length > 0 ? input.voices : defaultVoices;
-    
-    const multiSpeakerVoiceConfig = {
-      speakerVoiceConfigs: speakers.map((speaker, index) => ({
-        speaker,
-        voiceConfig: {
-          prebuiltVoiceConfig: { voiceName: selectedVoices[index % selectedVoices.length] },
-        },
-      })),
-    };
-    
-    const promptText = input.conversation.map(c => `${c.speaker}: ${c.line}`).join('\n');
-
-    const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: { multiSpeakerVoiceConfig },
-      },
-      prompt: promptText,
-    });
-    
-    if (!media) {
-      throw new Error('Failed to generate audio for the conversation.');
-    }
-    
-    const audioBuffer = Buffer.from(media.url.substring(media.url.indexOf(',') + 1), 'base64');
-    const audioDataUri = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
-
-    return { audio: audioDataUri };
-  }
-);
-
-
 // ========== API Function Exports ==========
 
 export async function generateConversationText(input: Omit<ConversationCoachRequest, 'voices'>): Promise<ConversationTextResponse> {
   return await generateConversationTextFlow(input);
-}
-
-export async function generateConversationAudio(input: ConversationAudioRequest): Promise<{ audio: string }> {
-  return await generateConversationAudioFlow(input);
 }

@@ -1,23 +1,28 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, Download, Save, Volume2 } from 'lucide-react';
+import { Loader2, Sparkles, Download, Save, Volume2, Play, Pause, StopCircle, Repeat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
-import { generateConversationText, generateConversationAudio, type ConversationTextResponse } from '@/ai/flows/conversation-coach-flow';
+import { generateConversationText, type ConversationTextResponse } from '@/ai/flows/conversation-coach-flow';
+import { generateAudio } from '@/ai/flows/tts-flow';
 import type { ConversationCoachRequest, ConversationCoachResponse } from '@/lib/types/conversation-coach';
 import { Input } from '../ui/input';
 import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
+import { cn } from '@/lib/utils';
+
 
 const geminiVoices = ['Algenib', 'Achernar', 'Sirius', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Vega'];
+const topics = ['Technology', 'Health', 'Travel', 'Work', 'Movies', 'Books', 'Food', 'Hobbies', 'Business', 'History'];
 
-const topics = ['Technology', 'Health', 'Travel', 'Work', 'Movies', 'Books', 'Food', 'Hobbies'];
+type SessionState = 'idle' | 'playing' | 'paused' | 'generating';
+
 
 export function ConversationCoach() {
   const { user } = useAuth();
@@ -28,14 +33,26 @@ export function ConversationCoach() {
   const [level, setLevel] = useState<'A1'|'A2'|'B1'|'B2'|'C1'|'C2'>('B1');
   const [numSpeakers, setNumSpeakers] = useState<2|3>(2);
   
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAudioLoading, setIsAudioLoading] = useState(false);
-  const [result, setResult] = useState<ConversationCoachResponse | null>(null);
+  const [sessionState, setSessionState] = useState<SessionState>('idle');
+  const [result, setResult] = useState<ConversationTextResponse | null>(null);
+  
+  const [audioState, setAudioState] = useState<Record<string, { loading: boolean; data: string | null }>>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   const [isSaveToDeckOpen, setIsSaveToDeckOpen] = useState(false);
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [showAnswers, setShowAnswers] = useState(false);
 
   const [selectedVoices, setSelectedVoices] = useState<string[]>(['Algenib', 'Achernar', 'Sirius']);
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio();
+    }
+  }, []);
 
   const handleGenerate = async () => {
     if (!user) {
@@ -43,37 +60,112 @@ export function ConversationCoach() {
       return;
     }
 
-    setIsLoading(true);
+    setSessionState('generating');
     setResult(null);
     setUserAnswers({});
     setShowAnswers(false);
+    setCurrentIndex(0);
+    setAudioState({});
 
     try {
       const textData = await generateConversationText({ level, topic, numSpeakers });
-      setResult(textData); // Show text results immediately
-      setIsLoading(false); // Stop main loading
-      
-      // Now, trigger audio generation after a delay
-      setIsAudioLoading(true);
-      setTimeout(async () => {
-        try {
-          const audioData = await generateConversationAudio({
-            conversation: textData.conversation,
-            voices: selectedVoices,
-          });
-          setResult(prevResult => prevResult ? { ...prevResult, audio: audioData.audio } : null);
-        } catch (audioError) {
-           toast({ variant: 'destructive', title: 'Audio Generation Failed', description: (audioError as Error).message });
-        } finally {
-            setIsAudioLoading(false);
-        }
-      }, 2000); // 2-second delay to avoid rate limiting
-      
+      setResult(textData); 
+      setSessionState('idle');
     } catch (error) {
       toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
-      setIsLoading(false);
+      setSessionState('idle');
     }
   };
+  
+  const playAudio = useCallback(async (text: string, voice: string, onEnd: () => void) => {
+    const audioKey = `${text}-${voice}`;
+    if (audioState[audioKey]?.data && audioRef.current) {
+      audioRef.current.src = audioState[audioKey]!.data!;
+      audioRef.current.play();
+      audioRef.current.onended = onEnd;
+      return;
+    }
+
+    setAudioState(prev => ({ ...prev, [audioKey]: { loading: true, data: null } }));
+    try {
+      const audioResult = await generateAudio({ text, voice });
+      if (audioRef.current && audioResult.media) {
+        setAudioState(prev => ({ ...prev, [audioKey]: { loading: false, data: audioResult.media } }));
+        audioRef.current.src = audioResult.media;
+        audioRef.current.play();
+        audioRef.current.onended = onEnd;
+      }
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Failed to generate audio' });
+      setAudioState(prev => ({ ...prev, [audioKey]: { loading: false, data: null } }));
+      onEnd();
+    }
+  }, [audioState, toast]);
+
+  const playNextLine = useCallback(() => {
+    if (!result || currentIndex >= result.conversation.length) {
+      setSessionState('idle');
+      toast({ title: 'Conversation finished!' });
+      return;
+    }
+
+    setSessionState('playing');
+    const line = result.conversation[currentIndex];
+    const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+    const voice = selectedVoices[speakerIndex % selectedVoices.length];
+
+    playAudio(line.line, voice, () => {
+      timeoutRef.current = setTimeout(() => {
+        setCurrentIndex(prev => prev + 1);
+      }, 1000); // 1-second pause
+    });
+  }, [result, currentIndex, playAudio, selectedVoices, toast]);
+
+
+  useEffect(() => {
+    if (sessionState === 'playing') {
+      playNextLine();
+    }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [sessionState, currentIndex, playNextLine]);
+  
+  const handlePlayPause = () => {
+    if (sessionState === 'playing') {
+      setSessionState('paused');
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      audioRef.current?.pause();
+    } else { // 'paused' or 'idle'
+      setSessionState('playing');
+      if(sessionState === 'paused') {
+        audioRef.current?.play();
+      }
+    }
+  };
+
+  const handleStop = () => {
+    setSessionState('idle');
+    setCurrentIndex(0);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
+  
+  const handleRepeat = () => {
+    if (!result) return;
+    const line = result.conversation[currentIndex];
+    const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+    const voice = selectedVoices[speakerIndex % selectedVoices.length];
+    playAudio(line.line, voice, () => {});
+  };
+
+  const handleLineClick = (index: number) => {
+    setCurrentIndex(index);
+    setSessionState('playing');
+  }
 
   const handleExportWord = () => {
     if (!result) return;
@@ -109,6 +201,7 @@ export function ConversationCoach() {
 
   const renderResults = () => {
     if (!result) return null;
+    const speakers = Array.from(new Set(result.conversation.map(l => l.speaker)));
 
     return (
       <Card className="flex-1 flex flex-col h-full">
@@ -121,24 +214,54 @@ export function ConversationCoach() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                        <span>Conversation</span>
-                         {isAudioLoading ? (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span>Audio is processing...</span>
+                  <CardTitle>Conversation Controls</CardTitle>
+                   <div className="flex flex-wrap items-end gap-4 pt-2">
+                        {speakers.map((speaker, index) => (
+                           <div key={speaker} className="space-y-1.5">
+                                <Label htmlFor={`voice-select-${index}`}>{speaker}'s Voice</Label>
+                                <Select
+                                  value={selectedVoices[index]}
+                                  onValueChange={(value) => {
+                                    const newVoices = [...selectedVoices];
+                                    newVoices[index] = value;
+                                    setSelectedVoices(newVoices);
+                                  }}
+                                >
+                                  <SelectTrigger id={`voice-select-${index}`} className="w-[180px]"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {geminiVoices.map((v) => ( <SelectItem key={v} value={v}>{v}</SelectItem> ))}
+                                  </SelectContent>
+                                </Select>
                             </div>
-                        ) : result.audio ? (
-                            <audio controls src={result.audio} className="h-8" />
-                        ) : (
-                           <div className="text-sm text-destructive">Audio failed to generate.</div>
-                        )}
-                    </CardTitle>
+                        ))}
+                    </div>
+                     <div className="flex items-center justify-center gap-2 pt-4">
+                        <Button onClick={handlePlayPause}>
+                            {sessionState === 'playing' ? <Pause /> : <Play />}
+                            {sessionState === 'playing' ? 'Pause' : 'Play'}
+                        </Button>
+                        <Button onClick={handleRepeat} variant="outline" disabled={sessionState === 'idle'}><Repeat /> Repeat</Button>
+                        <Button onClick={handleStop} variant="destructive" disabled={sessionState === 'idle'}><StopCircle /> Stop</Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                    {result.conversation.map((line, index) => (
-                        <p key={index}><strong>{line.speaker}:</strong> {line.line}</p>
-                    ))}
+                    {result.conversation.map((line, index) => {
+                        const audioKey = `${line.line}-${selectedVoices[speakers.indexOf(line.speaker) % selectedVoices.length]}`;
+                        const lineAudioState = audioState[audioKey];
+                        return (
+                            <div key={index} 
+                                 className={cn("flex items-center gap-2 p-2 rounded-md cursor-pointer",
+                                    currentIndex === index && sessionState === 'playing' ? 'bg-primary/20' : 'hover:bg-muted/50'
+                                 )}
+                                 onClick={() => handleLineClick(index)}
+                            >
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); playAudio(line.line, selectedVoices[speakers.indexOf(line.speaker) % selectedVoices.length], () => {})}}>
+                                    {lineAudioState?.loading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4" />}
+                                </Button>
+                                <p><strong>{line.speaker}:</strong> {line.line}</p>
+                            </div>
+                        )
+                    })}
                 </CardContent>
               </Card>
               <Card>
@@ -224,7 +347,12 @@ export function ConversationCoach() {
             <div className="max-w-md mx-auto space-y-4 w-full">
                 <div className="space-y-1.5">
                     <Label htmlFor="topic-input">Conversation Topic</Label>
-                    <Input id="topic-input" placeholder="e.g., Ordering food at a restaurant" value={topic} onChange={(e) => setTopic(e.target.value)}/>
+                    <Select value={topic} onValueChange={setTopic}>
+                        <SelectTrigger id="topic-input"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {topics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="level-select">Your Level (CEFR)</Label>
@@ -251,9 +379,9 @@ export function ConversationCoach() {
                     </Select>
                 </div>
                 {renderVoiceSelectors()}
-                <Button onClick={handleGenerate} disabled={isLoading || !topic.trim()} className="w-full">
+                <Button onClick={handleGenerate} disabled={sessionState === 'generating'} className="w-full">
                     <Sparkles />
-                    {isLoading ? 'Generating...' : 'Generate Conversation'}
+                    {sessionState === 'generating' ? 'Generating...' : 'Generate Conversation'}
                 </Button>
             </div>
         </CardContent>
@@ -262,7 +390,7 @@ export function ConversationCoach() {
 
   return (
     <div className="h-full min-h-0">
-        {isLoading ? (
+        {sessionState === 'generating' ? (
              <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
                 <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
                 <h3 className="text-xl font-semibold font-headline">Generating Conversation...</h3>
