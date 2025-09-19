@@ -53,12 +53,19 @@ const NotePointSchema = z.object({
   isKeyPoint: z.boolean().optional().describe('Set to true if this is a critical key point.'),
 });
 
+const TableSchema = z.object({
+    headers: z.array(z.string()).describe('The header row for the table.'),
+    rows: z.array(z.array(z.string())).describe('The data rows for the table.'),
+});
+
 export const LectureNoteSectionSchema = z.object({
   heading: z.string().describe('Section heading (e.g., "Introduction to Accounting").'),
   content: z.array(NotePointSchema).describe('Bullet-point content for the section.'),
+  table: TableSchema.optional().describe('A table extracted from the source text, if applicable.'),
   subsections: z.array(z.object({
     subheading: z.string().describe('Subsection heading (e.g., "Three Basic Activities of Accounting").'),
-    content: z.array(NotePointSchema).describe('Bullet-point content for the subsection.')
+    content: z.array(NotePointSchema).describe('Bullet-point content for the subsection.'),
+    table: TableSchema.optional().describe('A table for this subsection.'),
   })).optional(),
   addDividerAfter: z.boolean().optional().describe('If true, a horizontal line (---) should be added after this section.')
 });

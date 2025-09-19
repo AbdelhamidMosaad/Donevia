@@ -17,6 +17,7 @@ import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
 function InlineMarkdown({ text }: { text: string }) {
     const parts = text.split(/(\*\*.*?\*\*)/g);
@@ -85,10 +86,25 @@ export function LectureNotesGenerator() {
         text += `## ${section.heading}\n\n`;
         section.content.forEach(point => text += `- ${point.text}\n`);
         
+        if (section.table) {
+            text += `\n| ${section.table.headers.join(' | ')} |\n`;
+            text += `| ${section.table.headers.map(() => '---').join(' | ')} |\n`;
+            section.table.rows.forEach(row => {
+                text += `| ${row.join(' | ')} |\n`;
+            });
+        }
+
         if (section.subsections) {
             section.subsections.forEach(subsection => {
                 text += `\n### ${subsection.subheading}\n`;
                 subsection.content.forEach(subPoint => text += `  - ${subPoint.text}\n`);
+                 if (subsection.table) {
+                    text += `\n| ${subsection.table.headers.join(' | ')} |\n`;
+                    text += `| ${subsection.table.headers.map(() => '---').join(' | ')} |\n`;
+                    subsection.table.rows.forEach(row => {
+                        text += `| ${row.join(' | ')} |\n`;
+                    });
+                }
             });
         }
         text += '\n';
@@ -137,6 +153,18 @@ export function LectureNotesGenerator() {
             });
             html += '</ul>';
 
+            if (section.table) {
+                html += '<table><thead><tr>';
+                section.table.headers.forEach(header => html += `<th>${header}</th>`);
+                html += '</tr></thead><tbody>';
+                section.table.rows.forEach(row => {
+                    html += '<tr>';
+                    row.forEach(cell => html += `<td>${cell}</td>`);
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+            }
+
             if (section.subsections) {
                 section.subsections.forEach(subsection => {
                     html += `<h3>${subsection.subheading}</h3>`;
@@ -146,6 +174,18 @@ export function LectureNotesGenerator() {
                         html += `<li>${subPointText}</li>`;
                     });
                     html += '</ul>';
+
+                    if (subsection.table) {
+                        html += '<table><thead><tr>';
+                        subsection.table.headers.forEach(header => html += `<th>${header}</th>`);
+                        html += '</tr></thead><tbody>';
+                        subsection.table.rows.forEach(row => {
+                            html += '<tr>';
+                            row.forEach(cell => html += `<td>${cell}</td>`);
+                            html += '</tr>';
+                        });
+                        html += '</tbody></table>';
+                    }
                 });
             }
              if (section.addDividerAfter) {
@@ -196,10 +236,29 @@ export function LectureNotesGenerator() {
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: `${section.heading}` }] },
                 ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `• ${point.text}` }] }))
             ];
+             if (section.table) {
+                sectionContent.push({
+                    type: 'table',
+                    content: [
+                        { type: 'tableRow', content: section.table.headers.map(header => ({ type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: header }] }] })) },
+                        ...section.table.rows.map(row => ({ type: 'tableRow', content: row.map(cell => ({ type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: cell }] }] })) }))
+                    ]
+                });
+            }
+
             if (section.subsections) {
                 section.subsections.forEach(sub => {
                     sectionContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: `${sub.subheading}` }] });
                     sectionContent.push(...sub.content.map(subPoint => ({ type: 'paragraph', content: [{ type: 'text', text: `  - ${subPoint.text}` }] })));
+                    if (sub.table) {
+                         sectionContent.push({
+                            type: 'table',
+                            content: [
+                                { type: 'tableRow', content: sub.table.headers.map(header => ({ type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: header }] }] })) },
+                                ...sub.table.rows.map(row => ({ type: 'tableRow', content: row.map(cell => ({ type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: cell }] }] })) }))
+                            ]
+                        });
+                    }
                 });
             }
             if (section.addDividerAfter) {
@@ -260,6 +319,25 @@ export function LectureNotesGenerator() {
                             </li>
                         ))}
                     </ul>
+                     {section.table && (
+                        <div className="my-4">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        {section.table.headers.map(header => <TableHead key={header}>{header}</TableHead>)}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {section.table.rows.map((row, rowIndex) => (
+                                        <TableRow key={rowIndex}>
+                                            {row.map((cell, cellIndex) => <TableCell key={cellIndex}>{cell}</TableCell>)}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+
                     {section.subsections && section.subsections.map((sub, subIndex) => (
                         <div key={subIndex} className="ml-6">
                             <h3>{sub.subheading}</h3>
@@ -270,6 +348,24 @@ export function LectureNotesGenerator() {
                                     </li>
                                 ))}
                             </ul>
+                            {sub.table && (
+                                <div className="my-4">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                {sub.table.headers.map(header => <TableHead key={header}>{header}</TableHead>)}
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {sub.table.rows.map((row, rowIndex) => (
+                                                <TableRow key={rowIndex}>
+                                                    {row.map((cell, cellIndex) => <TableCell key={cellIndex}>{cell}</TableCell>)}
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            )}
                         </div>
                     ))}
                     {section.addDividerAfter && secIndex < sections.length - 1 && <Separator className="my-6" />}
