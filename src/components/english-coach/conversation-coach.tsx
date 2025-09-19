@@ -11,12 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
-import { generateConversation, generateConversationAudio } from '@/ai/flows/conversation-coach-flow';
+import { generateConversation } from '@/ai/flows/conversation-coach-flow';
 import type { ConversationCoachResponse } from '@/lib/types/conversation-coach';
 import { Input } from '../ui/input';
 import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
 
-type TtsEngine = 'gemini' | 'browser';
 const geminiVoices = ['Algenib', 'Achernar', 'Sirius', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Vega'];
 
 const topics = ['Technology', 'Health', 'Travel', 'Work', 'Movies', 'Books', 'Food', 'Hobbies'];
@@ -31,37 +30,26 @@ export function ConversationCoach() {
   const [numSpeakers, setNumSpeakers] = useState<2|3>(2);
   
   const [isLoading, setIsLoading] = useState(false);
-  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [result, setResult] = useState<ConversationCoachResponse | null>(null);
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [isSaveToDeckOpen, setIsSaveToDeckOpen] = useState(false);
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [showAnswers, setShowAnswers] = useState(false);
 
-  const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
-  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoices, setSelectedVoices] = useState<string[]>(['Algenib', 'Achernar', 'Sirius']);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-        const getVoices = () => {
-            const availableVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
-            setBrowserVoices(availableVoices);
-            if (selectedVoices.length === 0 && availableVoices.length > 0) {
-                setSelectedVoices(availableVoices.slice(0, 3).map(v => v.name));
-            }
-        };
-        getVoices();
-        window.speechSynthesis.onvoiceschanged = getVoices;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const getVoices = () => {
+        const availableVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+        if (selectedVoices.length === 0 && availableVoices.length > 0) {
+            setSelectedVoices(availableVoices.slice(0, 3).map(v => v.name));
+        }
+      };
+      getVoices();
+      window.speechSynthesis.onvoiceschanged = getVoices;
     }
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        audioRef.current = new Audio();
-    }
-  }, []);
 
   const handleGenerate = async () => {
     if (!user) {
@@ -71,24 +59,16 @@ export function ConversationCoach() {
 
     setIsLoading(true);
     setResult(null);
-    setAudioSrc(null);
     setUserAnswers({});
     setShowAnswers(false);
 
     try {
-      const data = await generateConversation({ level, topic, numSpeakers });
+      const data = await generateConversation({ level, topic, numSpeakers, voices: selectedVoices });
       setResult(data);
-      
-      // Automatically trigger audio generation
-      setIsAudioLoading(true);
-      const audioData = await generateConversationAudio({ conversation: data.conversation, voices: selectedVoices });
-      setAudioSrc(audioData.media);
-
     } catch (error) {
       toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
     } finally {
       setIsLoading(false);
-      setIsAudioLoading(false);
     }
   };
 
@@ -140,10 +120,13 @@ export function ConversationCoach() {
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                         <span>Conversation</span>
-                         {isAudioLoading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : audioSrc && (
-                            <audio controls src={audioSrc} className="h-8" />
+                         {!result.audio ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Audio is processing...</span>
+                            </div>
+                        ) : (
+                            <audio controls src={result.audio} className="h-8" />
                         )}
                     </CardTitle>
                 </CardHeader>
@@ -214,17 +197,11 @@ export function ConversationCoach() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {ttsEngine === 'gemini'
-              ? geminiVoices.map((v) => (
-                  <SelectItem key={v} value={v}>
-                    {v}
-                  </SelectItem>
-                ))
-              : browserVoices.map((v) => (
-                  <SelectItem key={v.name} value={v.name}>
-                    {v.name} ({v.lang})
-                  </SelectItem>
-                ))}
+            {geminiVoices.map((v) => (
+                <SelectItem key={v} value={v}>
+                {v}
+                </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -265,16 +242,6 @@ export function ConversationCoach() {
                         <SelectContent>
                            <SelectItem value="2">Two</SelectItem>
                            <SelectItem value="3">Three</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-1.5">
-                    <Label htmlFor="tts-engine-select">Text-to-Speech Engine</Label>
-                    <Select value={ttsEngine} onValueChange={(v: TtsEngine) => setTtsEngine(v)}>
-                        <SelectTrigger id="tts-engine-select"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="gemini">Gemini AI</SelectItem>
-                            <SelectItem value="browser">Browser-based</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

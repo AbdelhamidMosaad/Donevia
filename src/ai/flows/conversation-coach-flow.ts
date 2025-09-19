@@ -2,8 +2,7 @@
 'use server';
 /**
  * @fileOverview AI flow for generating a full conversation practice session.
- * - generateConversation - Generates a conversation, phrases, and questions.
- * - generateConversationAudio - Generates audio for the conversation.
+ * - generateConversation - Generates a conversation, phrases, questions, and audio.
  */
 
 import { ai } from '@/ai/genkit';
@@ -24,12 +23,12 @@ async function toWav(pcmData: Buffer, channels = 1, rate = 24000, sampleWidth = 
   });
 }
 
-// ========== Text Generation Flow ==========
+// ========== Text & Audio Generation Flow ==========
 
 const conversationPrompt = ai.definePrompt({
   name: 'conversationCoachPrompt',
   input: { schema: ConversationCoachRequestSchema },
-  output: { schema: ConversationCoachResponseSchema },
+  output: { schema: ConversationCoachResponseSchema.omit({ audio: true }) }, // AI doesn't generate the audio field
   prompt: `
     You are an expert English teacher creating a practice exercise. Your task is to generate a full conversation session based on the user's request.
 
@@ -65,36 +64,17 @@ const generateConversationFlow = ai.defineFlow(
     outputSchema: ConversationCoachResponseSchema,
   },
   async (input) => {
-    const { output } = await conversationPrompt(input);
-    if (!output) {
+    // 1. Generate the text content
+    const { output: textOutput } = await conversationPrompt(input);
+    if (!textOutput) {
       throw new Error('The AI failed to generate a conversation. Please try again.');
     }
-    return output;
-  }
-);
-
-
-// ========== Audio Generation Flow ==========
-
-const AudioRequestSchema = z.object({
-  conversation: z.array(z.object({
-    speaker: z.string(),
-    line: z.string(),
-  })),
-  voices: z.array(z.string()).optional(),
-});
-
-const generateAudioFlow = ai.defineFlow(
-  {
-    name: 'generateConversationAudioFlow',
-    inputSchema: AudioRequestSchema,
-    outputSchema: z.object({ media: z.string() }),
-  },
-  async ({ conversation, voices }) => {
-    const speakers = Array.from(new Set(conversation.map(c => c.speaker)));
-    const defaultVoices = ['Algenib', 'Achernar', 'Sirius']; // Pre-defined voices for speakers
-    const selectedVoices = voices && voices.length > 0 ? voices : defaultVoices;
-
+    
+    // 2. Generate the audio content from the generated text
+    const speakers = Array.from(new Set(textOutput.conversation.map(c => c.speaker)));
+    const defaultVoices = ['Algenib', 'Achernar', 'Sirius'];
+    const selectedVoices = input.voices && input.voices.length > 0 ? input.voices : defaultVoices;
+    
     const multiSpeakerVoiceConfig = {
       speakerVoiceConfigs: speakers.map((speaker, index) => ({
         speaker,
@@ -104,7 +84,7 @@ const generateAudioFlow = ai.defineFlow(
       })),
     };
     
-    const promptText = conversation.map(c => `${c.speaker}: ${c.line}`).join('\n');
+    const promptText = textOutput.conversation.map(c => `${c.speaker}: ${c.line}`).join('\n');
 
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
@@ -114,14 +94,19 @@ const generateAudioFlow = ai.defineFlow(
       },
       prompt: promptText,
     });
-
+    
     if (!media) {
-      throw new Error('No audio data was returned from the AI.');
+      // If audio fails, we can still return the text content.
+      return textOutput;
     }
     
     const audioBuffer = Buffer.from(media.url.substring(media.url.indexOf(',') + 1), 'base64');
+    const audioDataUri = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
+
+    // 3. Combine text and audio into the final response
     return {
-      media: 'data:audio/wav;base64,' + (await toWav(audioBuffer)),
+      ...textOutput,
+      audio: audioDataUri,
     };
   }
 );
@@ -131,8 +116,4 @@ const generateAudioFlow = ai.defineFlow(
 
 export async function generateConversation(input: ConversationCoachRequest): Promise<ConversationCoachResponse> {
   return await generateConversationFlow(input);
-}
-
-export async function generateConversationAudio(input: z.infer<typeof AudioRequestSchema>): Promise<{ media: string }> {
-  return await generateAudioFlow(input);
 }

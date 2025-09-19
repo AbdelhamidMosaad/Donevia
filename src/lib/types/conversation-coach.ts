@@ -7,6 +7,7 @@ export const ConversationCoachRequestSchema = z.object({
   topic: z.string().describe('The topic for the conversation.'),
   numSpeakers: z.number().min(2).max(3).describe('The number of speakers in the conversation (2 or 3).'),
   level: VocabularyLevelSchema.describe('The CEFR level of the user.'),
+  voices: z.array(z.string()).optional().describe('The selected voices for the speakers.'),
 });
 export type ConversationCoachRequest = z.infer<typeof ConversationCoachRequestSchema>;
 
@@ -32,5 +33,6 @@ export const ConversationCoachResponseSchema = z.object({
   conversation: z.array(ConversationLineSchema).describe('The full conversation script, broken down by speaker and line.'),
   phrases: z.array(PhraseExplanationSchema).describe('An array of 5 key phrases with explanations.'),
   questions: z.array(ComprehensionQuestionSchema).describe('An array of 5 multiple-choice questions about the conversation.'),
+  audio: z.string().optional().describe('The base64 encoded WAV audio data URI for the conversation.'),
 });
 export type ConversationCoachResponse = z.infer<typeof ConversationCoachResponseSchema>;
