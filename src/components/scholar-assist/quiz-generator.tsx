@@ -12,6 +12,7 @@ import { Loader2, Copy, Download, ChevronLeft, ChevronRight, RefreshCw, Save } f
 import { cn } from '@/lib/utils';
 import { SaveToDeckDialog } from './shared/save-to-deck-dialog';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
+import { Input } from '../ui/input';
 
 export function QuizGenerator() {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export function QuizGenerator() {
 
   // State for interactive quiz
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<number, string | number>>({});
   const [checkedAnswers, setCheckedAnswers] = useState<Record<number, boolean>>({});
   const [score, setScore] = useState<number | null>(null);
 
@@ -106,9 +107,9 @@ export function QuizGenerator() {
     toast({ title: '✓ Download started' });
   };
 
-  const handleAnswerSelect = (questionIndex: number, optionIndex: number) => {
+  const handleAnswerSelect = (questionIndex: number, answer: string | number) => {
       if(checkedAnswers[questionIndex]) return; // Don't allow changing answers after checking
-      setUserAnswers(prev => ({...prev, [questionIndex]: optionIndex}));
+      setUserAnswers(prev => ({...prev, [questionIndex]: answer}));
   }
 
   const checkAllAnswers = () => {
@@ -116,21 +117,34 @@ export function QuizGenerator() {
       let correctCount = 0;
       const newCheckedAnswers: Record<number, boolean> = {};
       result.quizContent.forEach((q, index) => {
-          const userAnswerIndex = userAnswers[index];
-          let correctIndex: number | undefined;
+          const userAnswer = userAnswers[index];
+          let isCorrect = false;
 
-          if (q.questionType === 'true-false') {
-              correctIndex = q.correctAnswer === 'True' ? 0 : 1;
-          } else {
-              correctIndex = q.options?.findIndex(opt => opt === q.correctAnswer);
+          if (q.questionType === 'multiple-choice') {
+              const correctIndex = q.options?.findIndex(opt => opt === q.correctAnswer);
+              if (userAnswer === correctIndex) {
+                  isCorrect = true;
+              }
+          } else if (q.questionType === 'true-false') {
+               const correctIndex = q.correctAnswer.toLowerCase() === 'true' ? 0 : 1;
+               if (userAnswer === correctIndex) {
+                   isCorrect = true;
+               }
+          } else { // short-answer
+              // For short-answer, we just mark as checked for review, not for scoring
           }
           
-          if (userAnswerIndex !== undefined && userAnswerIndex === correctIndex) {
-              correctCount++;
-          }
+          if(isCorrect) correctCount++;
           newCheckedAnswers[index] = true;
       });
-      setScore(correctCount);
+      
+      const totalScorableQuestions = result.quizContent.filter(q => q.questionType !== 'short-answer').length;
+      if (totalScorableQuestions > 0) {
+        setScore(correctCount);
+      } else {
+        setScore(null); // No score if only short-answer questions
+      }
+
       setCheckedAnswers(newCheckedAnswers);
   };
   
@@ -148,7 +162,7 @@ export function QuizGenerator() {
         ? ['True', 'False']
         : currentQuestion.options || [];
 
-    const correctOptionIndex = options.findIndex(opt => opt === currentQuestion.correctAnswer);
+    const correctOptionIndex = options.findIndex(opt => opt.toLowerCase() === currentQuestion.correctAnswer.toLowerCase());
 
     return (
       <Card className="flex-1 flex flex-col h-full">
@@ -158,29 +172,48 @@ export function QuizGenerator() {
         </CardHeader>
         <CardContent className="flex-1 space-y-4">
             <p className="font-semibold text-lg">{currentQuestion.questionText}</p>
-            <ul className="space-y-2">
-                {options.map((option, index) => {
-                    const isSelected = userAnswers[currentQuestionIndex] === index;
-                    const isCorrect = correctOptionIndex === index;
-                    return (
-                        <li 
-                            key={index}
-                            onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
-                            className={cn(
-                                "p-3 border rounded-md cursor-pointer transition-colors",
-                                isAnswered && isCorrect && "bg-green-100 border-green-400 text-green-800",
-                                isAnswered && isSelected && !isCorrect && "bg-red-100 border-red-400 text-red-800",
-                                isSelected && !isAnswered && "bg-blue-100 border-blue-400",
-                                !isSelected && !isAnswered && "hover:bg-muted"
-                            )}
-                        >
-                           {option}
-                        </li>
-                    )
-                })}
-            </ul>
+            
+            {currentQuestion.questionType === 'short-answer' ? (
+                <div>
+                    <Input 
+                        placeholder="Type your answer here..."
+                        value={(userAnswers[currentQuestionIndex] as string) || ''}
+                        onChange={(e) => handleAnswerSelect(currentQuestionIndex, e.target.value)}
+                        disabled={isAnswered}
+                    />
+                    {isAnswered && (
+                        <div className="mt-2 text-sm">
+                            <p className="font-bold">Correct Answer:</p>
+                            <p className="text-primary">{currentQuestion.correctAnswer}</p>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <ul className="space-y-2">
+                    {options.map((option, index) => {
+                        const isSelected = userAnswers[currentQuestionIndex] === index;
+                        const isCorrect = correctOptionIndex === index;
+                        return (
+                            <li 
+                                key={index}
+                                onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
+                                className={cn(
+                                    "p-3 border rounded-md cursor-pointer transition-colors",
+                                    isAnswered && isCorrect && "bg-green-100 border-green-400 text-green-800",
+                                    isAnswered && isSelected && !isCorrect && "bg-red-100 border-red-400 text-red-800",
+                                    isSelected && !isAnswered && "bg-blue-100 border-blue-400",
+                                    !isSelected && !isAnswered && "hover:bg-muted"
+                                )}
+                            >
+                            {option}
+                            </li>
+                        )
+                    })}
+                </ul>
+            )}
+            
              {isAnswered && (
-                <div className="p-3 bg-yellow-100/50 border-l-4 border-yellow-400 rounded-r-md">
+                <div className="p-3 bg-yellow-100/50 border-l-4 border-yellow-400 rounded-r-md mt-4">
                     <p className="font-bold">Explanation:</p>
                     <p>{currentQuestion.explanation}</p>
                 </div>
@@ -190,7 +223,7 @@ export function QuizGenerator() {
            {score !== null && (
                 <div className="text-center p-4 bg-muted rounded-lg">
                     <p className="text-xl font-bold">Quiz Complete!</p>
-                    <p className="text-2xl font-headline">Your Score: {score}/{totalQuestions} ({(score/totalQuestions * 100).toFixed(0)}%)</p>
+                    <p className="text-2xl font-headline">Your Score: {score}/{totalQuestions - result.quizContent.filter(q => q.questionType === 'short-answer').length} ({(score / (totalQuestions - result.quizContent.filter(q => q.questionType === 'short-answer').length) * 100).toFixed(0)}%)</p>
                 </div>
             )}
             <div className="flex justify-between items-center">
