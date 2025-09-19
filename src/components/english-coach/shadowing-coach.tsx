@@ -4,15 +4,28 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, Play, Pause, StopCircle } from 'lucide-react';
+import { Loader2, Sparkles, Play, Pause, StopCircle, Repeat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { generateShadowingArticle, type ShadowingResponse } from '@/ai/flows/shadowing-coach-flow';
 import { generateAudio } from '@/ai/flows/tts-flow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '../ui/label';
+import { cn } from '@/lib/utils';
 
-const topics = ['Technology', 'Health', 'Travel', 'History', 'Art', 'Business', 'Science', 'Everyday Life'];
+const topics = [
+    'Technology', 
+    'Health', 
+    'Travel', 
+    'History', 
+    'Art', 
+    'Business', 
+    'Science', 
+    'Everyday Life',
+    'Movie Stories',
+    'Books',
+    'Historical Events'
+];
 const PAUSE_DURATION_MS = 3000; // 3 seconds pause for the user to repeat
 
 type SessionState = 'idle' | 'playing' | 'paused' | 'generating';
@@ -38,10 +51,11 @@ export function ShadowingCoach() {
         if (typeof window !== 'undefined' && window.speechSynthesis) {
             const getVoices = () => {
                 const availableVoices = window.speechSynthesis.getVoices();
-                setVoices(availableVoices);
-                if (!selectedVoice && availableVoices.length > 0) {
-                    const defaultVoice = availableVoices.find(v => v.lang.startsWith('en') && v.default);
-                    setSelectedVoice(defaultVoice ? defaultVoice.name : availableVoices[0].name);
+                const englishVoices = availableVoices.filter(v => v.lang.startsWith('en'));
+                setVoices(englishVoices);
+                if (!selectedVoice && englishVoices.length > 0) {
+                    const defaultVoice = englishVoices.find(v => v.lang.startsWith('en') && v.default);
+                    setSelectedVoice(defaultVoice ? defaultVoice.name : englishVoices[0].name);
                 }
             };
             getVoices();
@@ -66,7 +80,31 @@ export function ShadowingCoach() {
         }
     };
     
-    const playNextPhrase = useCallback(async () => {
+    const playAudio = useCallback(async (text: string, onEnd: () => void) => {
+        if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voice = voices.find(v => v.name === selectedVoice);
+            if (voice) {
+                utterance.voice = voice;
+            }
+            utterance.onend = onEnd;
+            window.speechSynthesis.speak(utterance);
+        } else { // Gemini TTS
+            try {
+                const audioData = await generateAudio(text);
+                if (audioRef.current) {
+                    audioRef.current.src = audioData.media;
+                    audioRef.current.play();
+                    audioRef.current.onended = onEnd;
+                }
+            } catch (error) {
+                 toast({ variant: 'destructive', title: 'Could not play audio for the phrase.' });
+                 onEnd(); // proceed even if audio fails
+            }
+        }
+    }, [ttsEngine, voices, selectedVoice, toast]);
+
+    const playNextPhrase = useCallback(() => {
         if (!article || currentIndex >= article.phrases.length) {
             setSessionState('idle');
             toast({ title: 'Shadowing session complete!' });
@@ -74,46 +112,14 @@ export function ShadowingCoach() {
         }
 
         setSessionState('playing');
-        
-        try {
-            const phrase = article.phrases[currentIndex];
+        const phrase = article.phrases[currentIndex];
 
-            if (ttsEngine === 'browser' && 'speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(phrase);
-                const voice = voices.find(v => v.name === selectedVoice);
-                if (voice) {
-                    utterance.voice = voice;
-                }
-                utterance.onend = () => {
-                    timeoutRef.current = setTimeout(() => {
-                        setCurrentIndex(prev => prev + 1);
-                    }, PAUSE_DURATION_MS);
-                };
-                window.speechSynthesis.speak(utterance);
-            } else { // Gemini TTS
-                const audioData = await generateAudio(phrase);
-                
-                if (audioRef.current) {
-                    audioRef.current.src = audioData.media;
-                    audioRef.current.play();
-                    
-                    audioRef.current.onended = () => {
-                        timeoutRef.current = setTimeout(() => {
-                            setCurrentIndex(prev => prev + 1);
-                        }, PAUSE_DURATION_MS);
-                    };
-                }
-            }
-
-        } catch (error) {
-            console.error("Failed to play audio:", error);
-            toast({ variant: 'destructive', title: 'Could not play audio for the phrase.' });
+        playAudio(phrase, () => {
             timeoutRef.current = setTimeout(() => {
                 setCurrentIndex(prev => prev + 1);
             }, PAUSE_DURATION_MS);
-        }
-    }, [article, currentIndex, toast, ttsEngine, voices, selectedVoice]);
-
+        });
+    }, [article, currentIndex, toast, playAudio]);
 
     useEffect(() => {
         if (sessionState === 'playing' && article) {
@@ -159,6 +165,17 @@ export function ShadowingCoach() {
              audioRef.current.pause();
              audioRef.current.currentTime = 0;
         }
+    };
+
+    const handleRepeat = () => {
+        if (!article) return;
+        const phrase = article.phrases[currentIndex];
+        playAudio(phrase, () => {}); // No action on end
+    };
+    
+    const handlePhraseClick = (index: number) => {
+        setCurrentIndex(index);
+        setSessionState('playing');
     };
     
      useEffect(() => {
@@ -214,10 +231,39 @@ export function ShadowingCoach() {
         if (!article) return null;
         return (
             <div className="space-y-4">
+                <div className="flex items-center justify-center gap-2">
+                    <div className="space-y-1 text-left">
+                        <Label htmlFor="tts-engine-select-session">TTS Engine</Label>
+                        <Select value={ttsEngine} onValueChange={(v: TtsEngine) => setTtsEngine(v)}>
+                            <SelectTrigger id="tts-engine-select-session" className="w-[150px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="gemini">Gemini AI</SelectItem>
+                                <SelectItem value="browser">Browser-based</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     {ttsEngine === 'browser' && voices.length > 0 && (
+                        <div className="space-y-1 text-left">
+                            <Label htmlFor="voice-select-session">Voice</Label>
+                            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                                <SelectTrigger id="voice-select-session" className="w-[180px]"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {voices.map(v => (
+                                        <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+                </div>
+
                  <div className="flex items-center justify-center gap-4">
                     <Button onClick={handlePlayPause}>
                         {sessionState === 'playing' ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
                         {sessionState === 'playing' ? 'Pause' : (sessionState === 'paused' ? 'Resume' : 'Play')}
+                    </Button>
+                    <Button onClick={handleRepeat} variant="outline">
+                        <Repeat className="mr-2 h-5 w-5" /> Repeat Phrase
                     </Button>
                     <Button onClick={handleStop} variant="destructive">
                         <StopCircle className="mr-2 h-5 w-5" /> Stop
@@ -230,9 +276,16 @@ export function ShadowingCoach() {
                     </CardHeader>
                     <CardContent className="text-lg leading-relaxed">
                         {article.phrases.map((phrase, index) => (
-                            <span key={index} className={index === currentIndex && sessionState === 'playing' ? 'bg-primary/20 p-1 rounded' : 'p-1'}>
+                            <button
+                                key={index} 
+                                onClick={() => handlePhraseClick(index)}
+                                className={cn(
+                                    "text-left p-1 rounded transition-colors duration-300",
+                                    index === currentIndex && sessionState === 'playing' ? 'bg-primary/20' : 'hover:bg-muted/50'
+                                )}
+                            >
                                 {phrase}{' '}
-                            </span>
+                            </button>
                         ))}
                     </CardContent>
                 </Card>
