@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -174,6 +175,9 @@ export function ConversationCoach() {
         audioRef.current?.pause();
       }
     } else { // 'paused' or 'idle'
+      if (currentIndex >= (result?.conversation.length || 0)) {
+          setCurrentIndex(0);
+      }
       setSessionState('playing');
       if(sessionState === 'paused') {
         if(ttsEngine === 'browser') window.speechSynthesis.resume();
@@ -244,7 +248,7 @@ export function ConversationCoach() {
     setUserAnswers(prev => ({...prev, [questionIndex]: answer}));
   };
   
-  const renderVoiceSelectors = (inSession: boolean = false) => {
+  const VoiceSelectors = ({ inSession = false }: { inSession?: boolean }) => {
     return (
       <div className="space-y-4">
         <div className="space-y-1.5">
@@ -257,36 +261,50 @@ export function ConversationCoach() {
             </SelectContent>
           </Select>
         </div>
-        {ttsEngine === 'gemini' ? (
-          Array.from({ length: numSpeakers }).map((_, index) => (
-            <div key={index} className="space-y-1.5">
-              <Label htmlFor={inSession ? `voice-select-session-${index}` : `voice-select-${index}`}>Voice for Speaker {index + 1}</Label>
-              <Select
-                value={selectedVoices[index]}
-                onValueChange={(value) => {
-                  const newVoices = [...selectedVoices];
-                  newVoices[index] = value;
-                  setSelectedVoices(newVoices);
-                }}
-              >
-                <SelectTrigger id={inSession ? `voice-select-session-${index}` : `voice-select-${index}`}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {geminiVoices.map((v) => ( <SelectItem key={v} value={v}>{v}</SelectItem> ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ))
-        ) : (
-          <div className="space-y-1.5">
-            <Label htmlFor={inSession ? 'browser-voice-session' : 'browser-voice'}>Browser Voice</Label>
-            <Select value={selectedBrowserVoice} onValueChange={setSelectedBrowserVoice}>
-              <SelectTrigger id={inSession ? 'browser-voice-session' : 'browser-voice'}><SelectValue/></SelectTrigger>
-              <SelectContent>
-                {browserVoices.map(v => (<SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        {Array.from({ length: numSpeakers }).map((_, index) => {
+          const speakerNames = result ? Array.from(new Set(result.conversation.map(l => l.speaker))) : [];
+          const speakerName = speakerNames[index] || `Speaker ${index + 1}`;
+          
+          if (ttsEngine === 'gemini') {
+            return (
+              <div key={index} className="space-y-1.5">
+                <Label htmlFor={inSession ? `voice-select-session-${index}` : `voice-select-${index}`}>Voice for {speakerName}</Label>
+                <Select
+                  value={selectedVoices[index]}
+                  onValueChange={(value) => {
+                    const newVoices = [...selectedVoices];
+                    newVoices[index] = value;
+                    setSelectedVoices(newVoices);
+                  }}
+                >
+                  <SelectTrigger id={inSession ? `voice-select-session-${index}` : `voice-select-${index}`}><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {geminiVoices.map((v) => ( <SelectItem key={v} value={v}>{v}</SelectItem> ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )
+          } else { // browser-based
+             return (
+                <div key={index} className="space-y-1.5">
+                  <Label htmlFor={inSession ? `browser-voice-session-${index}` : `browser-voice-${index}`}>Voice for {speakerName}</Label>
+                  <Select 
+                      value={selectedVoices[index]} 
+                      onValueChange={(value) => {
+                        const newVoices = [...selectedVoices];
+                        newVoices[index] = value;
+                        setSelectedVoices(newVoices);
+                      }}
+                  >
+                    <SelectTrigger id={inSession ? `browser-voice-session-${index}` : `browser-voice-${index}`}><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      {browserVoices.map(v => (<SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+             );
+          }
+        })}
       </div>
     );
   };
@@ -307,7 +325,7 @@ export function ConversationCoach() {
                 <CardHeader>
                   <CardTitle>Conversation Controls</CardTitle>
                   <div className="pt-2">
-                    {renderVoiceSelectors(true)}
+                    <VoiceSelectors inSession={true} />
                   </div>
                      <div className="flex items-center justify-center gap-2 pt-4">
                         <Button onClick={handlePlayPause}>
@@ -321,11 +339,12 @@ export function ConversationCoach() {
                 <CardContent className="space-y-2">
                     {result.conversation.map((line, index) => {
                         let voice: string;
-                        if (ttsEngine === 'gemini') {
+                         if (ttsEngine === 'gemini') {
                             const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
                             voice = selectedVoices[speakerIndex % selectedVoices.length];
                         } else {
-                            voice = selectedBrowserVoice || '';
+                            const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+                            voice = selectedVoices[speakerIndex % selectedVoices.length] || '';
                         }
                         const audioKey = `${line.line}-${voice}`;
                         const lineAudioState = audioState[audioKey];
@@ -431,7 +450,7 @@ export function ConversationCoach() {
                         </SelectContent>
                     </Select>
                 </div>
-                {renderVoiceSelectors()}
+                <VoiceSelectors />
                 <Button onClick={handleGenerate} disabled={sessionState === 'generating'} className="w-full">
                     <Sparkles />
                     {sessionState === 'generating' ? 'Generating...' : 'Generate Conversation'}
@@ -463,3 +482,4 @@ export function ConversationCoach() {
     </div>
   );
 }
+
