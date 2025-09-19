@@ -10,6 +10,14 @@ import { z } from 'zod';
 import wav from 'wav';
 import { ConversationCoachRequestSchema, ConversationCoachResponseSchema, type ConversationCoachRequest, type ConversationCoachResponse } from '@/lib/types/conversation-coach';
 
+const ConversationTextResponseSchema = ConversationCoachResponseSchema.omit({ audio: true });
+export type ConversationTextResponse = z.infer<typeof ConversationTextResponseSchema>;
+
+const ConversationAudioRequestSchema = z.object({
+    conversation: z.array(z.object({ speaker: z.string(), line: z.string() })),
+    voices: z.array(z.string()).optional(),
+});
+type ConversationAudioRequest = z.infer<typeof ConversationAudioRequestSchema>;
 
 async function toWav(pcmData: Buffer, channels = 1, rate = 24000, sampleWidth = 2): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -23,12 +31,12 @@ async function toWav(pcmData: Buffer, channels = 1, rate = 24000, sampleWidth = 
   });
 }
 
-// ========== Text & Audio Generation Flow ==========
+// ========== Text Generation Flow ==========
 
-const conversationPrompt = ai.definePrompt({
-  name: 'conversationCoachPrompt',
-  input: { schema: ConversationCoachRequestSchema },
-  output: { schema: ConversationCoachResponseSchema.omit({ audio: true }) }, // AI doesn't generate the audio field
+const conversationTextPrompt = ai.definePrompt({
+  name: 'conversationCoachTextPrompt',
+  input: { schema: ConversationCoachRequestSchema.omit({ voices: true }) }, // Text prompt doesn't need voices
+  output: { schema: ConversationTextResponseSchema }, 
   prompt: `
     You are an expert English teacher creating a practice exercise. Your task is to generate a full conversation session based on the user's request.
 
@@ -57,21 +65,32 @@ const conversationPrompt = ai.definePrompt({
   `,
 });
 
-const generateConversationFlow = ai.defineFlow(
+const generateConversationTextFlow = ai.defineFlow(
   {
-    name: 'generateConversationFlow',
-    inputSchema: ConversationCoachRequestSchema,
-    outputSchema: ConversationCoachResponseSchema,
+    name: 'generateConversationTextFlow',
+    inputSchema: ConversationCoachRequestSchema.omit({ voices: true }),
+    outputSchema: ConversationTextResponseSchema,
   },
   async (input) => {
-    // 1. Generate the text content
-    const { output: textOutput } = await conversationPrompt(input);
-    if (!textOutput) {
+    const { output } = await conversationTextPrompt(input);
+    if (!output) {
       throw new Error('The AI failed to generate a conversation. Please try again.');
     }
-    
-    // 2. Generate the audio content from the generated text
-    const speakers = Array.from(new Set(textOutput.conversation.map(c => c.speaker)));
+    return output;
+  }
+);
+
+
+// ========== Audio Generation Flow ==========
+
+const generateConversationAudioFlow = ai.defineFlow(
+  {
+    name: 'generateConversationAudioFlow',
+    inputSchema: ConversationAudioRequestSchema,
+    outputSchema: z.object({ audio: z.string() }),
+  },
+  async (input) => {
+    const speakers = Array.from(new Set(input.conversation.map(c => c.speaker)));
     const defaultVoices = ['Algenib', 'Achernar', 'Sirius'];
     const selectedVoices = input.voices && input.voices.length > 0 ? input.voices : defaultVoices;
     
@@ -84,7 +103,7 @@ const generateConversationFlow = ai.defineFlow(
       })),
     };
     
-    const promptText = textOutput.conversation.map(c => `${c.speaker}: ${c.line}`).join('\n');
+    const promptText = input.conversation.map(c => `${c.speaker}: ${c.line}`).join('\n');
 
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
@@ -96,24 +115,23 @@ const generateConversationFlow = ai.defineFlow(
     });
     
     if (!media) {
-      // If audio fails, we can still return the text content.
-      return textOutput;
+      throw new Error('Failed to generate audio for the conversation.');
     }
     
     const audioBuffer = Buffer.from(media.url.substring(media.url.indexOf(',') + 1), 'base64');
     const audioDataUri = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
 
-    // 3. Combine text and audio into the final response
-    return {
-      ...textOutput,
-      audio: audioDataUri,
-    };
+    return { audio: audioDataUri };
   }
 );
 
 
 // ========== API Function Exports ==========
 
-export async function generateConversation(input: ConversationCoachRequest): Promise<ConversationCoachResponse> {
-  return await generateConversationFlow(input);
+export async function generateConversationText(input: Omit<ConversationCoachRequest, 'voices'>): Promise<ConversationTextResponse> {
+  return await generateConversationTextFlow(input);
+}
+
+export async function generateConversationAudio(input: ConversationAudioRequest): Promise<{ audio: string }> {
+  return await generateConversationAudioFlow(input);
 }

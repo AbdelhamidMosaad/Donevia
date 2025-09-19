@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -11,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
-import { generateConversation } from '@/ai/flows/conversation-coach-flow';
-import type { ConversationCoachResponse } from '@/lib/types/conversation-coach';
+import { generateConversationText, generateConversationAudio, type ConversationTextResponse } from '@/ai/flows/conversation-coach-flow';
+import type { ConversationCoachRequest, ConversationCoachResponse } from '@/lib/types/conversation-coach';
 import { Input } from '../ui/input';
 import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
 
@@ -30,26 +29,13 @@ export function ConversationCoach() {
   const [numSpeakers, setNumSpeakers] = useState<2|3>(2);
   
   const [isLoading, setIsLoading] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [result, setResult] = useState<ConversationCoachResponse | null>(null);
   const [isSaveToDeckOpen, setIsSaveToDeckOpen] = useState(false);
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [showAnswers, setShowAnswers] = useState(false);
 
   const [selectedVoices, setSelectedVoices] = useState<string[]>(['Algenib', 'Achernar', 'Sirius']);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const getVoices = () => {
-        const availableVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
-        if (selectedVoices.length === 0 && availableVoices.length > 0) {
-            setSelectedVoices(availableVoices.slice(0, 3).map(v => v.name));
-        }
-      };
-      getVoices();
-      window.speechSynthesis.onvoiceschanged = getVoices;
-    }
-  }, []);
-
 
   const handleGenerate = async () => {
     if (!user) {
@@ -63,11 +49,28 @@ export function ConversationCoach() {
     setShowAnswers(false);
 
     try {
-      const data = await generateConversation({ level, topic, numSpeakers, voices: selectedVoices });
-      setResult(data);
+      const textData = await generateConversationText({ level, topic, numSpeakers });
+      setResult(textData); // Show text results immediately
+      setIsLoading(false); // Stop main loading
+      
+      // Now, trigger audio generation after a delay
+      setIsAudioLoading(true);
+      setTimeout(async () => {
+        try {
+          const audioData = await generateConversationAudio({
+            conversation: textData.conversation,
+            voices: selectedVoices,
+          });
+          setResult(prevResult => prevResult ? { ...prevResult, audio: audioData.audio } : null);
+        } catch (audioError) {
+           toast({ variant: 'destructive', title: 'Audio Generation Failed', description: (audioError as Error).message });
+        } finally {
+            setIsAudioLoading(false);
+        }
+      }, 2000); // 2-second delay to avoid rate limiting
+      
     } catch (error) {
       toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -120,13 +123,15 @@ export function ConversationCoach() {
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                         <span>Conversation</span>
-                         {!result.audio ? (
+                         {isAudioLoading ? (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Loader2 className="h-4 w-4 animate-spin" />
                               <span>Audio is processing...</span>
                             </div>
-                        ) : (
+                        ) : result.audio ? (
                             <audio controls src={result.audio} className="h-8" />
+                        ) : (
+                           <div className="text-sm text-destructive">Audio failed to generate.</div>
                         )}
                     </CardTitle>
                 </CardHeader>
@@ -257,7 +262,14 @@ export function ConversationCoach() {
 
   return (
     <div className="h-full min-h-0">
-        {result ? renderResults() : renderInitialState()}
+        {isLoading ? (
+             <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
+                <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
+                <h3 className="text-xl font-semibold font-headline">Generating Conversation...</h3>
+                <p className="text-muted-foreground">The AI is crafting your learning session. Please wait.</p>
+            </div>
+        ) : result ? renderResults() : renderInitialState()
+        }
         {result && (
             <SaveToDeckDialog
                 isOpen={isSaveToDeckOpen}
