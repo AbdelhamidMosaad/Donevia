@@ -44,13 +44,14 @@ const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg:
   { name: 'theme-jade', label: 'Jade', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(158 30% 97%)', text: 'hsl(158 25% 25%)', primary: 'hsl(158 45% 57%)', secondary: 'hsl(158 30% 90%)' } },
   { name: 'theme-periwinkle', label: 'Periwinkle', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(233 35% 20%)', text: 'hsl(233 50% 95%)', primary: 'hsl(233 33% 62%)', secondary: 'hsl(233 35% 30%)' } },
   { name: 'theme-sky', label: 'Sky', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(195 40% 96%)', text: 'hsl(195 30% 25%)', primary: 'hsl(195 45% 73%)', secondary: 'hsl(195 40% 90%)' } },
-  { name: 'theme-orchid', label: 'Orchid', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(319 70% 15%)', text: 'hsl(319 60% 95%)', primary: 'hsl(319 71% 35%)', secondary: 'hsl(319 70% 25%)' } },
-  { name: 'theme-sage', label: 'Sage', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(141 35% 95%)', text: 'hsl(141 15% 30%)', primary: 'hsl(161 9% 55%)', secondary: 'hsl(141 30% 92%)' } },
-  { name: 'theme-coral', label: 'Coral', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(0 50% 18%)', text: 'hsl(0 40% 95%)', primary: 'hsl(349 83% 54%)', secondary: 'hsl(0 50% 28%)' } },
-  { name: 'theme-pastel', label: 'Pastel', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(187 25% 95%)', text: 'hsl(187 15% 30%)', primary: 'hsl(193 94% 75%)', secondary: 'hsl(187 20% 90%)' } },
-  { name: 'theme-oceanic', label: 'Oceanic', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(187 30% 15%)', text: 'hsl(187 20% 95%)', primary: 'hsl(187 78% 38%)', secondary: 'hsl(187 30% 25%)' } },
-  { name: 'theme-sunset-glow', label: 'Sunset Glow', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(40 30% 10%)', text: 'hsl(40 50% 95%)', primary: 'hsl(40 99% 54%)', secondary: 'hsl(40 30% 20%)' } },
-  { name: 'theme-vibrant', label: 'Vibrant', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(333 20% 96%)', text: 'hsl(333 15% 25%)', primary: 'hsl(333 83% 67%)', secondary: 'hsl(333 15% 92%)' } },
+  { name: 'theme-orchid', label: 'Orchid', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(333 83% 67%)', text: 'hsl(333 20% 10%)', primary: 'hsl(333 80% 55%)', secondary: 'hsl(333 80% 90%)' } },
+  { name: 'theme-oceanic', label: 'Oceanic', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(191 78% 38%)', text: 'hsl(191 20% 95%)', primary: 'hsl(191 70% 70%)', secondary: 'hsl(191 70% 30%)' } },
+  { name: 'theme-aqua', label: 'Aqua', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(178 70% 76%)', text: 'hsl(178 30% 15%)', primary: 'hsl(178 60% 45%)', secondary: 'hsl(178 60% 88%)' } },
+  { name: 'theme-lime', label: 'Lime', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(163 89% 52%)', text: 'hsl(163 30% 10%)', primary: 'hsl(163 80% 40%)', secondary: 'hsl(163 80% 88%)' } },
+  { name: 'theme-marigold', label: 'Marigold', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(40 99% 54%)', text: 'hsl(40 30% 10%)', primary: 'hsl(40 90% 45%)', secondary: 'hsl(40 90% 88%)' } },
+  { name: 'theme-ice', label: 'Ice', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(191 84% 75%)', text: 'hsl(191 30% 10%)', primary: 'hsl(191 70% 55%)', secondary: 'hsl(191 70% 90%)' } },
+  { name: 'theme-sage', label: 'Sage', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(100 30% 82%)', text: 'hsl(100 20% 15%)', primary: 'hsl(100 25% 45%)', secondary: 'hsl(100 30% 92%)' } },
+  { name: 'theme-coral', label: 'Coral', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(349 83% 54%)', text: 'hsl(349 30% 98%)', primary: 'hsl(349 80% 80%)', secondary: 'hsl(349 70% 40%)' } },
 ];
 
 const fonts: { name: Font; label: string; variable: string }[] = [
