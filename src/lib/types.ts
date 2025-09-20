@@ -227,7 +227,7 @@ export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'EGP';
 
 /** User Settings */
 export interface UserSettings {
-    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-sunset' | 'theme-mint' | 'theme-jade' | 'theme-periwinkle' | 'theme-sky' | 'theme-orchid' | 'theme-sage' | 'theme-coral';
+    theme: 'light' | 'dark' | 'theme-indigo' | 'theme-purple' | 'theme-green' | 'theme-sunset' | 'theme-mint' | 'theme-jade' | 'theme-periwinkle' | 'theme-sky' | 'theme-orchid' | 'theme-sage' | 'theme-coral' | 'theme-pastel' | 'theme-oceanic' | 'theme-sunset-glow' | 'theme-vibrant';
     font:
         | 'inter'
         | 'roboto'

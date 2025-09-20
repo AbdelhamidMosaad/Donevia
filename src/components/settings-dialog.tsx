@@ -47,6 +47,10 @@ const themes: { name: Theme; label: string; icon: React.ReactNode; colors: { bg:
   { name: 'theme-orchid', label: 'Orchid', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(319 70% 15%)', text: 'hsl(319 60% 95%)', primary: 'hsl(319 71% 35%)', secondary: 'hsl(319 70% 25%)' } },
   { name: 'theme-sage', label: 'Sage', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(161 10% 98%)', text: 'hsl(161 10% 25%)', primary: 'hsl(161 9% 55%)', secondary: 'hsl(161 10% 92%)' } },
   { name: 'theme-coral', label: 'Coral', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(0 50% 18%)', text: 'hsl(0 40% 95%)', primary: 'hsl(0 62% 64%)', secondary: 'hsl(0 50% 28%)' } },
+  { name: 'theme-pastel', label: 'Pastel', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(187 25% 95%)', text: 'hsl(187 15% 30%)', primary: 'hsl(193 94% 75%)', secondary: 'hsl(187 20% 90%)' } },
+  { name: 'theme-oceanic', label: 'Oceanic', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(187 30% 15%)', text: 'hsl(187 20% 95%)', primary: 'hsl(187 78% 38%)', secondary: 'hsl(187 30% 25%)' } },
+  { name: 'theme-sunset-glow', label: 'Sunset Glow', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(40 30% 10%)', text: 'hsl(40 50% 95%)', primary: 'hsl(40 99% 54%)', secondary: 'hsl(40 30% 20%)' } },
+  { name: 'theme-vibrant', label: 'Vibrant', icon: <Palette className="h-5 w-5" />, colors: { bg: 'hsl(333 20% 96%)', text: 'hsl(333 15% 25%)', primary: 'hsl(333 83% 67%)', secondary: 'hsl(333 15% 92%)' } },
 ];
 
 const fonts: { name: Font; label: string; variable: string }[] = [

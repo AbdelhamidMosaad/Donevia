@@ -303,6 +303,94 @@ body {
     --input: 0 50% 30%;
     --ring: 0 62% 64%;
   }
+  
+  .theme-pastel {
+    --background: 187 25% 95%;
+    --foreground: 187 15% 30%;
+    --card: 187 20% 100%;
+    --card-foreground: 187 15% 30%;
+    --popover: 187 20% 100%;
+    --popover-foreground: 187 15% 30%;
+    --primary: 193 94% 75%;
+    --primary-foreground: 193 15% 20%;
+    --secondary: 187 20% 90%;
+    --secondary-foreground: 187 15% 30%;
+    --muted: 187 20% 90%;
+    --muted-foreground: 187 10% 55%;
+    --accent: 178 70% 76%;
+    --accent-foreground: 178 15% 20%;
+    --destructive: 349 76% 54%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 187 15% 85%;
+    --input: 187 15% 85%;
+    --ring: 193 94% 75%;
+  }
+
+  .theme-oceanic {
+    --background: 187 30% 15%;
+    --foreground: 187 20% 95%;
+    --card: 187 30% 20%;
+    --card-foreground: 187 20% 95%;
+    --popover: 187 30% 15%;
+    --popover-foreground: 187 20% 95%;
+    --primary: 187 78% 38%;
+    --primary-foreground: 187 20% 98%;
+    --secondary: 187 30% 25%;
+    --secondary-foreground: 187 20% 95%;
+    --muted: 187 30% 25%;
+    --muted-foreground: 187 15% 70%;
+    --accent: 163 89% 52%;
+    --accent-foreground: 163 20% 10%;
+    --destructive: 349 76% 54%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 187 30% 28%;
+    --input: 187 30% 28%;
+    --ring: 187 78% 38%;
+  }
+
+  .theme-sunset-glow {
+    --background: 40 30% 10%;
+    --foreground: 40 50% 95%;
+    --card: 40 30% 15%;
+    --card-foreground: 40 50% 95%;
+    --popover: 40 30% 10%;
+    --popover-foreground: 40 50% 95%;
+    --primary: 40 99% 54%;
+    --primary-foreground: 40 30% 5%;
+    --secondary: 40 30% 20%;
+    --secondary-foreground: 40 50% 95%;
+    --muted: 40 30% 20%;
+    --muted-foreground: 40 20% 70%;
+    --accent: 349 76% 54%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 333 83% 67%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 30% 25%;
+    --input: 40 30% 25%;
+    --ring: 40 99% 54%;
+  }
+
+  .theme-vibrant {
+    --background: 333 20% 96%;
+    --foreground: 333 15% 25%;
+    --card: 333 15% 100%;
+    --card-foreground: 333 15% 25%;
+    --popover: 333 15% 100%;
+    --popover-foreground: 333 15% 25%;
+    --primary: 333 83% 67%;
+    --primary-foreground: 333 20% 98%;
+    --secondary: 333 15% 92%;
+    --secondary-foreground: 333 15% 25%;
+    --muted: 333 15% 92%;
+    --muted-foreground: 333 10% 55%;
+    --accent: 163 89% 52%;
+    --accent-foreground: 163 15% 10%;
+    --destructive: 349 76% 54%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 333 10% 88%;
+    --input: 333 10% 88%;
+    --ring: 333 83% 67%;
+  }
 
 
   /* Sidebar Themes */
@@ -677,4 +765,5 @@ body {
 .rbc-time-header.rbc-overflowing {
     border-right: none;
 }
+
 
