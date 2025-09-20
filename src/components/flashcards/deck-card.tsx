@@ -99,6 +99,12 @@ export function DeckCard({ deck, folders, onDelete, onMove, size = 'large' }: De
     e.preventDefault();
   };
 
+  const handleInputClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
+
   return (
     <>
       <a href={`/flashcards/${deck.id}`} onClick={handleCardClick} className="group block h-full">
@@ -113,7 +119,7 @@ export function DeckCard({ deck, folders, onDelete, onMove, size = 'large' }: De
                 onKeyDown={handleKeyDown}
                 onBlur={handleRename}
                 className="text-lg font-headline text-center bg-transparent"
-                onClick={(e) => e.stopPropagation()}
+                onClick={handleInputClick}
               />
             ) : (
               <h3 className={cn("font-bold font-headline text-foreground", size === 'large' && 'text-lg', size === 'medium' && 'text-base', size === 'small' && 'text-sm')}>{deck.name}</h3>
