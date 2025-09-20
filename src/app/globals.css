@@ -239,13 +239,13 @@ body {
   }
 
   .theme-orchid {
-    --background: 333 83% 67%; /* #EE66A6 */
+    --background: 333 80% 97%;
     --foreground: 333 20% 10%;
-    --card: 333 80% 97%;
+    --card: 333, 80%, 100%;
     --card-foreground: 333 20% 10%;
-    --popover: 333 80% 97%;
+    --popover: 333, 80%, 100%;
     --popover-foreground: 333 20% 10%;
-    --primary: 333 80% 55%;
+    --primary: 333 83% 67%; /* #EE66A6 */
     --primary-foreground: 333 20% 98%;
     --secondary: 333 80% 90%;
     --secondary-foreground: 333 20% 10%;
@@ -257,21 +257,21 @@ body {
     --destructive-foreground: 0 0% 100%;
     --border: 333 70% 88%;
     --input: 333 70% 88%;
-    --ring: 333 80% 55%;
+    --ring: 333 83% 67%;
   }
 
   .theme-oceanic {
-    --background: 191 78% 38%; /* #179BAE */
+    --background: 191 70% 25%;
     --foreground: 191 20% 95%;
-    --card: 191 70% 25%;
+    --card: 191 70% 28%;
     --card-foreground: 191 20% 95%;
     --popover: 191 70% 25%;
     --popover-foreground: 191 20% 95%;
-    --primary: 191 70% 70%;
-    --primary-foreground: 191 20% 5%;
-    --secondary: 191 70% 30%;
+    --primary: 191 78% 38%; /* #179BAE */
+    --primary-foreground: 191 20% 98%;
+    --secondary: 191 70% 32%;
     --secondary-foreground: 191 20% 95%;
-    --muted: 191 70% 30%;
+    --muted: 191 70% 32%;
     --muted-foreground: 191 15% 70%;
     --accent: 191 70% 60%;
     --accent-foreground: 191 20% 10%;
@@ -279,18 +279,18 @@ body {
     --destructive-foreground: 0 0% 100%;
     --border: 191 60% 40%;
     --input: 191 60% 40%;
-    --ring: 191 70% 70%;
+    --ring: 191 78% 38%;
   }
 
   .theme-aqua {
-    --background: 178 70% 76%; /* #8BE8E5 */
+    --background: 178 60% 95%;
     --foreground: 178 30% 15%;
-    --card: 178 60% 95%;
+    --card: 178 60% 100%;
     --card-foreground: 178 30% 15%;
-    --popover: 178 60% 95%;
+    --popover: 178 60% 100%;
     --popover-foreground: 178 30% 15%;
-    --primary: 178 60% 45%;
-    --primary-foreground: 178 30% 98%;
+    --primary: 178 70% 76%; /* #8BE8E5 */
+    --primary-foreground: 178 30% 10%;
     --secondary: 178 60% 88%;
     --secondary-foreground: 178 30% 15%;
     --muted: 178 60% 92%;
@@ -301,18 +301,18 @@ body {
     --destructive-foreground: 0 0% 100%;
     --border: 178 50% 85%;
     --input: 178 50% 85%;
-    --ring: 178 60% 45%;
+    --ring: 178 70% 76%;
   }
 
   .theme-lime {
-    --background: 163 89% 52%; /* #15F5BA */
+    --background: 163, 80%, 95%;
     --foreground: 163 30% 10%;
-    --card: 163, 80%, 95%;
+    --card: 163, 80%, 100%;
     --card-foreground: 163 30% 10%;
-    --popover: 163, 80%, 95%;
+    --popover: 163, 80%, 100%;
     --popover-foreground: 163 30% 10%;
-    --primary: 163 80% 40%;
-    --primary-foreground: 163 30% 98%;
+    --primary: 163 89% 52%; /* #15F5BA */
+    --primary-foreground: 163 30% 5%;
     --secondary: 163 80% 88%;
     --secondary-foreground: 163 30% 10%;
     --muted: 163 80% 92%;
@@ -323,18 +323,18 @@ body {
     --destructive-foreground: 0 0% 100%;
     --border: 163 70% 85%;
     --input: 163 70% 85%;
-    --ring: 163 80% 40%;
+    --ring: 163 89% 52%;
   }
 
   .theme-marigold {
-    --background: 40 99% 54%; /* #FEBA17 */
+    --background: 40, 90%, 95%;
     --foreground: 40 30% 10%;
-    --card: 40, 90%, 95%;
+    --card: 40, 90%, 100%;
     --card-foreground: 40 30% 10%;
-    --popover: 40, 90%, 95%;
+    --popover: 40, 90%, 100%;
     --popover-foreground: 40 30% 10%;
-    --primary: 40 90% 45%;
-    --primary-foreground: 40 30% 98%;
+    --primary: 40 99% 54%; /* #FEBA17 */
+    --primary-foreground: 40 30% 5%;
     --secondary: 40 90% 88%;
     --secondary-foreground: 40 30% 10%;
     --muted: 40 90% 92%;
@@ -345,18 +345,18 @@ body {
     --destructive-foreground: 0 0% 100%;
     --border: 40 80% 85%;
     --input: 40 80% 85%;
-    --ring: 40 90% 45%;
+    --ring: 40 99% 54%;
   }
   
   .theme-ice {
-    --background: 191 84% 75%; /* #4ED7F1 */
+    --background: 191, 70%, 97%;
     --foreground: 191 30% 10%;
-    --card: 191, 70%, 97%;
+    --card: 191, 70%, 100%;
     --card-foreground: 191 30% 10%;
-    --popover: 191, 70%, 97%;
+    --popover: 191, 70%, 100%;
     --popover-foreground: 191 30% 10%;
-    --primary: 191 70% 55%;
-    --primary-foreground: 191 30% 98%;
+    --primary: 191 84% 75%; /* #4ED7F1 */
+    --primary-foreground: 191 30% 5%;
     --secondary: 191 70% 90%;
     --secondary-foreground: 191 30% 10%;
     --muted: 191 70% 94%;
@@ -367,18 +367,18 @@ body {
     --destructive-foreground: 0 0% 100%;
     --border: 191 60% 88%;
     --input: 191 60% 88%;
-    --ring: 191 70% 55%;
+    --ring: 191 84% 75%;
   }
   
   .theme-sage {
-    --background: 100 30% 82%; /* #CEE5D0 */
+    --background: 100 30% 98%;
     --foreground: 100 20% 15%;
-    --card: 100 30% 98%;
+    --card: 100 30% 100%;
     --card-foreground: 100 20% 15%;
-    --popover: 100 30% 98%;
+    --popover: 100 30% 100%;
     --popover-foreground: 100 20% 15%;
-    --primary: 100 25% 45%;
-    --primary-foreground: 100 20% 98%;
+    --primary: 100 30% 82%; /* #CEE5D0 */
+    --primary-foreground: 100 20% 10%;
     --secondary: 100 30% 92%;
     --secondary-foreground: 100 20% 15%;
     --muted: 100 30% 95%;
@@ -389,18 +389,18 @@ body {
     --destructive-foreground: 0 0% 100%;
     --border: 100 25% 88%;
     --input: 100 25% 88%;
-    --ring: 100 25% 45%;
+    --ring: 100 30% 82%;
   }
   
   .theme-coral {
-    --background: 349 83% 54%; /* #EA2C62 */
+    --background: 349 70% 30%;
     --foreground: 349 30% 98%;
-    --card: 349 70% 30%;
+    --card: 349 70% 35%;
     --card-foreground: 349 30% 98%;
     --popover: 349 70% 30%;
     --popover-foreground: 349 30% 98%;
-    --primary: 349 80% 80%;
-    --primary-foreground: 349 30% 5%;
+    --primary: 349 83% 54%; /* #EA2C62 */
+    --primary-foreground: 349 30% 98%;
     --secondary: 349 70% 40%;
     --secondary-foreground: 349 30% 98%;
     --muted: 349 70% 40%;
@@ -411,7 +411,7 @@ body {
     --destructive-foreground: 0 0% 100%;
     --border: 349 60% 50%;
     --input: 349 60% 50%;
-    --ring: 349 80% 80%;
+    --ring: 349 83% 54%;
   }
   
 
@@ -787,6 +787,7 @@ body {
 .rbc-time-header.rbc-overflowing {
     border-right: none;
 }
+
 
 
 
