@@ -12,6 +12,7 @@ import { generateAudio } from '@/ai/flows/tts-flow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '../ui/label';
 import { cn } from '@/lib/utils';
+import { Slider } from '../ui/slider';
 
 const topics = [
     'Technology', 
@@ -45,6 +46,8 @@ export function ShadowingCoach() {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
     const [selectedGeminiVoice, setSelectedGeminiVoice] = useState<string>(geminiVoices[0]);
+    const [speechRate, setSpeechRate] = useState(1);
+    const [speechPitch, setSpeechPitch] = useState(1);
 
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -90,6 +93,8 @@ export function ShadowingCoach() {
             if (voice) {
                 utterance.voice = voice;
             }
+            utterance.rate = speechRate;
+            utterance.pitch = speechPitch;
             utterance.onend = onEnd;
             window.speechSynthesis.speak(utterance);
         } else { // Gemini TTS
@@ -105,7 +110,7 @@ export function ShadowingCoach() {
                  onEnd(); // proceed even if audio fails
             }
         }
-    }, [ttsEngine, voices, selectedVoice, selectedGeminiVoice, toast]);
+    }, [ttsEngine, voices, selectedVoice, selectedGeminiVoice, toast, speechRate, speechPitch]);
 
     const playNextPhrase = useCallback(() => {
         if (!article || currentIndex >= article.phrases.length) {
@@ -210,6 +215,7 @@ export function ShadowingCoach() {
                     </Select>
                 </div>
                  {ttsEngine === 'browser' && voices.length > 0 ? (
+                    <>
                     <div className="space-y-1 text-left">
                         <Label htmlFor="voice-select">Browser Voice</Label>
                         <Select value={selectedVoice} onValueChange={setSelectedVoice}>
@@ -221,6 +227,15 @@ export function ShadowingCoach() {
                             </SelectContent>
                         </Select>
                     </div>
+                     <div className="space-y-1.5">
+                        <Label htmlFor="rate-slider">Rate: {speechRate.toFixed(1)}</Label>
+                        <Slider id="rate-slider" min={0.5} max={2} step={0.1} value={[speechRate]} onValueChange={(v) => setSpeechRate(v[0])} />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="pitch-slider">Pitch: {speechPitch.toFixed(1)}</Label>
+                        <Slider id="pitch-slider" min={0} max={2} step={0.1} value={[speechPitch]} onValueChange={(v) => setSpeechPitch(v[0])} />
+                    </div>
+                    </>
                 ) : ttsEngine === 'gemini' && (
                      <div className="space-y-1 text-left">
                         <Label htmlFor="gemini-voice-select">Gemini Voice</Label>
@@ -258,6 +273,7 @@ export function ShadowingCoach() {
                         </Select>
                     </div>
                     {ttsEngine === 'browser' && voices.length > 0 ? (
+                        <>
                         <div className="space-y-1 text-left">
                             <Label htmlFor="voice-select-session">Voice</Label>
                             <Select value={selectedVoice} onValueChange={setSelectedVoice}>
@@ -269,6 +285,15 @@ export function ShadowingCoach() {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="space-y-1.5 w-24">
+                            <Label htmlFor="rate-slider-session">Rate</Label>
+                            <Slider id="rate-slider-session" min={0.5} max={2} step={0.1} value={[speechRate]} onValueChange={(v) => setSpeechRate(v[0])} />
+                        </div>
+                        <div className="space-y-1.5 w-24">
+                            <Label htmlFor="pitch-slider-session">Pitch</Label>
+                            <Slider id="pitch-slider-session" min={0} max={2} step={0.1} value={[speechPitch]} onValueChange={(v) => setSpeechPitch(v[0])} />
+                        </div>
+                        </>
                      ) : ttsEngine === 'gemini' && (
                         <div className="space-y-1 text-left">
                             <Label htmlFor="gemini-voice-select-session">Gemini Voice</Label>

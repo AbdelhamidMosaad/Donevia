@@ -17,6 +17,7 @@ import type { ConversationCoachRequest, ConversationCoachResponse } from '@/lib/
 import { Input } from '../ui/input';
 import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
 import { cn } from '@/lib/utils';
+import { Slider } from '../ui/slider';
 
 
 const geminiVoices = ['Algenib', 'Achernar', 'Sirius', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Vega'];
@@ -48,6 +49,9 @@ export function ConversationCoach() {
   const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoices, setSelectedVoices] = useState<string[]>(['Algenib', 'Achernar', 'Sirius']);
+
+  const [speechRate, setSpeechRate] = useState(1);
+  const [speechPitch, setSpeechPitch] = useState(1);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -106,6 +110,8 @@ export function ConversationCoach() {
         const utterance = new SpeechSynthesisUtterance(text);
         const browserVoice = browserVoices.find(v => v.name === voice);
         if(browserVoice) utterance.voice = browserVoice;
+        utterance.rate = speechRate;
+        utterance.pitch = speechPitch;
         utterance.onend = onEnd;
         window.speechSynthesis.speak(utterance);
         return;
@@ -135,7 +141,7 @@ export function ConversationCoach() {
       setAudioState(prev => ({ ...prev, [audioKey]: { loading: false, data: null } }));
       onEnd();
     }
-  }, [audioState, toast, ttsEngine, browserVoices]);
+  }, [audioState, toast, ttsEngine, browserVoices, speechRate, speechPitch]);
 
   const playNextLine = useCallback(() => {
     if (!result || currentIndex >= result.conversation.length) {
@@ -146,7 +152,8 @@ export function ConversationCoach() {
 
     setSessionState('playing');
     const line = result.conversation[currentIndex];
-    const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+    const speakerNames = Array.from(new Set(result.conversation.map(l => l.speaker)));
+    const speakerIndex = speakerNames.indexOf(line.speaker);
     const voice = selectedVoices[speakerIndex % selectedVoices.length];
 
     playAudio(line.line, voice, () => {
@@ -202,7 +209,8 @@ export function ConversationCoach() {
   const handleRepeat = () => {
     if (!result) return;
     const line = result.conversation[currentIndex];
-    const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+    const speakerNames = Array.from(new Set(result.conversation.map(l => l.speaker)));
+    const speakerIndex = speakerNames.indexOf(line.speaker);
     const voice = selectedVoices[speakerIndex % selectedVoices.length];
     playAudio(line.line, voice, () => {});
   };
@@ -286,6 +294,18 @@ export function ConversationCoach() {
               </div>
           )
         })}
+        {ttsEngine === 'browser' && (
+             <div className="space-y-4 pt-2">
+                <div className="space-y-1.5">
+                    <Label htmlFor="rate-slider">Rate: {speechRate.toFixed(1)}</Label>
+                    <Slider id="rate-slider" min={0.5} max={2} step={0.1} value={[speechRate]} onValueChange={(v) => setSpeechRate(v[0])} />
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="pitch-slider">Pitch: {speechPitch.toFixed(1)}</Label>
+                    <Slider id="pitch-slider" min={0} max={2} step={0.1} value={[speechPitch]} onValueChange={(v) => setSpeechPitch(v[0])} />
+                </div>
+            </div>
+        )}
       </div>
     );
   };
@@ -319,7 +339,8 @@ export function ConversationCoach() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {result.conversation.map((line, index) => {
-                        const speakerIndex = Array.from(new Set(result.conversation.map(l => l.speaker))).indexOf(line.speaker);
+                        const speakerNames = Array.from(new Set(result.conversation.map(l => l.speaker)));
+                        const speakerIndex = speakerNames.indexOf(line.speaker);
                         const voice = selectedVoices[speakerIndex % selectedVoices.length];
                         const audioKey = `${line.line}-${voice}`;
                         const lineAudioState = audioState[audioKey];

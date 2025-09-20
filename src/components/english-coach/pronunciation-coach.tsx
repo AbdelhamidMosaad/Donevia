@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '../ui/label';
 import { generatePronunciationPractice, type PronunciationPracticeResponse } from '@/ai/flows/pronunciation-coach-flow';
 import { generateAudio } from '@/ai/flows/tts-flow';
+import { Slider } from '../ui/slider';
 
 const topics = [
     'th (think, that)',
@@ -65,6 +66,8 @@ export function PronunciationCoach() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
   const [selectedGeminiVoice, setSelectedGeminiVoice] = useState<string>(geminiVoices[0]);
+  const [speechRate, setSpeechRate] = useState(1);
+  const [speechPitch, setSpeechPitch] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -122,6 +125,8 @@ export function PronunciationCoach() {
         if (voice) {
             utterance.voice = voice;
         }
+        utterance.rate = speechRate;
+        utterance.pitch = speechPitch;
         window.speechSynthesis.speak(utterance);
     } else { // Gemini TTS
         setAudioState(prev => ({...prev, [cleanText]: { loading: true, data: null }}));
@@ -215,17 +220,27 @@ export function PronunciationCoach() {
             </Select>
           </div>
           {ttsEngine === 'browser' && voices.length > 0 ? (
-            <div className="space-y-1.5">
-              <Label htmlFor="voice-select">Voice</Label>
-              <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                <SelectTrigger id="voice-select"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {voices.map(v => (
-                    <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="voice-select">Voice</Label>
+                <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                  <SelectTrigger id="voice-select"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {voices.map(v => (
+                      <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                  <Label htmlFor="rate-slider">Rate: {speechRate.toFixed(1)}</Label>
+                  <Slider id="rate-slider" min={0.5} max={2} step={0.1} value={[speechRate]} onValueChange={(v) => setSpeechRate(v[0])} />
+              </div>
+              <div className="space-y-1.5">
+                  <Label htmlFor="pitch-slider">Pitch: {speechPitch.toFixed(1)}</Label>
+                  <Slider id="pitch-slider" min={0} max={2} step={0.1} value={[speechPitch]} onValueChange={(v) => setSpeechPitch(v[0])} />
+              </div>
+            </>
           ) : ttsEngine === 'gemini' && (
              <div className="space-y-1.5">
                 <Label htmlFor="gemini-voice-select">Gemini Voice</Label>

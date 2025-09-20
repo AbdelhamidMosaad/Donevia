@@ -19,6 +19,7 @@ import { SaveToDeckDialog } from '../scholar-assist/shared/save-to-deck-dialog';
 import { generateAudio } from '@/ai/flows/tts-flow';
 import { addUserVocabularyWords } from '@/lib/vocabulary';
 import { cn } from '@/lib/utils';
+import { Slider } from '../ui/slider';
 
 function highlightStory(story: string, isDarkMode: boolean): React.ReactNode {
     const parts = story.split(/(\*\*.*?\*\*)/g);
@@ -50,6 +51,8 @@ export function VocabularyCoach() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string | undefined>();
   const [selectedGeminiVoice, setSelectedGeminiVoice] = useState<string>(geminiVoices[0]);
+  const [speechRate, setSpeechRate] = useState(1);
+  const [speechPitch, setSpeechPitch] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
    useEffect(() => {
@@ -116,6 +119,8 @@ export function VocabularyCoach() {
       if (voice) {
         utterance.voice = voice;
       }
+      utterance.rate = speechRate;
+      utterance.pitch = speechPitch;
       if (isStory) {
         utterance.onend = () => setIsStoryPlaying(false);
       }
@@ -256,6 +261,7 @@ export function VocabularyCoach() {
                         </Select>
                     </div>
                     {ttsEngine === 'browser' && voices.length > 0 ? (
+                        <>
                         <div className="space-y-1 text-left">
                             <Label htmlFor="voice-select">Voice</Label>
                             <Select value={selectedVoice} onValueChange={setSelectedVoice}>
@@ -267,6 +273,15 @@ export function VocabularyCoach() {
                                 </SelectContent>
                             </Select>
                         </div>
+                         <div className="space-y-1.5">
+                            <Label htmlFor="rate-slider">Rate: {speechRate.toFixed(1)}</Label>
+                            <Slider id="rate-slider" min={0.5} max={2} step={0.1} value={[speechRate]} onValueChange={(v) => setSpeechRate(v[0])} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="pitch-slider">Pitch: {speechPitch.toFixed(1)}</Label>
+                            <Slider id="pitch-slider" min={0} max={2} step={0.1} value={[speechPitch]} onValueChange={(v) => setSpeechPitch(v[0])} />
+                        </div>
+                        </>
                      ) : ttsEngine === 'gemini' && (
                         <div className="space-y-1 text-left">
                             <Label htmlFor="gemini-voice-select">Gemini Voice</Label>
