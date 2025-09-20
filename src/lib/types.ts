@@ -1,5 +1,3 @@
-
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -270,6 +268,15 @@ export interface UserSettings {
     studyProfile?: StudyProfile;
     currency?: Currency;
     englishCoachProfile?: EnglishCoachProfile;
+    ttsEngine?: 'gemini' | 'browser';
+    browserTtsVoice?: string;
+    geminiTtsVoice?: string;
+    ttsRate?: number;
+    ttsPitch?: number;
+    conversationCoachVoices?: string[];
+    pronunciationCoachVoice?: string;
+    vocabularyCoachVoice?: string;
+    shadowingCoachVoice?: string;
 }
 
 /** Brainstorming */
