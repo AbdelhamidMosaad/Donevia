@@ -1,11 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { MeetingNote } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { MoreHorizontal, Edit, Trash2, Copy } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,18 +28,62 @@ import { useRouter } from 'next/navigation';
 import moment from 'moment';
 import { MeetingNotesIcon } from '../icons/tools/meeting-notes-icon';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface MeetingNoteCardProps {
   note: MeetingNote;
   onDelete: () => void;
+  onDuplicate: () => void;
   size?: 'small' | 'medium' | 'large';
 }
 
-export function MeetingNoteCard({ note, onDelete, size = 'large' }: MeetingNoteCardProps) {
+export function MeetingNoteCard({ note, onDelete, onDuplicate, size = 'large' }: MeetingNoteCardProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(note.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+    }
+  }, [isEditing]);
+  
+  const handleRename = async () => {
+    if (!user || !name.trim() || name === note.title) {
+      setIsEditing(false);
+      setName(note.title);
+      return;
+    }
+    const noteRef = doc(db, 'users', user.uid, 'meetingNotes', note.id);
+    try {
+        await updateDoc(noteRef, { title: name.trim() });
+        toast({ title: '✓ Note Renamed' });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error renaming note.' });
+        setName(note.title);
+    } finally {
+        setIsEditing(false);
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleRename();
+    else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setName(note.title);
+    }
+  };
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    if(isEditing) return;
     router.push(`/meeting-notes/${note.id}`);
   };
 
@@ -48,7 +93,7 @@ export function MeetingNoteCard({ note, onDelete, size = 'large' }: MeetingNoteC
   };
 
   return (
-    <a href={`/meeting-notes/${note.id}`} onClick={handleCardClick} className="block cursor-pointer group">
+    <a href={`/meeting-notes/${note.id}`} onClick={handleCardClick} className="group block h-full">
       <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
         <div className={cn(
             "p-6 flex flex-col items-center text-center h-full justify-center",
@@ -61,11 +106,23 @@ export function MeetingNoteCard({ note, onDelete, size = 'large' }: MeetingNoteC
                 size === 'medium' && 'h-16 w-16',
                 size === 'small' && 'h-12 w-12 mb-2'
             )} />
-            <h3 className={cn("font-bold font-headline text-foreground", 
-                size === 'large' && 'text-lg',
-                size === 'medium' && 'text-base',
-                size === 'small' && 'text-sm'
-            )}>{note.title}</h3>
+             {isEditing ? (
+              <Input
+                ref={inputRef}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={handleRename}
+                className="text-lg font-headline text-center bg-transparent"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+                <h3 className={cn("font-bold font-headline text-foreground", 
+                    size === 'large' && 'text-lg',
+                    size === 'medium' && 'text-base',
+                    size === 'small' && 'text-sm'
+                )}>{note.title}</h3>
+            )}
             {size !== 'small' && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{note.startDate ? `Meeting on ${moment(note.startDate.toDate()).format('ll')}` : 'No date set'}</p>}
         </div>
         <div className="absolute top-2 right-2">
@@ -76,6 +133,12 @@ export function MeetingNoteCard({ note, onDelete, size = 'large' }: MeetingNoteC
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent onClick={handleActionClick}>
+                 <DropdownMenuItem onSelect={() => setIsEditing(true)}>
+                    <Edit className="mr-2 h-4 w-4" /> Rename
+                </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={onDuplicate}>
+                    <Copy className="mr-2 h-4 w-4" /> Duplicate
+                </DropdownMenuItem>
                 <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <DropdownMenuItem
@@ -111,5 +174,3 @@ export function MeetingNoteCard({ note, onDelete, size = 'large' }: MeetingNoteC
     </a>
   );
 }
-
-    

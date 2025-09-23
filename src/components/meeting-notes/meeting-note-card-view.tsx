@@ -4,6 +4,9 @@ import type { MeetingNote } from '@/lib/types';
 import { MeetingNoteCard } from './meeting-note-card';
 import { MeetingNotesIcon } from '../icons/tools/meeting-notes-icon';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { duplicateMeetingNote } from '@/lib/meeting-notes';
 
 interface MeetingNoteCardViewProps {
   notes: MeetingNote[];
@@ -12,6 +15,19 @@ interface MeetingNoteCardViewProps {
 }
 
 export function MeetingNoteCardView({ notes, onDelete, cardSize = 'large' }: MeetingNoteCardViewProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleDuplicateNote = async (noteId: string) => {
+    if(!user) return;
+    try {
+      await duplicateMeetingNote(user.uid, noteId);
+      toast({ title: 'Note duplicated successfully' });
+    } catch(e) {
+      toast({ variant: 'destructive', title: 'Error duplicating note' });
+    }
+  }
+
   if (notes.length === 0) {
     return (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
@@ -36,6 +52,7 @@ export function MeetingNoteCardView({ notes, onDelete, cardSize = 'large' }: Mee
           key={note.id}
           note={note}
           onDelete={() => onDelete(note.id)}
+          onDuplicate={() => handleDuplicateNote(note.id)}
           size={cardSize}
         />
       ))}
