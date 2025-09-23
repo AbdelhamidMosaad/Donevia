@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { MeetingNote, Attendee, AgendaItem } from '@/lib/types';
+import type { MeetingNote, Attendee, AgendaItem, Doc } from '@/lib/types';
 import { DocEditor } from '@/components/docs/doc-editor';
 import { Input } from '../ui/input';
 import moment from 'moment';
@@ -85,7 +85,9 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
     }
 
     let htmlContent = `<h1>${note.title}</h1>`;
-    htmlContent += `<p><strong>Date:</strong> ${moment(note.startDate?.toDate()).format('MMMM D, YYYY')}</p>`;
+    if (note.startDate) {
+        htmlContent += `<p><strong>Date:</strong> ${moment(note.startDate.toDate()).format('MMMM D, YYYY')}</p>`;
+    }
     if (note.location) {
         htmlContent += `<p><strong>Location:</strong> ${note.location}</p>`;
     }
@@ -93,7 +95,9 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
     if (note.attendees.length > 0) {
         htmlContent += `<h2>Attendees</h2><ul>`;
         note.attendees.forEach(a => {
-            htmlContent += `<li>${a.name} ${a.jobTitle ? `(${a.jobTitle})` : ''}</li>`;
+            if(a.name) {
+                htmlContent += `<li>${a.name} ${a.jobTitle ? `(${a.jobTitle})` : ''}</li>`;
+            }
         });
         htmlContent += `</ul>`;
     }
@@ -101,7 +105,9 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
     if (note.agenda.length > 0) {
         htmlContent += `<h2>Agenda</h2><ul>`;
         note.agenda.forEach(item => {
-            htmlContent += `<li>${item.topic}</li>`;
+             if(item.topic) {
+                htmlContent += `<li>${item.topic}</li>`;
+            }
         });
         htmlContent += `</ul>`;
     }
@@ -121,6 +127,13 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
     fileDownload.click();
     document.body.removeChild(fileDownload);
   };
+  
+    // This function will be called by the DocEditor component when its content changes
+    const handleNotesContentChange = (content: any) => {
+        const updatedNote = { ...note, notes: content };
+        setNote(updatedNote);
+        debouncedSave({ notes: content });
+    };
 
 
   return (
@@ -128,11 +141,15 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
         <div className="flex-1 min-h-0 order-2 md:order-1">
             <DocEditor 
                 doc={{
-                    ...note,
+                    id: note.id,
+                    title: note.title,
                     content: note.notes,
                     ownerId: note.ownerId,
+                    createdAt: note.createdAt,
+                    updatedAt: note.updatedAt,
                 }} 
                 onEditorInstance={(instance) => setEditorInstance(instance)}
+                onContentChange={handleNotesContentChange}
             />
         </div>
         <div className="order-1 md:order-2 space-y-4 p-4 border-l bg-card">

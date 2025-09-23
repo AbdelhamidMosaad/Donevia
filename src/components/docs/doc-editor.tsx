@@ -41,6 +41,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 interface DocEditorProps {
   doc: Doc;
   onEditorInstance?: (editor: Editor) => void;
+  onContentChange?: (content: any) => void;
 }
 
 // Helper function to recursively remove undefined values from an object
@@ -63,7 +64,7 @@ function deepCleanUndefined(obj: any): any {
 }
 
 
-export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps) {
+export function DocEditor({ doc: initialDoc, onEditorInstance, onContentChange }: DocEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [docData, setDocData] = useState(initialDoc);
@@ -73,7 +74,7 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
 
 
   const debouncedSave = useDebouncedCallback(async (updatedDoc: Doc) => {
-    if (!user) return;
+    if (!user || onContentChange) return; // If onContentChange is provided, parent component handles saving
     setSaveStatus('saving');
     const docRef = doc(db, 'users', user.uid, 'docs', updatedDoc.id);
 
@@ -144,9 +145,13 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
     },
     onUpdate: ({ editor }) => {
       const newContent = editor.getJSON();
-      const updatedDoc = { ...docData, content: newContent };
-      setDocData(updatedDoc);
-      debouncedSave(updatedDoc);
+      if(onContentChange) {
+        onContentChange(newContent);
+      } else {
+        const updatedDoc = { ...docData, content: newContent };
+        setDocData(updatedDoc);
+        debouncedSave(updatedDoc);
+      }
     },
     onCreate: ({ editor }) => {
       onEditorInstance?.(editor);
@@ -155,6 +160,10 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
   
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
+    if (onContentChange) {
+      // If used in meeting notes, we don't save title from here
+      return;
+    }
     const updatedDoc = { ...docData, title: newTitle };
     setDocData(updatedDoc);
     debouncedSave(updatedDoc);
@@ -238,37 +247,39 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
 
   return (
     <div ref={editorContainerRef} className="flex-1 flex flex-col h-full overflow-y-hidden bg-background">
-        <div className="p-4 border-b pr-16 relative bg-card">
-            <EditorToolbar 
-                editor={editor} 
-                backgroundColor={docData.backgroundColor || '#FFFFFF'}
-                onBackgroundColorChange={handleBackgroundColorChange}
-                margin={docData.margin || 'medium'}
-                onMarginChange={handleMarginChange}
-                fullWidth={!!docData.fullWidth}
-                onFullWidthToggle={handleFullWidthToggle}
-                container={editorContainerRef.current}
-              />
-             <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-muted-foreground">
-                {saveStatus === 'saving' && <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>}
-                {saveStatus === 'saved' && <span>Saved</span>}
+        {!onContentChange && ( // Only show this part for the main docs editor
+            <div className="p-4 border-b pr-16 relative bg-card">
+                <EditorToolbar 
+                    editor={editor} 
+                    backgroundColor={docData.backgroundColor || '#FFFFFF'}
+                    onBackgroundColorChange={handleBackgroundColorChange}
+                    margin={docData.margin || 'medium'}
+                    onMarginChange={handleMarginChange}
+                    fullWidth={!!docData.fullWidth}
+                    onFullWidthToggle={handleFullWidthToggle}
+                    container={editorContainerRef.current}
+                  />
+                 <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-muted-foreground">
+                    {saveStatus === 'saving' && <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>}
+                    {saveStatus === 'saved' && <span>Saved</span>}
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                     <Button variant="outline" size="icon">
-                        <Download />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                         <Button variant="outline" size="icon">
+                            <Download />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={handleExportWord}>Export as Word (.doc)</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                        {isFullscreen ? <Minimize /> : <Maximize />}
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onSelect={handleExportWord}>Export as Word (.doc)</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <Button variant="outline" size="icon" onClick={toggleFullscreen}>
-                    {isFullscreen ? <Minimize /> : <Maximize />}
-                </Button>
+                </div>
             </div>
-        </div>
+        )}
        
         <div 
           className="relative flex-1 overflow-y-auto" 
@@ -284,10 +295,12 @@ export function DocEditor({ doc: initialDoc, onEditorInstance }: DocEditorProps)
               <EditorContent editor={editor} />
             </div>
         </div>
-        <div className="border-t text-xs text-muted-foreground p-2 flex justify-end gap-4 bg-card">
-            <span>Words: {editor.storage.characterCount.words()}</span>
-            <span>Characters: {editor.storage.characterCount.characters()}</span>
-        </div>
+        {!onContentChange && (
+            <div className="border-t text-xs text-muted-foreground p-2 flex justify-end gap-4 bg-card">
+                <span>Words: {editor.storage.characterCount.words()}</span>
+                <span>Characters: {editor.storage.characterCount.characters()}</span>
+            </div>
+        )}
     </div>
   );
 }
