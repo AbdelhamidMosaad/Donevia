@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -174,20 +175,21 @@ export type Attendee = {
     id: string;
     name: string;
     email: string;
+    jobTitle?: string;
 };
 
 export type AgendaItem = {
     id: string;
     topic: string;
-    presenter: string;
-    time: number; // in minutes
     isCompleted: boolean;
 };
 
 export type MeetingNote = {
     id: string;
     title: string;
-    date: Timestamp;
+    startDate: Timestamp;
+    endDate: Timestamp | null;
+    location?: string;
     attendees: Attendee[];
     agenda: AgendaItem[];
     notes: any; // TipTap JSON content
@@ -779,3 +781,5 @@ export type InterviewFeedback = {
     suggestions: string[];
     overallAssessment: string;
 };
+
+    

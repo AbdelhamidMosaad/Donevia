@@ -52,7 +52,9 @@ export function NewMeetingNoteDialog({
     try {
       const docRef = await addDoc(collection(db, 'users', user.uid, 'meetingNotes'), {
         title: title.trim(),
-        date: Timestamp.now(),
+        startDate: Timestamp.now(),
+        endDate: null,
+        location: '',
         attendees: [],
         agenda: [],
         notes: templateContent,
@@ -131,3 +133,5 @@ export function NewMeetingNoteDialog({
     </Dialog>
   );
 }
+
+    

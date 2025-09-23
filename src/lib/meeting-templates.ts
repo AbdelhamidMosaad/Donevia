@@ -10,10 +10,16 @@ export const templates = {
         { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph' }] }] },
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Key Discussion Points' }] },
         { type: 'paragraph' },
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What was done?' }] },
+        { type: 'paragraph' },
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What needs to be done?' }] },
+        { type: 'taskList', content: [{ type: 'taskItem', attrs: { isChecked: false }, content: [{ type: 'paragraph' }] }] },
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Decisions Made' }] },
         { type: 'paragraph' },
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Action Items & Owners' }] },
         { type: 'taskList', content: [{ type: 'taskItem', attrs: { isChecked: false }, content: [{ type: 'paragraph' }] }] },
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Signatures' }] },
+        { type: 'paragraph' },
       ],
     },
   },
@@ -113,3 +119,5 @@ export const templates = {
 };
 
 export type TemplateId = keyof typeof templates;
+
+    

@@ -55,7 +55,7 @@ export function MeetingNoteListView({ notes, onDelete }: MeetingNoteListViewProp
                       {note.title}
                   </a>
               </TableCell>
-              <TableCell>{moment(note.date.toDate()).format('ll')}</TableCell>
+              <TableCell>{moment(note.startDate.toDate()).format('ll')}</TableCell>
               <TableCell>{moment(note.updatedAt.toDate()).fromNow()}</TableCell>
               <TableCell>
                 <DropdownMenu>
@@ -92,3 +92,5 @@ export function MeetingNoteListView({ notes, onDelete }: MeetingNoteListViewProp
     </div>
   );
 }
+
+    

@@ -66,7 +66,7 @@ export function MeetingNoteCard({ note, onDelete, size = 'large' }: MeetingNoteC
                 size === 'medium' && 'text-base',
                 size === 'small' && 'text-sm'
             )}>{note.title}</h3>
-            {size !== 'small' && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{note.date ? `Meeting on ${moment(note.date.toDate()).format('ll')}` : 'No date set'}</p>}
+            {size !== 'small' && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{note.startDate ? `Meeting on ${moment(note.startDate.toDate()).format('ll')}` : 'No date set'}</p>}
         </div>
         <div className="absolute top-2 right-2">
             <DropdownMenu>
@@ -111,3 +111,5 @@ export function MeetingNoteCard({ note, onDelete, size = 'large' }: MeetingNoteC
     </a>
   );
 }
+
+    
