@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
@@ -10,11 +10,12 @@ import { DocEditor } from '@/components/docs/doc-editor';
 import { Input } from '../ui/input';
 import moment from 'moment';
 import { Button } from '../ui/button';
-import { Trash2, UserPlus, ListPlus, Download } from 'lucide-react';
+import { Trash2, UserPlus, ListPlus, Download, Maximize, Minimize } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { v4 as uuidv4 } from 'uuid';
 import { EditorToolbar } from '../docs/editor-toolbar';
 import { Editor } from '@tiptap/react';
+import { cn } from '@/lib/utils';
 
 
 interface MeetingNotesEditorProps {
@@ -27,6 +28,7 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
   const [note, setNote] = useState(initialNote);
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
 
   const debouncedSave = useDebouncedCallback(async (updatedNote: Partial<MeetingNote>) => {
@@ -114,12 +116,11 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
         htmlContent += `</ul>`;
     }
     
-    htmlContent += '<h2>Notes</h2>'
     htmlContent += editorInstance.getHTML();
 
     const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word Document</title></head><body>";
     const footer = "</body></html>";
-    const sourceHTML = header + htmlContent + footer;
+    const sourceHTML = header + contentHtml + footer;
 
     const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
     const fileDownload = document.createElement("a");
@@ -137,10 +138,32 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
         debouncedSave({ notes: content });
     };
 
+    const toggleFullscreen = useCallback(() => {
+        const elem = editorContainerRef.current;
+        if (!elem) return;
+    
+        if (!document.fullscreenElement) {
+          elem.requestFullscreen().catch(err => {
+            toast({ variant: 'destructive', title: 'Error entering fullscreen.', description: err.message });
+          });
+        } else {
+          document.exitFullscreen();
+        }
+    }, [toast]);
+    
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+          setIsFullscreen(!!document.fullscreenElement);
+        };
+    
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
 
   return (
-    <div className="h-full flex flex-col md:grid md:grid-cols-[1fr_350px] gap-4">
-        <div ref={editorContainerRef} className="flex-1 min-h-0 order-2 md:order-1 flex flex-col">
+    <div ref={editorContainerRef} className={cn("h-full flex flex-col md:grid md:grid-cols-[1fr_350px] gap-4", isFullscreen && "fixed inset-0 z-50 bg-background p-4")}>
+        <div className="flex-1 min-h-0 order-2 md:order-1 flex flex-col">
             {editorInstance && (
                 <div className="p-2 border-b">
                     <EditorToolbar 
@@ -171,9 +194,14 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
         <div className="order-1 md:order-2 space-y-4 p-4 border-l bg-card">
             <div className="flex justify-between items-center">
                  <h2 className="text-xl font-bold font-headline">Meeting Details</h2>
-                 <Button variant="outline" onClick={handleExportWord}>
-                    <Download /> Export Word
-                </Button>
+                 <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={handleExportWord} size="sm">
+                        <Download className="h-4 w-4 mr-2" /> Export
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                        {isFullscreen ? <Minimize /> : <Maximize />}
+                    </Button>
+                 </div>
             </div>
             <div>
                 <label className="text-sm font-medium">Meeting Title</label>
