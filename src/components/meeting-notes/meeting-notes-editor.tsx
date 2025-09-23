@@ -130,7 +130,7 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
                     <label className="text-sm font-medium">Start Date</label>
                     <Input
                         type="date"
-                        value={moment(note.startDate.toDate()).format('YYYY-MM-DD')}
+                        value={note.startDate ? moment(note.startDate.toDate()).format('YYYY-MM-DD') : ''}
                         onChange={(e) => handleFieldChange('startDate', Timestamp.fromDate(new Date(e.target.value)))}
                     />
                 </div>
@@ -176,5 +176,3 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
     </div>
   );
 }
-
-    
