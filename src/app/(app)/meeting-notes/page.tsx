@@ -65,7 +65,7 @@ export default function MeetingNotesDashboardPage() {
     if (user) {
       const q = query(
         collection(db, 'users', user.uid, 'meetingNotes'),
-        orderBy('date', 'desc')
+        orderBy('startDate', 'desc')
       );
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const notesData = snapshot.docs.map(
