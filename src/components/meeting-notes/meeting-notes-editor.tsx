@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -10,7 +11,7 @@ import { DocEditor } from '@/components/docs/doc-editor';
 import { Input } from '../ui/input';
 import moment from 'moment';
 import { Button } from '../ui/button';
-import { Trash2, UserPlus, ListPlus, Download, Maximize, Minimize } from 'lucide-react';
+import { Trash2, UserPlus, ListPlus, Download, Maximize, Minimize, ArrowLeft } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { v4 as uuidv4 } from 'uuid';
 import { EditorToolbar } from '../docs/editor-toolbar';
@@ -120,7 +121,7 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
 
     const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word Document</title></head><body>";
     const footer = "</body></html>";
-    const sourceHTML = header + contentHtml + footer;
+    const sourceHTML = header + htmlContent + footer;
 
     const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
     const fileDownload = document.createElement("a");
