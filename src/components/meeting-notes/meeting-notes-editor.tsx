@@ -78,21 +78,46 @@ export function MeetingNotesEditor({ note: initialNote }: MeetingNotesEditorProp
       handleFieldChange('agenda', updatedAgenda);
   }
   
-   const handleExportWord = () => {
+  const handleExportWord = () => {
     if (!editorInstance) {
       toast({ variant: 'destructive', title: 'Editor not ready.' });
       return;
     }
-    const content = editorInstance.getHTML();
-    const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word Document</title></head><body><h1>${note.title}</h1>`;
+
+    let htmlContent = `<h1>${note.title}</h1>`;
+    htmlContent += `<p><strong>Date:</strong> ${moment(note.startDate?.toDate()).format('MMMM D, YYYY')}</p>`;
+    if (note.location) {
+        htmlContent += `<p><strong>Location:</strong> ${note.location}</p>`;
+    }
+
+    if (note.attendees.length > 0) {
+        htmlContent += `<h2>Attendees</h2><ul>`;
+        note.attendees.forEach(a => {
+            htmlContent += `<li>${a.name} ${a.jobTitle ? `(${a.jobTitle})` : ''}</li>`;
+        });
+        htmlContent += `</ul>`;
+    }
+
+    if (note.agenda.length > 0) {
+        htmlContent += `<h2>Agenda</h2><ul>`;
+        note.agenda.forEach(item => {
+            htmlContent += `<li>${item.topic}</li>`;
+        });
+        htmlContent += `</ul>`;
+    }
+
+    htmlContent += '<hr>';
+    htmlContent += editorInstance.getHTML();
+
+    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word Document</title></head><body>";
     const footer = "</body></html>";
-    const sourceHTML = header + content + footer;
+    const sourceHTML = header + htmlContent + footer;
 
     const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
     const fileDownload = document.createElement("a");
     document.body.appendChild(fileDownload);
     fileDownload.href = source;
-    fileDownload.download = `${note.title}.doc`;
+    fileDownload.download = `${note.title.replace(/ /g, '_')}.doc`;
     fileDownload.click();
     document.body.removeChild(fileDownload);
   };
