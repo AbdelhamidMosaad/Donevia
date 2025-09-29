@@ -71,7 +71,7 @@ export function StickyNotesBoard({ notes, onNoteClick, onDeleteNote }: StickyNot
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start p-4">
         {priorities.map((priority) => (
             <div key={priority} className="flex flex-col">
                 <div className="p-3">
