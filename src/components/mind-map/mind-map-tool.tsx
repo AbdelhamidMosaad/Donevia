@@ -199,17 +199,17 @@ export function MindMapTool() {
         isBold: false, isItalic: false, isUnderline: false,
     };
     
-    const newNodes = [...nodes, newNode];
-    setNodes(newNodes);
-    
-    let newConnections = [...connections];
-    if (parentNode) {
-      newConnections.push({ from: parentNode.id, to: newNode.id });
-      setConnections(newConnections);
-    }
-    
-    saveToHistory(newNodes, newConnections);
-    setSelectedNodeId(newNode.id);
+    setNodes(prevNodes => {
+      const newNodes = [...prevNodes, newNode];
+      let newConnections = [...connections];
+      if (parentNode) {
+        newConnections = [...connections, { from: parentNode.id, to: newNode.id }];
+        setConnections(newConnections);
+      }
+      saveToHistory(newNodes, newConnections);
+      setSelectedNodeId(newNode.id);
+      return newNodes;
+    });
   }, [nodes, connections, selectedNodeId, toast, saveToHistory]);
   
   const deleteNode = useCallback((nodeId: string) => {
