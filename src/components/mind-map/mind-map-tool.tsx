@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -183,34 +184,52 @@ export function MindMapTool() {
   }, [history, historyIndex, saveMindMap]);
 
  const addNode = useCallback((parentId?: string) => {
-    const parentNode = parentId ? nodes.find(n => n.id === parentId) : (selectedNodeId ? nodes.find(n => n.id === selectedNodeId) : null);
-    
-    if (!parentNode && nodes.length > 0) {
-        toast({variant: 'destructive', title: "Select a node first", description: "You must select a parent node to add a new idea."});
-        return;
-    }
+    if (!user) return;
+    const parent = parentId ? nodes.find(n => n.id === parentId) : null;
 
+    if (!parent) {
+      if (nodes.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Select a node",
+          description: "Please select a parent node before adding a new one.",
+        });
+      } else {
+        // Create a root node if the canvas is empty
+        const rootNode: MindMapNode = {
+          id: uuidv4(),
+          x: (mindMapContainerRef.current?.clientWidth || 800) / 2,
+          y: (mindMapContainerRef.current?.clientHeight || 600) / 2,
+          width: 150, height: 50, title: 'Central Idea', style: 'default',
+          backgroundColor: '#4361ee', color: 'white',
+          isBold: true, isItalic: false, isUnderline: false,
+        };
+        const newNodes = [rootNode];
+        setNodes(newNodes);
+        saveToHistory(newNodes, []);
+        setSelectedNodeId(rootNode.id);
+      }
+      return;
+    }
+    
+    const childrenCount = connections.filter(c => c.from === parent.id).length;
     const newNode: MindMapNode = {
-        id: uuidv4(),
-        x: parentNode ? parentNode.x + 200 : 300,
-        y: parentNode ? parentNode.y + (nodes.filter(n => connections.some(c => c.from === parentNode!.id && c.to === n.id)).length * 80) : 300,
-        width: 150, height: 50, title: 'New Idea', style: 'default',
-        backgroundColor: '#f8f9fa', color: '#212529',
-        isBold: false, isItalic: false, isUnderline: false,
+      id: uuidv4(),
+      x: parent.x + 250,
+      y: parent.y + (childrenCount > 0 ? childrenCount * 100 - (childrenCount-1)*50 : 0),
+      width: 150, height: 50, title: 'New Idea', style: 'default',
+      backgroundColor: '#f8f9fa', color: '#212529',
+      isBold: false, isItalic: false, isUnderline: false,
     };
     
-    setNodes(prevNodes => {
-      const newNodes = [...prevNodes, newNode];
-      let newConnections = [...connections];
-      if (parentNode) {
-        newConnections = [...connections, { from: parentNode.id, to: newNode.id }];
-        setConnections(newConnections);
-      }
-      saveToHistory(newNodes, newConnections);
-      setSelectedNodeId(newNode.id);
-      return newNodes;
-    });
-  }, [nodes, connections, selectedNodeId, toast, saveToHistory]);
+    const newNodes = [...nodes, newNode];
+    const newConnections = [...connections, { from: parent.id, to: newNode.id }];
+    
+    setNodes(newNodes);
+    setConnections(newConnections);
+    saveToHistory(newNodes, newConnections);
+    setSelectedNodeId(newNode.id);
+  }, [user, nodes, connections, saveToHistory, toast]);
   
   const deleteNode = useCallback((nodeId: string) => {
     if (nodes.length <= 1) {
@@ -606,7 +625,7 @@ export function MindMapTool() {
           onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
         >
-            <div className="absolute top-2 right-2 z-10 text-xs font-mono text-muted-foreground p-1 bg-card/50 rounded">
+            <div data-toolbar="true" className="absolute top-2 right-2 z-10 text-xs font-mono text-muted-foreground p-1 bg-card/50 rounded">
                 {saveStatus === 'saving' && 'Saving...'}
                 {saveStatus === 'saved' && 'Saved!'}
             </div>
@@ -694,7 +713,7 @@ export function MindMapTool() {
                             </div>
                             <textarea 
                                 value={node.title}
-                                onChange={(e) => handleNodeUpdate(node.id, { title: e.target.value, ...autoSizeNode(node, e.target.value) })}
+                                onChange={(e) => handleNodeUpdate(node.id, { title: e.target.value})}
                                 onBlur={handleNodeBlur}
                                 className={cn(
                                     "bg-transparent text-center focus:outline-none w-full h-full resize-none p-4",
