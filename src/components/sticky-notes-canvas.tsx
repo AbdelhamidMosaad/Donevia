@@ -16,13 +16,9 @@ interface StickyNotesCanvasProps {
   onDeleteNote: (noteId: string) => void;
 }
 
-const NOTE_WIDTH = 250;
-const GRID_GAP = 16;
-
 export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNotesCanvasProps) {
   const { user } = useAuth();
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [cols, setCols] = useState(1);
 
   // Derive a sorted list of notes to ensure stable order for dnd
   const sortedNotes = useMemo(() => {
@@ -35,31 +31,6 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
     });
   }, [notes]);
 
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (canvasRef.current) {
-        const canvasWidth = canvasRef.current.offsetWidth;
-        const newCols = Math.max(1, Math.floor((canvasWidth + GRID_GAP) / (NOTE_WIDTH + GRID_GAP)));
-        setCols(newCols);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    const resizeObserver = new ResizeObserver(handleResize);
-    if (canvasRef.current) {
-        resizeObserver.observe(canvasRef.current);
-    }
-    
-    return () => {
-        window.removeEventListener('resize', handleResize);
-        if (canvasRef.current) {
-            resizeObserver.unobserve(canvasRef.current);
-        }
-    }
-  }, []);
-
   const onDragEnd = async (result: DropResult) => {
     const { source, destination, draggableId } = result;
 
@@ -70,37 +41,30 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
       return;
     }
 
-    // Create a mutable copy of the notes for manipulation
-    const newNotesOrder = Array.from(sortedNotes);
-    const [movedNote] = newNotesOrder.splice(source.index, 1);
-    newNotesOrder.splice(destination.index, 0, movedNote);
+    const reorderedNotes = Array.from(sortedNotes);
+    const [movedNote] = reorderedNotes.splice(source.index, 1);
+    reorderedNotes.splice(destination.index, 0, movedNote);
 
-    // Update grid positions based on the new flat array order
-    for (let i = 0; i < newNotesOrder.length; i++) {
-        const note = newNotesOrder[i];
-        const newPos = {
-            row: Math.floor(i / cols),
-            col: i % cols
-        };
-
-        if (note.gridPosition?.row !== newPos.row || note.gridPosition?.col !== newPos.col) {
-            const noteRef = doc(db, 'users', user.uid, 'stickyNotes', note.id);
-            await updateDoc(noteRef, { gridPosition: newPos });
-        }
+    for (let i = 0; i < reorderedNotes.length; i++) {
+        const note = reorderedNotes[i];
+        const noteRef = doc(db, 'users', user.uid, 'stickyNotes', note.id);
+        // The index is now the order. We don't need row/col for masonry.
+        await updateDoc(noteRef, { order: i });
     }
   };
   
   return (
-    <div ref={canvasRef} className="relative h-full">
+    <div ref={canvasRef} className="relative h-full p-4">
       <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="canvas" direction="horizontal">
+        <Droppable droppableId="canvas">
           {(provided) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="grid gap-4 p-4 items-start"
+              className="gap-4"
               style={{
-                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                columnCount: 3,
+                columnGap: '1rem',
               }}
             >
               {sortedNotes.map((note, index) => (
@@ -111,7 +75,7 @@ export function StickyNotesCanvas({ notes, onNoteClick, onDeleteNote }: StickyNo
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
                       className={cn(
-                        'transition-shadow',
+                        'transition-shadow mb-4 break-inside-avoid',
                         snapshot.isDragging && 'shadow-2xl'
                       )}
                       style={{
