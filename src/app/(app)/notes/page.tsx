@@ -11,13 +11,12 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { StickyNote } from '@/lib/types';
 import { StickyNoteDialog } from '@/components/sticky-note-dialog';
-import { StickyNotesCanvas } from '@/components/sticky-notes-canvas';
 import { StickyNotesBoard } from '@/components/sticky-notes-board';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StickyNotesIcon } from '@/components/icons/tools/sticky-notes-icon';
 import { StickyNotesList } from '@/components/sticky-notes-list';
 
-type View = 'board' | 'canvas' | 'list';
+type View = 'board' | 'list';
 
 export default function StickyNotesPage() {
   const { user, loading } = useAuth();
@@ -37,8 +36,11 @@ export default function StickyNotesPage() {
     if (user) {
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
       getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists() && docSnap.data().notesView) {
-          setView(docSnap.data().notesView);
+        if (docSnap.exists()) {
+            const settings = docSnap.data();
+            if (settings.notesView && (settings.notesView === 'board' || settings.notesView === 'list')) {
+                 setView(settings.notesView);
+            }
         }
       });
     }
@@ -157,8 +159,6 @@ export default function StickyNotesPage() {
     switch(view) {
         case 'board':
             return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
-        case 'canvas':
-            return <StickyNotesCanvas notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
         case 'list':
             return <StickyNotesList notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
         default:
@@ -180,9 +180,6 @@ export default function StickyNotesPage() {
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
               <ToggleGroupItem value="board" aria-label="Board view">
                 <Kanban />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="canvas" aria-label="Canvas view">
-                <LayoutGrid />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
                 <List />
