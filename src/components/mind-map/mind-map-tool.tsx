@@ -49,10 +49,10 @@ import {
   Type,
   StickyNote,
   RectangleHorizontal,
+  Move,
   Bold,
   Italic,
   Underline,
-  Move,
   GripVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -233,7 +233,7 @@ export function MindMapTool() {
   };
 
   const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
-      const newNodes = nodes.map(n => {
+      setNodes(prevNodes => prevNodes.map(n => {
           if (n.id === nodeId) {
               const updatedNode = { ...n, ...updates };
               if (updates.title !== undefined) {
@@ -243,10 +243,13 @@ export function MindMapTool() {
               return updatedNode;
           }
           return n;
-      });
-      setNodes(newNodes);
-      saveMindMap(newNodes, connections);
+      }));
   };
+
+  useEffect(() => {
+    if (draggingNode) return;
+    saveMindMap(nodes, connections);
+  }, [nodes, connections, draggingNode, saveMindMap]);
   
   const handleNodeBlur = () => {
     saveToHistory(nodes, connections);
@@ -606,7 +609,7 @@ export function MindMapTool() {
                 {saveStatus === 'saving' && 'Saving...'}
                 {saveStatus === 'saved' && 'Saved!'}
             </div>
-            <div className="absolute top-4 left-4 z-10 bg-card/60 backdrop-blur-md p-2 rounded-lg shadow-lg flex gap-1 border">
+            <div data-toolbar="true" className="absolute top-4 left-4 z-10 bg-card/60 backdrop-blur-md p-2 rounded-lg shadow-lg flex gap-1 border">
                 <Button variant={currentTool === 'select' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('select')}><MousePointer/></Button>
                 <Button variant={currentTool === 'pan' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('pan')}><Move/></Button>
                 <Button variant="ghost" size="icon" onClick={() => addNode()}><PlusCircle/></Button>
@@ -623,11 +626,11 @@ export function MindMapTool() {
                     <Popover>
                         <PopoverTrigger asChild><Button variant="ghost" size="icon"><Palette/></Button></PopoverTrigger>
                         <PopoverContent className="w-auto p-2">
-                            <div className="flex gap-2">
-                                {colorPalette.map(color => (
-                                    <button key={color} style={{backgroundColor: color}} className="h-6 w-6 rounded-full border" onClick={() => handleNodeUpdate(selectedNodeId!, {backgroundColor: color, color: color === '#000000' ? 'white' : 'black'})} />
-                                ))}
-                            </div>
+                           <div className="flex gap-2">
+                            {colorPalette.map(color => (
+                                <button key={color} style={{backgroundColor: color}} className="h-6 w-6 rounded-full border" onClick={() => handleNodeUpdate(selectedNodeId!, {backgroundColor: color, color: color === '#000000' ? 'white' : 'black'})} />
+                            ))}
+                           </div>
                         </PopoverContent>
                     </Popover>
                  </div>
@@ -669,7 +672,7 @@ export function MindMapTool() {
                         <div
                             key={node.id}
                             id={`node-${node.id}`}
-                            className={cn('mindmap-node absolute p-3 rounded-lg shadow-lg flex items-center justify-center group', 
+                            className={cn('mindmap-node absolute rounded-lg shadow-lg flex items-center justify-center group', 
                             {'cursor-pointer': currentTool === 'select' || currentTool === 'connect'},
                             selectedNodeId === node.id && 'ring-2 ring-primary')}
                             style={{
@@ -681,20 +684,10 @@ export function MindMapTool() {
                                 color: node.color,
                                 transform: 'translate(-50%, -50%)',
                             }}
-                            onMouseDown={(e) => {
-                                if ((e.target as HTMLElement).closest('.drag-handle')) {
-                                    if(currentTool === 'select') {
-                                        setDraggingNode(node.id);
-                                        const transformedX = node.x * scale + offset.x;
-                                        const transformedY = node.y * scale + offset.y;
-                                        setDragStart({ x: e.clientX - transformedX, y: e.clientY - transformedY });
-                                    }
-                                }
-                            }}
                         >
                              <div 
                                 className="drag-handle absolute top-1/2 -left-3 -translate-y-1/2 p-1 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity"
-                                onMouseDown={(e) => e.stopPropagation()} // Prevent text selection
+                                onMouseDown={(e) => e.stopPropagation()}
                              >
                                 <GripVertical className="h-5 w-5 text-muted-foreground" />
                             </div>
@@ -703,13 +696,14 @@ export function MindMapTool() {
                                 onChange={(e) => handleNodeUpdate(node.id, { title: e.target.value })}
                                 onBlur={handleNodeBlur}
                                 className={cn(
-                                    "bg-transparent text-center focus:outline-none w-full h-full resize-none",
+                                    "bg-transparent text-center focus:outline-none w-full h-full resize-none p-2",
                                     node.isBold && 'font-bold',
                                     node.isItalic && 'italic',
                                     node.isUnderline && 'underline',
                                 )}
                                 style={{color: node.color}}
                                 rows={node.title.split('\n').length || 1}
+                                onFocus={(e) => e.target.select()}
                             />
                             <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-20">
                                 <Button size="icon" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); addNode(node.id); }}><Plus /></Button>
