@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   MousePointer,
   PlusCircle,
@@ -12,9 +12,6 @@ import {
   Plus,
   Trash2,
   Palette,
-  Bold,
-  Italic,
-  Underline,
   Settings,
   Grid3x3,
   List,
@@ -24,7 +21,38 @@ import {
   Maximize,
   Minimize,
   ArrowLeft,
-  Move,
+  ArrowUpRight,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Circle,
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  Layers,
+  FlipVertical,
+  Copy,
+  Map,
+  ImageIcon,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  LayoutTemplate,
+  Save,
+  Triangle,
+  Diamond,
+  Pen,
+  Type,
+  StickyNote,
+  RectangleHorizontal,
+  Bold,
+  Italic,
+  Underline,
+  Move
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -51,15 +79,21 @@ const backgroundColors = [
 ];
 
 
-// Helper function to measure text width
-const getTextWidth = (text: string, font: string) => {
+// Helper function to measure text dimensions
+const getTextDimensions = (text: string, font: string): { width: number, height: number } => {
+    if (typeof document === 'undefined') {
+        return { width: text.length * 8, height: 16 }; // Fallback for SSR
+    }
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
     if (context) {
         context.font = font;
-        return context.measureText(text).width;
+        const lines = text.split('\n');
+        const width = Math.max(...lines.map(line => context.measureText(line).width));
+        const height = lines.length * 18; // Approximate line height
+        return { width, height };
     }
-    return text.length * 8; // fallback
+    return { width: text.length * 8, height: 16 };
 };
 
 
@@ -186,14 +220,21 @@ export function MindMapTool() {
     saveToHistory(newNodes, newConnections);
   }, [nodes, connections, saveToHistory, toast]);
   
+  const autoSizeNode = (node: MindMapNode, text: string): Partial<MindMapNode> => {
+    const font = `${node.isBold ? 'bold' : ''} 14px sans-serif`;
+    const { width, height } = getTextDimensions(text, font);
+    const newWidth = Math.max(150, width + 40); // Add padding
+    const newHeight = Math.max(50, height + 20); // Add padding
+    return { width: newWidth, height: newHeight };
+  };
+
   const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
       const newNodes = nodes.map(n => {
           if (n.id === nodeId) {
               const updatedNode = { ...n, ...updates };
               if (updates.title !== undefined) {
-                  const font = `${updatedNode.isBold ? 'bold' : ''} 14px sans-serif`;
-                  const textWidth = getTextWidth(updates.title, font);
-                  updatedNode.width = Math.max(150, textWidth + 40); // Add padding
+                  const sizeUpdates = autoSizeNode(updatedNode, updates.title);
+                  return { ...updatedNode, ...sizeUpdates };
               }
               return updatedNode;
           }
@@ -344,7 +385,8 @@ export function MindMapTool() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         const activeElement = document.activeElement;
-        const isEditingText = activeElement instanceof HTMLInputElement && activeElement.type === 'text';
+        const isEditingText = activeElement?.tagName === 'TEXTAREA' || (activeElement instanceof HTMLInputElement && activeElement.type === 'text');
+
 
         if (isEditingText) return;
 
@@ -628,18 +670,27 @@ export function MindMapTool() {
                                 transform: 'translate(-50%, -50%)',
                             }}
                         >
-                            <input 
+                            <textarea 
                                 value={node.title}
-                                placeholder="Write text here..."
+                                onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    if(currentTool === 'select') {
+                                        setDraggingNode(node.id);
+                                        const transformedX = node.x * scale + offset.x;
+                                        const transformedY = node.y * scale + offset.y;
+                                        setDragStart({ x: e.clientX - transformedX, y: e.clientY - transformedY });
+                                    }
+                                }}
                                 onChange={(e) => handleNodeUpdate(node.id, { title: e.target.value })}
                                 onBlur={handleNodeBlur}
                                 className={cn(
-                                    "bg-transparent text-center focus:outline-none w-full",
+                                    "bg-transparent text-center focus:outline-none w-full h-full resize-none",
                                     node.isBold && 'font-bold',
                                     node.isItalic && 'italic',
                                     node.isUnderline && 'underline',
                                 )}
                                 style={{color: node.color}}
+                                rows={1}
                             />
                             <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-20">
                                 <Button size="icon" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); addNode(node.id); }}><Plus /></Button>
