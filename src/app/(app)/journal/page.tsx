@@ -12,6 +12,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { JournalIcon } from '@/components/icons/tools/journal-icon';
 import { JournalEntryList } from '@/components/journal/journal-entry-list';
+import moment from 'moment';
 
 export default function JournalPage() {
   const { user, loading } = useAuth();
@@ -40,7 +41,7 @@ export default function JournalPage() {
     if (!user) return;
     try {
       const newEntryRef = await addDoc(collection(db, 'users', user.uid, 'journalEntries'), {
-        title: 'New Entry',
+        title: moment().format('MMMM D, YYYY, h:mm A'),
         content: { type: 'doc', content: [{ type: 'paragraph' }] },
         ownerId: user.uid,
         createdAt: Timestamp.now(),

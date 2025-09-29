@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
+import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface JournalEntryListProps {
   entries: JournalEntry[];
@@ -78,19 +80,39 @@ export function JournalEntryList({ entries, onDelete }: JournalEntryListProps) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                 {/* Filters would go here */}
+                 <Select value={tagFilter} onValueChange={setTagFilter}>
+                    <SelectTrigger><SelectValue placeholder="Filter by tag..." /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="">All Tags</SelectItem>
+                        {allTags.map(tag => <SelectItem key={tag} value={tag}>{tag}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                 <Select value={moodFilter} onValueChange={(v: any) => setMoodFilter(v)}>
+                    <SelectTrigger><SelectValue placeholder="Filter by mood..." /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Moods</SelectItem>
+                        <SelectItem value="Happy">Happy</SelectItem>
+                        <SelectItem value="Neutral">Neutral</SelectItem>
+                        <SelectItem value="Sad">Sad</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-6">
                 {filteredEntries.map(entry => (
                     <Card 
                         key={entry.id} 
-                        className="hover:shadow-md transition-shadow cursor-pointer"
+                        className="hover:shadow-md transition-shadow cursor-pointer group"
                         onClick={() => router.push(`/journal/${entry.id}`)}
                     >
                         <CardHeader>
                             <div className="flex justify-between items-start">
-                                <CardTitle className="font-headline text-lg group-hover:underline">{entry.title}</CardTitle>
+                                <div>
+                                    <CardTitle className="font-headline text-lg group-hover:underline">{entry.title}</CardTitle>
+                                    <CardDescription>
+                                        {moment(entry.createdAt.toDate()).format('MMMM D, YYYY h:mm A')}
+                                    </CardDescription>
+                                </div>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => e.stopPropagation()}><MoreHorizontal /></Button>
@@ -115,22 +137,21 @@ export function JournalEntryList({ entries, onDelete }: JournalEntryListProps) {
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
-                            <CardDescription>
-                                {moment(entry.createdAt.toDate()).format('MMMM D, YYYY')}
-                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 {entry.mood && (
                                     <div className="flex items-center gap-1">
-                                        {moodIcons[entry.mood]}
+                                        {moodIcons[entry.mood as keyof typeof moodIcons]}
                                         <span>{entry.mood}</span>
                                     </div>
                                 )}
                                 {entry.tags && entry.tags.length > 0 && (
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 flex-wrap">
                                         <Tag className="h-4 w-4" />
-                                        <span>{entry.tags.join(', ')}</span>
+                                        {entry.tags.map(tag => (
+                                            <span key={tag} className="bg-secondary px-2 py-0.5 rounded-full text-xs">{tag}</span>
+                                        ))}
                                     </div>
                                 )}
                              </div>
@@ -138,6 +159,11 @@ export function JournalEntryList({ entries, onDelete }: JournalEntryListProps) {
                     </Card>
                 ))}
             </div>
+             {filteredEntries.length === 0 && (
+                <div className="text-center text-muted-foreground py-16">
+                    <p>No entries match your current filters.</p>
+                </div>
+            )}
         </div>
     );
 }
