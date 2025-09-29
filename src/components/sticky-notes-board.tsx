@@ -1,4 +1,3 @@
-
 'use client';
 import type { StickyNote } from '@/lib/types';
 import { StickyNoteCard } from './sticky-note-card';
