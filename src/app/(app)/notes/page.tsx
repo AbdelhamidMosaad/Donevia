@@ -16,7 +16,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StickyNotesIcon } from '@/components/icons/tools/sticky-notes-icon';
 import { StickyNotesList } from '@/components/sticky-notes-list';
 
-type View = 'board' | 'list';
+type View = 'board' | 'list' | 'grid';
 
 export default function StickyNotesPage() {
   const { user, loading } = useAuth();
@@ -38,7 +38,7 @@ export default function StickyNotesPage() {
       getDoc(settingsRef).then(docSnap => {
         if (docSnap.exists()) {
             const settings = docSnap.data();
-            if (settings.notesView && (settings.notesView === 'board' || settings.notesView === 'list')) {
+            if (settings.notesView && (settings.notesView === 'board' || settings.notesView === 'list' || settings.notesView === 'grid')) {
                  setView(settings.notesView);
             }
         }
@@ -159,8 +159,10 @@ export default function StickyNotesPage() {
     switch(view) {
         case 'board':
             return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
-        case 'list':
+        case 'grid':
             return <StickyNotesList notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
+        case 'list':
+            return <div>List view to be implemented</div>; // Placeholder for true list view
         default:
             return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
     }
@@ -180,6 +182,9 @@ export default function StickyNotesPage() {
             <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
               <ToggleGroupItem value="board" aria-label="Board view">
                 <Kanban />
+              </ToggleGroupItem>
+               <ToggleGroupItem value="grid" aria-label="Grid view">
+                <LayoutGrid />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
                 <List />
