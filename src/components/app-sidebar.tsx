@@ -47,6 +47,7 @@ import { LearningAssistantIcon } from '@/components/icons/tools/learning-assista
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from './icons/tools/interview-prep-icon';
 import { JournalIcon } from './icons/tools/journal-icon';
+import { MindMapIcon } from './icons/tools/mind-map-icon';
 
 const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
@@ -67,6 +68,7 @@ const defaultMenuItems = [
     { href: '/interview-prep', icon: <InterviewPrepIcon />, label: 'Interview Prep', tooltip: 'Interview Prep', id: 'interview-prep' },
     { href: '/brainstorming', icon: <BrainstormingIcon />, label: 'Brainstorming', tooltip: 'Brainstorming', id: 'brainstorming' },
     { href: '/whiteboard', icon: <WhiteboardIcon />, label: 'Whiteboard', tooltip: 'Whiteboard', id: 'whiteboard' },
+    { href: '/mind-map', icon: <MindMapIcon />, label: 'Mind Map', tooltip: 'Mind Map', id: 'mind-map' },
     { href: '/docs', icon: <DocsIcon />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
     { href: '/learning-tool', icon: <LearningAssistantIcon />, label: 'Learning Assistant', tooltip: 'Learning Assistant', id: 'learning-tool' },
     { href: '/pomodoro', icon: <PomodoroIcon />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },

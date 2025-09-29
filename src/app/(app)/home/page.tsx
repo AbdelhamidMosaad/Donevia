@@ -35,6 +35,7 @@ import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from '@/components/icons/tools/interview-prep-icon';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { JournalIcon } from '@/components/icons/tools/journal-icon';
+import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -53,6 +54,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     'interview-prep': InterviewPrepIcon,
     brainstorming: BrainstormingIcon,
     whiteboard: WhiteboardIcon,
+    'mind-map': MindMapIcon,
     docs: DocsIcon,
     'learning-tool': LearningAssistantIcon,
     pomodoro: PomodoroIcon,
@@ -76,6 +78,7 @@ const allTools = [
     { id: 'interview-prep', href: '/interview-prep', title: 'Interview Prep', description: 'Practice for your next job interview.' },
     { id: 'brainstorming', href: '/brainstorming', title: 'Brainstorming', description: 'Capture ideas on a structured canvas.' },
     { id: 'whiteboard', href: '/whiteboard', title: 'Whiteboard', description: 'A free-form digital canvas for your ideas.' },
+    { id: 'mind-map', href: '/mind-map', title: 'Mind Map', description: 'Visually organize ideas with an automatic layout.' },
     { id: 'docs', href: '/docs', title: 'Docs', description: 'A powerful, feature-rich document editor.' },
     { id: 'learning-tool', href: '/learning-tool', title: 'Learning Assistant', description: 'Generate study materials with AI.' },
     { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },
@@ -248,5 +251,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    

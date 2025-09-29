@@ -748,14 +748,30 @@ export type InterviewFeedback = {
     overallAssessment: string;
 };
 
-export type MindMap = {
+/** Mind Map */
+export type MindMapNode = {
+    id: string;
+    text: string;
+    x: number;
+    y: number;
+    parentId: string | null;
+    children: string[];
+    collapsed: boolean;
+    color: string;
+    shape: 'rounded' | 'circle' | 'diamond' | 'cloud';
+    fontSize: number;
+    bold: boolean;
+    width: number;
+};
+
+export type MindMapType = {
     id: string;
     name: string;
     ownerId: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
-    nodes: WhiteboardNode[];
-    connections: WhiteboardConnection[];
-    backgroundColor?: string;
-    backgroundGrid?: 'dotted' | 'lined' | 'plain';
+    nodes: Record<string, MindMapNode>;
+    connections: WhiteboardConnection[]; // Re-use for simplicity
+    scale?: number;
+    pan?: { x: number, y: number };
 };
