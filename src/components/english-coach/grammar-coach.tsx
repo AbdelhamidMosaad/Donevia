@@ -1,24 +1,41 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Sparkles, Check, X } from 'lucide-react';
+import { Loader2, Sparkles, Check, X, MessageSquareQuote } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import type { GrammarCorrectionResponse } from '@/lib/types/grammar';
 import { checkGrammarWithAI } from '@/ai/flows/grammar-coach-flow';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '../ui/dialog';
 
-export function GrammarCoach() {
-  const [inputText, setInputText] = useState('');
+interface GrammarCoachProps {
+    text?: string;
+    onCorrection?: (correctedText: string) => void;
+}
+
+export function GrammarCoach({ text, onCorrection }: GrammarCoachProps) {
+  const [inputText, setInputText] = useState(text || '');
   const [result, setResult] = useState<GrammarCorrectionResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  const handleOpen = (open: boolean) => {
+      if(open && text) {
+          setInputText(text);
+          handleCheckGrammar(text);
+      }
+      setIsOpen(open);
+  }
 
-  const handleCheckGrammar = async () => {
-    if (!inputText.trim()) {
+  const handleCheckGrammar = async (textToCheck: string) => {
+    if (!textToCheck.trim()) {
       toast({ variant: 'destructive', title: 'Please enter some text.' });
       return;
     }
@@ -31,7 +48,7 @@ export function GrammarCoach() {
     setResult(null);
 
     try {
-      const data = await checkGrammarWithAI({ text: inputText });
+      const data = await checkGrammarWithAI({ text: textToCheck });
       setResult(data);
     } catch (error) {
       console.error('Grammar check failed:', error);
@@ -44,6 +61,13 @@ export function GrammarCoach() {
       setIsLoading(false);
     }
   };
+  
+  const handleApplyCorrection = () => {
+    if(result && onCorrection) {
+        onCorrection(result.corrected_text);
+    }
+    setIsOpen(false);
+  }
 
   const renderResults = () => {
     if (!result) {
@@ -64,6 +88,10 @@ export function GrammarCoach() {
     }
     return (
       <div className="space-y-6">
+        <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+          <h3 className="font-bold text-lg">Final Polished Version:</h3>
+          <p className="mt-2 text-primary/90">{result.corrected_text}</p>
+        </div>
         <div>
           <h3 className="font-bold text-lg mb-2">Error Breakdown:</h3>
           {result.errors.map((error: any, index: number) => (
@@ -82,13 +110,42 @@ export function GrammarCoach() {
             </div>
           ))}
         </div>
-        <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-          <h3 className="font-bold text-lg">Final Polished Version:</h3>
-          <p className="mt-2 text-primary/90">{result.corrected_text}</p>
-        </div>
       </div>
     );
   };
+  
+  if (onCorrection) {
+      return (
+        <Dialog open={isOpen} onOpenChange={handleOpen}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10">
+                    <MessageSquareQuote className="h-4 w-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Grammar & Style Check</DialogTitle>
+                    <DialogDescription>Review the AI's suggestions and apply them to your note.</DialogDescription>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto pr-2">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                        <span>AI is analyzing your text...</span>
+                        </div>
+                    ) : (
+                        renderResults()
+                    )}
+                </div>
+                 {result && (
+                    <DialogFooter>
+                        <Button onClick={handleApplyCorrection}>Apply & Close</Button>
+                    </DialogFooter>
+                )}
+            </DialogContent>
+        </Dialog>
+      )
+  }
 
   return (
     <div className="grid md:grid-cols-2 gap-6 h-full">
@@ -102,12 +159,12 @@ export function GrammarCoach() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type or paste your text here..."
-            className="flex-1 text-base"
+            className="flex-1 text-base resize-none"
             rows={15}
           />
         </CardContent>
         <CardFooter>
-          <Button onClick={handleCheckGrammar} disabled={isLoading || !inputText.trim()} className="w-full">
+          <Button onClick={() => handleCheckGrammar(inputText)} disabled={isLoading || !inputText.trim()} className="w-full">
             <Sparkles className="mr-2 h-4 w-4" />
             {isLoading ? 'Analyzing...' : 'Check My Grammar'}
           </Button>

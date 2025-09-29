@@ -9,7 +9,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
-import { Palette, Check, CaseSensitive, Flag } from 'lucide-react';
+import { Palette, Check, CaseSensitive, Flag, MessageSquareQuote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -19,6 +19,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { GrammarCoach } from './english-coach/grammar-coach';
 
 interface StickyNoteDialogProps {
   note: StickyNote;
@@ -117,6 +118,12 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     }
   }
 
+  const handleGrammarCheckClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // The GrammarCoach component itself will open its own dialog.
+    // We just need to stop this click from closing the parent StickyNoteDialog.
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent 
@@ -144,64 +151,69 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
                 style={{ color: 'inherit' }}
             />
         </div>
-        <DialogFooter className="p-2 border-t flex justify-end items-center gap-1" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-            <Select onValueChange={handlePriorityChange} value={priority}>
-              <SelectTrigger className="w-[120px] h-8 text-xs bg-transparent border-black/10 hover:bg-black/10">
-                  <Flag className="h-3 w-3 mr-1"/>
-                  <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="High">High</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="Low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-            <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10">
-                <Palette className="h-4 w-4" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2">
-                <div className="flex gap-1">
-                {backgroundColors.map((c) => (
-                    <button
-                    key={c}
-                    onClick={() => handleColorChange(c, 'background')}
-                    className={cn(
-                        'h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center'
-                    )}
-                    style={{ backgroundColor: c }}
-                    >
-                    {bgColor === c && <Check className="h-4 w-4 text-black" />}
-                    </button>
-                ))}
-                </div>
-            </PopoverContent>
-            </Popover>
-             <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10">
-                <CaseSensitive className="h-4 w-4" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2">
-                <div className="flex gap-1">
-                {textColors.map((c) => (
-                    <button
-                    key={c}
-                    onClick={() => handleColorChange(c, 'text')}
-                    className={cn(
-                        'h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center'
-                    )}
-                    style={{ backgroundColor: c }}
-                    >
-                    {textColor === c && <Check className="h-4 w-4" style={{ color: c === '#FFFFFF' ? '#000000' : '#FFFFFF' }} />}
-                    </button>
-                ))}
-                </div>
-            </PopoverContent>
-            </Popover>
+        <DialogFooter className="p-2 border-t flex justify-between items-center" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+             <div onClick={handleGrammarCheckClick}>
+                <GrammarCoach text={text} onCorrection={setText} />
+             </div>
+             <div className="flex items-center gap-1">
+                <Select onValueChange={handlePriorityChange} value={priority}>
+                <SelectTrigger className="w-[120px] h-8 text-xs bg-transparent border-black/10 hover:bg-black/10">
+                    <Flag className="h-3 w-3 mr-1"/>
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+                </Select>
+                <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10">
+                    <Palette className="h-4 w-4" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-2">
+                    <div className="flex gap-1">
+                    {backgroundColors.map((c) => (
+                        <button
+                        key={c}
+                        onClick={() => handleColorChange(c, 'background')}
+                        className={cn(
+                            'h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center'
+                        )}
+                        style={{ backgroundColor: c }}
+                        >
+                        {bgColor === c && <Check className="h-4 w-4 text-black" />}
+                        </button>
+                    ))}
+                    </div>
+                </PopoverContent>
+                </Popover>
+                <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10">
+                    <CaseSensitive className="h-4 w-4" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-2">
+                    <div className="flex gap-1">
+                    {textColors.map((c) => (
+                        <button
+                        key={c}
+                        onClick={() => handleColorChange(c, 'text')}
+                        className={cn(
+                            'h-8 w-8 rounded-full border border-gray-300 flex items-center justify-center'
+                        )}
+                        style={{ backgroundColor: c }}
+                        >
+                        {textColor === c && <Check className="h-4 w-4" style={{ color: c === '#FFFFFF' ? '#000000' : '#FFFFFF' }} />}
+                        </button>
+                    ))}
+                    </div>
+                </PopoverContent>
+                </Popover>
+            </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
