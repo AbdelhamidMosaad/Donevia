@@ -34,6 +34,7 @@ import { LearningAssistantIcon } from '@/components/icons/tools/learning-assista
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from '@/components/icons/tools/interview-prep-icon';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { JournalIcon } from '../icons/tools/journal-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -55,6 +56,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     docs: DocsIcon,
     'learning-tool': LearningAssistantIcon,
     pomodoro: PomodoroIcon,
+    journal: JournalIcon,
 };
 
 const allTools = [
@@ -77,6 +79,7 @@ const allTools = [
     { id: 'docs', href: '/docs', title: 'Docs', description: 'A powerful, feature-rich document editor.' },
     { id: 'learning-tool', href: '/learning-tool', title: 'Learning Assistant', description: 'Generate study materials with AI.' },
     { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },
+    { id: 'journal', href: '/journal', title: 'Journal', description: 'Reflect and get insights with an AI-powered journal.' },
 ];
 
 type CardSize = 'small' | 'medium' | 'large';

@@ -46,12 +46,14 @@ import { DocsIcon } from '@/components/icons/tools/docs-icon';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from './icons/tools/interview-prep-icon';
+import { JournalIcon } from './icons/tools/journal-icon';
 
 const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
     { href: '/planner', icon: <PlannerIcon />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
     { href: '/dashboard/lists', icon: <TasksIcon />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
     { href: '/crm', icon: <CrmIcon />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
+    { href: '/journal', icon: <JournalIcon />, label: 'Journal', tooltip: 'Journal', id: 'journal' },
     { href: '/habits', icon: <HabitsIcon />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <GoalsIcon />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
     { href: '/study-tracker', icon: <StudyTrackerIcon />, label: 'Study Tracker', tooltip: 'Study Tracker', id: 'study-tracker' },
