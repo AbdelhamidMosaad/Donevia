@@ -128,6 +128,7 @@ export function MindMapTool() {
   const lastMousePos = useRef({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mindMapContainerRef = useRef<HTMLDivElement>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
 
   // Firestore Refs
@@ -161,13 +162,15 @@ export function MindMapTool() {
       });
       return () => unsub();
     }
-  }, [user, mindMapId, toast, router, getMindMapDocRef]);
+  }, [user, mindMapId, toast, router, getMindMapDocRef, history.length]);
   
   const saveMindMap = useDebouncedCallback(async (updatedNodes, updatedConnections) => {
     const mapRef = getMindMapDocRef();
     if (mapRef) {
+      setSaveStatus('saving');
       await updateDoc(mapRef, { nodes: updatedNodes, connections: updatedConnections, updatedAt: new Date() });
-      toast({ title: "✓ Saved", description: "Your mind map changes are saved."});
+      setSaveStatus('saved');
+       setTimeout(() => setSaveStatus('idle'), 2000);
     }
   }, 2000);
 
@@ -229,7 +232,7 @@ export function MindMapTool() {
     return { width: newWidth, height: newHeight };
   };
 
- const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
+  const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
       const newNodes = nodes.map(n => {
           if (n.id === nodeId) {
               const updatedNode = { ...n, ...updates };
@@ -280,7 +283,10 @@ export function MindMapTool() {
         setDragStart({ x: e.clientX - transformedX, y: e.clientY - transformedY });
       }
     } else {
-      setSelectedNodeId(null);
+        // Prevent deselecting if clicking on toolbar
+        if (!target.closest('[data-toolbar]')) {
+             setSelectedNodeId(null);
+        }
     }
   };
 
@@ -596,6 +602,10 @@ export function MindMapTool() {
           onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
         >
+            <div className="absolute top-2 right-2 z-10 text-xs font-mono text-muted-foreground p-1 bg-card/50 rounded">
+                {saveStatus === 'saving' && 'Saving...'}
+                {saveStatus === 'saved' && 'Saved!'}
+            </div>
             <div className="absolute top-4 left-4 z-10 bg-card/60 backdrop-blur-md p-2 rounded-lg shadow-lg flex gap-1 border">
                 <Button variant={currentTool === 'select' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('select')}><MousePointer/></Button>
                 <Button variant={currentTool === 'pan' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('pan')}><Move/></Button>
@@ -606,7 +616,7 @@ export function MindMapTool() {
             </div>
             
             {selectedNode && (
-                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-card/60 backdrop-blur-md p-2 rounded-lg shadow-lg flex gap-1 items-center border">
+                 <div data-toolbar="true" className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-card/60 backdrop-blur-md p-2 rounded-lg shadow-lg flex gap-1 items-center border">
                     <Button variant={selectedNode.isBold ? 'secondary' : 'ghost'} size="icon" onClick={() => handleNodeUpdate(selectedNodeId!, { isBold: !selectedNode.isBold })}><Bold/></Button>
                     <Button variant={selectedNode.isItalic ? 'secondary' : 'ghost'} size="icon" onClick={() => handleNodeUpdate(selectedNodeId!, { isItalic: !selectedNode.isItalic })}><Italic/></Button>
                     <Button variant={selectedNode.isUnderline ? 'secondary' : 'ghost'} size="icon" onClick={() => handleNodeUpdate(selectedNodeId!, { isUnderline: !selectedNode.isUnderline })}><Underline/></Button>
@@ -715,4 +725,3 @@ export function MindMapTool() {
     </div>
   );
 }
-
