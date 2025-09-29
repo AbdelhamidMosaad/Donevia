@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -15,6 +16,39 @@ import {
   Italic,
   Underline,
   Palette,
+  Settings,
+  Grid3x3,
+  List,
+  Baseline,
+  Maximize,
+  Minimize,
+  ArrowUpRight,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Circle,
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  Layers,
+  FlipVertical,
+  Copy,
+  Map,
+  ImageIcon,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  LayoutTemplate,
+  Triangle,
+  Diamond,
+  Pen,
+  Type,
+  StickyNote,
+  RectangleHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -24,6 +58,12 @@ import {
   doc,
   onSnapshot,
   updateDoc,
+  serverTimestamp,
+  collection,
+  writeBatch,
+  addDoc,
+  setDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -85,20 +125,22 @@ const NodeComponent = ({
     tempSpan.style.fontSize = `${node.fontSize || 16}px`;
     tempSpan.style.fontWeight = node.isBold ? 'bold' : 'normal';
     tempSpan.style.fontStyle = node.isItalic ? 'italic' : 'normal';
-    tempSpan.style.whiteSpace = 'pre';
+    tempSpan.style.whiteSpace = 'pre-wrap';
     tempSpan.style.position = 'absolute';
     tempSpan.style.visibility = 'hidden';
+    tempSpan.style.padding = '8px';
     document.body.appendChild(tempSpan);
 
-    const lines = text.split('\n');
-    const longestLine = lines.reduce((a, b) => a.length > b.length ? a : b, '');
-    tempSpan.textContent = longestLine;
-    const textWidth = tempSpan.offsetWidth;
+    tempSpan.textContent = text;
+    tempSpan.style.width = `${node.width || minWidth}px`; // Constrain width for height calculation
+
+    const textWidth = tempSpan.scrollWidth;
+    const textHeight = tempSpan.scrollHeight;
     
     document.body.removeChild(tempSpan);
 
-    const newWidth = Math.max(minWidth, Math.min(maxWidth, textWidth + 40)); // Add padding
-    const newHeight = Math.max(minHeight, lines.length * 24 + 16); // 24px per line + padding
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, textWidth + 40)); 
+    const newHeight = Math.max(minHeight, textHeight); 
 
     if (newWidth !== node.width || newHeight !== node.height) {
       onUpdateNode(node.id, { width: newWidth, height: newHeight });
@@ -150,7 +192,7 @@ const NodeComponent = ({
         />
       ) : (
         <div
-          className="w-full h-full flex items-center justify-center text-center whitespace-pre-wrap break-words"
+          className="w-full h-full flex items-center justify-center text-center whitespace-pre-wrap break-words p-2"
           style={{
             color: node.color,
             fontSize: `${node.fontSize || 16}px`,
@@ -182,6 +224,7 @@ export function MindMapTool() {
   const router = useRouter();
   const mindMapId = params.mindMapId as string;
 
+  const [boardData, setBoardData] = useState<MindMapType | null>(null);
   const [nodes, setNodes] = useState<Record<string, MindMapNode>>({});
   const [connections, setConnections] = useState<MindMapConnection[]>([]);
   
@@ -207,16 +250,17 @@ export function MindMapTool() {
       const unsub = onSnapshot(mapRef, (doc) => {
         if (doc.exists()) {
           const data = doc.data() as MindMapType;
-          setMapName(data.name);
-          const fetchedNodes = data.nodes || [];
-
-          if (isInitialLoad.current) {
-            const initialNodes = fetchedNodes.reduce((acc, node) => {
+          setBoardData(data);
+          const fetchedConnections = data.connections || [];
+          const fetchedNodes = (data.nodes || []).reduce((acc, node) => {
               acc[node.id] = node;
               return acc;
-            }, {} as Record<string, MindMapNode>);
+          }, {} as Record<string, MindMapNode>);
+          setConnections(fetchedConnections);
+          setBoardName(data.name);
 
-            if (Object.keys(initialNodes).length === 0) {
+          if (isInitialLoad.current) {
+            if (Object.keys(fetchedNodes).length === 0) {
               const rootNode: MindMapNode = {
                 id: 'root',
                 x: 0, y: 0,
@@ -233,9 +277,8 @@ export function MindMapTool() {
               pushToHistory({ root: rootNode }, []);
               setSelectedNodeId('root');
             } else {
-              setNodes(initialNodes);
-              setConnections(data.connections || []);
-              setHistory([{ nodes: initialNodes, connections: data.connections || [] }]);
+              setNodes(fetchedNodes);
+              setHistory([{ nodes: fetchedNodes, connections: fetchedConnections }]);
               setHistoryIndex(0);
             }
             isInitialLoad.current = false;
@@ -270,16 +313,19 @@ export function MindMapTool() {
     setHistoryIndex(newHistory.length - 1);
     saveMindMap(Object.values(newNodes), newConnections);
   }, [history, historyIndex, saveMindMap]);
-
+  
+  const handleUpdateNodeDebounced = useDebouncedCallback((id: string, updates: Partial<MindMapNode>) => {
+    const nodeRef = doc(db, 'users', user!.uid, 'mindMaps', mindMapId, 'nodes', id);
+    updateDoc(nodeRef, { ...updates, updatedAt: serverTimestamp() });
+    pushToHistory({ ...nodes, [id]: { ...nodes[id], ...updates } as MindMapNode }, connections);
+  }, 500);
+  
   const handleUpdateNode = (id: string, updates: Partial<MindMapNode>) => {
     setNodes(prev => ({
         ...prev,
         [id]: { ...prev[id], ...updates } as MindMapNode,
     }));
-  };
-
-  const handleNodeUpdateComplete = () => {
-    pushToHistory(nodes, connections);
+    handleUpdateNodeDebounced(id, updates);
   };
   
   const addNode = (parentId: string) => {
@@ -287,13 +333,13 @@ export function MindMapTool() {
     if (!parentNode) return;
 
     const children = Object.values(nodes).filter(n => n.parentId === parentId);
-    const lastChild = children.sort((a,b) => a.y - b.y)[children.length - 1];
+    const lastChild = children.sort((a,b) => (a.y || 0) - (b.y || 0))[children.length - 1];
     
     const newNodeId = uuidv4();
     const newNode: MindMapNode = {
       id: newNodeId,
-      x: parentNode.x + (parentNode.width || 150) / 2 + 150, 
-      y: lastChild ? lastChild.y + (lastChild.height || 50) + 20 : parentNode.y,
+      x: (parentNode.x || 0) + ((parentNode.width || 150) / 2) + 150, 
+      y: lastChild ? (lastChild.y || 0) + (lastChild.height || 50) + 20 : (parentNode.y || 0),
       width: 150, height: 50,
       text: 'New Idea',
       type: 'shape',
@@ -344,7 +390,7 @@ export function MindMapTool() {
             const childrenToDelete = Object.values(nodes).filter(n => n.parentId === selectedNodeId);
             childrenToDelete.forEach(child => delete newNodes[child.id]);
             
-            const newConnections = connections.filter(c => c.from !== selectedNodeId && c.to !== selectedNodeId);
+            const newConnections = connections.filter(c => c.from !== selectedNodeId && c.to !== selectedNodeId && c.from !== nodeToDelete.id && c.to !== nodeToDelete.id);
 
             setNodes(newNodes);
             setConnections(newConnections);
@@ -364,6 +410,28 @@ export function MindMapTool() {
 
   const selectedNode = selectedNodeId ? nodes[selectedNodeId] : null;
 
+  const undo = () => {
+    if (historyIndex > 0) {
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+        const { nodes: prevNodes, connections: prevConnections } = history[newIndex];
+        setNodes(prevNodes);
+        setConnections(prevConnections);
+        saveMindMap(Object.values(prevNodes), prevConnections);
+    }
+  };
+
+  const redo = () => {
+      if (historyIndex < history.length - 1) {
+          const newIndex = historyIndex + 1;
+          setHistoryIndex(newIndex);
+          const { nodes: nextNodes, connections: nextConnections } = history[newIndex];
+          setNodes(nextNodes);
+          setConnections(nextConnections);
+          saveMindMap(Object.values(nextNodes), nextConnections);
+      }
+  };
+
   return (
     <div className="flex flex-col h-full gap-4" onKeyDown={handleKeyDown} tabIndex={-1}>
       <div className="flex justify-between items-center">
@@ -381,7 +449,7 @@ export function MindMapTool() {
           />
         </div>
         <div className="flex items-center gap-2">
-            <div className="text-sm text-muted-foreground w-24 text-right">
+             <div className="text-sm text-muted-foreground w-24 text-right">
                 {saveStatus === 'saving' && 'Saving...'}
                 {saveStatus === 'saved' && 'Saved!'}
             </div>
@@ -389,9 +457,12 @@ export function MindMapTool() {
             <Button variant="outline" onClick={() => {}}><Download /> Export PDF</Button>
         </div>
       </div>
-       <div className="flex justify-center items-center gap-2 absolute top-20 left-1/2 -translate-x-1/2 z-10">
+       <div 
+        className="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-card/80 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 items-center border"
+        onMouseDown={(e) => e.stopPropagation()} // Prevent canvas drag
+        >
             {selectedNode && (
-                 <div className="bg-card/80 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 items-center border">
+                 <>
                     <Button variant={selectedNode.isBold ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleUpdateNode(selectedNodeId!, { isBold: !selectedNode.isBold })}><Bold/></Button>
                     <Button variant={selectedNode.isItalic ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleUpdateNode(selectedNodeId!, { isItalic: !selectedNode.isItalic })}><Italic/></Button>
                     <Button variant={selectedNode.isUnderline ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleUpdateNode(selectedNodeId!, { isUnderline: !selectedNode.isUnderline })}><Underline/></Button>
@@ -407,7 +478,7 @@ export function MindMapTool() {
                             </div>
                         </PopoverContent>
                     </Popover>
-                 </div>
+                 </>
             )}
        </div>
       <div
@@ -424,10 +495,15 @@ export function MindMapTool() {
                     const fromNode = nodes[conn.from];
                     const toNode = nodes[conn.to];
                     if (!fromNode || !toNode) return null;
+                    const fromX = (fromNode.x || 0) + ((fromNode.width || 0) / 2);
+                    const fromY = (fromNode.y || 0);
+                    const toX = (toNode.x || 0) - ((toNode.width || 0) / 2);
+                    const toY = (toNode.y || 0);
+                    
                     return (
                         <path
                             key={`conn-${conn.from}-${conn.to}`}
-                            d={`M ${fromNode.x + fromNode.width!/2} ${fromNode.y} C ${fromNode.x + fromNode.width!/2 + 50} ${fromNode.y}, ${toNode.x - toNode.width!/2 - 50} ${toNode.y}, ${toNode.x - toNode.width!/2} ${toNode.y}`}
+                            d={`M ${fromX} ${fromY} C ${fromX + 50} ${fromY}, ${toX - 50} ${toY}, ${toX} ${toY}`}
                             stroke="#ccc"
                             strokeWidth="2"
                             fill="none"
@@ -441,17 +517,10 @@ export function MindMapTool() {
                     node={node}
                     onUpdateNode={handleUpdateNode}
                     onSelectNode={(id, e) => {
-                        if(e.shiftKey) {
-                            setSelectedNodeId(prev => prev === id ? null : id);
-                        } else {
-                            setSelectedNodeId(id);
-                        }
+                        setSelectedNodeId(id);
                     }}
                     onStartEditing={(id) => setEditingNodeId(id)}
-                    onStopEditing={() => {
-                        setEditingNodeId(null);
-                        handleNodeUpdateComplete();
-                    }}
+                    onStopEditing={() => setEditingNodeId(null)}
                     selectedNodeId={selectedNodeId}
                     editingNodeId={editingNodeId}
                     onAddNode={addNode}
