@@ -52,7 +52,8 @@ import {
   Bold,
   Italic,
   Underline,
-  Move
+  Move,
+  GripVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -90,10 +91,10 @@ const getTextDimensions = (text: string, font: string): { width: number, height:
         context.font = font;
         const lines = text.split('\n');
         const width = Math.max(...lines.map(line => context.measureText(line).width));
-        const height = lines.length * 18; // Approximate line height
+        const height = lines.length * 20; // Approximate line height
         return { width, height };
     }
-    return { width: text.length * 8, height: 16 };
+    return { width: text.length * 8, height: 20 * text.split('\n').length };
 };
 
 
@@ -221,14 +222,14 @@ export function MindMapTool() {
   }, [nodes, connections, saveToHistory, toast]);
   
   const autoSizeNode = (node: MindMapNode, text: string): Partial<MindMapNode> => {
-    const font = `${node.isBold ? 'bold' : ''} 14px sans-serif`;
+    const font = `${node.isBold ? 'bold ' : ''}${node.isItalic ? 'italic ' : ''}14px sans-serif`;
     const { width, height } = getTextDimensions(text, font);
     const newWidth = Math.max(150, width + 40); // Add padding
     const newHeight = Math.max(50, height + 20); // Add padding
     return { width: newWidth, height: newHeight };
   };
 
-  const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
+ const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
       const newNodes = nodes.map(n => {
           if (n.id === nodeId) {
               const updatedNode = { ...n, ...updates };
@@ -241,6 +242,7 @@ export function MindMapTool() {
           return n;
       });
       setNodes(newNodes);
+      saveMindMap(newNodes, connections);
   };
   
   const handleNodeBlur = () => {
@@ -250,6 +252,7 @@ export function MindMapTool() {
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     const nodeEl = target.closest('.mindmap-node');
+    const dragHandle = target.closest('.drag-handle');
     
     if (currentTool === 'pan' || (e.button === 1 && !nodeEl)) { // Middle mouse button pan
       isPanning.current = true;
@@ -269,7 +272,7 @@ export function MindMapTool() {
         setConnectingNodeId(null);
         return;
       }
-      if(currentTool === 'select') {
+      if(currentTool === 'select' && dragHandle) {
         setDraggingNode(nodeId);
         const node = nodes.find(n => n.id === nodeId)!
         const transformedX = node.x * scale + offset.x;
@@ -656,9 +659,8 @@ export function MindMapTool() {
                         <div
                             key={node.id}
                             id={`node-${node.id}`}
-                            className={cn('mindmap-node absolute p-3 rounded-lg shadow-lg flex items-center justify-center', 
+                            className={cn('mindmap-node absolute p-3 rounded-lg shadow-lg flex items-center justify-center group', 
                             {'cursor-pointer': currentTool === 'select' || currentTool === 'connect'},
-                            {'cursor-grab': currentTool === 'select' && draggingNode === node.id},
                             selectedNodeId === node.id && 'ring-2 ring-primary')}
                             style={{
                                 left: node.x,
@@ -669,18 +671,25 @@ export function MindMapTool() {
                                 color: node.color,
                                 transform: 'translate(-50%, -50%)',
                             }}
-                        >
-                            <textarea 
-                                value={node.title}
-                                onMouseDown={(e) => {
-                                    e.stopPropagation();
+                            onMouseDown={(e) => {
+                                if ((e.target as HTMLElement).closest('.drag-handle')) {
                                     if(currentTool === 'select') {
                                         setDraggingNode(node.id);
                                         const transformedX = node.x * scale + offset.x;
                                         const transformedY = node.y * scale + offset.y;
                                         setDragStart({ x: e.clientX - transformedX, y: e.clientY - transformedY });
                                     }
-                                }}
+                                }
+                            }}
+                        >
+                             <div 
+                                className="drag-handle absolute top-1/2 -left-3 -translate-y-1/2 p-1 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity"
+                                onMouseDown={(e) => e.stopPropagation()} // Prevent text selection
+                             >
+                                <GripVertical className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <textarea 
+                                value={node.title}
                                 onChange={(e) => handleNodeUpdate(node.id, { title: e.target.value })}
                                 onBlur={handleNodeBlur}
                                 className={cn(
@@ -690,7 +699,7 @@ export function MindMapTool() {
                                     node.isUnderline && 'underline',
                                 )}
                                 style={{color: node.color}}
-                                rows={1}
+                                rows={node.title.split('\n').length || 1}
                             />
                             <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-20">
                                 <Button size="icon" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); addNode(node.id); }}><Plus /></Button>
@@ -706,3 +715,4 @@ export function MindMapTool() {
     </div>
   );
 }
+
