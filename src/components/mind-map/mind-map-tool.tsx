@@ -15,25 +15,16 @@ import {
   Bold,
   Italic,
   Underline,
-  GitBranch,
-  Save,
-  Expand,
-  Minus,
-  Move,
-  Maximize,
-  Minimize,
-  PanelLeftOpen,
-  PanelLeftClose,
-  Square,
-  Circle,
   Settings,
   Grid3x3,
   List,
   Baseline,
-  ArrowDown,
-  ArrowUp,
+  Minus,
+  Expand,
+  Maximize,
+  Minimize,
   ArrowLeft,
-  ArrowRight,
+  Move,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -50,6 +41,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { jsPDF } from 'jspdf';
 
 
 const colorPalette = ['#4361ee', '#ef476f', '#06d6a0', '#ffd166', '#9d4edd', '#000000'];
@@ -57,11 +49,18 @@ type Tool = 'select' | 'node' | 'connect' | 'pan';
 const backgroundColors = [
     '#FFFFFF', '#F8F9FA', '#E9ECEF', '#FFF9C4', '#F1F3F5'
 ];
-type Shape =
-  | 'rectangle'
-  | 'circle';
 
-type LayoutDirection = 'right' | 'bottom' | 'left' | 'top';
+
+// Helper function to measure text width
+const getTextWidth = (text: string, font: string) => {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (context) {
+        context.font = font;
+        return context.measureText(text).width;
+    }
+    return text.length * 8; // fallback
+};
 
 
 export function MindMapTool() {
@@ -94,8 +93,6 @@ export function MindMapTool() {
   const lastMousePos = useRef({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mindMapContainerRef = useRef<HTMLDivElement>(null);
-  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
-  const [layoutDirection, setLayoutDirection] = useState<LayoutDirection>('right');
 
 
   // Firestore Refs
@@ -148,75 +145,33 @@ export function MindMapTool() {
   }, [history, historyIndex, saveMindMap]);
 
   const addNode = useCallback((parentId?: string) => {
-    setNodes(prevNodes => {
-        const parentNode = parentId ? prevNodes.find(n => n.id === parentId) : prevNodes.find(n => n.id === selectedNodeId);
-        if (!parentNode && prevNodes.length > 0) {
-            toast({variant: 'destructive', title: "Select a node first", description: "You must select a parent node to add a new idea."});
-            return prevNodes;
-        }
+    const parentNode = parentId ? nodes.find(n => n.id === parentId) : nodes.find(n => n.id === selectedNodeId);
+    if (!parentNode && nodes.length > 0) {
+        toast({variant: 'destructive', title: "Select a node first", description: "You must select a parent node to add a new idea."});
+        return;
+    }
 
-        const newNode: MindMapNode = {
-            id: uuidv4(), x: 0, y: 0, width: 150, height: 50, title: '', style: 'default',
-            backgroundColor: '#f8f9fa', color: '#212529',
-            isBold: false, isItalic: false, isUnderline: false,
-        };
-        
-        let newX = 0, newY = 0;
-        const siblingGap = 40;
-        const childGap = 100;
-
-        if (parentNode) {
-            const children = prevNodes.filter(n => connections.some(c => c.from === parentNode.id && c.to === n.id));
-            
-            switch(layoutDirection) {
-                case 'right':
-                    newX = parentNode.x + parentNode.width / 2 + childGap;
-                    const totalChildrenHeight = children.reduce((sum, child) => sum + child.height + siblingGap, 0);
-                    const startY = parentNode.y - (totalChildrenHeight - siblingGap) / 2;
-                    newY = startY + totalChildrenHeight + newNode.height / 2;
-                    break;
-                case 'left':
-                    newX = parentNode.x - parentNode.width / 2 - childGap;
-                    const totalChildrenHeightLeft = children.reduce((sum, child) => sum + child.height + siblingGap, 0);
-                    const startYLeft = parentNode.y - (totalChildrenHeightLeft - siblingGap) / 2;
-                    newY = startYLeft + totalChildrenHeightLeft + newNode.height / 2;
-                    break;
-                case 'bottom':
-                    const totalChildrenWidth = children.reduce((sum, child) => sum + child.width + siblingGap, 0);
-                    const startX = parentNode.x - (totalChildrenWidth - siblingGap) / 2;
-                    newX = startX + totalChildrenWidth + newNode.width / 2;
-                    newY = parentNode.y + parentNode.height / 2 + childGap;
-                    break;
-                 case 'top':
-                    const totalChildrenWidthTop = children.reduce((sum, child) => sum + child.width + siblingGap, 0);
-                    const startXTop = parentNode.x - (totalChildrenWidthTop - siblingGap) / 2;
-                    newX = startXTop + totalChildrenWidthTop + newNode.width / 2;
-                    newY = parentNode.y - parentNode.height / 2 - childGap;
-                    break;
-            }
-        } else {
-             newX = (mindMapContainerRef.current?.clientWidth || window.innerWidth) / (2*scale) - offset.x/scale;
-             newY = (mindMapContainerRef.current?.clientHeight || window.innerHeight) / (2*scale) - offset.y/scale;
-        }
-
-        newNode.x = newX;
-        newNode.y = newY;
-        
-        const newNodes = [...prevNodes, newNode];
-        
-        setConnections(prevConnections => {
-            let newConnections = [...prevConnections];
-            if (parentNode) {
-              newConnections.push({ from: parentNode.id, to: newNode.id });
-            }
-            saveToHistory(newNodes, newConnections);
-            return newConnections;
-        });
-
-        setSelectedNodeId(newNode.id);
-        return newNodes;
-    });
-  }, [selectedNodeId, toast, saveToHistory, scale, offset, connections, layoutDirection]);
+    const newNode: MindMapNode = {
+        id: uuidv4(),
+        x: parentNode ? parentNode.x + 200 : 300,
+        y: parentNode ? parentNode.y + (nodes.filter(n => connections.some(c => c.from === parentNode.id && c.to === n.id)).length * 80) : 300,
+        width: 150, height: 50, title: 'New Idea', style: 'default',
+        backgroundColor: '#f8f9fa', color: '#212529',
+        isBold: false, isItalic: false, isUnderline: false,
+    };
+    
+    const newNodes = [...nodes, newNode];
+    setNodes(newNodes);
+    
+    let newConnections = [...connections];
+    if (parentNode) {
+      newConnections.push({ from: parentNode.id, to: newNode.id });
+      setConnections(newConnections);
+    }
+    
+    saveToHistory(newNodes, newConnections);
+    setSelectedNodeId(newNode.id);
+  }, [nodes, connections, selectedNodeId, toast, saveToHistory]);
   
   const deleteNode = useCallback((nodeId: string) => {
     if (nodes.length <= 1) {
@@ -232,7 +187,19 @@ export function MindMapTool() {
   }, [nodes, connections, saveToHistory, toast]);
   
   const handleNodeUpdate = (nodeId: string, updates: Partial<MindMapNode>) => {
-      setNodes(nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n));
+      const newNodes = nodes.map(n => {
+          if (n.id === nodeId) {
+              const updatedNode = { ...n, ...updates };
+              if (updates.title !== undefined) {
+                  const font = `${updatedNode.isBold ? 'bold' : ''} 14px sans-serif`;
+                  const textWidth = getTextWidth(updates.title, font);
+                  updatedNode.width = Math.max(150, textWidth + 40); // Add padding
+              }
+              return updatedNode;
+          }
+          return n;
+      });
+      setNodes(newNodes);
   };
   
   const handleNodeBlur = () => {
@@ -377,7 +344,7 @@ export function MindMapTool() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         const activeElement = document.activeElement;
-        const isEditingText = activeElement instanceof HTMLInputElement && activeElement.type === 'text' || activeElement instanceof HTMLTextAreaElement;
+        const isEditingText = activeElement instanceof HTMLInputElement && activeElement.type === 'text';
 
         if (isEditingText) return;
 
@@ -399,10 +366,6 @@ export function MindMapTool() {
                 e.preventDefault();
                 deleteNode(selectedNodeId);
             }
-            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                e.preventDefault();
-                navigateNodes(e.key);
-            }
         }
     };
     
@@ -412,49 +375,13 @@ export function MindMapTool() {
         }
     }
 
-    const navigateNodes = (key: string) => {
-        const currentNode = nodes.find(n => n.id === selectedNodeId);
-        if (!currentNode) return;
-    
-        const children = connections.filter(c => c.from === currentNode.id).map(c => nodes.find(n => n.id === c.to)).filter(Boolean) as MindMapNode[];
-        const parentConnection = connections.find(c => c.to === currentNode.id);
-        const parent = parentConnection ? nodes.find(n => n.id === parentConnection.from) : null;
-        const siblings = parent ? (connections.filter(c => c.from === parent.id).map(c => nodes.find(n => n.id === c.to)).filter(Boolean) as MindMapNode[]) : [];
-        const currentIndex = siblings.findIndex(s => s?.id === currentNode.id);
-
-        switch (key) {
-            case 'ArrowDown':
-                if (currentIndex !== -1 && currentIndex < siblings.length - 1) {
-                    setSelectedNodeId(siblings[currentIndex + 1]!.id);
-                } else if (children.length > 0) {
-                     setSelectedNodeId(children[0]!.id);
-                }
-                break;
-            case 'ArrowUp':
-                if (currentIndex > 0) {
-                    setSelectedNodeId(siblings[currentIndex - 1]!.id);
-                }
-                break;
-            case 'ArrowLeft':
-                 if (parent) {
-                    setSelectedNodeId(parent.id);
-                }
-                break;
-            case 'ArrowRight':
-                 if (children.length > 0) {
-                    setSelectedNodeId(children[0]!.id);
-                }
-                break;
-        }
-    };
-
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     return () => {
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);
     }
-  }, [selectedNodeId, addNode, deleteNode, nodes, connections, currentTool]);
+  }, [selectedNodeId, addNode, deleteNode, currentTool]);
 
   const toggleFullscreen = () => {
     const elem = mindMapContainerRef.current;
@@ -603,15 +530,6 @@ export function MindMapTool() {
                                     <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
                                 </ToggleGroup>
                             </div>
-                            <div className="grid gap-2">
-                                <Label>Layout Direction</Label>
-                                <ToggleGroup type="single" value={layoutDirection} onValueChange={(value: LayoutDirection) => value && setLayoutDirection(value)}>
-                                    <ToggleGroupItem value="right" aria-label="Layout Right"><ArrowRight /></ToggleGroupItem>
-                                    <ToggleGroupItem value="bottom" aria-label="Layout Down"><ArrowDown /></ToggleGroupItem>
-                                    <ToggleGroupItem value="left" aria-label="Layout Left"><ArrowLeft /></ToggleGroupItem>
-                                    <ToggleGroupItem value="top" aria-label="Layout Up"><ArrowUp /></ToggleGroupItem>
-                                </ToggleGroup>
-                            </div>
                         </div>
                     </PopoverContent>
                 </Popover>
@@ -696,7 +614,7 @@ export function MindMapTool() {
                         <div
                             key={node.id}
                             id={`node-${node.id}`}
-                            className={cn('mindmap-node absolute p-3 rounded-lg shadow-lg flex flex-col items-center justify-center', 
+                            className={cn('mindmap-node absolute p-3 rounded-lg shadow-lg flex items-center justify-center', 
                             {'cursor-pointer': currentTool === 'select' || currentTool === 'connect'},
                             {'cursor-grab': currentTool === 'select' && draggingNode === node.id},
                             selectedNodeId === node.id && 'ring-2 ring-primary')}
@@ -704,7 +622,7 @@ export function MindMapTool() {
                                 left: node.x,
                                 top: node.y,
                                 width: node.width,
-                                minHeight: node.height,
+                                height: node.height,
                                 backgroundColor: node.backgroundColor,
                                 color: node.color,
                                 transform: 'translate(-50%, -50%)',
