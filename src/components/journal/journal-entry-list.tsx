@@ -44,7 +44,7 @@ const moodIcons = {
 export function JournalEntryList({ entries, onDelete }: JournalEntryListProps) {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
-    const [tagFilter, setTagFilter] = useState('');
+    const [tagFilter, setTagFilter] = useState('all-tags');
     const [moodFilter, setMoodFilter] = useState<'all' | 'Happy' | 'Neutral' | 'Sad'>('all');
 
     const allTags = useMemo(() => {
@@ -56,7 +56,7 @@ export function JournalEntryList({ entries, onDelete }: JournalEntryListProps) {
     const filteredEntries = useMemo(() => {
         return entries.filter(entry => {
             const searchMatch = searchQuery === '' || entry.title.toLowerCase().includes(searchQuery.toLowerCase());
-            const tagMatch = tagFilter === '' || entry.tags?.includes(tagFilter);
+            const tagMatch = tagFilter === 'all-tags' || entry.tags?.includes(tagFilter);
             const moodMatch = moodFilter === 'all' || entry.mood === moodFilter;
             return searchMatch && tagMatch && moodMatch;
         });
@@ -83,7 +83,7 @@ export function JournalEntryList({ entries, onDelete }: JournalEntryListProps) {
                  <Select value={tagFilter} onValueChange={setTagFilter}>
                     <SelectTrigger><SelectValue placeholder="Filter by tag..." /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">All Tags</SelectItem>
+                        <SelectItem value="all-tags">All Tags</SelectItem>
                         {allTags.map(tag => <SelectItem key={tag} value={tag}>{tag}</SelectItem>)}
                     </SelectContent>
                 </Select>
