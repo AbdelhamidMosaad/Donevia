@@ -34,7 +34,7 @@ import { LearningAssistantIcon } from '@/components/icons/tools/learning-assista
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from '@/components/icons/tools/interview-prep-icon';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { JournalIcon } from '../icons/tools/journal-icon';
+import { JournalIcon } from '@/components/icons/tools/journal-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -248,3 +248,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
