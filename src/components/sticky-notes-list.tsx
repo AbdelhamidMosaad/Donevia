@@ -1,7 +1,7 @@
-
 'use client';
 import type { StickyNote } from '@/lib/types';
 import { StickyNoteCard } from './sticky-note-card';
+import { cn } from '@/lib/utils';
 
 interface StickyNotesListProps {
   notes: StickyNote[];
@@ -15,11 +15,7 @@ export function StickyNotesList({ notes, onNoteClick, onDeleteNote }: StickyNote
   return (
     <div className="w-full">
         <div 
-            className="gap-4 w-full"
-            style={{
-                columnCount: 4,
-                columnGap: '1rem',
-            }}
+            className="gap-4 w-full columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5"
         >
           {sortedNotes.map((note) => (
              <div key={note.id} className="mb-4 break-inside-avoid">
