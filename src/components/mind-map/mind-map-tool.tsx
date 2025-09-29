@@ -182,8 +182,9 @@ export function MindMapTool() {
     saveMindMap(newNodes, newConnections);
   }, [history, historyIndex, saveMindMap]);
 
-  const addNode = useCallback((parentId?: string) => {
-    const parentNode = parentId ? nodes.find(n => n.id === parentId) : nodes.find(n => n.id === selectedNodeId);
+ const addNode = useCallback((parentId?: string) => {
+    const parentNode = parentId ? nodes.find(n => n.id === parentId) : (selectedNodeId ? nodes.find(n => n.id === selectedNodeId) : null);
+    
     if (!parentNode && nodes.length > 0) {
         toast({variant: 'destructive', title: "Select a node first", description: "You must select a parent node to add a new idea."});
         return;
@@ -192,7 +193,7 @@ export function MindMapTool() {
     const newNode: MindMapNode = {
         id: uuidv4(),
         x: parentNode ? parentNode.x + 200 : 300,
-        y: parentNode ? parentNode.y + (nodes.filter(n => connections.some(c => c.from === parentNode.id && c.to === n.id)).length * 80) : 300,
+        y: parentNode ? parentNode.y + (nodes.filter(n => connections.some(c => c.from === parentNode!.id && c.to === n.id)).length * 80) : 300,
         width: 150, height: 50, title: 'New Idea', style: 'default',
         backgroundColor: '#f8f9fa', color: '#212529',
         isBold: false, isItalic: false, isUnderline: false,
@@ -693,10 +694,10 @@ export function MindMapTool() {
                             </div>
                             <textarea 
                                 value={node.title}
-                                onChange={(e) => handleNodeUpdate(node.id, { title: e.target.value })}
+                                onChange={(e) => handleNodeUpdate(node.id, { title: e.target.value, ...autoSizeNode(node, e.target.value) })}
                                 onBlur={handleNodeBlur}
                                 className={cn(
-                                    "bg-transparent text-center focus:outline-none w-full h-full resize-none p-2",
+                                    "bg-transparent text-center focus:outline-none w-full h-full resize-none p-4",
                                     node.isBold && 'font-bold',
                                     node.isItalic && 'italic',
                                     node.isUnderline && 'underline',
