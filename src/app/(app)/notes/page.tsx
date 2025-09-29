@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -74,21 +75,32 @@ export default function StickyNotesPage() {
     if (!user) return;
     try {
       const position = findNextAvailablePosition(notes);
+      const now = Timestamp.now();
 
-      await addDoc(collection(db, 'users', user.uid, 'stickyNotes'), {
+      const newNoteData: Omit<StickyNote, 'id'> = {
         title: 'New Note',
         text: '',
         color: '#fff176', // Default yellow
         textColor: '#000000', // Default black text
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        createdAt: now,
+        updatedAt: now,
         priority: 'Medium',
         gridPosition: position,
         ownerId: user.uid,
-      });
+      };
+
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'stickyNotes'), newNoteData);
+      
+      const newNote: StickyNote = {
+          ...newNoteData,
+          id: docRef.id,
+      };
+
+      setEditingNote(newNote); // Open the new note for editing automatically
+
       toast({
         title: '✓ Note Added',
-        description: 'A new sticky note has been created.',
+        description: 'Your new sticky note is ready to edit.',
       });
     } catch (e) {
       console.error("Error adding document: ", e);
