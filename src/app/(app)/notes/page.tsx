@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, Kanban } from 'lucide-react';
+import { PlusCircle, LayoutGrid, Kanban, List } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, addDoc, Timestamp, orderBy, setDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -15,8 +15,9 @@ import { StickyNotesCanvas } from '@/components/sticky-notes-canvas';
 import { StickyNotesBoard } from '@/components/sticky-notes-board';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StickyNotesIcon } from '@/components/icons/tools/sticky-notes-icon';
+import { StickyNotesList } from '@/components/sticky-notes-list';
 
-type View = 'board' | 'canvas';
+type View = 'board' | 'canvas' | 'list';
 
 export default function StickyNotesPage() {
   const { user, loading } = useAuth();
@@ -158,6 +159,8 @@ export default function StickyNotesPage() {
             return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
         case 'canvas':
             return <StickyNotesCanvas notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
+        case 'list':
+            return <StickyNotesList notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
         default:
             return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
     }
@@ -180,6 +183,9 @@ export default function StickyNotesPage() {
               </ToggleGroupItem>
               <ToggleGroupItem value="canvas" aria-label="Canvas view">
                 <LayoutGrid />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <List />
               </ToggleGroupItem>
             </ToggleGroup>
             <Button onClick={handleAddNote}>
