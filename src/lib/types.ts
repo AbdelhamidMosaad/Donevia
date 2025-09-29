@@ -374,40 +374,6 @@ export type WhiteboardTemplate = {
 };
 
 
-/** Mind Map */
-export type MindMapNode = {
-    id: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    title: string;
-    style: string;
-    backgroundColor: string;
-    color: string;
-    isBold: boolean;
-    isItalic: boolean;
-    isUnderline: boolean;
-};
-
-export type MindMapConnection = {
-    from: string;
-    to: string;
-};
-
-export type MindMap = {
-  id: string;
-  name: string;
-  ownerId: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  nodes: MindMapNode[];
-  connections: MindMapConnection[];
-  backgroundColor?: string;
-  backgroundGrid?: 'dotted' | 'lined' | 'plain';
-};
-
-
 /** Pomodoro */
 export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
 
@@ -782,4 +748,14 @@ export type InterviewFeedback = {
     overallAssessment: string;
 };
 
-    
+export type MindMap = {
+    id: string;
+    name: string;
+    ownerId: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    nodes: WhiteboardNode[];
+    connections: WhiteboardConnection[];
+    backgroundColor?: string;
+    backgroundGrid?: 'dotted' | 'lined' | 'plain';
+};
