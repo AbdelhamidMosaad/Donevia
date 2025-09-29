@@ -10,6 +10,11 @@ import {
   Expand,
   Save,
   ArrowLeft,
+  GripVertical,
+  Bold,
+  Italic,
+  Underline,
+  Palette,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -25,15 +30,17 @@ import { useToast } from '@/hooks/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import type {
   MindMap as MindMapType,
-  MindMapNode,
+  WhiteboardNode as MindMapNode, // Re-using WhiteboardNode for flexibility
+  WhiteboardConnection as MindMapConnection
 } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
+import { Textarea } from '../ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Check } from 'lucide-react';
 
-interface NodeWithChildren extends MindMapNode {
-  children: NodeWithChildren[];
-}
+const colorPalette = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#333333'];
 
 // Recursive component to render nodes and their children
 const NodeComponent = ({
@@ -41,77 +48,128 @@ const NodeComponent = ({
   onUpdateNode,
   onSelectNode,
   onStartEditing,
+  onStopEditing,
   selectedNodeId,
   editingNodeId,
+  dragHandleProps,
+  onAddNode,
 }: {
-  node: NodeWithChildren;
+  node: MindMapNode;
   onUpdateNode: (id: string, updates: Partial<MindMapNode>) => void;
-  onSelectNode: (id: string) => void;
+  onSelectNode: (id: string, e: React.MouseEvent) => void;
   onStartEditing: (id: string) => void;
+  onStopEditing: () => void;
   selectedNodeId: string | null;
   editingNodeId: string | null;
+  dragHandleProps?: any;
+  onAddNode: (parentId: string) => void;
 }) => {
   const isSelected = node.id === selectedNodeId;
   const isEditing = node.id === editingNodeId;
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+    if (isEditing && textAreaRef.current) {
+      textAreaRef.current.focus();
+      textAreaRef.current.select();
     }
   }, [isEditing]);
+  
+  const autoSizeNode = useCallback((text: string) => {
+    const minWidth = 150;
+    const maxWidth = 400;
+    const minHeight = 40;
+
+    // Create a temporary span to measure text width
+    const tempSpan = document.createElement('span');
+    tempSpan.style.fontSize = `${node.fontSize || 16}px`;
+    tempSpan.style.fontWeight = node.isBold ? 'bold' : 'normal';
+    tempSpan.style.fontStyle = node.isItalic ? 'italic' : 'normal';
+    tempSpan.style.whiteSpace = 'pre';
+    tempSpan.style.position = 'absolute';
+    tempSpan.style.visibility = 'hidden';
+    document.body.appendChild(tempSpan);
+
+    const lines = text.split('\n');
+    const longestLine = lines.reduce((a, b) => a.length > b.length ? a : b, '');
+    tempSpan.textContent = longestLine;
+    const textWidth = tempSpan.offsetWidth;
+    
+    document.body.removeChild(tempSpan);
+
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, textWidth + 40)); // Add padding
+    const newHeight = Math.max(minHeight, lines.length * 24 + 16); // 24px per line + padding
+
+    if (newWidth !== node.width || newHeight !== node.height) {
+      onUpdateNode(node.id, { width: newWidth, height: newHeight });
+    }
+  }, [node.fontSize, node.isBold, node.isItalic, node.width, node.height, onUpdateNode, node.id]);
+  
+   useEffect(() => {
+    if (node.text) {
+      autoSizeNode(node.text);
+    }
+   }, [node.text, autoSizeNode]);
+
 
   return (
     <div
-      className="flex items-center"
+      className={cn(
+        'node-item group absolute flex items-center justify-center rounded-lg shadow-md cursor-pointer border-2 transition-all p-4',
+        isSelected ? 'border-primary shadow-lg' : 'border-gray-300',
+        isEditing && 'border-primary ring-2 ring-primary/50'
+      )}
       style={{
-        position: 'absolute',
         left: `${node.x}px`,
         top: `${node.y}px`,
+        width: `${node.width}px`,
+        height: `${node.height}px`,
         transform: 'translate(-50%, -50%)',
+        backgroundColor: node.backgroundColor,
       }}
+      onClick={(e) => onSelectNode(node.id, e)}
+      onDoubleClick={() => onStartEditing(node.id)}
     >
-      <div
-        className={cn(
-          'node-item p-2 rounded-lg shadow cursor-pointer border-2',
-          isSelected ? 'border-primary' : 'border-gray-300'
-        )}
-        style={{
-          backgroundColor: node.backgroundColor,
-          color: node.color,
-          width: `${node.width}px`,
-          height: `${node.height}px`,
-        }}
-        onClick={() => onSelectNode(node.id)}
-        onDoubleClick={() => onStartEditing(node.id)}
-      >
-        {isEditing ? (
-          <Input
-            ref={inputRef}
-            value={node.title}
-            onChange={(e) => onUpdateNode(node.id, { title: e.target.value })}
-            onBlur={() => onStartEditing('')}
-            className="w-full h-full bg-transparent border-none text-center"
-            style={{
-              fontWeight: node.isBold ? 'bold' : 'normal',
-              fontStyle: node.isItalic ? 'italic' : 'normal',
-              textDecoration: node.isUnderline ? 'underline' : 'none',
-            }}
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center text-center"
-            style={{
-              fontWeight: node.isBold ? 'bold' : 'normal',
-              fontStyle: node.isItalic ? 'italic' : 'normal',
-              textDecoration: node.isUnderline ? 'underline' : 'none',
-            }}
-          >
-            {node.title}
-          </div>
-        )}
+      {isEditing ? (
+        <Textarea
+          ref={textAreaRef}
+          value={node.text || ''}
+          onChange={(e) => onUpdateNode(node.id, { text: e.target.value })}
+          onBlur={onStopEditing}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') onStopEditing();
+          }}
+          className="w-full h-full bg-transparent border-none text-center resize-none p-0 focus-visible:ring-0"
+          style={{
+            color: node.color,
+            fontSize: `${node.fontSize || 16}px`,
+            fontWeight: node.isBold ? 'bold' : 'normal',
+            fontStyle: node.isItalic ? 'italic' : 'normal',
+            textDecoration: node.isUnderline ? 'underline' : 'none',
+          }}
+        />
+      ) : (
+        <div
+          className="w-full h-full flex items-center justify-center text-center whitespace-pre-wrap break-words"
+          style={{
+            color: node.color,
+            fontSize: `${node.fontSize || 16}px`,
+            fontWeight: node.isBold ? 'bold' : 'normal',
+            fontStyle: node.isItalic ? 'italic' : 'normal',
+            textDecoration: node.isUnderline ? 'underline' : 'none',
+          }}
+        >
+          {node.text}
+        </div>
+      )}
+      <div {...dragHandleProps} className="absolute top-1/2 -left-3 -translate-y-1/2 p-1 cursor-grab opacity-0 group-hover:opacity-50 transition-opacity">
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
+      {isSelected && (
+          <Button size="icon" className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full" onClick={(e) => {e.stopPropagation(); onAddNode(node.id);}}>
+            <Plus className="h-4 w-4"/>
+          </Button>
+      )}
     </div>
   );
 };
@@ -124,19 +182,19 @@ export function MindMapTool() {
   const router = useRouter();
   const mindMapId = params.mindMapId as string;
 
-  const [nodes, setNodes] = useState<MindMapNode[]>([]);
+  const [nodes, setNodes] = useState<Record<string, MindMapNode>>({});
+  const [connections, setConnections] = useState<MindMapConnection[]>([]);
+  
   const [mapName, setMapName] = useState('');
   
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   
-  const [history, setHistory] = useState<{ nodes: MindMapNode[] }[]>([]);
+  const [history, setHistory] = useState<{ nodes: Record<string, MindMapNode>, connections: MindMapConnection[] }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const isInitialLoad = useRef(true);
   
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const isPanning = useRef(false);
-  const lastMousePos = useRef({ x: 0, y: 0 });
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const getMindMapDocRef = useCallback(() => {
     if (!user || !mindMapId) return null;
@@ -150,30 +208,37 @@ export function MindMapTool() {
         if (doc.exists()) {
           const data = doc.data() as MindMapType;
           setMapName(data.name);
-
           const fetchedNodes = data.nodes || [];
-          if (fetchedNodes.length === 0) {
-            // Create a root node if none exist
-            const rootNode: MindMapNode = {
-              id: 'root',
-              x: 0, y: 0,
-              width: 180, height: 60,
-              title: 'Central Idea',
-              style: 'default',
-              backgroundColor: '#4361ee', color: 'white',
-              isBold: true, isItalic: false, isUnderline: false,
-              parentId: null,
-            };
-            setNodes([rootNode]);
-            setHistory([{ nodes: [rootNode] }]);
-            setHistoryIndex(0);
-            setSelectedNodeId('root');
-          } else {
-             setNodes(fetchedNodes);
-             if(historyIndex === -1) {
-                setHistory([{ nodes: fetchedNodes }]);
-                setHistoryIndex(0);
-             }
+
+          if (isInitialLoad.current) {
+            const initialNodes = fetchedNodes.reduce((acc, node) => {
+              acc[node.id] = node;
+              return acc;
+            }, {} as Record<string, MindMapNode>);
+
+            if (Object.keys(initialNodes).length === 0) {
+              const rootNode: MindMapNode = {
+                id: 'root',
+                x: 0, y: 0,
+                width: 180, height: 60,
+                text: 'Central Idea',
+                type: 'shape',
+                shape: 'rectangle',
+                backgroundColor: '#4361ee', color: 'white',
+                isBold: true, isItalic: false, isUnderline: false,
+                fontSize: 18,
+                parentId: null,
+              };
+              setNodes({ root: rootNode });
+              pushToHistory({ root: rootNode }, []);
+              setSelectedNodeId('root');
+            } else {
+              setNodes(initialNodes);
+              setConnections(data.connections || []);
+              setHistory([{ nodes: initialNodes, connections: data.connections || [] }]);
+              setHistoryIndex(0);
+            }
+            isInitialLoad.current = false;
           }
         } else {
           toast({ variant: 'destructive', title: 'Mind Map not found.' });
@@ -182,106 +247,75 @@ export function MindMapTool() {
       });
       return () => unsub();
     }
-  }, [user, mindMapId, getMindMapDocRef, toast, router, historyIndex]);
+  }, [user, mindMapId, toast, router, getMindMapDocRef]);
 
-  const saveMindMap = useDebouncedCallback(async (updatedNodes: MindMapNode[]) => {
+  const saveMindMap = useDebouncedCallback(async (updatedNodes: MindMapNode[], updatedConnections: MindMapConnection[]) => {
     const mapRef = getMindMapDocRef();
     if (mapRef) {
-        await updateDoc(mapRef, { nodes: updatedNodes, updatedAt: new Date() });
-        toast({ title: "Saved!" });
+        setSaveStatus('saving');
+        await updateDoc(mapRef, { 
+            nodes: updatedNodes, 
+            connections: updatedConnections,
+            updatedAt: new Date() 
+        });
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
     }
   }, 1500);
 
-  const pushToHistory = (newNodes: MindMapNode[]) => {
+  const pushToHistory = useCallback((newNodes: Record<string, MindMapNode>, newConnections: MindMapConnection[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push({ nodes: JSON.parse(JSON.stringify(newNodes)) });
+    newHistory.push({ nodes: newNodes, connections: newConnections });
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-    saveMindMap(newNodes);
-  };
+    saveMindMap(Object.values(newNodes), newConnections);
+  }, [history, historyIndex, saveMindMap]);
 
   const handleUpdateNode = (id: string, updates: Partial<MindMapNode>) => {
-    const newNodes = nodes.map(n => n.id === id ? {...n, ...updates} : n);
-    setNodes(newNodes);
-    // Debounced save will be triggered by a different effect
+    setNodes(prev => ({
+        ...prev,
+        [id]: { ...prev[id], ...updates } as MindMapNode,
+    }));
+  };
+
+  const handleNodeUpdateComplete = () => {
+    pushToHistory(nodes, connections);
   };
   
-  // Debounce saving when nodes change, but not on every minor update during drag
-  useEffect(() => {
-    if (historyIndex !== -1) {
-      saveMindMap(nodes);
-    }
-  }, [nodes, historyIndex, saveMindMap]);
+  const addNode = (parentId: string) => {
+    const parentNode = nodes[parentId];
+    if (!parentNode) return;
 
-
-  const autoLayout = useCallback((nodesToLayout: MindMapNode[]): MindMapNode[] => {
-    const root = nodesToLayout.find(n => !n.parentId);
-    if (!root) return nodesToLayout;
-
-    const nodeMap = new Map(nodesToLayout.map(n => [n.id, { ...n, children: [] as any[] }]));
-    nodesToLayout.forEach(n => {
-        if (n.parentId && nodeMap.has(n.parentId)) {
-            nodeMap.get(n.parentId)!.children.push(n.id);
-        }
-    });
+    const children = Object.values(nodes).filter(n => n.parentId === parentId);
+    const lastChild = children.sort((a,b) => a.y - b.y)[children.length - 1];
     
-    const layoutNode = (nodeId: string, x: number, y: number, level: number, dir: number) => {
-        const node = nodeMap.get(nodeId);
-        if (!node) return;
-
-        node.x = x;
-        node.y = y;
-
-        const children = node.children.map(childId => nodeMap.get(childId)).filter(Boolean);
-        const totalChildHeight = children.reduce((acc, child) => acc + (child!.height) + 40, 0);
-        
-        let currentY = y - totalChildHeight / 2;
-
-        children.forEach((child, index) => {
-            const childHeight = child!.height;
-            const childY = currentY + childHeight / 2;
-            const childX = x + (dir * (node.width / 2 + 100 + child!.width / 2));
-            layoutNode(child!.id, childX, childY, level + 1, dir);
-            currentY += childHeight + 40;
-        });
+    const newNodeId = uuidv4();
+    const newNode: MindMapNode = {
+      id: newNodeId,
+      x: parentNode.x + (parentNode.width || 150) / 2 + 150, 
+      y: lastChild ? lastChild.y + (lastChild.height || 50) + 20 : parentNode.y,
+      width: 150, height: 50,
+      text: 'New Idea',
+      type: 'shape',
+      shape: 'rectangle',
+      backgroundColor: '#f8f9fa', color: '#212529',
+      isBold: false, isItalic: false, isUnderline: false,
+      fontSize: 16,
+      parentId: parentId,
     };
-
-    const rootNode = nodeMap.get(root.id)!;
-    rootNode.x = 0;
-    rootNode.y = 0;
     
-    const midPoint = Math.ceil(rootNode.children.length / 2);
-    const leftChildren = rootNode.children.slice(0, midPoint);
-    const rightChildren = rootNode.children.slice(midPoint);
-
-    let currentY = -leftChildren.reduce((acc, id) => acc + (nodeMap.get(id)!.height) + 40, 0) / 2;
-    leftChildren.forEach(id => {
-        const child = nodeMap.get(id)!;
-        layoutNode(id, -(root.width/2 + 100 + child.width/2), currentY + child.height/2, 1, -1);
-        currentY += child.height + 40;
-    });
-
-    currentY = -rightChildren.reduce((acc, id) => acc + (nodeMap.get(id)!.height) + 40, 0) / 2;
-    rightChildren.forEach(id => {
-        const child = nodeMap.get(id)!;
-        layoutNode(id, (root.width/2 + 100 + child.width/2), currentY + child.height/2, 1, 1);
-        currentY += child.height + 40;
-    });
+    const newNodes = { ...nodes, [newNodeId]: newNode };
+    const newConnections = [...connections, { from: parentId, to: newNodeId }];
     
-    return Array.from(nodeMap.values());
-  }, []);
-  
-  useEffect(() => {
-    if (nodes.length > 0) {
-      const laidOutNodes = autoLayout(nodes);
-      if (JSON.stringify(laidOutNodes) !== JSON.stringify(nodes)) {
-        setNodes(laidOutNodes);
-      }
-    }
-  }, [nodes, autoLayout]);
-  
+    setNodes(newNodes);
+    setConnections(newConnections);
+    pushToHistory(newNodes, newConnections);
+    setSelectedNodeId(newNodeId);
+    setEditingNodeId(newNodeId);
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!selectedNodeId) return;
+    if (!selectedNodeId || editingNodeId) return;
 
     if (e.key === 'F2') {
         e.preventDefault();
@@ -290,85 +324,46 @@ export function MindMapTool() {
 
     if (e.key === 'Tab') {
       e.preventDefault();
-      const parentNode = nodes.find(n => n.id === selectedNodeId);
-      if (parentNode) {
-        const newNode: MindMapNode = {
-          id: uuidv4(),
-          x: 0, y: 0, // Position will be set by autoLayout
-          width: 150, height: 50,
-          title: 'New Idea',
-          style: 'default',
-          backgroundColor: '#f8f9fa', color: '#212529',
-          isBold: false, isItalic: false, isUnderline: false,
-          parentId: parentNode.id,
-        };
-        const newNodes = autoLayout([...nodes, newNode]);
-        setNodes(newNodes);
-        pushToHistory(newNodes);
-        setSelectedNodeId(newNode.id);
-        setEditingNodeId(newNode.id);
-      }
+      addNode(selectedNodeId);
     }
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      const siblingNode = nodes.find(n => n.id === selectedNodeId);
+      const siblingNode = nodes[selectedNodeId];
       if (siblingNode && siblingNode.parentId) {
-        const newNode: MindMapNode = {
-          id: uuidv4(),
-          x: 0, y: 0, width: 150, height: 50,
-          title: 'New Sibling',
-          style: 'default',
-          backgroundColor: '#f8f9fa', color: '#212529',
-          isBold: false, isItalic: false, isUnderline: false,
-          parentId: siblingNode.parentId,
-        };
-        const newNodes = autoLayout([...nodes, newNode]);
-        setNodes(newNodes);
-        pushToHistory(newNodes);
-        setSelectedNodeId(newNode.id);
-        setEditingNodeId(newNode.id);
+        addNode(siblingNode.parentId);
       }
     }
     
-    if (e.key === 'Delete') {
-        const nodeToDelete = nodes.find(n => n.id === selectedNodeId);
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        const nodeToDelete = nodes[selectedNodeId];
         if (nodeToDelete && nodeToDelete.parentId) {
-            const newNodes = nodes.filter(n => n.id !== selectedNodeId);
-            setNodes(autoLayout(newNodes));
-            pushToHistory(autoLayout(newNodes));
+            const newNodes = { ...nodes };
+            delete newNodes[selectedNodeId];
+
+            const childrenToDelete = Object.values(nodes).filter(n => n.parentId === selectedNodeId);
+            childrenToDelete.forEach(child => delete newNodes[child.id]);
+            
+            const newConnections = connections.filter(c => c.from !== selectedNodeId && c.to !== selectedNodeId);
+
+            setNodes(newNodes);
+            setConnections(newConnections);
+            pushToHistory(newNodes, newConnections);
             setSelectedNodeId(nodeToDelete.parentId);
         }
     }
   };
   
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button === 0 && e.target === e.currentTarget) { // Left click on background
-        isPanning.current = true;
-        lastMousePos.current = { x: e.clientX, y: e.clientY };
+  const handleMapNameChangeDebounced = useDebouncedCallback(async (newName: string) => {
+    const boardRef = getMindMapDocRef();
+    if (boardRef && boardData && newName.trim() !== boardData.name) {
+      await updateDoc(boardRef, { name: newName.trim(), updatedAt: new Date() });
+      toast({ title: "Mind Map renamed!" });
     }
-  }
+  }, 1000);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if(isPanning.current) {
-        const dx = e.clientX - lastMousePos.current.x;
-        const dy = e.clientY - lastMousePos.current.y;
-        setOffset(prev => ({x: prev.x + dx, y: prev.y + dy}));
-        lastMousePos.current = {x: e.clientX, y: e.clientY};
-    }
-  }
+  const selectedNode = selectedNodeId ? nodes[selectedNodeId] : null;
 
-  const handleMouseUp = () => {
-    isPanning.current = false;
-  }
-  
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const zoomSpeed = 0.1;
-    const newScale = e.deltaY > 0 ? scale * (1 - zoomSpeed) : scale * (1 + zoomSpeed);
-    setScale(Math.min(Math.max(newScale, 0.2), 2));
-  };
-  
   return (
     <div className="flex flex-col h-full gap-4" onKeyDown={handleKeyDown} tabIndex={-1}>
       <div className="flex justify-between items-center">
@@ -380,68 +375,92 @@ export function MindMapTool() {
             value={mapName}
             onChange={(e) => {
               setMapName(e.target.value);
+              handleMapNameChangeDebounced(e.target.value);
             }}
-            onBlur={() => {
-                const mapRef = getMindMapDocRef();
-                if (mapRef) {
-                    updateDoc(mapRef, { name: mapName });
-                }
-            }}
-            className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0"
+            className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => {}}><Save /> Export PNG</Button>
-            <Button variant="outline" onClick={() => {}}><Save /> Export PDF</Button>
+            <div className="text-sm text-muted-foreground w-24 text-right">
+                {saveStatus === 'saving' && 'Saving...'}
+                {saveStatus === 'saved' && 'Saved!'}
+            </div>
+            <Button variant="outline" onClick={() => {}}><Download /> Export PNG</Button>
+            <Button variant="outline" onClick={() => {}}><Download /> Export PDF</Button>
         </div>
       </div>
+       <div className="flex justify-center items-center gap-2 absolute top-20 left-1/2 -translate-x-1/2 z-10">
+            {selectedNode && (
+                 <div className="bg-card/80 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 items-center border">
+                    <Button variant={selectedNode.isBold ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleUpdateNode(selectedNodeId!, { isBold: !selectedNode.isBold })}><Bold/></Button>
+                    <Button variant={selectedNode.isItalic ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleUpdateNode(selectedNodeId!, { isItalic: !selectedNode.isItalic })}><Italic/></Button>
+                    <Button variant={selectedNode.isUnderline ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleUpdateNode(selectedNodeId!, { isUnderline: !selectedNode.isUnderline })}><Underline/></Button>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                             <Button variant='ghost' size="icon" className="h-8 w-8" style={{color: selectedNode.color}}><Palette/></Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2">
+                            <div className="flex gap-1">
+                                {colorPalette.map(c => (
+                                    <button key={c} style={{backgroundColor: c}} className="h-6 w-6 rounded-full border" onClick={() => handleUpdateNode(selectedNodeId!, { color: c})} />
+                                ))}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                 </div>
+            )}
+       </div>
       <div
-        className="flex-1 relative overflow-hidden bg-background border rounded-lg"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onWheel={handleWheel}
+        className="flex-1 relative overflow-hidden bg-background/50 border rounded-lg"
       >
         <div
           className="w-full h-full"
-          style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}
         >
-            <div className="absolute top-1/2 left-1/2">
-                <svg
-                    className="absolute overflow-visible"
-                >
-                    {nodes.map(node => {
-                        if (!node.parentId) return null;
-                        const parent = nodes.find(p => p.id === node.parentId);
-                        if (!parent) return null;
-                        return (
-                            <path
-                                key={`conn-${node.id}`}
-                                d={`M ${parent.x} ${parent.y} L ${node.x} ${node.y}`}
-                                stroke="#ccc"
-                                strokeWidth="2"
-                                fill="none"
-                            />
-                        )
-                    })}
-                </svg>
-                {nodes.map(node => (
-                    <NodeComponent
-                        key={node.id}
-                        node={{...node, children: []}} // children are not used in this flat render
-                        onUpdateNode={handleUpdateNode}
-                        onSelectNode={setSelectedNodeId}
-                        onStartEditing={setEditingNodeId}
-                        selectedNodeId={selectedNodeId}
-                        editingNodeId={editingNodeId}
-                    />
-                ))}
-            </div>
+            <svg
+                className="absolute top-0 left-0 w-full h-full"
+                pointerEvents="none"
+            >
+                {connections.map(conn => {
+                    const fromNode = nodes[conn.from];
+                    const toNode = nodes[conn.to];
+                    if (!fromNode || !toNode) return null;
+                    return (
+                        <path
+                            key={`conn-${conn.from}-${conn.to}`}
+                            d={`M ${fromNode.x + fromNode.width!/2} ${fromNode.y} C ${fromNode.x + fromNode.width!/2 + 50} ${fromNode.y}, ${toNode.x - toNode.width!/2 - 50} ${toNode.y}, ${toNode.x - toNode.width!/2} ${toNode.y}`}
+                            stroke="#ccc"
+                            strokeWidth="2"
+                            fill="none"
+                        />
+                    )
+                })}
+            </svg>
+            {Object.values(nodes).map(node => (
+                <NodeComponent
+                    key={node.id}
+                    node={node}
+                    onUpdateNode={handleUpdateNode}
+                    onSelectNode={(id, e) => {
+                        if(e.shiftKey) {
+                            setSelectedNodeId(prev => prev === id ? null : id);
+                        } else {
+                            setSelectedNodeId(id);
+                        }
+                    }}
+                    onStartEditing={(id) => setEditingNodeId(id)}
+                    onStopEditing={() => {
+                        setEditingNodeId(null);
+                        handleNodeUpdateComplete();
+                    }}
+                    selectedNodeId={selectedNodeId}
+                    editingNodeId={editingNodeId}
+                    onAddNode={addNode}
+                />
+            ))}
         </div>
-         <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setScale(s => Math.min(s*1.2, 2))}><Plus/></Button>
-            <Button variant="outline" size="icon" onClick={() => setScale(s => Math.max(s*0.8, 0.2))}><Minus/></Button>
-            <Button variant="outline" size="icon" onClick={() => { setScale(1); setOffset({x:0, y:0})}}><Expand/></Button>
+         <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
+            <Button variant="outline" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1}><Redo/></Button>
         </div>
       </div>
     </div>
