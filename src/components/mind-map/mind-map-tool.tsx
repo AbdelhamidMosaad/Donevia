@@ -15,10 +15,10 @@ import {
   Circle,
   Square,
   Diamond,
+  Star,
   Cloud,
   Undo,
-  Redo,
-  Save,
+  Redo
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -29,11 +29,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import type { MindMapType, MindMapNode } from '@/lib/types';
 
+
 const MindMapTool = () => {
   const { user } = useAuth();
   const params = useParams();
   const { toast } = useToast();
-  const whiteboardId = params.whiteboardId as string; // Assuming it's coming from a dynamic route
+  const mindMapId = params.mindMapId as string;
 
   const [nodes, setNodes] = useState<Record<string, MindMapNode>>({
     '1': {
@@ -52,7 +53,7 @@ const MindMapTool = () => {
     },
   });
 
-  const [selectedNodeId, setSelectedNodeId] = useState('1');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>('1');
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -75,10 +76,24 @@ const MindMapTool = () => {
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(prev => prev - 1);
+      setNodes(history[historyIndex - 1].nodes);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(prev => prev + 1);
+      setNodes(history[historyIndex + 1].nodes);
+    }
+  };
   
   const debouncedSave = useDebouncedCallback(async (dataToSave: Partial<MindMapType>) => {
-    if (!user || !whiteboardId) return;
-    const mapRef = doc(db, 'users', user.uid, 'mindMaps', whiteboardId);
+    if (!user || !mindMapId) return;
+    const mapRef = doc(db, 'users', user.uid, 'mindMaps', mindMapId);
     try {
         await updateDoc(mapRef, {...dataToSave, updatedAt: serverTimestamp()});
     } catch (error) {
@@ -123,7 +138,7 @@ const MindMapTool = () => {
   const addNode = useCallback((parentId: string | null, isSibling = false) => {
     if (!parentId && !isSibling) parentId = '1';
     if(isSibling) {
-        const selected = nodes[selectedNodeId];
+        const selected = nodes[selectedNodeId!];
         if(selected && selected.parentId) {
             parentId = selected.parentId;
         } else {
@@ -265,6 +280,7 @@ const MindMapTool = () => {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
 
@@ -286,7 +302,9 @@ const MindMapTool = () => {
     Object.values(nodes).forEach(node => {
       if (node.parentId && isNodeVisible(node.id)) {
         const parent = nodes[node.parentId];
-        drawCurve(parent.x, parent.y, node.x, node.y, node.color + 'CC');
+        if (parent) {
+          drawCurve(parent.x, parent.y, node.x, node.y, node.color + 'CC');
+        }
       }
     });
 
@@ -299,28 +317,20 @@ const MindMapTool = () => {
 
   const isNodeVisible = (nodeId: string): boolean => {
     let current = nodes[nodeId];
-    while (current && current.parentId) {
+    if (!current) return false;
+    while (current.parentId) {
       const parent = nodes[current.parentId];
       if (!parent || parent.collapsed) return false;
       current = parent;
     }
     return true;
   };
+
+  const resetView = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
   
-    const undo = () => {
-        if (historyIndex > 0) {
-            setHistoryIndex(prev => prev - 1);
-            setNodes(history[historyIndex - 1].nodes);
-        }
-    };
-    
-    const redo = () => {
-        if (historyIndex < history.length - 1) {
-            setHistoryIndex(prev => prev + 1);
-            setNodes(history[historyIndex + 1].nodes);
-        }
-    };
-    
   return (
     <div ref={containerRef} className="w-full h-full bg-background flex flex-col overflow-hidden">
       {/* Toolbar etc. will be added later */}
@@ -355,14 +365,14 @@ const MindMapTool = () => {
                     defaultValue={node.text}
                     onBlur={(e) => finishEditing(node.id, e.target.value)}
                     onKeyDown={(e) => { if(e.key === 'Enter') finishEditing(node.id, e.currentTarget.value)}}
-                    className="p-2 border rounded-md"
+                    className="p-2 border rounded-md pointer-events-auto"
                     style={{fontSize: node.fontSize}}
                 />
               ) : (
                 <div 
                     onClick={() => setSelectedNodeId(node.id)}
                     onDoubleClick={() => setEditingNodeId(node.id)}
-                    className={`p-2 cursor-pointer border-2 ${selectedNodeId === node.id ? 'border-blue-500' : 'border-transparent'}`}
+                    className={`p-2 cursor-pointer border-2 pointer-events-auto ${selectedNodeId === node.id ? 'border-blue-500' : 'border-transparent'}`}
                     style={{
                         backgroundColor: node.color,
                         color: 'white',
@@ -384,5 +394,3 @@ const MindMapTool = () => {
 };
 
 export default MindMapTool;
-
-    
