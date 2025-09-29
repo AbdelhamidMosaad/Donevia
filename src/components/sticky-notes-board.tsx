@@ -8,6 +8,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface StickyNotesBoardProps {
   notes: StickyNote[];
@@ -71,9 +72,9 @@ export function StickyNotesBoard({ notes, onNoteClick, onDeleteNote }: StickyNot
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start p-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-full">
         {priorities.map((priority) => (
-            <div key={priority} className="flex flex-col">
+            <div key={priority} className="flex flex-col min-w-0">
                 <div className="p-2">
                     <h2 className="font-semibold font-headline text-lg">{priority} Priority</h2>
                 </div>
@@ -82,7 +83,10 @@ export function StickyNotesBoard({ notes, onNoteClick, onDeleteNote }: StickyNot
                         <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`flex flex-col gap-4 bg-muted/50 rounded-lg p-2 min-h-[300px] transition-colors ${snapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
+                            className={cn(
+                                `flex flex-col gap-4 bg-muted/50 rounded-lg p-2 min-h-[300px] transition-colors`,
+                                snapshot.isDraggingOver ? 'bg-primary/10' : ''
+                            )}
                         >
                             {notesByPriority[priority] && notesByPriority[priority].map((note, index) => (
                                 <Draggable key={note.id} draggableId={note.id} index={index}>
