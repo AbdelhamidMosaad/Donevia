@@ -15,6 +15,7 @@ import { StickyNotesBoard } from '@/components/sticky-notes-board';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StickyNotesIcon } from '@/components/icons/tools/sticky-notes-icon';
 import { StickyNotesList } from '@/components/sticky-notes-list';
+import { StickyNotesGrid } from '@/components/sticky-notes-grid';
 
 type View = 'board' | 'list' | 'grid';
 
@@ -160,9 +161,9 @@ export default function StickyNotesPage() {
         case 'board':
             return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
         case 'grid':
-            return <StickyNotesList notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
+            return <StickyNotesGrid notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
         case 'list':
-            return <div>List view to be implemented</div>; // Placeholder for true list view
+            return <StickyNotesList notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
         default:
             return <StickyNotesBoard notes={notes} onNoteClick={handleNoteClick} onDeleteNote={handleDeleteNote} />;
     }

@@ -13,25 +13,17 @@ export function StickyNotesList({ notes, onNoteClick, onDeleteNote }: StickyNote
   const sortedNotes = [...notes].sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
   return (
-    <div className="w-full">
-        <div 
-            className="gap-4 w-full"
-            style={{
-                columnCount: 'auto',
-                columnWidth: '250px',
-            }}
-        >
-          {sortedNotes.map((note) => (
-             <div key={note.id} className="mb-4 break-inside-avoid">
-                 <StickyNoteCard
-                    note={note}
-                    onClick={() => onNoteClick(note)}
-                    onDelete={() => onDeleteNote(note.id)}
-                    className="h-auto"
+    <div className="w-full max-w-3xl mx-auto space-y-4">
+        {sortedNotes.map((note) => (
+            <div key={note.id}>
+                <StickyNoteCard
+                note={note}
+                onClick={() => onNoteClick(note)}
+                onDelete={() => onDeleteNote(note.id)}
+                className="h-auto"
                 />
-             </div>
-          ))}
-        </div>
+            </div>
+        ))}
     </div>
   );
 }
