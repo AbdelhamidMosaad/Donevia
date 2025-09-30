@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, FolderPlus, Minus, Plus, GripHorizontal } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, FolderPlus, Minus, Plus, GripHorizontal, FileText, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -21,6 +21,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DocsIcon } from '@/components/icons/tools/docs-icon';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type View = 'card' | 'list';
 type CardSize = 'small' | 'medium' | 'large';
@@ -33,6 +37,10 @@ export default function DocsDashboardPage() {
   const [cardSize, setCardSize] = useState<CardSize>('large');
   const [docs, setDocs] = useState<Doc[]>([]);
   const [folders, setFolders] = useState<DocFolder[]>([]);
+
+  const [isNewDocDialogOpen, setIsNewDocDialogOpen] = useState(false);
+  const [newDocName, setNewDocName] = useState('');
+  const [createdDocInfo, setCreatedDocInfo] = useState<{ id: string, title: string } | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -55,14 +63,12 @@ export default function DocsDashboardPage() {
         }
       });
 
-      // Subscribe to folders
       const foldersQuery = query(collection(db, 'users', user.uid, 'docFolders'), orderBy('createdAt', 'desc'));
       const unsubscribeFolders = onSnapshot(foldersQuery, (snapshot) => {
         const foldersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocFolder));
         setFolders(foldersData);
       });
       
-      // Subscribe to documents
       const docsQuery = query(collection(db, 'users', user.uid, 'docs'), orderBy('createdAt', 'desc'));
       const unsubscribeDocs = onSnapshot(docsQuery, (snapshot) => {
         const docsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Doc));
@@ -75,6 +81,14 @@ export default function DocsDashboardPage() {
       };
     }
   }, [user]);
+
+  useEffect(() => {
+    if(!isNewDocDialogOpen) {
+        setNewDocName('');
+        setCreatedDocInfo(null);
+    }
+  }, [isNewDocDialogOpen]);
+
 
   const handleViewChange = async (newView: View) => {
     if (newView) {
@@ -109,8 +123,6 @@ export default function DocsDashboardPage() {
 
    const handleDeleteFolder = async (folderId: string) => {
     if (!user) return;
-    // For now, we only delete the folder. Documents inside are not deleted.
-    // A more robust implementation might ask the user what to do with them.
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'docFolders', folderId));
       toast({ title: 'Folder deleted' });
@@ -121,10 +133,13 @@ export default function DocsDashboardPage() {
   };
 
   const handleAddDoc = async () => {
-    if (!user) return;
+    if (!user || !newDocName.trim()) {
+        toast({variant: 'destructive', title: 'Document name cannot be empty.'});
+        return;
+    };
     try {
       const docRef = await addDoc(collection(db, 'users', user.uid, 'docs'), {
-        title: 'Untitled Document',
+        title: newDocName.trim(),
         content: { type: 'doc', content: [{ type: 'paragraph' }] },
         ownerId: user.uid,
         createdAt: Timestamp.now(),
@@ -133,9 +148,9 @@ export default function DocsDashboardPage() {
       });
       toast({
         title: '✓ Document Created',
-        description: `"Untitled Document" has been created.`,
+        description: `"${newDocName.trim()}" has been created.`,
       });
-      router.push(`/docs/${docRef.id}`);
+      setCreatedDocInfo({ id: docRef.id, title: newDocName.trim() });
     } catch (e) {
       console.error("Error adding document: ", e);
       toast({
@@ -217,7 +232,7 @@ export default function DocsDashboardPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onSelect={handleAddDoc}>
+                <DropdownMenuItem onSelect={() => setIsNewDocDialogOpen(true)}>
                   <PlusCircle /> New Doc
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={handleAddFolder}>
@@ -257,6 +272,45 @@ export default function DocsDashboardPage() {
             </div>
         </div>
       )}
+        <Dialog open={isNewDocDialogOpen} onOpenChange={setIsNewDocDialogOpen}>
+            <DialogContent>
+                 {createdDocInfo ? (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2"><CheckCircle className="text-green-500"/> Success!</DialogTitle>
+                            <DialogDescription>Your document "{createdDocInfo.title}" has been created.</DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsNewDocDialogOpen(false)}>Close</Button>
+                            <Button onClick={() => router.push(`/docs/${createdDocInfo.id}`)}>
+                                <FileText className="mr-2 h-4 w-4"/> Open Document
+                            </Button>
+                        </DialogFooter>
+                    </>
+                 ) : (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle>Create New Document</DialogTitle>
+                            <DialogDescription>Enter a name for your new document to get started.</DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <Label htmlFor="doc-name">Document Name</Label>
+                            <Input
+                                id="doc-name"
+                                value={newDocName}
+                                onChange={(e) => setNewDocName(e.target.value)}
+                                placeholder="e.g., Project Proposal"
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddDoc()}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsNewDocDialogOpen(false)}>Cancel</Button>
+                            <Button onClick={handleAddDoc} disabled={!newDocName.trim()}>Create</Button>
+                        </DialogFooter>
+                    </>
+                 )}
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
