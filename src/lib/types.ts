@@ -79,6 +79,7 @@ export type StickyNote = {
     priority: 'High' | 'Medium' | 'Low';
     position?: { x: number; y: number };
     gridPosition?: { col: number; row: number };
+    order?: number;
 };
 
 /** Bookmarks */
