@@ -1,3 +1,4 @@
+
 'use client';
 import type { Doc, DocFolder } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +13,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface DocListListViewProps {
   docs: Doc[];
@@ -49,12 +51,17 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
     if (!user) return;
     const originalDoc = docs.find(l => l.id === docId);
     const trimmedName = editingDocName.trim();
-    handleCancelEdit();
+    
     if (!trimmedName || !originalDoc) {
       toast({ variant: 'destructive', title: 'Error', description: 'Document name cannot be empty.' });
+      setEditingDocId(null);
       return;
     }
-    if (originalDoc.title === trimmedName) return;
+    
+    if (originalDoc.title === trimmedName) {
+        setEditingDocId(null);
+        return;
+    };
     const docRef = doc(db, 'users', user.uid, 'docs', docId);
     try {
       await updateDoc(docRef, { title: trimmedName });
@@ -62,6 +69,9 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
     } catch (e) {
       console.error("Error updating document: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to rename document.' });
+    } finally {
+        setEditingDocId(null);
+        setEditingDocName('');
     }
   };
 
@@ -71,8 +81,10 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
   };
   
   const handleNavigate = (e: React.MouseEvent, docId: string) => {
-    e.preventDefault();
-    if (editingDocId === docId) return;
+    if (editingDocId === docId || (e.target as HTMLElement).closest('button')) {
+      e.preventDefault();
+      return;
+    }
     router.push(`/docs/${docId}`);
   }
 
@@ -89,7 +101,7 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
         </TableHeader>
         <TableBody>
           {docs.map(document => (
-            <TableRow key={document.id} onDoubleClick={(e) => handleNavigate(e, document.id)} className="cursor-pointer">
+            <TableRow key={document.id} onClick={(e) => handleNavigate(e, document.id)} className="cursor-pointer">
               <TableCell>
                 {editingDocId === document.id ? (
                   <div className="flex items-center gap-2">
@@ -104,10 +116,10 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
                     />
                   </div>
                 ) : (
-                  <a href={`/docs/${document.id}`} onClick={(e) => handleNavigate(e, document.id)} className="flex items-center gap-2 font-medium text-primary hover:underline">
+                  <Link href={`/docs/${document.id}`} onClick={(e) => handleNavigate(e, document.id)} className="flex items-center gap-2 font-medium text-primary hover:underline">
                       <FileSignature className="h-4 w-4" />
                       {document.title}
-                  </a>
+                  </Link>
                 )}
               </TableCell>
               <TableCell>{document.createdAt?.toDate().toLocaleDateString()}</TableCell>

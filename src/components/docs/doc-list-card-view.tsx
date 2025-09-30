@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useRouter } from 'next/navigation';
 import { Card } from '../ui/card';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface DocListCardViewProps {
   docs: Doc[];
@@ -54,14 +55,18 @@ export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'l
     const originalDoc = docs.find(l => l.id === docId);
     const trimmedName = editingDocName.trim();
     
-    handleCancelEdit();
+    // Don't call handleCancelEdit here, wait for the save to complete
     
     if (!trimmedName || !originalDoc) {
       toast({ variant: 'destructive', title: 'Error', description: 'Document name cannot be empty.' });
+      setEditingDocId(null); // Still cancel on error
       return;
     }
     
-    if (originalDoc.title === trimmedName) return;
+    if (originalDoc.title === trimmedName) {
+        setEditingDocId(null); // Cancel if name is unchanged
+        return;
+    };
 
     const docRef = doc(db, 'users', user.uid, 'docs', docId);
     try {
@@ -70,14 +75,19 @@ export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'l
     } catch (e) {
       console.error("Error updating document: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to rename document.' });
+    } finally {
+        setEditingDocId(null);
+        setEditingDocName('');
     }
   };
-
-  const handleNavigate = (e: React.MouseEvent, docId: string) => {
-    e.preventDefault();
-    if (editingDocId === docId) return;
+  
+  const handleCardClick = (e: React.MouseEvent, docId: string) => {
+    if (editingDocId === docId || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
+      e.preventDefault();
+      return;
+    }
     router.push(`/docs/${docId}`);
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, docId: string) => {
     if (e.key === 'Enter') handleFinishEdit(docId);
@@ -92,8 +102,8 @@ export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'l
         cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7"
     )}>
       {docs.map(document => (
-        <a key={document.id} href={`/docs/${document.id}`} onClick={(e) => handleNavigate(e, document.id)} className="block cursor-pointer group">
-            <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
+        <div key={document.id} className="group block h-full">
+            <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer" onClick={(e) => handleCardClick(e, document.id)}>
               <div className={cn(
                     "p-6 flex flex-col items-center text-center h-full justify-center",
                     cardSize === 'medium' && 'p-4',
@@ -178,7 +188,7 @@ export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'l
                     </DropdownMenu>
                 </div>
             </Card>
-          </a>
+          </div>
         ))}
     </div>
   );
