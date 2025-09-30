@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import type { StickyNote } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, writeBatch } from 'firebase/firestore';
 import { StickyNoteCard } from './sticky-note-card';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
@@ -55,47 +54,54 @@ export function StickyNotesGrid({ notes, onNoteClick, onDeleteNote }: StickyNote
     }
   };
 
+  // Create columns
+  const columns = useMemo(() => {
+    const cols: StickyNote[][] = [[], [], []];
+    orderedNotes.forEach((note, index) => {
+      cols[index % 3].push(note);
+    });
+    return cols;
+  }, [orderedNotes]);
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <Droppable droppableId="notes-grid">
-        {(provided) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className="p-4"
-            style={{
-              columnCount: 'auto',
-              columnWidth: '250px',
-              columnGap: '1rem',
-            }}
-          >
-            {orderedNotes.map((note, index) => (
-              <Draggable key={note.id} draggableId={note.id} index={index}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    className={cn(
-                      "mb-4 break-inside-avoid",
-                      snapshot.isDragging && 'shadow-2xl'
-                    )}
-                    style={{ ...provided.draggableProps.style }}
-                  >
-                    <StickyNoteCard
-                      note={note}
-                      onClick={() => onNoteClick(note)}
-                      onDelete={() => onDeleteNote(note.id)}
-                      className="h-auto"
-                    />
-                  </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        {columns.map((columnNotes, colIndex) => (
+          <Droppable key={colIndex} droppableId={`col-${colIndex}`}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={cn(
+                  "flex flex-col gap-4 min-h-[100px]",
+                  snapshot.isDraggingOver && 'bg-muted/50 rounded-lg'
                 )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
+              >
+                {columnNotes.map((note, index) => (
+                  <Draggable key={note.id} draggableId={note.id} index={orderedNotes.findIndex(n => n.id === note.id)}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={cn(snapshot.isDragging && 'shadow-2xl')}
+                      >
+                        <StickyNoteCard
+                          note={note}
+                          onClick={() => onNoteClick(note)}
+                          onDelete={() => onDeleteNote(note.id)}
+                          className="h-auto"
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        ))}
+      </div>
     </DragDropContext>
   );
 }
