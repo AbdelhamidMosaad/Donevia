@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StickyNote } from '@/lib/types';
@@ -13,9 +14,9 @@ export function StickyNotesGrid({ notes, onNoteClick, onDeleteNote }: StickyNote
   const sortedNotes = [...notes].sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
   return (
-    <div className="w-full" style={{ columnCount: 3, columnGap: '1rem' }}>
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
       {sortedNotes.map((note) => (
-        <div key={note.id} className="mb-4 break-inside-avoid">
+        <div key={note.id}>
           <StickyNoteCard
             note={note}
             onClick={() => onNoteClick(note)}
