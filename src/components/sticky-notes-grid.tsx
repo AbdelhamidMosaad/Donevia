@@ -28,9 +28,16 @@ export function StickyNotesGrid({ notes, onNoteClick, onDeleteNote }: StickyNote
   }, [notes]);
 
   const onDragEnd = async (result: DropResult) => {
-    const { source, destination, draggableId } = result;
-    if (!destination || !user) return;
-    if (destination.index === source.index) return;
+    const { source, destination } = result;
+
+    // If dropped outside of any droppable area, do nothing.
+    // The library will automatically handle reverting the item to its original position.
+    if (!destination) {
+      return;
+    }
+    
+    if (!user) return;
+    if (destination.index === source.index && destination.droppableId === source.droppableId) return;
 
     const items = Array.from(orderedNotes);
     const [reorderedItem] = items.splice(source.index, 1);
@@ -65,7 +72,7 @@ export function StickyNotesGrid({ notes, onNoteClick, onDeleteNote }: StickyNote
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 p-4">
         {columns.map((columnNotes, colIndex) => (
           <Droppable key={colIndex} droppableId={`col-${colIndex}`}>
             {(provided, snapshot) => (
@@ -73,18 +80,20 @@ export function StickyNotesGrid({ notes, onNoteClick, onDeleteNote }: StickyNote
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className={cn(
-                  "flex flex-col gap-4 min-h-[100px]",
+                  "flex flex-col gap-0 min-h-[100px]",
                   snapshot.isDraggingOver && 'bg-muted/50 rounded-lg'
                 )}
               >
-                {columnNotes.map((note, index) => (
-                  <Draggable key={note.id} draggableId={note.id} index={orderedNotes.findIndex(n => n.id === note.id)}>
+                {columnNotes.map((note) => {
+                   const index = orderedNotes.findIndex(n => n.id === note.id);
+                   return (
+                  <Draggable key={note.id} draggableId={note.id} index={index}>
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={cn(snapshot.isDragging && 'shadow-2xl')}
+                        className={cn(snapshot.isDragging && 'shadow-2xl', 'p-2')} // Added padding around each item
                       >
                         <StickyNoteCard
                           note={note}
@@ -95,7 +104,7 @@ export function StickyNotesGrid({ notes, onNoteClick, onDeleteNote }: StickyNote
                       </div>
                     )}
                   </Draggable>
-                ))}
+                )})}
                 {provided.placeholder}
               </div>
             )}
