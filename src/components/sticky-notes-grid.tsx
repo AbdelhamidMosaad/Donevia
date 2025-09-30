@@ -13,9 +13,9 @@ export function StickyNotesGrid({ notes, onNoteClick, onDeleteNote }: StickyNote
   const sortedNotes = [...notes].sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
   return (
-    <div className="grid grid-cols-3 gap-4 w-full">
+    <div className="w-full" style={{ columnCount: 3, columnGap: '1rem' }}>
       {sortedNotes.map((note) => (
-        <div key={note.id}>
+        <div key={note.id} className="mb-4 break-inside-avoid">
           <StickyNoteCard
             note={note}
             onClick={() => onNoteClick(note)}
