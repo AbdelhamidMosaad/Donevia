@@ -55,16 +55,15 @@ export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'l
     const originalDoc = docs.find(l => l.id === docId);
     const trimmedName = editingDocName.trim();
     
-    // Don't call handleCancelEdit here, wait for the save to complete
+    setEditingDocId(null);
+    setEditingDocName('');
     
     if (!trimmedName || !originalDoc) {
       toast({ variant: 'destructive', title: 'Error', description: 'Document name cannot be empty.' });
-      setEditingDocId(null); // Still cancel on error
       return;
     }
     
     if (originalDoc.title === trimmedName) {
-        setEditingDocId(null); // Cancel if name is unchanged
         return;
     };
 
@@ -75,9 +74,6 @@ export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'l
     } catch (e) {
       console.error("Error updating document: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to rename document.' });
-    } finally {
-        setEditingDocId(null);
-        setEditingDocName('');
     }
   };
   

@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import type { FlashcardFolder } from '@/lib/types';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 import { Folder, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';

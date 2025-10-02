@@ -109,9 +109,12 @@ export function AddStudyChapterDialog({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSave();
+      const activeElement = document.activeElement;
+      if (activeElement && activeElement.tagName.toLowerCase() !== 'button') {
+        handleSave();
+      }
     }
   };
 

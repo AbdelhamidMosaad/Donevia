@@ -52,14 +52,15 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
     const originalDoc = docs.find(l => l.id === docId);
     const trimmedName = editingDocName.trim();
     
+    setEditingDocId(null);
+    setEditingDocName('');
+
     if (!trimmedName || !originalDoc) {
       toast({ variant: 'destructive', title: 'Error', description: 'Document name cannot be empty.' });
-      setEditingDocId(null);
       return;
     }
     
     if (originalDoc.title === trimmedName) {
-        setEditingDocId(null);
         return;
     };
     const docRef = doc(db, 'users', user.uid, 'docs', docId);
@@ -69,9 +70,6 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
     } catch (e) {
       console.error("Error updating document: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to rename document.' });
-    } finally {
-        setEditingDocId(null);
-        setEditingDocName('');
     }
   };
 
