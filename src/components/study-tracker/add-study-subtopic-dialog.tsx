@@ -73,8 +73,6 @@ export function AddStudySubtopicDialog({
       } else {
         resetForm();
       }
-    } else {
-        resetForm();
     }
   }, [open, subtopic, isEditMode]);
 
@@ -131,6 +129,20 @@ export function AddStudySubtopicDialog({
   const handleRemoveResource = (resourceId: string) => {
       setResources(resources.filter(r => r.id !== resourceId));
   }
+  
+  const handleDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        const activeEl = document.activeElement;
+        // Check if the active element is one of the resource inputs
+        if (activeEl?.id === 'new-res-title' || activeEl?.id === 'new-res-url') {
+            return; // Don't save the whole dialog, let the resource input handle it
+        }
+        if (activeEl?.tagName.toLowerCase() !== 'button') {
+            e.preventDefault();
+            handleSave();
+        }
+    }
+  };
 
   const handleResourceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -142,7 +154,7 @@ export function AddStudySubtopicDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" onKeyDown={handleDialogKeyDown}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Subtopic' : 'Add New Subtopic'}</DialogTitle>
           <DialogDescription>{isEditMode ? 'Update this subtopic.' : 'Add a new subtopic to this chapter.'}</DialogDescription>

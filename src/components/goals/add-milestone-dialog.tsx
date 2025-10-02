@@ -60,8 +60,6 @@ export function AddMilestoneDialog({
       } else {
         resetForm();
       }
-    } else {
-        resetForm();
     }
   }, [open, milestone, isEditMode]);
 
@@ -105,7 +103,10 @@ export function AddMilestoneDialog({
    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSave();
+      const activeElement = document.activeElement;
+      if (activeElement && activeElement.tagName.toLowerCase() !== 'button') {
+        handleSave();
+      }
     }
   };
 

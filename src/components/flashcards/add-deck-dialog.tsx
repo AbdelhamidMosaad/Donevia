@@ -42,8 +42,6 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
   useEffect(() => {
     if (open) {
       resetForm();
-    } else {
-      resetForm();
     }
   }, [open, deck]);
 
@@ -71,9 +69,16 @@ export function AddDeckDialog({ deck, open, onOpenChange }: AddDeckDialogProps) 
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSave();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>Edit Deck Details</DialogTitle>
           <DialogDescription>Update the name and description for your deck.</DialogDescription>

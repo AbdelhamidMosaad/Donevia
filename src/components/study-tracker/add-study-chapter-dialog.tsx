@@ -65,8 +65,6 @@ export function AddStudyChapterDialog({
       } else {
         resetForm();
       }
-    } else {
-        resetForm();
     }
   }, [open, chapter, isEditMode]);
 

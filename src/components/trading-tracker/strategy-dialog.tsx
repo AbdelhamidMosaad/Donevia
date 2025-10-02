@@ -87,9 +87,16 @@ export function StrategyDialog({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSave();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Strategy' : 'Create New Strategy'}</DialogTitle>
           <DialogDescription>

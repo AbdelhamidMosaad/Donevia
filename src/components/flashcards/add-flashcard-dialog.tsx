@@ -49,8 +49,6 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
       } else {
         resetForm();
       }
-    } else {
-        resetForm();
     }
   }, [open, card, isEditMode]);
 
@@ -88,9 +86,16 @@ export function AddFlashcardDialog({ deckId, card, open, onOpenChange }: AddFlas
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+        e.preventDefault();
+        handleSave();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Flashcard' : 'Add New Flashcard'}</DialogTitle>
           <DialogDescription>

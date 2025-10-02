@@ -164,11 +164,18 @@ export function AddTradeDialog({
   const handleDeleteNote = (noteId: string) => {
     setNotes(notes.filter(n => n.id !== noteId));
   };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        handleSave();
+    }
+  };
 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Trade' : 'Record New Trade'}</DialogTitle>
           <DialogDescription>
