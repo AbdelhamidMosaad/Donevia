@@ -21,6 +21,7 @@ import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/use-window-size';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { useStudyTimer } from '@/hooks/use-study-timer';
 
 
 export default function StudyGoalDetailPage() {
@@ -29,6 +30,7 @@ export default function StudyGoalDetailPage() {
   const params = useParams();
   const { toast } = useToast();
   const goalId = params.goalId as string;
+  const { activeSubtopic, elapsedTime, toggleTimer } = useStudyTimer();
 
   const [goal, setGoal] = useState<StudyGoal | null>(null);
   const [chapters, setChapters] = useState<StudyChapter[]>([]);
@@ -36,9 +38,6 @@ export default function StudyGoalDetailPage() {
   const [isEditGoalOpen, setIsEditGoalOpen] = useState(false);
   const [isAddChapterOpen, setIsAddChapterOpen] = useState(false);
   
-  const [activeTimer, setActiveTimer] = useState<{subtopicId: string, startTime: number} | null>(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
-
   const [showConfetti, setShowConfetti] = useState(false);
   const { width, height } = useWindowSize();
   const prevCompletionState = useRef<Record<string, boolean>>({});
@@ -130,36 +129,8 @@ export default function StudyGoalDetailPage() {
   }, [user, goalId, router]);
 
 
-  // Timer logic
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (activeTimer) {
-      interval = setInterval(() => {
-        setElapsedTime(Date.now() - activeTimer.startTime);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [activeTimer]);
-  
-  const handleToggleTimer = (subtopicId: string) => {
-    if (activeTimer?.subtopicId === subtopicId) {
-      // Stop timer
-      if (user) {
-        logStudySession(user.uid, subtopicId, Math.floor(elapsedTime / 1000));
-      }
-      setActiveTimer(null);
-      setElapsedTime(0);
-    } else {
-      // Stop any other active timer before starting a new one
-      if (activeTimer && user) {
-        logStudySession(user.uid, activeTimer.subtopicId, Math.floor(elapsedTime / 1000));
-      }
-      // Start new timer
-      setActiveTimer({ subtopicId, startTime: Date.now() });
-      setElapsedTime(0);
-    }
+  const handleToggleTimer = (subtopic: StudySubtopic) => {
+    toggleTimer(subtopic.id, subtopic.title);
   };
 
 
@@ -347,7 +318,7 @@ export default function StudyGoalDetailPage() {
                                                         chapter={chapter} 
                                                         subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
                                                         chaptersCount={chapters.length}
-                                                        activeTimer={activeTimer}
+                                                        activeTimer={activeSubtopic}
                                                         onToggleTimer={handleToggleTimer}
                                                     />
                                                 </div>
@@ -393,7 +364,7 @@ export default function StudyGoalDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-center text-muted-foreground italic text-sm">
-                            {activeTimer ? `Timer running for subtopic... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a subtopic to track your time."}
+                            {activeSubtopic ? `Timer running... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a subtopic to track your time."}
                         </div>
                     </CardContent>
                 </Card>
