@@ -18,6 +18,7 @@ interface StudyTimerContextType extends StudyTimerState {
   elapsedTime: number;
   toggleTimer: (subtopicId: string, subtopicTitle: string) => void;
   stopTimer: () => void;
+  activeSubtopic: { subtopicId: string, title: string | null } | null;
 }
 
 const StudyTimerContext = createContext<StudyTimerContextType | undefined>(undefined);
@@ -129,6 +130,26 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
             await updateFirestoreState(newState);
         }
     }, [user, state, updateFirestoreState, logStudySession]);
+    
+    // Effect to handle cleanup on page unload
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            // This logic relies on the state when the event listener was added.
+            // A more robust solution might involve reading directly from a ref
+            // if state updates aren't guaranteed to be flushed.
+            if (state.isActive && state.activeSubtopicId && state.startTime) {
+                 const durationSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+                 logStudySession(user!.uid, state.activeSubtopicId, durationSeconds);
+                 // We don't need to update state or firestore here as the session is ending.
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [state.isActive, state.activeSubtopicId, state.startTime, user]);
 
 
     const value = {
