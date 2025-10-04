@@ -133,14 +133,13 @@ export function AddStudySubtopicDialog({
   const handleDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         const activeEl = document.activeElement;
-        // Check if the active element is one of the resource inputs
-        if (activeEl?.id === 'new-res-title' || activeEl?.id === 'new-res-url') {
-            return; // Don't save the whole dialog, let the resource input handle it
+        // Check if the active element is one of the resource inputs or a button, if so, let them handle it.
+        if (activeEl?.id === 'new-res-title' || activeEl?.id === 'new-res-url' || activeEl?.tagName.toLowerCase() === 'button') {
+            return;
         }
-        if (activeEl?.tagName.toLowerCase() !== 'button') {
-            e.preventDefault();
-            handleSave();
-        }
+        // Otherwise, save the dialog
+        e.preventDefault();
+        handleSave();
     }
   };
 
