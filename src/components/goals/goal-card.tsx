@@ -17,8 +17,8 @@ import { db } from '@/lib/firebase';
 import type { Milestone } from '@/lib/types';
 import { GoalsIcon } from '../icons/tools/goals-icon';
 import { useRouter } from 'next/navigation';
-import { Input } from '../ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 
 interface GoalCardProps {
@@ -87,8 +87,11 @@ export function GoalCard({ goal, onDelete, size = 'large' }: GoalCardProps) {
 
 
   const handleCardClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if(isEditing) return;
+    const target = e.target as HTMLElement;
+    if(isEditing || target.closest('button, [role="menu"]')) {
+      e.preventDefault();
+      return;
+    }
     router.push(`/goals/${goal.id}`);
   };
 

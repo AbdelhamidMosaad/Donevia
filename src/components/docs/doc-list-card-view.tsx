@@ -55,18 +55,14 @@ export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'l
     const originalDoc = docs.find(l => l.id === docId);
     const trimmedName = editingDocName.trim();
     
+    if (!trimmedName || !originalDoc || (originalDoc.title === trimmedName)) {
+      handleCancelEdit();
+      return;
+    }
+
     setEditingDocId(null);
     setEditingDocName('');
     
-    if (!trimmedName || !originalDoc) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Document name cannot be empty.' });
-      return;
-    }
-    
-    if (originalDoc.title === trimmedName) {
-        return;
-    };
-
     const docRef = doc(db, 'users', user.uid, 'docs', docId);
     try {
       await updateDoc(docRef, { title: trimmedName });
@@ -78,7 +74,9 @@ export function DocListCardView({ docs, folders, onDelete, onMove, cardSize = 'l
   };
   
   const handleCardClick = (e: React.MouseEvent, docId: string) => {
-    if (editingDocId === docId || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
+    const target = e.target as HTMLElement;
+    // Prevent navigation if clicking on input, button, or any part of the dropdown
+    if (editingDocId === docId || target.closest('input, button, [role="menu"]')) {
       e.preventDefault();
       return;
     }

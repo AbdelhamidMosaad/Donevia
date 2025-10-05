@@ -216,7 +216,7 @@ export default function DigitalWhiteboard() {
     newHistory.push({ nodes: newNodes, connections: newConnections });
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-  }
+  };
 
   const createNode = async (newNode: Omit<WhiteboardNode, 'id' | 'userId'| 'createdAt' | 'updatedAt' | 'zIndex'>): Promise<WhiteboardNode> => {
     if(!user) throw new Error("User not authenticated");
@@ -679,6 +679,7 @@ export default function DigitalWhiteboard() {
                         setBoardName(e.target.value);
                         handleMapNameChange(e.target.value);
                     }}
+                    onBlur={() => handleMapNameChange.flush()}
                     className="text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
             </div>
@@ -1021,5 +1022,3 @@ export default function DigitalWhiteboard() {
     </>
   );
 }
-
-    

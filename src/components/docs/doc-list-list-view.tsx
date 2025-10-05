@@ -52,17 +52,14 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
     const originalDoc = docs.find(l => l.id === docId);
     const trimmedName = editingDocName.trim();
     
+    if (!trimmedName || !originalDoc || (originalDoc.title === trimmedName)) {
+      handleCancelEdit();
+      return;
+    }
+
     setEditingDocId(null);
     setEditingDocName('');
 
-    if (!trimmedName || !originalDoc) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Document name cannot be empty.' });
-      return;
-    }
-    
-    if (originalDoc.title === trimmedName) {
-        return;
-    };
     const docRef = doc(db, 'users', user.uid, 'docs', docId);
     try {
       await updateDoc(docRef, { title: trimmedName });
@@ -79,7 +76,8 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
   };
   
   const handleNavigate = (e: React.MouseEvent, docId: string) => {
-    if (editingDocId === docId || (e.target as HTMLElement).closest('button')) {
+    const target = e.target as HTMLElement;
+    if (editingDocId === docId || target.closest('button, [role="menu"]')) {
       e.preventDefault();
       return;
     }
@@ -111,6 +109,7 @@ export function DocListListView({ docs, folders, onDelete, onMove }: DocListList
                       onKeyDown={(e) => handleKeyDown(e, document.id)}
                       onBlur={() => handleFinishEdit(document.id)}
                       className="h-8"
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </div>
                 ) : (

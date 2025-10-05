@@ -90,8 +90,11 @@ export function DeckCard({ deck, folders, onDelete, onMove, size = 'large' }: De
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (isEditing) return;
+    const target = e.target as HTMLElement;
+    if (isEditing || target.closest('input, button, [role="menu"]')) {
+      e.preventDefault();
+      return;
+    }
     router.push(`/flashcards/${deck.id}`);
   };
 
@@ -100,7 +103,7 @@ export function DeckCard({ deck, folders, onDelete, onMove, size = 'large' }: De
     e.preventDefault();
   };
 
-  const CardContent = (
+  const CardContentEl = (
       <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
         <div className={cn("p-6 flex flex-col items-center text-center h-full justify-center", size === 'medium' && 'p-4', size === 'small' && 'p-3')}>
           <FlashcardsIcon className={cn("mb-4", size === 'large' && "h-24 w-24", size === 'medium' && "h-16 w-16", size === 'small' && "h-12 w-12 mb-2")} />
@@ -169,14 +172,8 @@ export function DeckCard({ deck, folders, onDelete, onMove, size = 'large' }: De
 
   return (
     <>
-      <div className="group block h-full" onClick={handleCardClick} onMouseDown={(e) => {if(isEditing) e.stopPropagation()}}>
-         {isEditing ? (
-            <div>{CardContent}</div>
-         ) : (
-            <Link href={`/flashcards/${deck.id}`} className="contents">
-                {CardContent}
-            </Link>
-         )}
+      <div className="group block h-full" onClick={handleCardClick}>
+         {CardContentEl}
       </div>
       <AddDeckDialog deck={deck} open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
     </>

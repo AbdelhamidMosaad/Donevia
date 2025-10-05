@@ -83,8 +83,11 @@ export function MindMapCard({ map, onDelete, size = 'large' }: MindMapCardProps)
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (isEditing) return;
+    const target = e.target as HTMLElement;
+    if (isEditing || target.closest('input, button, [role="menu"]')) {
+      e.preventDefault();
+      return;
+    }
     router.push(`/mind-map/${map.id}`);
   };
 

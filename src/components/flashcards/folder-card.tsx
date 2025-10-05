@@ -14,6 +14,8 @@ import { updateFlashcardFolder } from '@/lib/flashcards';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface FolderCardProps {
   folder: FlashcardFolder;
@@ -42,13 +44,14 @@ export function FolderCard({ folder, onDelete, size = 'large' }: FolderCardProps
       return;
     }
 
+    const folderRef = doc(db, 'users', user.uid, 'flashcardFolders', folder.id);
     try {
-      await updateFlashcardFolder(user.uid, folder.id, { name: name.trim() });
+      await updateDoc(folderRef, { name: name.trim() });
       toast({ title: '✓ Folder Renamed' });
     } catch (e) {
       console.error("Error renaming folder: ", e);
       toast({ variant: 'destructive', title: 'Error renaming folder' });
-      setName(folder.name);
+      setName(folder.name); // Revert on error
     } finally {
       setIsEditing(false);
     }
@@ -63,7 +66,7 @@ export function FolderCard({ folder, onDelete, size = 'large' }: FolderCardProps
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if (isEditing) {
+    if (isEditing || (e.target as HTMLElement).closest('button, [role="menu"]')) {
       e.preventDefault();
     }
   };

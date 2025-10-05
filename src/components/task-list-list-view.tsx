@@ -69,14 +69,13 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
     const originalList = taskLists.find(l => l.id === listId);
     const trimmedName = editingListName.trim();
     
-    handleCancelEdit();
-    
-    if (!trimmedName || !originalList) {
-      toast({ variant: 'destructive', title: 'Error', description: 'List name cannot be empty.' });
+    if (!trimmedName || !originalList || (originalList.name === trimmedName)) {
+      handleCancelEdit();
       return;
     }
     
-    if (originalList.name === trimmedName) return;
+    setEditingListId(null);
+    setEditingListName('');
 
     const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
     try {
@@ -127,6 +126,7 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
                       onKeyDown={(e) => handleKeyDown(e, list.id)}
                       onBlur={() => handleFinishEdit(list.id)}
                       className="h-8"
+                      onClick={e => e.stopPropagation()}
                     />
                   </div>
                 ) : (

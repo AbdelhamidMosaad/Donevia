@@ -82,8 +82,11 @@ export function TaskListCard({ list, onDelete, size = 'large' }: TaskListCardPro
   };
   
   const handleCardClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if(isEditing) return;
+    const target = e.target as HTMLElement;
+    if(isEditing || target.closest('button, [role="menu"]')) {
+      e.preventDefault();
+      return;
+    }
     router.push(`/dashboard/list/${list.id}`);
   }
   

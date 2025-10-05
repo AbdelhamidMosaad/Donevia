@@ -3,13 +3,11 @@
 
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Plus, X, ArrowRight } from 'lucide-react';
+import { Textarea } from './ui/textarea';
+import { Plus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { addTask as addTaskToDb } from '@/lib/tasks';
 import { Timestamp } from 'firebase/firestore';
-import { Textarea } from './ui/textarea';
 import { Card } from './ui/card';
 import { useTasks } from '@/hooks/use-tasks';
 
@@ -48,17 +46,15 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
     };
 
     const handleStartEditing = () => {
-        setTitle(''); // Always clear title when starting to edit
+        setTitle('');
         setIsEditing(true);
     }
 
     const handleSave = async () => {
-        if (!title.trim()) {
+        if (!title.trim() || !user) {
             resetAndClose();
             return;
         }
-
-        if (!user) return;
         
         try {
             await addTask({
@@ -66,15 +62,13 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                 listId,
                 status: stageId,
                 priority: 'Medium',
-                dueDate: Timestamp.now(), // Default due date
+                dueDate: Timestamp.now(),
                 tags: [],
                 ownerId: user.uid,
                 color: getRandomColor(),
                 deleted: false,
             });
-            // Immediately reset for the next task
-            setTitle('');
-            // Keep focus on the input to allow adding another task right away
+            setTitle(''); // Reset for next task
             document.getElementById(`task-creator-input-${stageId}`)?.focus();
         } catch (error) {
             console.error("Error creating task: ", error);
@@ -84,7 +78,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) { // Save on Enter, allow Shift+Enter for new lines
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSave();
         } else if (e.key === 'Escape') {
@@ -115,12 +109,6 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onBlur={() => {
-                    // Only close on blur if title is empty, otherwise user might be clicking Save
-                    if(!title.trim()) {
-                       resetAndClose();
-                    }
-                }}
                 placeholder="Enter a title for this card..."
                 className="text-sm shadow-sm min-h-[60px] resize-y"
             />
