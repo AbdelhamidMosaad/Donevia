@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { StudyChapter, StudyDifficulty } from '@/lib/types';
+import type { StudyChapter, StudyDifficulty, ChapterStatus } from '@/lib/types';
 import { addStudyChapter, updateStudyChapter } from '@/lib/study-tracker';
 import { Timestamp } from 'firebase/firestore';
 import moment from 'moment';
@@ -47,12 +47,15 @@ export function AddStudyChapterDialog({
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [reminder, setReminder] = useState<StudyChapter['reminder']>('none');
   const [difficulty, setDifficulty] = useState<StudyDifficulty>('Medium');
+  const [status, setStatus] = useState<ChapterStatus>('Not Started');
+
 
   const resetForm = () => {
     setTitle('');
     setDueDate(null);
     setReminder('none');
     setDifficulty('Medium');
+    setStatus('Not Started');
   };
 
   useEffect(() => {
@@ -62,6 +65,7 @@ export function AddStudyChapterDialog({
         setDueDate(chapter.dueDate ? chapter.dueDate.toDate() : null);
         setReminder(chapter.reminder || 'none');
         setDifficulty(chapter.difficulty || 'Medium');
+        setStatus(chapter.status || 'Not Started');
       } else {
         resetForm();
       }
@@ -87,6 +91,7 @@ export function AddStudyChapterDialog({
         dueDate: dueDate ? Timestamp.fromDate(dueDate) : null,
         reminder: reminder,
         difficulty: difficulty,
+        status: status,
     };
 
     try {
@@ -105,8 +110,8 @@ export function AddStudyChapterDialog({
       setIsSaving(false);
     }
   };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  
+   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       const activeElement = document.activeElement;
@@ -153,6 +158,17 @@ export function AddStudyChapterDialog({
                 <SelectItem value="Easy">Easy</SelectItem>
                 <SelectItem value="Medium">Medium</SelectItem>
                 <SelectItem value="Hard">Hard</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="status" className="text-right">Status</Label>
+             <Select onValueChange={(v: ChapterStatus) => setStatus(v)} value={status}>
+              <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Not Started">Not Started</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Done">Done</SelectItem>
               </SelectContent>
             </Select>
           </div>

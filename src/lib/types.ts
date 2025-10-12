@@ -501,6 +501,8 @@ export type StudyFolder = {
   parentId?: string | null;
 };
 
+export type ChapterStatus = 'Not Started' | 'In Progress' | 'Done';
+
 export const StudyChapterSchema = z.object({
     id: z.string(),
     goalId: z.string(),
@@ -509,6 +511,7 @@ export const StudyChapterSchema = z.object({
     createdAt: FirebaseTimestampSchema,
     ownerId: z.string(),
     isCompleted: z.boolean().optional(),
+    status: z.enum(['Not Started', 'In Progress', 'Done']).optional(),
     timeSpentSeconds: z.number().optional(),
     dueDate: FirebaseTimestampSchema.nullable().optional(),
     reminder: z.enum(['none', 'on-due-date', '1-day', '2-days', '1-week']).optional(),

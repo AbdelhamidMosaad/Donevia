@@ -89,6 +89,7 @@ export const addStudyChapter = async (userId: string, chapterData: Omit<StudyCha
   const chaptersRef = collection(db, 'users', userId, 'studyChapters');
   return await addDoc(chaptersRef, {
     ...chapterData,
+    status: 'Not Started', // Default status
     ownerId: userId,
     createdAt: serverTimestamp(),
   });
@@ -102,7 +103,10 @@ export const updateStudyChapter = async (userId: string, chapterId: string, chap
 export const toggleChapterCompletion = async (userId: string, chapterId: string, isCompleted: boolean) => {
     const batch = writeBatch(db);
     const chapterRef = doc(db, 'users', userId, 'studyChapters', chapterId);
-    batch.update(chapterRef, { isCompleted });
+    batch.update(chapterRef, { 
+      isCompleted,
+      status: isCompleted ? 'Done' : 'In Progress' 
+    });
 
     const topicsQuery = query(collection(db, 'users', userId, 'studyTopics'), where('chapterId', '==', chapterId));
     const topicsSnapshot = await getDocs(topicsQuery);
