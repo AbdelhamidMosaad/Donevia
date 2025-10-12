@@ -21,7 +21,7 @@ const presentationPrompt = ai.definePrompt({
     - **Number of Slides:** {{numSlides}}
     - **Tone/Style:** {{tone}}
 
-    {{#if (eq generationType "from_topic")}}
+    {{#if topic}}
     - **Topic:** {{topic}}
     {{else}}
     - **Source Text:** 
