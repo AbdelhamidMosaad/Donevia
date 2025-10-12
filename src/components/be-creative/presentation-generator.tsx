@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, createRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,6 +25,7 @@ import Image from 'next/image';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import PptxGenJS from 'pptxgenjs';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 const templates: { id: PresentationTemplate; name: string; bg: string, text: string, accent: string, pptx: { backgroundColor: string, fontColor: string, accentColor: string } }[] = [
@@ -128,6 +129,14 @@ export function PresentationGenerator() {
   const [selectedTemplate, setSelectedTemplate] = useState<PresentationTemplate>('default');
   const [api, setApi] = useState<CarouselApi>()
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+  
+  const slideRefs = useRef<(React.RefObject<HTMLDivElement>)[]>([]);
+
+  useEffect(() => {
+    if (response?.slides) {
+      slideRefs.current = response.slides.map(() => createRef());
+    }
+  }, [response]);
 
   const form = useForm<PresentationFormValues>({
     resolver: zodResolver(PresentationRequestSchema),
@@ -194,13 +203,12 @@ export function PresentationGenerator() {
       const layoutName = slideSize === '16:9' ? 'LAYOUT_16x9' : 'LAYOUT_4x3';
       pptx.layout = layoutName;
       
-      // Define a master slide for consistent branding
       pptx.defineSlideMaster({
         title: 'MASTER_SLIDE',
         background: { color: templateStyle.backgroundColor },
       });
 
-      response.slides.forEach((slide, index) => {
+      for (const [index, slide] of response.slides.entries()) {
         const isTitleSlide = index === 0;
         const isLastSlide = index === response.slides.length - 1;
         const pptxSlide = pptx.addSlide({ masterName: 'MASTER_SLIDE' });
@@ -222,23 +230,39 @@ export function PresentationGenerator() {
             align: 'center', fontSize: 44, bold: true, color: templateStyle.fontColor 
           });
         } else {
-          // Regular content slide
           pptxSlide.addText(slide.title, { x: 0.5, y: 0.25, w: 8, h: 0.75, fontSize: 32, bold: true, color: templateStyle.fontColor });
           
-          pptxSlide.addText(
-            slide.content.map(point => ({ text: point, options: { bullet: true } })),
-            { 
-              x: 0.5, y: 1.5, w: '90%', h: '75%', 
-              fontSize: 18, color: templateStyle.fontColor,
-              lineSpacing: 36
-            }
-          );
+          if(slide.layout !== 'visual-only') {
+            pptxSlide.addText(
+              slide.content.map(point => ({ text: point, options: { bullet: true } })),
+              { 
+                x: slide.layout === 'text-and-visual' ? 0.5 : 1, 
+                y: 1.5, 
+                w: slide.layout === 'text-and-visual' ? '45%' : '80%', 
+                h: '75%', 
+                fontSize: 18, color: templateStyle.fontColor,
+                lineSpacing: 36
+              }
+            );
+          }
+
+           if((slide.layout === 'text-and-visual' || slide.layout === 'visual-only') && slide.visualSuggestion) {
+              const lowerSuggestion = slide.visualSuggestion.toLowerCase();
+              if (lowerSuggestion.includes('bar chart')) {
+                 pptxSlide.addChart(pptx.ChartType.bar, chartData, { x: 5.5, y: 1.5, w: 4, h: 4, barDir: 'bar' });
+              } else if (lowerSuggestion.includes('pie chart')) {
+                  pptxSlide.addChart(pptx.ChartType.pie, chartData, { x: 5.5, y: 1.5, w: 4, h: 4, showLegend: true });
+              } else {
+                 const imageUrl = `https://picsum.photos/seed/${slide.visualSuggestion.replace(/\s+/g, '-')}-${index}/600/400`;
+                 pptxSlide.addImage({ path: imageUrl, x: 5.5, y: 1.5, w: 4, h: 4 });
+              }
+           }
         }
 
         if (slide.speakerNotes) {
           pptxSlide.addNotes(slide.speakerNotes);
         }
-      });
+      }
 
       await pptx.writeFile({ fileName: `${response.title}.pptx` });
       toast({title: "Export successful!", description: "Your presentation has been downloaded."});
@@ -254,29 +278,33 @@ export function PresentationGenerator() {
     if(!response) return;
     setIsExporting(true);
 
-    const pdf = new jsPDF({
-      orientation: slideSize === '16:9' ? 'landscape' : 'portrait',
-      unit: 'px',
-      format: slideSize === '16:9' ? [1280, 720] : [960, 720],
-    });
-    
-    response.slides.forEach((slide, index) => {
-      if (index > 0) pdf.addPage();
-      pdf.text(slide.title, 40, 50);
-      let yOffset = 100;
-      slide.content.forEach(point => {
-        pdf.text(`• ${point}`, 50, yOffset);
-        yOffset += 20;
-      });
-       if (slide.speakerNotes) {
-         pdf.setTextColor(150);
-         pdf.text(`Notes: ${slide.speakerNotes}`, 40, pdf.internal.pageSize.height - 40, { maxWidth: pdf.internal.pageSize.width - 80 });
-         pdf.setTextColor(0);
-      }
-    });
+    try {
+        const isLandscape = slideSize === '16:9';
+        const pdf = new jsPDF({
+            orientation: isLandscape ? 'landscape' : 'portrait',
+            unit: 'px',
+            format: isLandscape ? [1280, 720] : [960, 720],
+        });
 
-    pdf.save(`${response.title}.pdf`);
-    setIsExporting(false);
+        for (let i = 0; i < response.slides.length; i++) {
+            if (i > 0) pdf.addPage();
+            
+            const slideElement = slideRefs.current[i].current;
+            if (slideElement) {
+                const canvas = await html2canvas(slideElement, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+            }
+        }
+
+        pdf.save(`${response.title}.pdf`);
+        toast({ title: 'Export successful!', description: 'Your presentation is being downloaded as a PDF.' });
+
+    } catch (error) {
+        toast({variant: 'destructive', title: "PDF Export failed", description: (error as Error).message });
+    } finally {
+       setIsExporting(false);
+    }
   }
   
   const renderInitialState = () => (
@@ -503,6 +531,7 @@ export function PresentationGenerator() {
                 
                 return (
                   <CarouselItem key={index}>
+                    <div ref={slideRefs.current[index]}>
                     <Card className={cn(
                         "h-full flex flex-col p-6",
                         templateStyle.bg, 
@@ -545,6 +574,7 @@ export function PresentationGenerator() {
                         </div>
                       </CardContent>
                     </Card>
+                    </div>
                   </CarouselItem>
                 )
             })}
