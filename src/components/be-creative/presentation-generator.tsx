@@ -214,13 +214,13 @@ export function PresentationGenerator() {
         const pptxSlide = pptx.addSlide({ masterName: 'MASTER_SLIDE' });
 
         if (isTitleSlide) {
-          pptxSlide.addText(slide.title, { 
-            x: '5%', y: '40%', w: '90%', h: '20%', 
+          pptxSlide.addText(response.title, { 
+            x: '5%', y: '35%', w: '90%', h: '20%', 
             align: 'center', fontSize: 44, bold: true, color: templateStyle.fontColor 
           });
-          if(slide.content.length > 0) {
-            pptxSlide.addText(slide.content.join(' '), { 
-              x: '5%', y: '60%', w: '90%', h: '10%', 
+          if(slide.title) {
+            pptxSlide.addText(slide.title, { 
+              x: '5%', y: '55%', w: '90%', h: '10%', 
               align: 'center', fontSize: 24, color: templateStyle.fontColor, 
             });
           }
@@ -232,28 +232,31 @@ export function PresentationGenerator() {
         } else {
           pptxSlide.addText(slide.title, { x: 0.5, y: 0.25, w: 8, h: 0.75, fontSize: 32, bold: true, color: templateStyle.fontColor });
           
-          if(slide.layout !== 'visual-only') {
+          if(slide.layout !== 'visual-only' && slide.content.length > 0) {
+            const contentObjects = slide.content.map(point => ({ text: point, options: { bullet: true, indentLevel: 0 } }));
             pptxSlide.addText(
-              slide.content.map(point => ({ text: point, options: { bullet: true } })),
+              contentObjects,
               { 
                 x: slide.layout === 'text-and-visual' ? 0.5 : 1, 
-                y: 1.25, 
+                y: 1.5, 
                 w: slide.layout === 'text-and-visual' ? '45%' : '80%', 
                 h: '75%', 
                 fontSize: 18, color: templateStyle.fontColor,
-                lineSpacing: 36
+                lineSpacing: 36,
+                valign: 'top',
               }
             );
           }
 
            if((slide.layout === 'text-and-visual' || slide.layout === 'visual-only') && slide.visualSuggestion) {
               const lowerSuggestion = slide.visualSuggestion.toLowerCase();
+              const imageUrl = `https://picsum.photos/seed/${slide.visualSuggestion.replace(/\s+/g, '-')}-${index}/600/400`;
+
               if (lowerSuggestion.includes('bar chart')) {
                  pptxSlide.addChart(pptx.ChartType.bar, chartData, { x: 5.5, y: 1.5, w: 4, h: 4, barDir: 'bar' });
               } else if (lowerSuggestion.includes('pie chart')) {
                   pptxSlide.addChart(pptx.ChartType.pie, chartData, { x: 5.5, y: 1.5, w: 4, h: 4, showLegend: true });
               } else {
-                 const imageUrl = `https://picsum.photos/seed/${slide.visualSuggestion.replace(/\s+/g, '-')}-${index}/600/400`;
                  pptxSlide.addImage({ path: imageUrl, x: 5.5, y: 1.5, w: 4, h: 4 });
               }
            }
@@ -542,8 +545,8 @@ export function PresentationGenerator() {
                         <div className={cn('w-full h-full', getLayoutClasses(slide.layout, isTitleSlide, isLastSlide))}>
                             {isTitleSlide ? (
                                 <div className="space-y-4">
-                                    <h1 className="text-6xl font-bold">{slide.title}</h1>
-                                    <p className="text-2xl opacity-80">{slide.content.join(' ')}</p>
+                                    <h1 className="text-6xl font-bold">{response.title}</h1>
+                                    <p className="text-2xl opacity-80">{slide.title}</p>
                                 </div>
                             ) : isLastSlide ? (
                                 <div className="space-y-6 text-center">
