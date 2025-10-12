@@ -99,6 +99,21 @@ export const updateStudyChapter = async (userId: string, chapterId: string, chap
   return await updateDoc(chapterRef, chapterData);
 };
 
+export const toggleChapterCompletion = async (userId: string, chapterId: string, isCompleted: boolean) => {
+    const batch = writeBatch(db);
+    const chapterRef = doc(db, 'users', userId, 'studyChapters', chapterId);
+    batch.update(chapterRef, { isCompleted });
+
+    const topicsQuery = query(collection(db, 'users', userId, 'studyTopics'), where('chapterId', '==', chapterId));
+    const topicsSnapshot = await getDocs(topicsQuery);
+    topicsSnapshot.forEach(topicDoc => {
+        batch.update(topicDoc.ref, { isCompleted });
+    });
+
+    return await batch.commit();
+}
+
+
 export const deleteStudyChapter = async (userId: string, chapterId: string) => {
   const batch = writeBatch(db);
   const chapterRef = doc(db, 'users', userId, 'studyChapters', chapterId);

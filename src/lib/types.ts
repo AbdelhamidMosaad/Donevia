@@ -203,7 +203,7 @@ export type MeetingNote = {
 
 /** Gamification */
 export type BadgeId = 
-    | 'subtopic-master-1' | 'subtopic-master-10' | 'subtopic-master-50' | 'subtopic-master-100'
+    | 'topic-master-1' | 'topic-master-10' | 'topic-master-50' | 'topic-master-100'
     | 'goal-crusher-1' | 'goal-crusher-5'
     | 'perfect-week' | 'knowledge-architect';
 
@@ -264,13 +264,8 @@ export interface UserSettings {
     tableColumns?: { [listId: string]: string[] };
     sidebarOrder?: string[];
     toolOrder?: string[];
-    bookmarkSettings?: {
-        categories: string[];
-    };
-    workTrackerSettings?: WorkTrackerSettings;
-    crmSettings?: CrmSettings;
-    studyProfile?: StudyProfile;
     currency?: Currency;
+    studyProfile?: StudyProfile;
     englishCoachProfile?: EnglishCoachProfile;
     ttsEngine?: 'gemini' | 'browser';
     browserTtsVoice?: string;
@@ -546,7 +541,7 @@ export type StudyTopic = z.infer<typeof StudyTopicSchema>;
 
 export const StudySessionSchema = z.object({
     id: z.string(),
-    subtopicId: z.string(),
+    topicId: z.string(),
     date: FirebaseTimestampSchema,
     durationSeconds: z.number(),
     ownerId: z.string(),

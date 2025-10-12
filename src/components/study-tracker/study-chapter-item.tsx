@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import type { StudyChapter, StudyTopic } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { deleteStudyChapter } from '@/lib/study-tracker';
+import { deleteStudyChapter, toggleChapterCompletion } from '@/lib/study-tracker';
 import { cn } from '@/lib/utils';
 import { MoreHorizontal, Edit, Trash2, PlusCircle, GripVertical, ChevronRight, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -33,6 +33,8 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import moment from 'moment';
 import { Progress } from '../ui/progress';
+import { Checkbox } from '../ui/checkbox';
+
 
 interface StudyChapterItemProps {
   chapter: StudyChapter;
@@ -64,7 +66,7 @@ export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, 
     if(!user) return;
     try {
         // Corrected function name
-        // await deleteStudySubtopic(user.uid, topicId);
+        // await deleteStudyTopic(user.uid, topicId);
         toast({ title: "Topic deleted successfully" });
     } catch (e) {
         toast({ variant: "destructive", title: "Error deleting topic" });
@@ -72,10 +74,21 @@ export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, 
   }
   
   const progressPercentage = useMemo(() => {
-    if (topics.length === 0) return 0;
+    if (topics.length === 0) {
+        return chapter.isCompleted ? 100 : 0;
+    }
     const completedCount = topics.filter(s => s.isCompleted).length;
     return (completedCount / topics.length) * 100;
-  }, [topics]);
+  }, [topics, chapter.isCompleted]);
+
+  const handleToggleCompletion = async () => {
+    if (!user) return;
+    try {
+        await toggleChapterCompletion(user.uid, chapter.id, !chapter.isCompleted);
+    } catch (e) {
+        toast({ variant: "destructive", title: "Error updating chapter completion" });
+    }
+  }
 
   return (
     <>
@@ -83,10 +96,24 @@ export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, 
         <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
+                <Checkbox
+                    id={`chapter-${chapter.id}`}
+                    checked={chapter.isCompleted}
+                    onCheckedChange={handleToggleCompletion}
+                    className="mt-1"
+                />
                  <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="flex items-center gap-2 pl-1 pr-2">
                         <ChevronRight className={cn("h-4 w-4 transition-transform", isOpen && "rotate-90")}/>
-                        <h3 className="font-bold text-lg">{chapter.title}</h3>
+                        <label
+                           htmlFor={`chapter-${chapter.id}`}
+                           className={cn(
+                             'font-bold text-lg cursor-pointer',
+                             chapter.isCompleted && 'line-through text-muted-foreground'
+                           )}
+                        >
+                            {chapter.title}
+                        </label>
                     </Button>
                 </CollapsibleTrigger>
                  <div className="flex-1 max-w-[200px] hidden md:block">
