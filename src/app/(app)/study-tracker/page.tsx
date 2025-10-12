@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, LayoutGrid, List, BarChart3, Folder as FolderIcon, GripHorizontal, Minus, Plus, Kanban } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import type { StudyGoal, StudyTopic, StudySession, StudyFolder } from '@/lib/types';
+import type { StudyGoal, StudyTopic, StudyFolder } from '@/lib/types';
 import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
@@ -37,7 +38,7 @@ import { cn } from '@/lib/utils';
 import { StudyGoalBoard } from '@/components/study-tracker/study-goal-board';
 
 
-type View = 'card' | 'list' | 'board';
+type View = 'card' | 'list';
 type CardSize = 'small' | 'medium' | 'large';
 
 export default function StudyTrackerPage() {
@@ -46,7 +47,6 @@ export default function StudyTrackerPage() {
   const { toast } = useToast();
   const [goals, setGoals] = useState<StudyGoal[]>([]);
   const [topics, setTopics] = useState<StudyTopic[]>([]);
-  const [sessions, setSessions] = useState<StudySession[]>([]);
   const [folders, setFolders] = useState<StudyFolder[]>([]);
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
@@ -92,12 +92,6 @@ export default function StudyTrackerPage() {
         setTopics(topicsData);
       });
       
-      const sessionsQuery = query(collection(db, 'users', user.uid, 'studySessions'));
-      const unsubscribeSessions = onSnapshot(sessionsQuery, (snapshot) => {
-        const sessionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySession));
-        setSessions(sessionsData);
-      });
-      
       const foldersQuery = query(collection(db, 'users', user.uid, 'studyFolders'), orderBy('createdAt', 'desc'));
       const unsubscribeFolders = onSnapshot(foldersQuery, (snapshot) => {
         setFolders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyFolder)));
@@ -106,7 +100,6 @@ export default function StudyTrackerPage() {
       return () => {
         unsubscribeGoals();
         unsubscribeTopics();
-        unsubscribeSessions();
         unsubscribeFolders();
       }
     }
@@ -199,8 +192,6 @@ export default function StudyTrackerPage() {
     switch(view) {
         case 'list':
             return <StudyGoalListView goals={unfiledGoals} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} />;
-        case 'board':
-            return <StudyGoalBoard goals={unfiledGoals} />;
         case 'card':
         default:
             return (
@@ -243,9 +234,6 @@ export default function StudyTrackerPage() {
                         <ToggleGroupItem value="list" aria-label="List view">
                             <List />
                         </ToggleGroupItem>
-                         <ToggleGroupItem value="board" aria-label="Board view">
-                            <Kanban />
-                        </ToggleGroupItem>
                     </ToggleGroup>
                     {view === 'card' && (
                         <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
@@ -275,7 +263,7 @@ export default function StudyTrackerPage() {
                     </div>
                 ) : (
                     <div className="flex-1 space-y-8">
-                        {topLevelFolders.length > 0 && view !== 'board' && (
+                        {topLevelFolders.length > 0 && (
                             <div>
                                 <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
                                 <div className={cn(
@@ -340,3 +328,4 @@ export default function StudyTrackerPage() {
     </div>
   );
 }
+

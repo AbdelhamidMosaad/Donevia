@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -10,7 +9,7 @@ import { db } from '@/lib/firebase';
 import type { StudyGoal, StudyChapter, StudyTopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Lightbulb, BookOpen, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Lightbulb, BookOpen, BarChart3, Kanban, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { AddStudyChapterDialog } from '@/components/study-tracker/add-study-chapter-dialog';
@@ -23,6 +22,10 @@ import { useWindowSize } from '@/hooks/use-window-size';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useStudyTimer } from '@/hooks/use-study-timer';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { StudyChapterBoard } from '@/components/study-tracker/study-chapter-board';
+
+type View = 'list' | 'board';
 
 
 export default function StudyGoalDetailPage() {
@@ -31,7 +34,7 @@ export default function StudyGoalDetailPage() {
   const params = useParams();
   const { toast } = useToast();
   const goalId = params.goalId as string;
-  const { activeItem, elapsedTime, toggleTimer } = useStudyTimer();
+  const { activeItem, toggleTimer } = useStudyTimer();
 
   const [goal, setGoal] = useState<StudyGoal | null>(null);
   const [chapters, setChapters] = useState<StudyChapter[]>([]);
@@ -42,6 +45,8 @@ export default function StudyGoalDetailPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const { width, height } = useWindowSize();
   const prevCompletionState = useRef<Record<string, boolean>>({});
+  const [view, setView] = useState<View>('list');
+
 
   useEffect(() => {
     // Initialize previous completion state
@@ -144,10 +149,8 @@ export default function StudyGoalDetailPage() {
   const flagPosition = `${progressPercentage}%`;
   
   const totalTimeSpent = useMemo(() => {
-    const chapterTime = chapters.reduce((acc, c) => acc + (c.timeSpentSeconds || 0), 0);
-    const topicTime = topics.reduce((acc, t) => acc + (t.timeSpentSeconds || 0), 0);
-    return chapterTime + topicTime;
-  }, [chapters, topics]);
+    return topics.reduce((acc, t) => acc + (t.timeSpentSeconds || 0), 0);
+  }, [topics]);
 
   const adaptivePlan = useMemo(() => {
     if (!goal?.dueDate) return null;
@@ -262,6 +265,56 @@ export default function StudyGoalDetailPage() {
         toast({ title: 'Topics reordered.' });
     }
   };
+  
+  const renderStudyPlanView = () => {
+    if (view === 'board') {
+      return <StudyChapterBoard chapters={chapters} topics={topics} onToggleTimer={handleToggleTimer} activeTimer={activeItem}/>;
+    }
+    
+    // Default to 'list' view
+    return (
+       <Card className="flex flex-col flex-1 min-h-0 bg-card/60 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle>Content Breakdown</CardTitle>
+                <CardDescription>Organize your study material into chapters and topics.</CardDescription>
+            </div>
+            <Button onClick={() => setIsAddChapterOpen(true)}><PlusCircle /> Add Chapter</Button>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto">
+                {chapters.length > 0 ? (
+                    <DragDropContext onDragEnd={onDragEnd}>
+                        <Droppable droppableId="chapters-droppable" type="chapter">
+                        {(provided) => (
+                            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                                {chapters.map((chapter, index) => (
+                                    <Draggable key={chapter.id} draggableId={chapter.id} index={index}>
+                                        {(provided) => (
+                                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                                <StudyChapterItem 
+                                                    chapter={chapter} 
+                                                    topics={topics.filter(s => s.chapterId === chapter.id)}
+                                                    chaptersCount={chapters.length}
+                                                    activeTimer={activeItem}
+                                                    onToggleTimer={handleToggleTimer}
+                                                />
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                ))}
+                                {provided.placeholder}
+                            </div>
+                        )}
+                        </Droppable>
+                    </DragDropContext>
+                ) : (
+                    <p className="text-center text-muted-foreground py-8">No chapters yet. Add one to get started!</p>
+                )}
+            </CardContent>
+        </Card>
+    );
+  };
+
 
   if (loading || !user || !goal) {
     return <div className="flex items-center justify-center h-full"><p>Loading goal...</p></div>;
@@ -298,46 +351,14 @@ export default function StudyGoalDetailPage() {
           <TabsTrigger value="plan"><BookOpen className="mr-2 h-4 w-4" /> Study Plan</TabsTrigger>
           <TabsTrigger value="overview"><BarChart3 className="mr-2 h-4 w-4" /> Progress Overview</TabsTrigger>
         </TabsList>
-        <TabsContent value="plan" className="flex-1 mt-4">
-            <Card className="flex flex-col flex-1 min-h-0 bg-card/60 backdrop-blur-sm">
-                <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Content Breakdown</CardTitle>
-                    <CardDescription>Organize your study material into chapters and topics.</CardDescription>
-                </div>
-                <Button onClick={() => setIsAddChapterOpen(true)}><PlusCircle /> Add Chapter</Button>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto">
-                    {chapters.length > 0 ? (
-                        <DragDropContext onDragEnd={onDragEnd}>
-                            <Droppable droppableId="chapters-droppable" type="chapter">
-                            {(provided) => (
-                                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-                                    {chapters.map((chapter, index) => (
-                                        <Draggable key={chapter.id} draggableId={chapter.id} index={index}>
-                                            {(provided) => (
-                                                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                                    <StudyChapterItem 
-                                                        chapter={chapter} 
-                                                        topics={topics.filter(s => s.chapterId === chapter.id)}
-                                                        chaptersCount={chapters.length}
-                                                        activeTimer={activeItem}
-                                                        onToggleTimer={handleToggleTimer}
-                                                    />
-                                                </div>
-                                            )}
-                                        </Draggable>
-                                    ))}
-                                    {provided.placeholder}
-                                </div>
-                            )}
-                            </Droppable>
-                        </DragDropContext>
-                    ) : (
-                        <p className="text-center text-muted-foreground py-8">No chapters yet. Add one to get started!</p>
-                    )}
-                </CardContent>
-            </Card>
+        <TabsContent value="plan" className="flex-1 mt-4 flex flex-col min-h-0">
+             <div className="flex justify-end items-center gap-2 mb-4">
+                <ToggleGroup type="single" value={view} onValueChange={(v: View) => v && setView(v)}>
+                    <ToggleGroupItem value="list"><List/></ToggleGroupItem>
+                    <ToggleGroupItem value="board"><Kanban/></ToggleGroupItem>
+                </ToggleGroup>
+            </div>
+            {renderStudyPlanView()}
         </TabsContent>
          <TabsContent value="overview" className="flex-1 mt-4">
            <div className="grid md:grid-cols-2 gap-6">
@@ -366,8 +387,8 @@ export default function StudyGoalDetailPage() {
                         <CardDescription>Aggregate study time for this goal.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-center text-muted-foreground italic text-sm">
-                            {activeItem ? `Timer running... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a topic to track your time."}
+                         <div className="text-center text-muted-foreground italic text-sm">
+                            {activeItem ? `Timer running...` : "Start a timer on a topic to track your time."}
                         </div>
                     </CardContent>
                 </Card>
@@ -381,3 +402,4 @@ export default function StudyGoalDetailPage() {
     </div>
   );
 }
+
