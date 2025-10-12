@@ -430,10 +430,13 @@ export function PresentationGenerator() {
     const templateStyle = templates.find(t => t.id === selectedTemplate) || templates[0];
     const currentSlide = response.slides[currentSlideIndex];
     
-    const getLayoutClasses = (layout: Slide['layout']) => {
+    const getLayoutClasses = (layout: Slide['layout'], isTitleSlide: boolean) => {
+        if (isTitleSlide) {
+            return 'flex flex-col items-center justify-center text-center';
+        }
         switch (layout) {
-            case 'title': return 'flex-col items-center justify-center text-center';
-            case 'text-only': return 'flex-col justify-center';
+            case 'title': return 'flex flex-col items-center justify-center text-center';
+            case 'text-only': return 'flex flex-col justify-center';
             case 'visual-only': return 'flex-col items-center justify-center';
             case 'text-and-visual':
             default:
@@ -446,39 +449,49 @@ export function PresentationGenerator() {
         <h2 className={`text-3xl font-bold text-center font-headline`}>{response.title}</h2>
         <Carousel className="w-full max-w-5xl mx-auto" setApi={setApi}>
           <CarouselContent>
-            {response.slides.map((slide, index) => (
-              <CarouselItem key={index}>
-                <Card className={cn(
-                    "h-full flex flex-col p-6",
-                    templateStyle.bg, 
-                    templateStyle.text,
-                    slideSize === '16:9' ? 'aspect-[16/9]' : 'aspect-[4/3]'
-                )}>
-                  <CardHeader className={cn(slide.layout === 'title' && 'items-center')}>
-                    <CardTitle className="flex items-center gap-2 text-4xl">
-                        <span className={cn('h-2 w-16 rounded-full', templateStyle.accent)} />
-                        {slide.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1 w-full flex items-center justify-center">
-                    <div className={cn('w-full h-full', getLayoutClasses(slide.layout))}>
-                        {slide.layout !== 'visual-only' && (
-                            <div className={cn("space-y-4", slide.layout === 'title' && 'max-w-xl')}>
-                              <ul className="list-disc pl-5 space-y-2 text-xl">
-                                {slide.content.map((point, i) => <li key={i}>{point}</li>)}
-                              </ul>
-                            </div>
-                        )}
-                        {(slide.layout === 'text-and-visual' || slide.layout === 'visual-only') && (
-                            <div className="h-full w-full min-h-[200px]">
-                                <VisualSuggestion suggestion={slide.visualSuggestion} index={index} />
-                            </div>
-                        )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-            ))}
+            {response.slides.map((slide, index) => {
+                const isTitleSlide = index === 0;
+                return (
+                  <CarouselItem key={index}>
+                    <Card className={cn(
+                        "h-full flex flex-col p-6",
+                        templateStyle.bg, 
+                        templateStyle.text,
+                        slideSize === '16:9' ? 'aspect-[16/9]' : 'aspect-[4/3]'
+                    )}>
+                      <CardContent className="flex-1 w-full flex items-center justify-center">
+                        <div className={cn('w-full h-full', getLayoutClasses(slide.layout, isTitleSlide))}>
+                            {isTitleSlide ? (
+                                <div className="space-y-4">
+                                    <h1 className="text-6xl font-bold">{slide.title}</h1>
+                                    <p className="text-2xl opacity-80">{slide.content.join(' ')}</p>
+                                </div>
+                            ) : (
+                                <>
+                                {(slide.layout !== 'visual-only') && (
+                                    <div className="space-y-4">
+                                      <h3 className="text-4xl font-bold flex items-center gap-4">
+                                        <span className={cn('h-2 w-16 rounded-full', templateStyle.accent)} />
+                                        {slide.title}
+                                      </h3>
+                                      <ul className="list-disc pl-8 space-y-2 text-xl">
+                                        {slide.content.map((point, i) => <li key={i}>{point}</li>)}
+                                      </ul>
+                                    </div>
+                                )}
+                                {(slide.layout === 'text-and-visual' || slide.layout === 'visual-only') && (
+                                    <div className="h-full w-full min-h-[200px]">
+                                        <VisualSuggestion suggestion={slide.visualSuggestion} index={index} />
+                                    </div>
+                                )}
+                                </>
+                            )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CarouselItem>
+                )
+            })}
           </CarouselContent>
           <CarouselPrevious className="text-black" />
           <CarouselNext className="text-black" />
