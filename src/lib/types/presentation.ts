@@ -21,7 +21,7 @@ export const PresentationRequestSchema = z.object({
   topic: z.string().optional(),
   sourceText: z.string().optional(),
   audience: z.string().min(3, { message: 'Audience must be at least 3 characters.' }),
-  numSlides: z.coerce.number().min(3, { message: 'Must generate at least 3 slides.' }).max(15, { message: 'Cannot generate more than 15 slides.' }),
+  numSlides: z.coerce.number().min(3, { message: 'Must generate at least 3 slides.' }).max(30, { message: 'Cannot generate more than 30 slides.' }),
   tone: PresentationToneSchema,
   template: PresentationTemplateSchema,
   slideSize: SlideSizeSchema.optional().default('16:9'),

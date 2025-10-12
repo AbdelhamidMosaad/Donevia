@@ -399,7 +399,7 @@ export function PresentationGenerator() {
                   <FormItem>
                     <FormLabel>Number of Slides</FormLabel>
                     <FormControl>
-                      <Input type="number" min="3" max="15" {...field} />
+                      <Input type="number" min="3" max="30" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
