@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, LayoutGrid, List, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import type { StudyGoal, StudySubtopic, StudySession } from '@/lib/types';
-import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc } from 'firebase/firestore';
+import type { StudyGoal, StudySubtopic, StudySession, StudyFolder } from '@/lib/types';
+import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { StudyGoalCard } from '@/components/study-tracker/study-goal-card';
-import { deleteStudyGoal } from '@/lib/study-tracker';
+import { deleteStudyGoal, addStudyFolder, deleteStudyFolder } from '@/lib/study-tracker';
 import { useToast } from '@/hooks/use-toast';
 import { InsightsDashboard } from '@/components/study-tracker/insights-dashboard';
 import { GamificationProfile } from '@/components/study-tracker/gamification-profile';
@@ -19,6 +19,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StudyGoalListView } from '@/components/study-tracker/study-goal-list-view';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { FolderCard } from '@/components/study-tracker/study-folder-card';
 
 
 type View = 'card' | 'list';
@@ -30,6 +32,7 @@ export default function StudyTrackerPage() {
   const [goals, setGoals] = useState<StudyGoal[]>([]);
   const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
+  const [folders, setFolders] = useState<StudyFolder[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [view, setView] = useState<View>('card');
 
@@ -69,11 +72,17 @@ export default function StudyTrackerPage() {
         const sessionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySession));
         setSessions(sessionsData);
       });
+      
+      const foldersQuery = query(collection(db, 'users', user.uid, 'studyFolders'), orderBy('createdAt', 'desc'));
+      const unsubscribeFolders = onSnapshot(foldersQuery, (snapshot) => {
+        setFolders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyFolder)));
+      });
 
       return () => {
         unsubscribeGoals();
         unsubscribeSubtopics();
         unsubscribeSessions();
+        unsubscribeFolders();
       }
     }
   }, [user]);
@@ -89,6 +98,38 @@ export default function StudyTrackerPage() {
     }
   };
   
+    const handleDeleteFolder = async (folderId: string) => {
+    if (!user) return;
+    try {
+      await deleteStudyFolder(user.uid, folderId);
+      toast({ title: 'Folder deleted.'});
+    } catch(e) {
+      toast({ variant: 'destructive', title: 'Error deleting folder.'});
+    }
+  };
+  
+  const handleAddFolder = async () => {
+      if (!user) return;
+      try {
+          await addStudyFolder(user.uid, 'New Folder');
+          toast({ title: '✓ Folder Created' });
+      } catch(e) {
+          toast({ variant: 'destructive', title: 'Error creating folder.'});
+      }
+  };
+  
+  const handleMoveGoalToFolder = async (goalId: string, folderId: string | null) => {
+    if (!user) return;
+    try {
+        const goalRef = doc(db, 'users', user.uid, 'studyGoals', goalId);
+        await updateDoc(goalRef, { folderId: folderId });
+        toast({ title: '✓ Goal Moved' });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error moving goal.'});
+    }
+  };
+
+  
   const handleViewChange = (newView: View) => {
     if (newView) {
         setView(newView);
@@ -98,6 +139,8 @@ export default function StudyTrackerPage() {
         }
     }
   };
+  
+  const unfiledGoals = goals.filter(g => !g.folderId);
 
   if (loading || !user) {
     return <div>Loading...</div>;
@@ -129,25 +172,53 @@ export default function StudyTrackerPage() {
                             <List />
                         </ToggleGroupItem>
                     </ToggleGroup>
-                    <Button onClick={() => setIsAddDialogOpen(true)}>
-                        <PlusCircle />
-                        New Study Goal
-                    </Button>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button>
+                                <PlusCircle /> New
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                             <DropdownMenuItem onSelect={() => setIsAddDialogOpen(true)}>New Study Goal</DropdownMenuItem>
+                             <DropdownMenuItem onSelect={handleAddFolder}>New Folder</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
 
-                {goals.length === 0 ? (
+                {goals.length === 0 && folders.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-card/60 backdrop-blur-sm">
                         <StudyTrackerIcon className="h-24 w-24 text-muted-foreground mb-4" />
                         <h3 className="text-xl font-semibold font-headline">No Study Goals Yet</h3>
-                        <p className="text-muted-foreground">Click "New Study Goal" to set your first one.</p>
+                        <p className="text-muted-foreground">Click "New" to set your first goal or folder.</p>
                     </div>
-                ) : view === 'list' ? (
-                    <StudyGoalListView goals={goals} onDelete={handleDeleteGoal} />
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {goals.map(goal => (
-                            <StudyGoalCard key={goal.id} goal={goal} onDelete={handleDeleteGoal} />
-                        ))}
+                    <div className="flex-1 space-y-8">
+                        {folders.length > 0 && (
+                            <div>
+                                <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                    {folders.map(folder => (
+                                        <StudyFolderCard key={folder.id} folder={folder} onDelete={() => handleDeleteFolder(folder.id)} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div>
+                             <h2 className="text-2xl font-bold font-headline mb-4">Study Goals</h2>
+                             {unfiledGoals.length > 0 ? (
+                                 view === 'list' ? (
+                                    <StudyGoalListView goals={unfiledGoals} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} />
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {unfiledGoals.map(goal => (
+                                            <StudyGoalCard key={goal.id} goal={goal} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} />
+                                        ))}
+                                    </div>
+                                )
+                             ) : (
+                                <p className="text-muted-foreground text-sm">No goals outside of folders.</p>
+                             )}
+                        </div>
                     </div>
                 )}
             </TabsContent>

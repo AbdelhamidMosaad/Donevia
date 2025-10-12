@@ -88,12 +88,12 @@ function GoalRow({ goal, folders, onDelete, onMove }: { goal: StudyGoal; folders
                 <DropdownMenuSubTrigger><Move className="mr-2 h-4 w-4" />Move to Folder</DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                     {goal.folderId && <DropdownMenuItem onSelect={() => onMove(goal.id, null)}>Remove from folder</DropdownMenuItem>}
-                    {folders.map(folder => (
+                    {folders && folders.map(folder => (
                         <DropdownMenuItem key={folder.id} onSelect={() => onMove(goal.id, folder.id)} disabled={goal.folderId === folder.id}>
                             <Folder className="mr-2 h-4 w-4" /> {folder.name}
                         </DropdownMenuItem>
                     ))}
-                    {folders.length === 0 && <DropdownMenuItem disabled>No folders available</DropdownMenuItem>}
+                    {(!folders || folders.length === 0) && <DropdownMenuItem disabled>No folders available</DropdownMenuItem>}
                 </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
