@@ -20,7 +20,7 @@ import { StudyGoalListView } from '@/components/study-tracker/study-goal-list-vi
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { FolderCard } from '@/components/study-tracker/study-folder-card';
+import { FolderCard as StudyFolderCard } from '@/components/study-tracker/study-folder-card';
 
 
 type View = 'card' | 'list';
