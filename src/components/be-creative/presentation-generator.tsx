@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
@@ -430,8 +430,8 @@ export function PresentationGenerator() {
     const templateStyle = templates.find(t => t.id === selectedTemplate) || templates[0];
     const currentSlide = response.slides[currentSlideIndex];
     
-    const getLayoutClasses = (layout: Slide['layout'], isTitleSlide: boolean) => {
-        if (isTitleSlide) {
+    const getLayoutClasses = (layout: Slide['layout'], isTitleSlide: boolean, isLastSlide: boolean) => {
+        if (isTitleSlide || isLastSlide) {
             return 'flex flex-col items-center justify-center text-center';
         }
         switch (layout) {
@@ -451,6 +451,12 @@ export function PresentationGenerator() {
           <CarouselContent>
             {response.slides.map((slide, index) => {
                 const isTitleSlide = index === 0;
+                const isLastSlide = index === response.slides.length - 1;
+                let EndIcon = ThumbsUp;
+                if (slide.title.toLowerCase().includes('q&a')) {
+                  EndIcon = Handshake;
+                }
+                
                 return (
                   <CarouselItem key={index}>
                     <Card className={cn(
@@ -460,11 +466,17 @@ export function PresentationGenerator() {
                         slideSize === '16:9' ? 'aspect-[16/9]' : 'aspect-[4/3]'
                     )}>
                       <CardContent className="flex-1 w-full flex items-center justify-center">
-                        <div className={cn('w-full h-full', getLayoutClasses(slide.layout, isTitleSlide))}>
+                        <div className={cn('w-full h-full', getLayoutClasses(slide.layout, isTitleSlide, isLastSlide))}>
                             {isTitleSlide ? (
                                 <div className="space-y-4">
                                     <h1 className="text-6xl font-bold">{slide.title}</h1>
                                     <p className="text-2xl opacity-80">{slide.content.join(' ')}</p>
+                                </div>
+                            ) : isLastSlide ? (
+                                <div className="space-y-6 text-center">
+                                    <EndIcon className="h-24 w-24 mx-auto opacity-80" />
+                                    <h2 className="text-5xl font-bold">{slide.title}</h2>
+                                    {slide.content.length > 0 && <p className="text-xl opacity-80">{slide.content.join(' ')}</p>}
                                 </div>
                             ) : (
                                 <>
