@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { DocListCardView } from '@/components/docs/doc-list-card-view';
 import { DocListListView } from '@/components/docs/doc-list-list-view';
+import { FolderCard } from '@/components/docs/folder-card';
 
 type View = 'card' | 'list';
 
@@ -24,6 +25,7 @@ export default function DocsFolderPage() {
   const { toast } = useToast();
   const [view, setView] = useState<View>('card');
   const [docs, setDocs] = useState<Doc[]>([]);
+  const [subFolders, setSubFolders] = useState<DocFolder[]>([]);
   const [allFolders, setAllFolders] = useState<DocFolder[]>([]);
   const [currentFolder, setCurrentFolder] = useState<DocFolder | null>(null);
 
@@ -60,6 +62,11 @@ export default function DocsFolderPage() {
       const unsubscribeDocs = onSnapshot(docsQuery, (snapshot) => {
         setDocs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Doc)));
       });
+      
+      const subFoldersQuery = query(collection(db, 'users', user.uid, 'docFolders'), where('parentId', '==', folderId));
+      const unsubscribeSubFolders = onSnapshot(subFoldersQuery, (snapshot) => {
+        setSubFolders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocFolder)));
+      });
 
       const allFoldersQuery = query(collection(db, 'users', user.uid, 'docFolders'));
        const unsubscribeAllFolders = onSnapshot(allFoldersQuery, (snapshot) => {
@@ -70,6 +77,7 @@ export default function DocsFolderPage() {
         unsubscribeFolder();
         unsubscribeDocs();
         unsubscribeAllFolders();
+        unsubscribeSubFolders();
       };
     }
   }, [user, folderId, router, toast]);
@@ -92,6 +100,17 @@ export default function DocsFolderPage() {
     } catch (e) {
         console.error("Error deleting document: ", e);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete document.' });
+    }
+  };
+
+  const handleDeleteFolder = async (folderIdToDelete: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'docFolders', folderIdToDelete));
+      toast({ title: 'Folder deleted' });
+    } catch(e) {
+       console.error("Error deleting folder: ", e);
+       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete folder.' });
     }
   };
 
@@ -132,6 +151,18 @@ export default function DocsFolderPage() {
         toast({ variant: 'destructive', title: 'Error moving document.'});
     }
   };
+  
+  const handleMoveFolder = async (folderToMoveId: string, newParentId: string | null) => {
+    if (!user) return;
+    try {
+      const folderRef = doc(db, 'users', user.uid, 'docFolders', folderToMoveId);
+      await updateDoc(folderRef, { parentId: newParentId });
+      toast({ title: '✓ Folder Moved' });
+    } catch (e) {
+      console.error("Error moving folder: ", e);
+      toast({ variant: 'destructive', title: 'Error moving folder.' });
+    }
+  };
 
   if (loading || !user || !currentFolder) {
     return <div>Loading folder...</div>;
@@ -141,7 +172,7 @@ export default function DocsFolderPage() {
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
          <div className='flex items-center gap-4'>
-            <Button variant="outline" size="icon" onClick={() => router.push('/docs')}><ArrowLeft /></Button>
+            <Button variant="outline" size="icon" onClick={() => router.push(currentFolder.parentId ? `/docs/folder/${currentFolder.parentId}` : '/docs')}><ArrowLeft /></Button>
             <div>
                  <div className="flex items-center gap-2">
                     <Folder className="h-7 w-7 text-primary"/>
@@ -166,18 +197,42 @@ export default function DocsFolderPage() {
         </div>
       </div>
       
-       {docs.length === 0 ? (
+       {docs.length === 0 && subFolders.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
             <h3 className="text-xl font-semibold font-headline">This folder is empty</h3>
             <p className="text-muted-foreground">Click "New Doc" to add a document to this folder.</p>
         </div>
       ) : (
-         <div className="flex-1">
-            {view === 'card' ? (
-              <DocListCardView docs={docs} folders={allFolders} onDelete={handleDeleteDoc} onMove={handleMoveToFolder} />
-            ) : (
-              <DocListListView docs={docs} folders={allFolders} onDelete={handleDeleteDoc} onMove={handleMoveToFolder} />
+         <div className="flex-1 space-y-8">
+            {subFolders.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold font-headline mb-4">Sub-folders</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                  {subFolders.map(folder => (
+                    <FolderCard 
+                        key={folder.id} 
+                        folder={folder}
+                        allFolders={allFolders}
+                        onDelete={() => handleDeleteFolder(folder.id)}
+                        onMove={handleMoveFolder}
+                    />
+                  ))}
+                </div>
+              </div>
             )}
+            
+            <div>
+              <h2 className="text-2xl font-bold font-headline mb-4">Documents</h2>
+              {docs.length > 0 ? (
+                view === 'card' ? (
+                  <DocListCardView docs={docs} folders={allFolders} onDelete={handleDeleteDoc} onMove={handleMoveToFolder} />
+                ) : (
+                  <DocListListView docs={docs} folders={allFolders} onDelete={handleDeleteDoc} onMove={handleMoveToFolder} />
+                )
+              ) : (
+                <p className="text-muted-foreground text-sm">No documents in this folder.</p>
+              )}
+            </div>
         </div>
       )}
     </div>

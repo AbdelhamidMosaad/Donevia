@@ -316,6 +316,7 @@ export type DocFolder = {
   name: string;
   ownerId: string;
   createdAt: Timestamp;
+  parentId?: string | null;
 };
 
 /** Whiteboard */

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, FolderPlus, Minus, Plus, GripHorizontal, FileText, CheckCircle } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, FolderPlus, Minus, Plus, GripHorizontal, FileText, CheckCircle, Folder as FolderIcon, Move } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -168,6 +168,7 @@ export default function DocsDashboardPage() {
         name: 'New Folder',
         ownerId: user.uid,
         createdAt: Timestamp.now(),
+        parentId: null,
       });
       toast({ title: '✓ Folder Created' });
     } catch (e) {
@@ -192,7 +193,20 @@ export default function DocsDashboardPage() {
     }
   };
 
+  const handleMoveFolder = async (folderId: string, newParentId: string | null) => {
+    if (!user) return;
+    try {
+      const folderRef = doc(db, 'users', user.uid, 'docFolders', folderId);
+      await updateDoc(folderRef, { parentId: newParentId });
+      toast({ title: '✓ Folder Moved' });
+    } catch (e) {
+      console.error("Error moving folder: ", e);
+      toast({ variant: 'destructive', title: 'Error moving folder.' });
+    }
+  };
+
   const unfiledDocs = docs.filter(d => !d.folderId);
+  const topLevelFolders = folders.filter(f => !f.parentId);
 
   if (loading || !user) {
     return <div>Loading...</div>;
@@ -251,12 +265,18 @@ export default function DocsDashboardPage() {
         </div>
       ) : (
          <div className="flex-1 space-y-8">
-            {folders.length > 0 && (
+            {topLevelFolders.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                  {folders.map(folder => (
-                    <FolderCard key={folder.id} folder={folder} onDelete={() => handleDeleteFolder(folder.id)} />
+                  {topLevelFolders.map(folder => (
+                    <FolderCard 
+                        key={folder.id} 
+                        folder={folder}
+                        allFolders={folders}
+                        onDelete={() => handleDeleteFolder(folder.id)}
+                        onMove={handleMoveFolder}
+                    />
                   ))}
                 </div>
               </div>
