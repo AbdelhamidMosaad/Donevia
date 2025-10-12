@@ -229,12 +229,14 @@ export function PresentationGenerator() {
             x: 0.5, y: 1.0, w: 1.0, h: 0.1, fill: { color: templateStyle.accentColor }
           });
           
-          pptxSlide.addText(slide.content, { 
-            x: 0.5, y: 1.5, w: '90%', h: '75%', 
-            fontSize: 18, color: templateStyle.fontColor,
-            bullet: true,
-            lineSpacing: 36
-          });
+          pptxSlide.addText(
+            slide.content.map(point => ({ text: point, options: { bullet: true } })),
+            { 
+              x: 0.5, y: 1.5, w: '90%', h: '75%', 
+              fontSize: 18, color: templateStyle.fontColor,
+              lineSpacing: 36
+            }
+          );
         }
 
         if (slide.speakerNotes) {
