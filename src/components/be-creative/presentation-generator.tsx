@@ -27,17 +27,17 @@ import PptxGenJS from 'pptxgenjs';
 import jsPDF from 'jspdf';
 
 
-const templates: { id: PresentationTemplate; name: string; bg: string, text: string, accent: string }[] = [
-    { id: 'default', name: 'Default', bg: 'bg-slate-100', text: 'text-slate-800', accent: 'bg-blue-500' },
-    { id: 'professional', name: 'Professional', bg: 'bg-white', text: 'text-gray-900', accent: 'bg-gray-800' },
-    { id: 'creative', name: 'Creative', bg: 'bg-purple-100', text: 'text-purple-900', accent: 'bg-yellow-400' },
-    { id: 'technical', name: 'Technical', bg: 'bg-gray-800', text: 'text-white', accent: 'bg-cyan-400' },
-    { id: 'minimalist', name: 'Minimalist', bg: 'bg-gray-50', text: 'text-gray-700', accent: 'bg-gray-400' },
-    { id: 'dark', name: 'Dark Mode', bg: 'bg-gray-900', text: 'text-gray-100', accent: 'bg-indigo-500' },
-    { id: 'playful', name: 'Playful', bg: 'bg-yellow-100', text: 'text-orange-900', accent: 'bg-pink-500' },
-    { id: 'academic', name: 'Academic', bg: 'bg-blue-50', text: 'text-blue-900', accent: 'bg-blue-800' },
-    { id: 'corporate', name: 'Corporate', bg: 'bg-sky-700', text: 'text-white', accent: 'bg-sky-200' },
-    { id: 'elegant', name: 'Elegant', bg: 'bg-stone-200', text: 'text-stone-800', accent: 'bg-stone-600' },
+const templates: { id: PresentationTemplate; name: string; bg: string, text: string, accent: string, pptx: { backgroundColor: string, fontColor: string, accentColor: string } }[] = [
+    { id: 'default', name: 'Default', bg: 'bg-slate-100', text: 'text-slate-800', accent: 'bg-blue-500', pptx: { backgroundColor: 'F1F5F9', fontColor: '1E293B', accentColor: '3B82F6' } },
+    { id: 'professional', name: 'Professional', bg: 'bg-white', text: 'text-gray-900', accent: 'bg-gray-800', pptx: { backgroundColor: 'FFFFFF', fontColor: '111827', accentColor: '1F2937' } },
+    { id: 'creative', name: 'Creative', bg: 'bg-purple-100', text: 'text-purple-900', accent: 'bg-yellow-400', pptx: { backgroundColor: 'F3E8FF', fontColor: '581C87', accentColor: 'FBBF24' } },
+    { id: 'technical', name: 'Technical', bg: 'bg-gray-800', text: 'text-white', accent: 'bg-cyan-400', pptx: { backgroundColor: '1F2937', fontColor: 'FFFFFF', accentColor: '22D3EE' } },
+    { id: 'minimalist', name: 'Minimalist', bg: 'bg-gray-50', text: 'text-gray-700', accent: 'bg-gray-400', pptx: { backgroundColor: 'F9FAFB', fontColor: '374151', accentColor: '9CA3AF' } },
+    { id: 'dark', name: 'Dark Mode', bg: 'bg-gray-900', text: 'text-gray-100', accent: 'bg-indigo-500', pptx: { backgroundColor: '111827', fontColor: 'F9FAFB', accentColor: '6366F1' } },
+    { id: 'playful', name: 'Playful', bg: 'bg-yellow-100', text: 'text-orange-900', accent: 'bg-pink-500', pptx: { backgroundColor: 'FEF3C7', fontColor: '7C2D12', accentColor: 'EC4899' } },
+    { id: 'academic', name: 'Academic', bg: 'bg-blue-50', text: 'text-blue-900', accent: 'bg-blue-800', pptx: { backgroundColor: 'EFF6FF', fontColor: '1E3A8A', accentColor: '1E40AF' } },
+    { id: 'corporate', name: 'Corporate', bg: 'bg-sky-700', text: 'text-white', accent: 'bg-sky-200', pptx: { backgroundColor: '0369A1', fontColor: 'FFFFFF', accentColor: 'BAE6FD' } },
+    { id: 'elegant', name: 'Elegant', bg: 'bg-stone-200', text: 'text-stone-800', accent: 'bg-stone-600', pptx: { backgroundColor: 'E7E5E4', fontColor: '292524', accentColor: '57534E' } },
 ];
 
 const toneOptions = [
@@ -187,23 +187,69 @@ export function PresentationGenerator() {
     if (!response) return;
     setIsExporting(true);
 
-    const pptx = new PptxGenJS();
-    
-    response.slides.forEach(slide => {
-      const pptxSlide = pptx.addSlide();
+    try {
+      const pptx = new PptxGenJS();
+      const templateStyle = templates.find(t => t.id === selectedTemplate)?.pptx || templates[0].pptx;
       
-      pptxSlide.addText(slide.title, { x: 0.5, y: 0.25, fontSize: 24, bold: true, w: '90%' });
+      const layoutName = slideSize === '16:9' ? 'LAYOUT_16x9' : 'LAYOUT_4x3';
+      pptx.layout = layoutName;
+      
+      // Define a master slide for consistent branding
+      pptx.defineSlideMaster({
+        title: 'MASTER_SLIDE',
+        background: { color: templateStyle.backgroundColor },
+      });
 
-      const contentText = slide.content.map(point => `• ${point}`).join('\n');
-      pptxSlide.addText(contentText, { x: 0.5, y: 1.5, fontSize: 14, w: '90%', h: '75%' });
+      response.slides.forEach((slide, index) => {
+        const isTitleSlide = index === 0;
+        const isLastSlide = index === response.slides.length - 1;
+        const pptxSlide = pptx.addSlide({ masterName: 'MASTER_SLIDE' });
 
-      if (slide.speakerNotes) {
-        pptxSlide.addNotes(slide.speakerNotes);
-      }
-    });
+        if (isTitleSlide) {
+          pptxSlide.addText(slide.title, { 
+            x: '5%', y: '40%', w: '90%', h: '20%', 
+            align: 'center', fontSize: 44, bold: true, color: templateStyle.fontColor 
+          });
+          if(slide.content.length > 0) {
+            pptxSlide.addText(slide.content.join(' '), { 
+              x: '5%', y: '60%', w: '90%', h: '10%', 
+              align: 'center', fontSize: 24, color: templateStyle.fontColor, 
+            });
+          }
+        } else if (isLastSlide) {
+           pptxSlide.addText(slide.title, { 
+            x: '5%', y: '40%', w: '90%', h: '20%', 
+            align: 'center', fontSize: 44, bold: true, color: templateStyle.fontColor 
+          });
+        } else {
+          // Regular content slide
+          pptxSlide.addText(slide.title, { x: 0.5, y: 0.25, w: 8, h: 0.75, fontSize: 32, bold: true, color: templateStyle.fontColor });
+          // Add an accent shape
+          pptxSlide.addShape(pptx.shapes.RECTANGLE, {
+            x: 0.5, y: 1.0, w: 1.0, h: 0.1, fill: { color: templateStyle.accentColor }
+          });
+          
+          pptxSlide.addText(slide.content, { 
+            x: 0.5, y: 1.5, w: '90%', h: '75%', 
+            fontSize: 18, color: templateStyle.fontColor,
+            bullet: true,
+            lineSpacing: 36
+          });
+        }
 
-    await pptx.writeFile({ fileName: `${response.title}.pptx` });
-    setIsExporting(false);
+        if (slide.speakerNotes) {
+          pptxSlide.addNotes(slide.speakerNotes);
+        }
+      });
+
+      await pptx.writeFile({ fileName: `${response.title}.pptx` });
+      toast({title: "Export successful!", description: "Your presentation has been downloaded."});
+
+    } catch (error) {
+       toast({variant: 'destructive', title: "Export failed", description: (error as Error).message });
+    } finally {
+       setIsExporting(false);
+    }
   };
   
    const handleExportPDF = async () => {
