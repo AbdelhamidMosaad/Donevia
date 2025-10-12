@@ -224,10 +224,6 @@ export function PresentationGenerator() {
         } else {
           // Regular content slide
           pptxSlide.addText(slide.title, { x: 0.5, y: 0.25, w: 8, h: 0.75, fontSize: 32, bold: true, color: templateStyle.fontColor });
-          // Add an accent shape
-          pptxSlide.addShape(pptx.shapes.RECTANGLE, {
-            x: 0.5, y: 1.0, w: 1.0, h: 0.1, fill: { color: templateStyle.accentColor }
-          });
           
           pptxSlide.addText(
             slide.content.map(point => ({ text: point, options: { bullet: true } })),
@@ -531,7 +527,7 @@ export function PresentationGenerator() {
                                 {(slide.layout !== 'visual-only') && (
                                     <div className="space-y-4">
                                       <h3 className="text-4xl font-bold flex items-center gap-4">
-                                        <span className={cn('h-2 w-16 rounded-full', templateStyle.accent)} />
+                                        
                                         {slide.title}
                                       </h3>
                                       <ul className="list-disc pl-8 space-y-2 text-xl">
