@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -19,6 +20,7 @@ import { Textarea } from '../ui/textarea';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 
 const templates: { id: PresentationTemplate; name: string; bg: string, text: string, accent: string }[] = [
@@ -34,9 +36,9 @@ const templates: { id: PresentationTemplate; name: string; bg: string, text: str
     { id: 'elegant', name: 'Elegant', bg: 'bg-stone-200', text: 'text-stone-800', accent: 'bg-stone-600' },
 ];
 
-const toneOptions: z.infer<typeof PresentationRequestSchema.shape.tone>['enum'] = [
+const toneOptions = [
     'Professional', 'Educational', 'Creative', 'Technical / Data-driven', 'Marketing / Sales pitch'
-];
+] as const;
 
 type PresentationFormValues = z.infer<typeof PresentationRequestSchema>;
 
