@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,12 +15,12 @@ import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
 import { PresentationRequestSchema, type PresentationResponse, type Slide, type PresentationTemplate } from '@/lib/types/presentation';
 import { generatePresentation } from '@/ai/flows/presentation-flow';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '../ui/carousel';
 import { Textarea } from '../ui/textarea';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
+import { Label } from '../ui/label';
 
 
 const templates: { id: PresentationTemplate; name: string; bg: string, text: string, accent: string }[] = [
@@ -74,6 +74,8 @@ export function PresentationGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<PresentationResponse | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PresentationTemplate>('default');
+  const [api, setApi] = useState<CarouselApi>()
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
 
   const form = useForm<PresentationFormValues>({
     resolver: zodResolver(PresentationRequestSchema),
@@ -87,6 +89,18 @@ export function PresentationGenerator() {
       template: 'default',
     },
   });
+
+  useEffect(() => {
+    if (!api) {
+      return
+    }
+ 
+    setCurrentSlideIndex(api.selectedScrollSnap())
+ 
+    api.on("select", () => {
+      setCurrentSlideIndex(api.selectedScrollSnap())
+    })
+  }, [api])
   
   const generationType = form.watch('generationType');
 
@@ -284,11 +298,12 @@ export function PresentationGenerator() {
   const renderResults = () => {
     if (!response) return null;
     const templateStyle = templates.find(t => t.id === selectedTemplate) || templates[0];
+    const currentSlide = response.slides[currentSlideIndex];
 
     return (
       <div className="flex flex-col h-full gap-4">
         <h2 className={`text-2xl font-bold text-center ${templateStyle.text}`}>{response.title}</h2>
-        <Carousel className="w-full max-w-4xl mx-auto flex-1">
+        <Carousel className="w-full max-w-4xl mx-auto" setApi={setApi}>
           <CarouselContent>
             {response.slides.map((slide, index) => (
               <CarouselItem key={index}>
@@ -306,14 +321,8 @@ export function PresentationGenerator() {
                         {slide.content.map((point, i) => <li key={i}>{point}</li>)}
                       </ul>
                     </div>
-                    <div className="flex flex-col gap-4">
-                        <div className="p-4 bg-black/5 rounded-lg flex-1">
-                          <h4 className="font-semibold mb-2">Speaker Notes</h4>
-                          <p className="text-sm italic">{slide.speakerNotes}</p>
-                        </div>
-                         <div className="flex-1">
-                            <VisualSuggestion suggestion={slide.visualSuggestion} />
-                         </div>
+                    <div className="flex-1">
+                        <VisualSuggestion suggestion={slide.visualSuggestion} />
                     </div>
                   </CardContent>
                 </Card>
@@ -323,6 +332,17 @@ export function PresentationGenerator() {
           <CarouselPrevious className="text-black" />
           <CarouselNext className="text-black" />
         </Carousel>
+
+        <Card className="w-full max-w-4xl mx-auto">
+            <CardHeader>
+                <CardTitle>Speaker Notes</CardTitle>
+                <CardDescription>Slide {currentSlideIndex + 1} of {response.slides.length}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm italic">{currentSlide?.speakerNotes || "No notes for this slide."}</p>
+            </CardContent>
+        </Card>
+
         <div className="flex justify-center gap-2">
           <Button onClick={handleReset}>New Presentation</Button>
         </div>
