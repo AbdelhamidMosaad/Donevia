@@ -230,7 +230,7 @@ export function PresentationGenerator() {
             align: 'center', fontSize: 44, bold: true, color: templateStyle.fontColor 
           });
         } else {
-          pptxSlide.addText(slide.title, { x: 0.5, y: 0.25, w: 8, h: 0.75, fontSize: 32, bold: true, color: templateStyle.fontColor });
+          pptxSlide.addText(slide.title, { x: 0.5, y: 0.25, w: '90%', h: 0.75, fontSize: 32, bold: true, color: templateStyle.fontColor });
           
           if(slide.layout !== 'visual-only' && slide.content.length > 0) {
             const contentObjects = slide.content.map(point => ({ text: point, options: { bullet: true, indentLevel: 0 } }));
@@ -244,6 +244,7 @@ export function PresentationGenerator() {
                 fontSize: 18, color: templateStyle.fontColor,
                 lineSpacing: 36,
                 valign: 'top',
+                fit: 'shrink',
               }
             );
           }
