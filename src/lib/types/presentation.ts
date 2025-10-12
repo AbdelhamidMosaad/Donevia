@@ -12,6 +12,9 @@ export const PresentationToneSchema = z.enum([
 ]);
 export type PresentationTone = z.infer<typeof PresentationToneSchema>;
 
+export const SlideSizeSchema = z.enum(['16:9', '4:3']);
+export type SlideSize = z.infer<typeof SlideSizeSchema>;
+
 
 export const PresentationRequestSchema = z.object({
   generationType: z.enum(['from_topic', 'from_text']),
@@ -21,6 +24,7 @@ export const PresentationRequestSchema = z.object({
   numSlides: z.coerce.number().min(3, { message: 'Must generate at least 3 slides.' }).max(15, { message: 'Cannot generate more than 15 slides.' }),
   tone: PresentationToneSchema,
   template: PresentationTemplateSchema,
+  slideSize: SlideSizeSchema.optional().default('16:9'),
 }).refine(data => data.generationType === 'from_topic' ? !!data.topic : !!data.sourceText, {
     message: "Topic is required for topic-based generation, and source text is required for text-based generation.",
     path: ["topic"],

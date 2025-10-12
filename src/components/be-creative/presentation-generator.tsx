@@ -9,11 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
-import { PresentationRequestSchema, type PresentationResponse, type Slide, type PresentationTemplate } from '@/lib/types/presentation';
+import { PresentationRequestSchema, type PresentationResponse, type Slide, type PresentationTemplate, type SlideSize } from '@/lib/types/presentation';
 import { generatePresentation } from '@/ai/flows/presentation-flow';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '../ui/carousel';
 import { Textarea } from '../ui/textarea';
@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
 import Image from 'next/image';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import PptxGenJS from 'pptxgenjs';
+import jsPDF from 'jspdf';
 
 
 const templates: { id: PresentationTemplate; name: string; bg: string, text: string, accent: string }[] = [
@@ -121,6 +123,7 @@ export function PresentationGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [response, setResponse] = useState<PresentationResponse | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PresentationTemplate>('default');
   const [api, setApi] = useState<CarouselApi>()
@@ -136,6 +139,7 @@ export function PresentationGenerator() {
       numSlides: 8,
       tone: "Professional",
       template: 'default',
+      slideSize: '16:9',
     },
   });
 
@@ -152,6 +156,7 @@ export function PresentationGenerator() {
   }, [api])
   
   const generationType = form.watch('generationType');
+  const slideSize = form.watch('slideSize');
 
   const handleGenerate = async (values: PresentationFormValues) => {
     if (!user) {
@@ -177,6 +182,58 @@ export function PresentationGenerator() {
     form.reset();
     setResponse(null);
   };
+  
+   const handleExportPPTX = async () => {
+    if (!response) return;
+    setIsExporting(true);
+
+    const pptx = new PptxGenJS();
+    
+    response.slides.forEach(slide => {
+      const pptxSlide = pptx.addSlide();
+      
+      pptxSlide.addText(slide.title, { x: 0.5, y: 0.25, fontSize: 24, bold: true, w: '90%' });
+
+      const contentText = slide.content.map(point => `• ${point}`).join('\n');
+      pptxSlide.addText(contentText, { x: 0.5, y: 1.5, fontSize: 14, w: '90%', h: '75%' });
+
+      if (slide.speakerNotes) {
+        pptxSlide.addNotes(slide.speakerNotes);
+      }
+    });
+
+    await pptx.writeFile({ fileName: `${response.title}.pptx` });
+    setIsExporting(false);
+  };
+  
+   const handleExportPDF = async () => {
+    if(!response) return;
+    setIsExporting(true);
+
+    const pdf = new jsPDF({
+      orientation: slideSize === '16:9' ? 'landscape' : 'portrait',
+      unit: 'px',
+      format: slideSize === '16:9' ? [1280, 720] : [960, 720],
+    });
+    
+    response.slides.forEach((slide, index) => {
+      if (index > 0) pdf.addPage();
+      pdf.text(slide.title, 40, 50);
+      let yOffset = 100;
+      slide.content.forEach(point => {
+        pdf.text(`• ${point}`, 50, yOffset);
+        yOffset += 20;
+      });
+       if (slide.speakerNotes) {
+         pdf.setTextColor(150);
+         pdf.text(`Notes: ${slide.speakerNotes}`, 40, pdf.internal.pageSize.height - 40, { maxWidth: pdf.internal.pageSize.width - 80 });
+         pdf.setTextColor(0);
+      }
+    });
+
+    pdf.save(`${response.title}.pdf`);
+    setIsExporting(false);
+  }
   
   const renderInitialState = () => (
     <Card className="h-full max-w-3xl mx-auto">
@@ -292,6 +349,30 @@ export function PresentationGenerator() {
                     </FormItem>
                 )}
             />
+            
+             <FormField
+              control={form.control}
+              name="slideSize"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Slide Size</FormLabel>
+                  <FormControl>
+                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4">
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl><RadioGroupItem value="16:9" /></FormControl>
+                        <FormLabel className="font-normal">Widescreen (16:9)</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl><RadioGroupItem value="4:3" /></FormControl>
+                        <FormLabel className="font-normal">Standard (4:3)</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
 
              <FormField
                 control={form.control}
@@ -362,14 +443,16 @@ export function PresentationGenerator() {
 
     return (
       <div className="flex flex-col h-full gap-4">
-        <h2 className={`text-3xl font-bold text-center font-headline ${templateStyle.text}`}>{response.title}</h2>
+        <h2 className={`text-3xl font-bold text-center font-headline`}>{response.title}</h2>
         <Carousel className="w-full max-w-5xl mx-auto" setApi={setApi}>
           <CarouselContent>
             {response.slides.map((slide, index) => (
               <CarouselItem key={index}>
                 <Card className={cn(
-                    `h-full flex flex-col aspect-[16/9] ${templateStyle.bg} ${templateStyle.text}`,
-                    getLayoutClasses(slide.layout)
+                    "h-full flex flex-col p-6",
+                    templateStyle.bg, 
+                    templateStyle.text,
+                    slideSize === '16:9' ? 'aspect-[16/9]' : 'aspect-[4/3]'
                 )}>
                   <CardHeader className={cn(slide.layout === 'title' && 'items-center')}>
                     <CardTitle className="flex items-center gap-2 text-4xl">
@@ -413,6 +496,14 @@ export function PresentationGenerator() {
 
         <div className="flex justify-center gap-2">
           <Button onClick={handleReset}>New Presentation</Button>
+           <Button onClick={handleExportPPTX} disabled={isExporting}>
+            <MonitorPlay className="mr-2 h-4 w-4" />
+            {isExporting ? 'Exporting...' : 'Export PPTX'}
+          </Button>
+           <Button onClick={handleExportPDF} disabled={isExporting}>
+            <FileText className="mr-2 h-4 w-4" />
+            {isExporting ? 'Exporting...' : 'Export PDF'}
+          </Button>
         </div>
       </div>
     );
