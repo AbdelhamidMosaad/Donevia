@@ -27,15 +27,13 @@ import { BookmarksIcon } from '@/components/icons/tools/bookmarks-icon';
 import { TradingTrackerIcon } from '@/components/icons/tools/trading-tracker-icon';
 import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
 import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
-import { BrainstormingIcon } from '@/components/icons/tools/brainstorming-icon';
-import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
 import { DocsIcon } from '@/components/icons/tools/docs-icon';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from '@/components/icons/tools/interview-prep-icon';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { JournalIcon } from '@/components/icons/tools/journal-icon';
-import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
+import { BeCreativeIcon } from '@/components/icons/tools/be-creative-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -52,9 +50,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     'work-tracker': WorkTrackerIcon,
     'english-coach': EnglishCoachIcon,
     'interview-prep': InterviewPrepIcon,
-    brainstorming: BrainstormingIcon,
-    whiteboard: WhiteboardIcon,
-    'mind-map': MindMapIcon,
+    'be-creative': BeCreativeIcon,
     docs: DocsIcon,
     'learning-tool': LearningAssistantIcon,
     pomodoro: PomodoroIcon,
@@ -76,9 +72,7 @@ const allTools = [
     { id: 'work-tracker', href: '/work-tracker', title: 'Work Tracker', description: 'Log your daily work activities and tasks.' },
     { id: 'english-coach', href: '/english-coach', title: 'English Coach', description: 'Improve your English with AI-powered tools.' },
     { id: 'interview-prep', href: '/interview-prep', title: 'Interview Prep', description: 'Practice for your next job interview.' },
-    { id: 'brainstorming', href: '/brainstorming', title: 'Brainstorming', description: 'Capture ideas on a structured canvas.' },
-    { id: 'whiteboard', href: '/whiteboard', title: 'Whiteboard', description: 'A free-form digital canvas for your ideas.' },
-    { id: 'mind-map', href: '/mind-map', title: 'Mind Map', description: 'Visually organize ideas with an automatic layout.' },
+    { id: 'be-creative', href: '/be-creative', title: 'Be Creative', description: 'A suite of tools for brainstorming and creativity.' },
     { id: 'docs', href: '/docs', title: 'Docs', description: 'A powerful, feature-rich document editor.' },
     { id: 'learning-tool', href: '/learning-tool', title: 'Learning Assistant', description: 'Generate study materials with AI.' },
     { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },

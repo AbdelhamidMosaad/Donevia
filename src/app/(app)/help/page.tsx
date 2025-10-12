@@ -128,13 +128,13 @@ const features = [
         details: [
             {
                 title: 'Structured Planning',
-                text: "Break down large study goals into chapters and subtopics. Drag and drop to reorder your study plan and track progress with satisfying checklists and progress bars.",
+                text: "Break down large study goals into chapters and topics. Drag and drop to reorder your study plan and track progress with satisfying checklists and progress bars.",
                 image: "https://picsum.photos/600/400",
                 dataAiHint: "study plan checklist"
             },
             {
                 title: 'Time Tracking & Gamification',
-                text: "Use the built-in timer for each subtopic to log your study sessions. Level up, earn badges, and build a study streak to stay motivated on your learning journey.",
+                text: "Use the built-in timer for each topic to log your study sessions. Level up, earn badges, and build a study streak to stay motivated on your learning journey.",
                 image: "https://picsum.photos/600/400",
                 dataAiHint: "gamification level up"
             },
@@ -189,9 +189,9 @@ const features = [
         ],
     },
     {
-        id: 'creativity-suite',
+        id: 'be-creative',
         icon: <BrainCircuit className="h-6 w-6 text-violet-500" />,
-        title: 'Creativity Suite',
+        title: 'Be Creative',
         description: 'A collection of visual tools to brainstorm and plan.',
         details: [
              {
