@@ -2,8 +2,10 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BrainstormingIcon, WhiteboardIcon, MindMapIcon } from 'lucide-react';
 import { BeCreativeIcon } from '@/components/icons/tools/be-creative-icon';
+import { BrainstormingIcon } from '@/components/icons/tools/brainstorming-icon';
+import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
+import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
 
 import BrainstormingPage from '../brainstorming/page';
 import WhiteboardDashboardPage from '../whiteboard/page';
