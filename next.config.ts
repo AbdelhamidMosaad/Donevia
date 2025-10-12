@@ -44,14 +44,17 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  experimental: {
-    allowedDevOrigins: ["https://6000-firebase-studio-*.cluster-*.cloudworkstations.dev"],
-  },
-  reactStrictMode: false,
 };
 
 
 const isDev = process.env.NODE_ENV === 'development';
+
+if (isDev) {
+    nextConfig.reactStrictMode = false;
+    nextConfig.experimental = {
+        allowedDevOrigins: ["https://6000-firebase-studio-*.cluster-*.cloudworkstations.dev"],
+    }
+}
 
 // Only wrap with PWA config in production.
 const config = isDev ? nextConfig : withPWA(nextConfig);
