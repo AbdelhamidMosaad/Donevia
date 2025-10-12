@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, BarChart3 } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, BarChart3, Folder as FolderIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { StudyGoal, StudySubtopic, StudySession, StudyFolder } from '@/lib/types';
@@ -20,7 +20,7 @@ import { StudyGoalListView } from '@/components/study-tracker/study-goal-list-vi
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { FolderCard as StudyFolderCard } from '@/components/study-tracker/study-folder-card';
+import { StudyFolderCard } from '@/components/study-tracker/study-folder-card';
 
 
 type View = 'card' | 'list';
@@ -180,7 +180,7 @@ export default function StudyTrackerPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                              <DropdownMenuItem onSelect={() => setIsAddDialogOpen(true)}>New Study Goal</DropdownMenuItem>
-                             <DropdownMenuItem onSelect={handleAddFolder}>New Folder</DropdownMenuItem>
+                             <DropdownMenuItem onSelect={handleAddFolder}><FolderIcon className="mr-2 h-4 w-4"/>New Folder</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
