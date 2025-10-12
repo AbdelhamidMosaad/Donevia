@@ -54,7 +54,7 @@ export function InsightsDashboard({ goals, topics, sessions }: InsightsDashboard
   }, [sessions]);
   
   const averageTopicTime = useMemo(() => {
-    if (!topics) return 0;
+    if (!topics || topics.length === 0) return 0;
     const completedTopicsWithTime = topics.filter(s => s.isCompleted && (s.timeSpentSeconds || 0) > 0);
     if (completedTopicsWithTime.length === 0) return 0;
     const totalSeconds = completedTopicsWithTime.reduce((sum, s) => sum + (s.timeSpentSeconds || 0), 0);
