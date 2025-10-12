@@ -16,7 +16,7 @@ import {
   increment,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { StudyGoal, StudyChapter, StudySubtopic, StudyProfile } from './types';
+import type { StudyGoal, StudyChapter, StudyTopic, StudyProfile } from './types';
 import moment from 'moment';
 import { checkAndAwardBadges } from './gamification';
 
@@ -49,9 +49,9 @@ export const deleteStudyGoal = async (userId: string, goalId: string) => {
   const chaptersSnapshot = await getDocs(chaptersQuery);
   chaptersSnapshot.forEach((doc) => batch.delete(doc.ref));
   
-  const subtopicsQuery = query(collection(db, 'users', userId, 'studySubtopics'), where('goalId', '==', goalId));
-  const subtopicsSnapshot = await getDocs(subtopicsQuery);
-  subtopicsSnapshot.forEach((doc) => batch.delete(doc.ref));
+  const topicsQuery = query(collection(db, 'users', userId, 'studyTopics'), where('goalId', '==', goalId));
+  const topicsSnapshot = await getDocs(topicsQuery);
+  topicsSnapshot.forEach((doc) => batch.delete(doc.ref));
 
   return await batch.commit();
 };
@@ -104,46 +104,46 @@ export const deleteStudyChapter = async (userId: string, chapterId: string) => {
   const chapterRef = doc(db, 'users', userId, 'studyChapters', chapterId);
   batch.delete(chapterRef);
 
-  const subtopicsQuery = query(collection(db, 'users', userId, 'studySubtopics'), where('chapterId', '==', chapterId));
-  const subtopicsSnapshot = await getDocs(subtopicsQuery);
-  subtopicsSnapshot.forEach((doc) => batch.delete(doc.ref));
+  const topicsQuery = query(collection(db, 'users', userId, 'studyTopics'), where('chapterId', '==', chapterId));
+  const topicsSnapshot = await getDocs(topicsQuery);
+  topicsSnapshot.forEach((doc) => batch.delete(doc.ref));
   
   return await batch.commit();
 }
 
 
-// --- Subtopics ---
-export const addStudySubtopic = async (userId: string, subtopicData: Omit<StudySubtopic, 'id' | 'createdAt' | 'ownerId'>) => {
-  const subtopicsRef = collection(db, 'users', userId, 'studySubtopics');
-  return await addDoc(subtopicsRef, {
-    ...subtopicData,
+// --- Topics ---
+export const addStudyTopic = async (userId: string, topicData: Omit<StudyTopic, 'id' | 'createdAt' | 'ownerId'>) => {
+  const topicsRef = collection(db, 'users', userId, 'studyTopics');
+  return await addDoc(topicsRef, {
+    ...topicData,
     ownerId: userId,
     createdAt: serverTimestamp(),
   });
 };
 
-export const updateStudySubtopic = async (userId: string, subtopicId: string, subtopicData: Partial<Omit<StudySubtopic, 'id'>>) => {
-  const subtopicRef = doc(db, 'users', userId, 'studySubtopics', subtopicId);
-  return await updateDoc(subtopicRef, subtopicData);
+export const updateStudyTopic = async (userId: string, topicId: string, topicData: Partial<Omit<StudyTopic, 'id'>>) => {
+  const topicRef = doc(db, 'users', userId, 'studyTopics', topicId);
+  return await updateDoc(topicRef, topicData);
 };
 
-export const toggleStudySubtopicCompletion = async (userId: string, subtopicId: string, isCompleted: boolean) => {
-    const subtopicRef = doc(db, 'users', userId, 'studySubtopics', subtopicId);
-    await updateDoc(subtopicRef, { isCompleted });
+export const toggleStudyTopicCompletion = async (userId: string, topicId: string, isCompleted: boolean) => {
+    const topicRef = doc(db, 'users', userId, 'studyTopics', topicId);
+    await updateDoc(topicRef, { isCompleted });
     if(isCompleted) {
         await logStudyActivity(userId);
-        await checkAndAwardBadges(userId, 'subtopic');
+        await checkAndAwardBadges(userId, 'topic');
     }
 }
 
-export const deleteStudySubtopic = async (userId: string, subtopicId: string) => {
-  const subtopicRef = doc(db, 'users', userId, 'studySubtopics', subtopicId);
-  return await deleteDoc(subtopicRef);
+export const deleteStudyTopic = async (userId: string, topicId: string) => {
+  const topicRef = doc(db, 'users', userId, 'studyTopics', topicId);
+  return await deleteDoc(topicRef);
 };
 
 
 // --- Time Tracking ---
-export const logStudySession = async (userId: string, subtopicId: string, durationSeconds: number) => {
+export const logStudySession = async (userId: string, topicId: string, durationSeconds: number) => {
     if (durationSeconds <= 0) return;
 
     const batch = writeBatch(db);
@@ -151,15 +151,15 @@ export const logStudySession = async (userId: string, subtopicId: string, durati
     // Log the individual session
     const sessionRef = doc(collection(db, 'users', userId, 'studySessions'));
     batch.set(sessionRef, {
-        subtopicId,
+        topicId,
         ownerId: userId,
         durationSeconds,
         date: serverTimestamp(),
     });
 
-    // Increment the total time on the subtopic
-    const subtopicRef = doc(db, 'users', userId, 'studySubtopics', subtopicId);
-    batch.update(subtopicRef, {
+    // Increment the total time on the topic
+    const topicRef = doc(db, 'users', userId, 'studyTopics', topicId);
+    batch.update(topicRef, {
         timeSpentSeconds: increment(durationSeconds)
     });
     
@@ -212,9 +212,9 @@ export const addSampleStudyGoal = async (userId: string) => {
     });
 
     const chapters = [
-        { title: '1. Introduction to React', order: 0, subtopics: ['What is React?', 'Setting up a React project', 'Understanding JSX'] },
-        { title: '2. Components & Props', order: 1, subtopics: ['Functional Components', 'Class Components', 'Passing Props'] },
-        { title: '3. State & Lifecycle', order: 2, subtopics: ['useState Hook', 'useEffect Hook', 'Lifecycle Methods'] },
+        { title: '1. Introduction to React', order: 0, topics: ['What is React?', 'Setting up a React project', 'Understanding JSX'] },
+        { title: '2. Components & Props', order: 1, topics: ['Functional Components', 'Class Components', 'Passing Props'] },
+        { title: '3. State & Lifecycle', order: 2, topics: ['useState Hook', 'useEffect Hook', 'Lifecycle Methods'] },
     ];
 
     for (const chapterData of chapters) {
@@ -227,12 +227,12 @@ export const addSampleStudyGoal = async (userId: string) => {
             createdAt: serverTimestamp(),
         });
 
-        for (const [i, subtopicTitle] of chapterData.subtopics.entries()) {
-            const subtopicRef = doc(collection(db, 'users', userId, 'studySubtopics'));
-            batch.set(subtopicRef, {
+        for (const [i, topicTitle] of chapterData.topics.entries()) {
+            const topicRef = doc(collection(db, 'users', userId, 'studyTopics'));
+            batch.set(topicRef, {
                 goalId: goalRef.id,
                 chapterId: chapterRef.id,
-                title: subtopicTitle,
+                title: topicTitle,
                 isCompleted: false,
                 order: i,
                 ownerId: userId,
@@ -245,8 +245,8 @@ export const addSampleStudyGoal = async (userId: string) => {
 }
 
 
-export const cleanupFinishedSubtopics = async (userId: string): Promise<number> => {
-    const q = query(collection(db, 'users', userId, 'studySubtopics'), where('isCompleted', '==', true));
+export const cleanupFinishedTopics = async (userId: string): Promise<number> => {
+    const q = query(collection(db, 'users', userId, 'studyTopics'), where('isCompleted', '==', true));
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {

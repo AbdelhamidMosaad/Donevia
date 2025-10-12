@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, collectionGroup } from 'firebase/firestore';
-import type { Task, Doc, Client, StickyNote, PlannerEvent, DocFolder, FlashcardFolder, StudyChapter, StudySubtopic, FlashcardDeck, FlashcardToolCard, WorkActivity, ClientRequest, Trade, TradingStrategy, WatchlistItem, MeetingNote, MindMap, Whiteboard } from '@/lib/types';
+import type { Task, Doc, Client, StickyNote, PlannerEvent, DocFolder, FlashcardFolder, StudyChapter, StudyTopic, FlashcardDeck, FlashcardToolCard, WorkActivity, ClientRequest, Trade, TradingStrategy, WatchlistItem, MeetingNote, MindMap, Whiteboard } from '@/lib/types';
 import { Loader2, Search as SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +23,7 @@ type SearchResult =
     | { type: 'flashcardDeck', data: FlashcardDeck, match: { field: string, text: string } }
     | { type: 'flashcard', data: FlashcardToolCard, match: { field: string, text: string } }
     | { type: 'studyChapter', data: StudyChapter, match: { field: string, text: string } }
-    | { type: 'studySubtopic', data: StudySubtopic, match: { field: string, text: string } }
+    | { type: 'studyTopic', data: StudyTopic, match: { field: string, text: string } }
     | { type: 'workActivity', data: WorkActivity, match: { field: string, text: string } }
     | { type: 'trade', data: Trade, match: { field: string, text: string } }
     | { type: 'tradingStrategy', data: TradingStrategy, match: { field: string, text: string } }
@@ -68,7 +68,7 @@ function SearchResultsComponent() {
                 // 1. Fetch all data
                 const [
                     tasksSnap, docsSnap, clientsSnap, notesSnap, eventsSnap,
-                    docFoldersSnap, flashcardFoldersSnap, studyChaptersSnap, studySubtopicsSnap,
+                    docFoldersSnap, flashcardFoldersSnap, studyChaptersSnap, studyTopicsSnap,
                     flashcardDecksSnap, workActivitiesSnap, clientRequestsSnap,
                     tradesSnap, tradingStrategiesSnap, watchlistItemsSnap,
                     meetingNotesSnap, mindMapsSnap, whiteboardsSnap
@@ -81,7 +81,7 @@ function SearchResultsComponent() {
                     getDocs(collection(db, 'users', user.uid, 'docFolders')),
                     getDocs(collection(db, 'users', user.uid, 'flashcardFolders')),
                     getDocs(collection(db, 'users', user.uid, 'studyChapters')),
-                    getDocs(collection(db, 'users', user.uid, 'studySubtopics')),
+                    getDocs(collection(db, 'users', user.uid, 'studyTopics')),
                     getDocs(collection(db, 'users', user.uid, 'flashcardDecks')),
                     getDocs(collection(db, 'users', user.uid, 'workActivities')),
                     getDocs(collection(db, 'users', user.uid, 'clientRequests')),
@@ -162,7 +162,7 @@ function SearchResultsComponent() {
                 flashcardDecksSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as FlashcardDeck; if (resultIds.has(`deck-${data.id}`)) return; if (data.name.toLowerCase().includes(term)) { allResults.push({ type: 'flashcardDeck', data, match: { field: 'name', text: data.name }}); resultIds.add(`deck-${data.id}`); } });
                 flashcardsSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as FlashcardToolCard; if (data.ownerId !== user.uid) return; if (resultIds.has(`flashcard-${data.id}`)) return; if (data.front.toLowerCase().includes(term) || data.back.toLowerCase().includes(term)) { allResults.push({ type: 'flashcard', data, match: { field: 'content', text: `${data.front.substring(0,50)}...` }}); resultIds.add(`flashcard-${data.id}`); } });
                 studyChaptersSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as StudyChapter; if (resultIds.has(`chapter-${data.id}`)) return; if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'studyChapter', data, match: { field: 'title', text: data.title }}); resultIds.add(`chapter-${data.id}`); } });
-                studySubtopicsSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as StudySubtopic; if (resultIds.has(`subtopic-${data.id}`)) return; if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'studySubtopic', data, match: { field: 'title', text: data.title }}); resultIds.add(`subtopic-${data.id}`); } else if (data.notes?.toLowerCase().includes(term)) { allResults.push({ type: 'studySubtopic', data, match: { field: 'notes', text: data.notes.substring(0, 100) + '...' }}); resultIds.add(`subtopic-${data.id}`); } });
+                studyTopicsSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as StudyTopic; if (resultIds.has(`topic-${data.id}`)) return; if (data.title.toLowerCase().includes(term)) { allResults.push({ type: 'studyTopic', data, match: { field: 'title', text: data.title }}); resultIds.add(`topic-${data.id}`); } else if (data.notes?.toLowerCase().includes(term)) { allResults.push({ type: 'studyTopic', data, match: { field: 'notes', text: data.notes.substring(0, 100) + '...' }}); resultIds.add(`topic-${data.id}`); } });
                 workActivitiesSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as WorkActivity; if (resultIds.has(`work-${data.id}`)) return; if (data.description.toLowerCase().includes(term) || data.notes?.toLowerCase().includes(term)) { allResults.push({ type: 'workActivity', data, match: { field: 'description', text: data.description }}); resultIds.add(`work-${data.id}`); } });
                 tradesSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as Trade; if (resultIds.has(`trade-${data.id}`)) return; if (data.symbol.toLowerCase().includes(term)) { allResults.push({ type: 'trade', data, match: { field: 'symbol', text: data.symbol }}); resultIds.add(`trade-${data.id}`); } });
                 tradingStrategiesSnap.forEach(doc => { const data = { id: doc.id, ...doc.data() } as TradingStrategy; if (resultIds.has(`strategy-${data.id}`)) return; if (data.name.toLowerCase().includes(term) || data.description.toLowerCase().includes(term)) { allResults.push({ type: 'tradingStrategy', data, match: { field: 'name', text: data.name }}); resultIds.add(`strategy-${data.id}`); } });
@@ -198,7 +198,7 @@ function SearchResultsComponent() {
             case 'flashcardDeck': return `/flashcards/${result.data.id}`;
             case 'flashcard': return `/flashcards/${result.data.deckId}`;
             case 'studyChapter': return `/study-tracker/${result.data.goalId}`;
-            case 'studySubtopic': return `/study-tracker/${result.data.goalId}`;
+            case 'studyTopic': return `/study-tracker/${result.data.goalId}`;
             case 'workActivity': return `/work-tracker`;
             case 'trade': return `/trading-tracker`;
             case 'tradingStrategy': return `/trading-tracker`;

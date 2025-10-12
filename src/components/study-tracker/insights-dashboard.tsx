@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { StudyGoal, StudySession, StudyTopic } from '@/lib/types';
+import type { StudyGoal, StudyTopic } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Lightbulb, PlusSquare, Trash2, Flame, BarChart, Clock } from 'lucide-react';
@@ -28,7 +28,6 @@ import { Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart as Rech
 interface InsightsDashboardProps {
   goals: StudyGoal[];
   topics: StudyTopic[];
-  sessions: StudySession[];
 }
 
 function formatTime(totalSeconds: number): string {
@@ -42,15 +41,25 @@ function formatTime(totalSeconds: number): string {
     return parts.length > 0 ? parts.join(' ') : '0m';
 }
 
-export function InsightsDashboard({ goals, topics, sessions }: InsightsDashboardProps) {
+export function InsightsDashboard({ goals, topics }: InsightsDashboardProps) {
   const { user } = useAuth();
+  const [sessions, setSessions] = useState([]);
+
+  useEffect(() => {
+    if(!user) return;
+    const sessionsQuery = query(collection(db, 'users', user.uid, 'studySessions'));
+    const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
+        setSessions(snapshot.docs.map(doc => doc.data()));
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   const totalGoals = goals.length;
   
   const weeklyStudyTime = useMemo(() => {
       const oneWeekAgo = moment().subtract(7, 'days').startOf('day');
-      const weeklySessions = sessions.filter(s => moment(s.date.toDate()).isAfter(oneWeekAgo));
-      return weeklySessions.reduce((acc, session) => acc + session.durationSeconds, 0);
+      const weeklySessions = sessions.filter(s => moment((s as any).date.toDate()).isAfter(oneWeekAgo));
+      return weeklySessions.reduce((acc, session) => acc + (session as any).durationSeconds, 0);
   }, [sessions]);
   
   const averageTopicTime = useMemo(() => {

@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { StudyGoal, StudyChapter, StudySubtopic } from '@/lib/types';
+import type { StudyGoal, StudyChapter, StudyTopic } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, PlusCircle, Flag, Share2, Timer, Lightbulb, BookOpen, BarChart3 } from 'lucide-react';
@@ -30,11 +30,11 @@ export default function StudyGoalDetailPage() {
   const params = useParams();
   const { toast } = useToast();
   const goalId = params.goalId as string;
-  const { activeSubtopic, elapsedTime, toggleTimer } = useStudyTimer();
+  const { activeTopic, elapsedTime, toggleTimer } = useStudyTimer();
 
   const [goal, setGoal] = useState<StudyGoal | null>(null);
   const [chapters, setChapters] = useState<StudyChapter[]>([]);
-  const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
+  const [topics, setTopics] = useState<StudyTopic[]>([]);
   const [isEditGoalOpen, setIsEditGoalOpen] = useState(false);
   const [isAddChapterOpen, setIsAddChapterOpen] = useState(false);
   
@@ -46,8 +46,8 @@ export default function StudyGoalDetailPage() {
     // Initialize previous completion state
     const initialCompletionState: Record<string, boolean> = {};
      chapters.forEach(chapter => {
-      const chapterSubtopics = subtopics.filter(s => s.chapterId === chapter.id);
-      const isChapterComplete = chapterSubtopics.length > 0 && chapterSubtopics.every(s => s.isCompleted);
+      const chapterTopics = topics.filter(s => s.chapterId === chapter.id);
+      const isChapterComplete = chapterTopics.length > 0 && chapterTopics.every(s => s.isCompleted);
       initialCompletionState[chapter.id] = isChapterComplete;
     });
     const isGoalComplete = chapters.length > 0 && chapters.every(c => initialCompletionState[c.id]);
@@ -62,10 +62,10 @@ export default function StudyGoalDetailPage() {
     
     // Check for chapter completions
     chapters.forEach(chapter => {
-        const chapterSubtopics = subtopics.filter(s => s.chapterId === chapter.id);
-        if (chapterSubtopics.length === 0) return;
+        const chapterTopics = topics.filter(s => s.chapterId === chapter.id);
+        if (chapterTopics.length === 0) return;
 
-        const isNowComplete = chapterSubtopics.every(s => s.isCompleted);
+        const isNowComplete = chapterTopics.every(s => s.isCompleted);
         const wasPreviouslyComplete = prevCompletionState.current[chapter.id];
 
         if (isNowComplete && !wasPreviouslyComplete) {
@@ -78,8 +78,8 @@ export default function StudyGoalDetailPage() {
     
     // Check for overall goal completion
     const allChaptersComplete = chapters.length > 0 && chapters.every(c => {
-         const chapterSubtopics = subtopics.filter(s => s.chapterId === c.id);
-         return chapterSubtopics.length > 0 && chapterSubtopics.every(s => s.isCompleted);
+         const chapterTopics = topics.filter(s => s.chapterId === c.id);
+         return chapterTopics.length > 0 && chapterTopics.every(s => s.isCompleted);
     });
 
     if (allChaptersComplete && !prevCompletionState.current['goal']) {
@@ -89,7 +89,7 @@ export default function StudyGoalDetailPage() {
     }
     prevCompletionState.current['goal'] = allChaptersComplete;
 
-  }, [subtopics, chapters, goal, loading, user, toast]);
+  }, [topics, chapters, goal, loading, user, toast]);
 
 
   useEffect(() => {
@@ -115,70 +115,70 @@ export default function StudyGoalDetailPage() {
         setChapters(chaptersData.sort((a,b) => a.order - b.order));
       });
       
-      const subtopicsQuery = query(collection(db, 'users', user.uid, 'studySubtopics'), where('goalId', '==', goalId));
-      const unsubscribeSubtopics = onSnapshot(subtopicsQuery, (snapshot) => {
-        setSubtopics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySubtopic)));
+      const topicsQuery = query(collection(db, 'users', user.uid, 'studyTopics'), where('goalId', '==', goalId));
+      const unsubscribeTopics = onSnapshot(topicsQuery, (snapshot) => {
+        setTopics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyTopic)));
       });
       
       return () => {
         unsubscribeGoal();
         unsubscribeChapters();
-        unsubscribeSubtopics();
+        unsubscribeTopics();
       };
     }
   }, [user, goalId, router]);
 
 
-  const handleToggleTimer = (subtopic: StudySubtopic) => {
-    toggleTimer(subtopic.id, subtopic.title);
+  const handleToggleTimer = (topic: StudyTopic) => {
+    toggleTimer(topic.id, topic.title);
   };
 
 
   const progressPercentage = useMemo(() => {
-    if (subtopics.length === 0) return 0;
-    const completedCount = subtopics.filter(m => m.isCompleted).length;
-    return (completedCount / subtopics.length) * 100;
-  }, [subtopics]);
+    if (topics.length === 0) return 0;
+    const completedCount = topics.filter(m => m.isCompleted).length;
+    return (completedCount / topics.length) * 100;
+  }, [topics]);
   
   const flagPosition = `${progressPercentage}%`;
   
   const totalTimeSpent = useMemo(() => {
-      return subtopics.reduce((acc, s) => acc + (s.timeSpentSeconds || 0), 0);
-  }, [subtopics]);
+      return topics.reduce((acc, s) => acc + (s.timeSpentSeconds || 0), 0);
+  }, [topics]);
 
   const adaptivePlan = useMemo(() => {
     if (!goal?.dueDate) return null;
     
-    const remainingSubtopics = subtopics.filter(s => !s.isCompleted).length;
-    if (remainingSubtopics === 0) return null;
+    const remainingTopics = topics.filter(s => !s.isCompleted).length;
+    if (remainingTopics === 0) return null;
 
     const daysRemaining = moment(goal.dueDate.toDate()).diff(moment(), 'days');
     
     if (daysRemaining < 1) {
-        return `The deadline has passed! You still have ${remainingSubtopics} subtopics left.`;
+        return `The deadline has passed! You still have ${remainingTopics} topics left.`;
     }
 
-    const pace = Math.ceil(remainingSubtopics / daysRemaining);
-    return `To finish by ${moment(goal.dueDate.toDate()).format('ll')}, you should aim to complete ~${pace} subtopic${pace > 1 ? 's' : ''} per day.`;
+    const pace = Math.ceil(remainingTopics / daysRemaining);
+    return `To finish by ${moment(goal.dueDate.toDate()).format('ll')}, you should aim to complete ~${pace} topic${pace > 1 ? 's' : ''} per day.`;
 
-  }, [goal, subtopics]);
+  }, [goal, topics]);
 
 
   const handleShareProgress = () => {
-    if (!goal || subtopics.length === 0) return;
-    const completedCount = subtopics.filter(s => s.isCompleted).length;
-    const totalCount = subtopics.length;
+    if (!goal || topics.length === 0) return;
+    const completedCount = topics.filter(s => s.isCompleted).length;
+    const totalCount = topics.length;
     const percentage = Math.round(progressPercentage);
 
     let progressText = `My Study Progress for "${goal.title}":\n`;
-    progressText += `✅ ${completedCount} of ${totalCount} subtopics completed (${percentage}%)\n\n`;
+    progressText += `✅ ${completedCount} of ${totalCount} topics completed (${percentage}%)\n\n`;
     
     chapters.forEach(chapter => {
         progressText += `Chapter: ${chapter.title}\n`;
-        subtopics.filter(s => s.chapterId === chapter.id)
+        topics.filter(s => s.chapterId === chapter.id)
             .sort((a,b) => a.order - b.order)
-            .forEach(subtopic => {
-                progressText += `  [${subtopic.isCompleted ? 'x' : ' '}] ${subtopic.title}\n`;
+            .forEach(topic => {
+                progressText += `  [${topic.isCompleted ? 'x' : ' '}] ${topic.title}\n`;
             });
         progressText += '\n';
     });
@@ -219,44 +219,44 @@ export default function StudyGoalDetailPage() {
         toast({ title: 'Chapters reordered.' });
     }
 
-    if (type === 'subtopic') {
+    if (type === 'topic') {
         const sourceChapterId = source.droppableId;
         const destChapterId = destination.droppableId;
         
-        const sourceSubtopics = subtopics.filter(s => s.chapterId === sourceChapterId).sort((a,b)=> a.order-b.order);
-        const [movedSubtopic] = sourceSubtopics.splice(source.index, 1);
+        const sourceTopics = topics.filter(s => s.chapterId === sourceChapterId).sort((a,b)=> a.order-b.order);
+        const [movedTopic] = sourceTopics.splice(source.index, 1);
         
         const batch = writeBatch(db);
         
         // If moved within the same chapter
         if (sourceChapterId === destChapterId) {
-            sourceSubtopics.splice(destination.index, 0, movedSubtopic);
-            sourceSubtopics.forEach((subtopic, index) => {
-                const subtopicRef = doc(db, 'users', user.uid, 'studySubtopics', subtopic.id);
-                batch.update(subtopicRef, { order: index });
+            sourceTopics.splice(destination.index, 0, movedTopic);
+            sourceTopics.forEach((topic, index) => {
+                const topicRef = doc(db, 'users', user.uid, 'studyTopics', topic.id);
+                batch.update(topicRef, { order: index });
             });
         } else {
             // Moved to a different chapter
-            const destSubtopics = subtopics.filter(s => s.chapterId === destChapterId).sort((a,b)=> a.order-b.order);
-            destSubtopics.splice(destination.index, 0, movedSubtopic);
+            const destTopics = topics.filter(s => s.chapterId === destChapterId).sort((a,b)=> a.order-b.order);
+            destTopics.splice(destination.index, 0, movedTopic);
             
             // Update order for source chapter
-            sourceSubtopics.forEach((subtopic, index) => {
-                const subtopicRef = doc(db, 'users', user.uid, 'studySubtopics', subtopic.id);
-                batch.update(subtopicRef, { order: index });
+            sourceTopics.forEach((topic, index) => {
+                const topicRef = doc(db, 'users', user.uid, 'studyTopics', topic.id);
+                batch.update(topicRef, { order: index });
             });
             
             // Update moved item's chapterId and order, and update order for destination chapter
-            const movedSubtopicRef = doc(db, 'users', user.uid, 'studySubtopics', movedSubtopic.id);
-            batch.update(movedSubtopicRef, { chapterId: destChapterId });
-             destSubtopics.forEach((subtopic, index) => {
-                const subtopicRef = doc(db, 'users', user.uid, 'studySubtopics', subtopic.id);
-                batch.update(subtopicRef, { order: index });
+            const movedTopicRef = doc(db, 'users', user.uid, 'studyTopics', movedTopic.id);
+            batch.update(movedTopicRef, { chapterId: destChapterId });
+             destTopics.forEach((topic, index) => {
+                const topicRef = doc(db, 'users', user.uid, 'studyTopics', topic.id);
+                batch.update(topicRef, { order: index });
             });
         }
         
         await batch.commit();
-        toast({ title: 'Subtopics reordered.' });
+        toast({ title: 'Topics reordered.' });
     }
   };
 
@@ -300,7 +300,7 @@ export default function StudyGoalDetailPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Content Breakdown</CardTitle>
-                    <CardDescription>Organize your study material into chapters and subtopics.</CardDescription>
+                    <CardDescription>Organize your study material into chapters and topics.</CardDescription>
                 </div>
                 <Button onClick={() => setIsAddChapterOpen(true)}><PlusCircle /> Add Chapter</Button>
                 </CardHeader>
@@ -316,9 +316,9 @@ export default function StudyGoalDetailPage() {
                                                 <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                                                     <StudyChapterItem 
                                                         chapter={chapter} 
-                                                        subtopics={subtopics.filter(s => s.chapterId === chapter.id)}
+                                                        topics={topics.filter(s => s.chapterId === chapter.id)}
                                                         chaptersCount={chapters.length}
-                                                        activeTimer={activeSubtopic}
+                                                        activeTimer={activeTopic}
                                                         onToggleTimer={handleToggleTimer}
                                                     />
                                                 </div>
@@ -341,7 +341,7 @@ export default function StudyGoalDetailPage() {
                 <Card className="md:col-span-2 bg-card/60 backdrop-blur-sm">
                     <CardHeader>
                         <CardTitle>Progress Track</CardTitle>
-                        <CardDescription>{subtopics.filter(s => s.isCompleted).length} of {subtopics.length} subtopics completed</CardDescription>
+                        <CardDescription>{topics.filter(s => s.isCompleted).length} of {topics.length} topics completed</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="relative h-10">
@@ -364,7 +364,7 @@ export default function StudyGoalDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-center text-muted-foreground italic text-sm">
-                            {activeSubtopic ? `Timer running... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a subtopic to track your time."}
+                            {activeTopic ? `Timer running... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a topic to track your time."}
                         </div>
                     </CardContent>
                 </Card>

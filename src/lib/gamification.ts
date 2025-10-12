@@ -20,26 +20,26 @@ import {
 } from 'firebase/firestore';
 
 export const badges: Record<BadgeId, Badge> = {
-  'subtopic-master-1': {
-    id: 'subtopic-master-1',
+  'topic-master-1': {
+    id: 'topic-master-1',
     name: 'First Steps',
     description: 'Complete your first topic.',
     icon: 'CheckCircle2',
   },
-  'subtopic-master-10': {
-    id: 'subtopic-master-10',
+  'topic-master-10': {
+    id: 'topic-master-10',
     name: 'Study Enthusiast',
     description: 'Complete 10 topics.',
     icon: 'BookOpen',
   },
-  'subtopic-master-50': {
-    id: 'subtopic-master-50',
+  'topic-master-50': {
+    id: 'topic-master-50',
     name: 'Topic Explorer',
     description: 'Complete 50 topics.',
     icon: 'Lightbulb',
   },
-  'subtopic-master-100': {
-    id: 'subtopic-master-100',
+  'topic-master-100': {
+    id: 'topic-master-100',
     name: 'Knowledge Navigator',
     description: 'Complete 100 topics.',
     icon: 'Rocket',
@@ -134,10 +134,10 @@ export const checkAndAwardBadges = async (
         }
       };
 
-      if (completedTopics >= 1) checkAndAddBadge('subtopic-master-1');
-      if (completedTopics >= 10) checkAndAddBadge('subtopic-master-10');
-      if (completedTopics >= 50) checkAndAddBadge('subtopic-master-50');
-      if (completedTopics >= 100) checkAndAddBadge('subtopic-master-100');
+      if (completedTopics >= 1) checkAndAddBadge('topic-master-1');
+      if (completedTopics >= 10) checkAndAddBadge('topic-master-10');
+      if (completedTopics >= 50) checkAndAddBadge('topic-master-50');
+      if (completedTopics >= 100) checkAndAddBadge('topic-master-100');
       
       if (profile.currentStreak >= 7) checkAndAddBadge('perfect-week');
 

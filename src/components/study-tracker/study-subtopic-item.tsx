@@ -1,9 +1,9 @@
 
 'use client';
 
-import type { StudySubtopic } from '@/lib/types';
+import type { StudyTopic } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { toggleStudySubtopicCompletion } from '@/lib/study-tracker';
+import { toggleStudyTopicCompletion } from '@/lib/study-tracker';
 import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
 import { MoreHorizontal, Edit, Trash2, Link, FileText, GripVertical, Play, Pause, Flag } from 'lucide-react';
@@ -32,8 +32,8 @@ import {
 } from '@/components/ui/collapsible';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
-interface StudySubtopicItemProps {
-  subtopic: StudySubtopic;
+interface StudyTopicItemProps {
+  topic: StudyTopic;
   onDelete: () => void;
   onEdit: () => void;
   onToggleTimer: () => void;
@@ -57,22 +57,22 @@ const difficultyConfig = {
 };
 
 
-export function StudySubtopicItem({
-  subtopic,
+export function StudyTopicItem({
+  topic,
   onDelete,
   onEdit,
   onToggleTimer,
   isTimerActive,
-}: StudySubtopicItemProps) {
+}: StudyTopicItemProps) {
   const { user } = useAuth();
-  const difficultyInfo = subtopic.difficulty ? difficultyConfig[subtopic.difficulty] : null;
+  const difficultyInfo = topic.difficulty ? difficultyConfig[topic.difficulty] : null;
 
   const handleToggle = async () => {
     if (!user) return;
-    await toggleStudySubtopicCompletion(
+    await toggleStudyTopicCompletion(
       user.uid,
-      subtopic.id,
-      !subtopic.isCompleted
+      topic.id,
+      !topic.isCompleted
     );
   };
 
@@ -80,7 +80,7 @@ export function StudySubtopicItem({
     e.stopPropagation();
   };
 
-  const hasExtraContent = !!subtopic.notes || (subtopic.resources && subtopic.resources.length > 0);
+  const hasExtraContent = !!topic.notes || (topic.resources && topic.resources.length > 0);
 
   return (
     <>
@@ -88,13 +88,13 @@ export function StudySubtopicItem({
         <div
           className={cn(
             'flex items-start gap-2 p-2 rounded-md transition-colors group',
-            subtopic.isCompleted ? '' : 'hover:bg-accent/50'
+            topic.isCompleted ? '' : 'hover:bg-accent/50'
           )}
         >
           <GripVertical className="h-5 w-5 text-muted-foreground mt-1 cursor-grab" />
           <Checkbox
-            id={`subtopic-${subtopic.id}`}
-            checked={subtopic.isCompleted}
+            id={`topic-${topic.id}`}
+            checked={topic.isCompleted}
             onCheckedChange={handleToggle}
             className="mt-1"
           />
@@ -114,19 +114,19 @@ export function StudySubtopicItem({
                 )}
                 <CollapsibleTrigger asChild disabled={!hasExtraContent}>
                      <label
-                        htmlFor={`subtopic-${subtopic.id}`}
+                        htmlFor={`topic-${topic.id}`}
                         className={cn(
                           'font-medium cursor-pointer text-sm',
-                          subtopic.isCompleted && 'line-through text-muted-foreground',
+                          topic.isCompleted && 'line-through text-muted-foreground',
                           hasExtraContent && "hover:underline"
                         )}
                       >
-                        {subtopic.title}
+                        {topic.title}
                       </label>
                 </CollapsibleTrigger>
             </div>
-            {subtopic.timeSpentSeconds && subtopic.timeSpentSeconds > 0 ? (
-                 <p className="text-xs text-muted-foreground">{formatTime(subtopic.timeSpentSeconds)} studied</p>
+            {topic.timeSpentSeconds && topic.timeSpentSeconds > 0 ? (
+                 <p className="text-xs text-muted-foreground">{formatTime(topic.timeSpentSeconds)} studied</p>
             ) : null}
           </div>
           
@@ -157,10 +157,10 @@ export function StudySubtopicItem({
                 </AlertDialogTrigger>
                 <AlertDialogContent onClick={handleActionClick}>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Subtopic?</AlertDialogTitle>
+                    <AlertDialogTitle>Delete Topic?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete the subtopic "
-                      {subtopic.title}"?
+                      Are you sure you want to delete the topic "
+                      {topic.title}"?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -176,17 +176,17 @@ export function StudySubtopicItem({
         </div>
          <CollapsibleContent>
             <div className="pl-12 pr-4 pb-2 space-y-4">
-              {subtopic.notes && (
+              {topic.notes && (
                 <div className="mt-2 text-sm text-muted-foreground bg-background p-3 rounded-md border">
                     <p className="font-semibold mb-1 flex items-center gap-2"><FileText className="h-4 w-4"/> Notes</p>
-                    <p className="whitespace-pre-wrap">{subtopic.notes}</p>
+                    <p className="whitespace-pre-wrap">{topic.notes}</p>
                 </div>
               )}
-              {subtopic.resources && subtopic.resources.length > 0 && (
+              {topic.resources && topic.resources.length > 0 && (
                 <div className="mt-2 space-y-2">
                     <p className="font-semibold text-sm mb-1 flex items-center gap-2"><Link className="h-4 w-4"/> Resources</p>
                     <ul className="list-none space-y-1">
-                        {subtopic.resources.map(res => (
+                        {topic.resources.map(res => (
                             <li key={res.id}>
                                 <a href={res.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
                                    - {res.title}

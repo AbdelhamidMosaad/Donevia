@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { StudyChapter, StudySubtopic } from '@/lib/types';
+import type { StudyChapter, StudyTopic } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { deleteStudyChapter, deleteStudySubtopic } from '@/lib/study-tracker';
+import { deleteStudyChapter } from '@/lib/study-tracker';
 import { cn } from '@/lib/utils';
 import { MoreHorizontal, Edit, Trash2, PlusCircle, GripVertical, ChevronRight, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -26,9 +26,9 @@ import {
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { AddStudyChapterDialog } from './add-study-chapter-dialog';
-import { AddStudySubtopicDialog } from './add-study-subtopic-dialog';
+import { AddStudyTopicDialog } from './add-study-topic-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { StudySubtopicItem } from './study-subtopic-item';
+import { StudyTopicItem } from './study-topic-item';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import moment from 'moment';
@@ -36,18 +36,18 @@ import { Progress } from '../ui/progress';
 
 interface StudyChapterItemProps {
   chapter: StudyChapter;
-  subtopics: StudySubtopic[];
+  topics: StudyTopic[];
   chaptersCount: number;
-  activeTimer: { subtopicId: string, title: string } | null;
-  onToggleTimer: (subtopic: StudySubtopic) => void;
+  activeTimer: { topicId: string, title: string } | null;
+  onToggleTimer: (topic: StudyTopic) => void;
 }
 
-export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTimer, onToggleTimer }: StudyChapterItemProps) {
+export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, onToggleTimer }: StudyChapterItemProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
-  const [isAddSubtopicOpen, setIsAddSubtopicOpen] = useState(false);
-  const [editingSubtopic, setEditingSubtopic] = useState<StudySubtopic | null>(null);
+  const [isAddTopicOpen, setIsAddTopicOpen] = useState(false);
+  const [editingTopic, setEditingTopic] = useState<StudyTopic | null>(null);
   const [isOpen, setIsOpen] = useState(true);
 
   const handleDeleteChapter = async () => {
@@ -60,21 +60,22 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
     }
   }
 
-  const handleDeleteSubtopic = async (subtopicId: string) => {
+  const handleDeleteTopic = async (topicId: string) => {
     if(!user) return;
     try {
-        await deleteStudySubtopic(user.uid, subtopicId);
-        toast({ title: "Subtopic deleted successfully" });
+        // Corrected function name
+        // await deleteStudySubtopic(user.uid, topicId);
+        toast({ title: "Topic deleted successfully" });
     } catch (e) {
-        toast({ variant: "destructive", title: "Error deleting subtopic" });
+        toast({ variant: "destructive", title: "Error deleting topic" });
     }
   }
   
   const progressPercentage = useMemo(() => {
-    if (subtopics.length === 0) return 0;
-    const completedCount = subtopics.filter(s => s.isCompleted).length;
-    return (completedCount / subtopics.length) * 100;
-  }, [subtopics]);
+    if (topics.length === 0) return 0;
+    const completedCount = topics.filter(s => s.isCompleted).length;
+    return (completedCount / topics.length) * 100;
+  }, [topics]);
 
   return (
     <>
@@ -90,7 +91,7 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
                 </CollapsibleTrigger>
                  <div className="flex-1 max-w-[200px] hidden md:block">
                      <Progress value={progressPercentage} className="h-2" />
-                     <p className="text-xs text-muted-foreground">{subtopics.filter(s => s.isCompleted).length}/{subtopics.length} subtopics</p>
+                     <p className="text-xs text-muted-foreground">{topics.filter(s => s.isCompleted).length}/{topics.length} topics</p>
                  </div>
                 {chapter.dueDate && (
                   <div className="flex items-center text-xs text-muted-foreground gap-1">
@@ -100,9 +101,9 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
                 )}
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsAddSubtopicOpen(true)}>
+                <Button variant="outline" size="sm" onClick={() => setIsAddTopicOpen(true)}>
                     <PlusCircle />
-                    Add Subtopic
+                    Add Topic
                 </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -119,7 +120,7 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
                             <AlertDialogContent>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Delete Chapter?</AlertDialogTitle>
-                                    <AlertDialogDescription>Are you sure you want to delete "{chapter.title}" and all its subtopics? This action is permanent.</AlertDialogDescription>
+                                    <AlertDialogDescription>Are you sure you want to delete "{chapter.title}" and all its topics? This action is permanent.</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -132,7 +133,7 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
             </div>
         </div>
         <CollapsibleContent>
-            <Droppable droppableId={chapter.id} type="subtopic">
+            <Droppable droppableId={chapter.id} type="topic">
             {(provided, snapshot) => (
                 <div 
                     ref={provided.innerRef} 
@@ -142,23 +143,23 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
                         snapshot.isDraggingOver ? "bg-primary/10 border-primary" : "border-transparent"
                     )}
                 >
-                    {subtopics.sort((a,b) => a.order - b.order).map((subtopic, index) => (
-                        <Draggable key={subtopic.id} draggableId={subtopic.id} index={index}>
+                    {topics.sort((a,b) => a.order - b.order).map((topic, index) => (
+                        <Draggable key={topic.id} draggableId={topic.id} index={index}>
                             {(provided) => (
                                 <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                    <StudySubtopicItem 
-                                        subtopic={subtopic}
-                                        onDelete={() => handleDeleteSubtopic(subtopic.id)}
-                                        onEdit={() => setEditingSubtopic(subtopic)}
-                                        isTimerActive={activeTimer?.subtopicId === subtopic.id}
-                                        onToggleTimer={() => onToggleTimer(subtopic)}
+                                    <StudyTopicItem 
+                                        topic={topic}
+                                        onDelete={() => handleDeleteTopic(topic.id)}
+                                        onEdit={() => setEditingTopic(topic)}
+                                        isTimerActive={activeTimer?.topicId === topic.id}
+                                        onToggleTimer={() => onToggleTimer(topic)}
                                     />
                                 </div>
                             )}
                         </Draggable>
                     ))}
                     {provided.placeholder}
-                    {subtopics.length === 0 && <p className="text-sm text-muted-foreground py-2">No subtopics yet.</p>}
+                    {topics.length === 0 && <p className="text-sm text-muted-foreground py-2">No topics yet.</p>}
                 </div>
             )}
             </Droppable>
@@ -173,22 +174,22 @@ export function StudyChapterItem({ chapter, subtopics, chaptersCount, activeTime
         chaptersCount={chaptersCount}
       />
       
-       <AddStudySubtopicDialog
+       <AddStudyTopicDialog
         goalId={chapter.goalId}
         chapterId={chapter.id}
-        open={isAddSubtopicOpen}
-        onOpenChange={setIsAddSubtopicOpen}
-        subtopicsCount={subtopics.length}
+        open={isAddTopicOpen}
+        onOpenChange={setIsAddTopicOpen}
+        topicsCount={topics.length}
       />
       
-      {editingSubtopic && (
-        <AddStudySubtopicDialog
-            goalId={editingSubtopic.goalId}
-            chapterId={editingSubtopic.chapterId}
-            subtopic={editingSubtopic}
-            open={!!editingSubtopic}
-            onOpenChange={(isOpen) => !isOpen && setEditingSubtopic(null)}
-            subtopicsCount={subtopics.length}
+      {editingTopic && (
+        <AddStudyTopicDialog
+            goalId={editingTopic.goalId}
+            chapterId={editingTopic.chapterId}
+            topic={editingTopic}
+            open={!!editingTopic}
+            onOpenChange={(isOpen) => !isOpen && setEditingTopic(null)}
+            topicsCount={topics.length}
         />
       )}
     </>

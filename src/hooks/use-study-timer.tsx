@@ -8,17 +8,17 @@ import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { logStudySession } from '@/lib/study-tracker';
 
 interface StudyTimerState {
-  activeSubtopicId: string | null;
-  activeSubtopicTitle: string | null;
+  activeTopicId: string | null;
+  activeTopicTitle: string | null;
   startTime: number | null; // epoch time
   isActive: boolean;
 }
 
 interface StudyTimerContextType extends StudyTimerState {
   elapsedTime: number;
-  toggleTimer: (subtopicId: string, subtopicTitle: string) => void;
+  toggleTimer: (topicId: string, topicTitle: string) => void;
   stopTimer: () => void;
-  activeSubtopic: { subtopicId: string, title: string | null } | null;
+  activeTopic: { topicId: string, title: string | null } | null;
 }
 
 const StudyTimerContext = createContext<StudyTimerContextType | undefined>(undefined);
@@ -34,8 +34,8 @@ export function useStudyTimer() {
 export function StudyTimerProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const [state, setState] = useState<StudyTimerState>({
-        activeSubtopicId: null,
-        activeSubtopicTitle: null,
+        activeTopicId: null,
+        activeTopicTitle: null,
         startTime: null,
         isActive: false,
     });
@@ -79,15 +79,15 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
     }, [user]);
 
     const stopTimer = useCallback(async () => {
-        if (!user || !state.activeSubtopicId || !state.startTime) return;
+        if (!user || !state.activeTopicId || !state.startTime) return;
         
         const durationSeconds = Math.floor((Date.now() - state.startTime) / 1000);
         
-        await logStudySession(user.uid, state.activeSubtopicId, durationSeconds);
+        await logStudySession(user.uid, state.activeTopicId, durationSeconds);
 
         const newState: StudyTimerState = {
-            activeSubtopicId: null,
-            activeSubtopicTitle: null,
+            activeTopicId: null,
+            activeTopicTitle: null,
             startTime: null,
             isActive: false,
         };
@@ -97,32 +97,32 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
     }, [user, state, updateFirestoreState]);
 
 
-    const toggleTimer = useCallback(async (subtopicId: string, subtopicTitle: string) => {
+    const toggleTimer = useCallback(async (topicId: string, topicTitle: string) => {
         if (!user) return;
         
-        const isDifferentSubtopic = state.activeSubtopicId !== subtopicId;
+        const isDifferentTopic = state.activeTopicId !== topicId;
 
         // If a timer is active, stop it first
         if(state.isActive) {
-            const oldSubtopicId = state.activeSubtopicId;
+            const oldTopicId = state.activeTopicId;
             const oldStartTime = state.startTime;
             
-            if(oldSubtopicId && oldStartTime) {
+            if(oldTopicId && oldStartTime) {
                  const durationSeconds = Math.floor((Date.now() - oldStartTime) / 1000);
-                 await logStudySession(user.uid, oldSubtopicId, durationSeconds);
+                 await logStudySession(user.uid, oldTopicId, durationSeconds);
             }
         }
         
-        // If it's the same subtopic being toggled off, or a different subtopic was stopped
-        if (!isDifferentSubtopic && state.isActive) {
-             const newState: StudyTimerState = { activeSubtopicId: null, activeSubtopicTitle: null, startTime: null, isActive: false };
+        // If it's the same topic being toggled off, or a different topic was stopped
+        if (!isDifferentTopic && state.isActive) {
+             const newState: StudyTimerState = { activeTopicId: null, activeTopicTitle: null, startTime: null, isActive: false };
              setState(newState);
              await updateFirestoreState(newState);
         } else {
              // Starting a new timer (or switching)
             const newState: StudyTimerState = {
-                activeSubtopicId: subtopicId,
-                activeSubtopicTitle: subtopicTitle,
+                activeTopicId: topicId,
+                activeTopicTitle: topicTitle,
                 startTime: Date.now(),
                 isActive: true,
             };
@@ -137,9 +137,9 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
             // This logic relies on the state when the event listener was added.
             // A more robust solution might involve reading directly from a ref
             // if state updates aren't guaranteed to be flushed.
-            if (state.isActive && state.activeSubtopicId && state.startTime) {
+            if (state.isActive && state.activeTopicId && state.startTime) {
                  const durationSeconds = Math.floor((Date.now() - state.startTime) / 1000);
-                 logStudySession(user!.uid, state.activeSubtopicId, durationSeconds);
+                 logStudySession(user!.uid, state.activeTopicId, durationSeconds);
                  // We don't need to update state or firestore here as the session is ending.
             }
         };
@@ -149,12 +149,12 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
-    }, [state.isActive, state.activeSubtopicId, state.startTime, user]);
+    }, [state.isActive, state.activeTopicId, state.startTime, user]);
 
 
     const value = {
         ...state,
-        activeSubtopic: state.activeSubtopicId ? { subtopicId: state.activeSubtopicId, title: state.activeSubtopicTitle } : null,
+        activeTopic: state.activeTopicId ? { topicId: state.activeTopicId, title: state.activeTopicTitle } : null,
         elapsedTime,
         toggleTimer,
         stopTimer,
@@ -166,4 +166,3 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
         </StudyTimerContext.Provider>
     );
 }
-
