@@ -237,7 +237,7 @@ export function PresentationGenerator() {
               slide.content.map(point => ({ text: point, options: { bullet: true } })),
               { 
                 x: slide.layout === 'text-and-visual' ? 0.5 : 1, 
-                y: 1.5, 
+                y: 1.25, 
                 w: slide.layout === 'text-and-visual' ? '45%' : '80%', 
                 h: '75%', 
                 fontSize: 18, color: templateStyle.fontColor,
