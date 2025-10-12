@@ -3,19 +3,23 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Folder as FolderIcon, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Folder as FolderIcon, ArrowLeft, GripHorizontal, Minus, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import type { StudyGoal, StudyFolder } from '@/lib/types';
-import { collection, onSnapshot, query, doc, addDoc, Timestamp, where, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, addDoc, Timestamp, where, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { StudyGoalCard } from '@/components/study-tracker/study-goal-card';
 import { deleteStudyGoal, deleteStudyFolder, moveStudyFolder } from '@/lib/study-tracker';
 import { StudyFolderCard } from '@/components/study-tracker/study-folder-card';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { cn } from '@/lib/utils';
+
+type CardSize = 'small' | 'medium' | 'large';
 
 export default function StudyFolderPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, settings } = useAuth();
   const router = useRouter();
   const params = useParams();
   const folderId = params.folderId as string;
@@ -25,6 +29,14 @@ export default function StudyFolderPage() {
   const [subFolders, setSubFolders] = useState<StudyFolder[]>([]);
   const [allFolders, setAllFolders] = useState<StudyFolder[]>([]);
   const [currentFolder, setCurrentFolder] = useState<StudyFolder | null>(null);
+  const [cardSize, setCardSize] = useState<CardSize>(settings.studyTrackerCardSize || 'large');
+  
+  useEffect(() => {
+    if(settings.studyTrackerCardSize) {
+        setCardSize(settings.studyTrackerCardSize);
+    }
+  }, [settings.studyTrackerCardSize]);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -111,6 +123,14 @@ export default function StudyFolderPage() {
       toast({ variant: 'destructive', title: 'Error moving folder.' });
     }
   };
+  
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize && user) {
+        setCardSize(newSize);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { studyTrackerCardSize: newSize }, { merge: true });
+    }
+  }
 
 
   if (loading || !user || !currentFolder) {
@@ -130,6 +150,13 @@ export default function StudyFolderPage() {
                 <p className="text-muted-foreground">Manage study goals and folders.</p>
             </div>
         </div>
+        <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+            </ToggleGroup>
+        </div>
       </div>
       
        {goals.length === 0 && subFolders.length === 0 ? (
@@ -142,7 +169,12 @@ export default function StudyFolderPage() {
             {subFolders.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold font-headline mb-4">Sub-folders</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <div className={cn(
+                        "grid gap-6",
+                        cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                        cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+                        cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+                    )}>
                   {subFolders.map(folder => (
                     <StudyFolderCard 
                         key={folder.id} 
@@ -150,6 +182,7 @@ export default function StudyFolderPage() {
                         allFolders={allFolders}
                         onDelete={() => handleDeleteFolder(folder.id)}
                         onMove={handleMoveFolder}
+                        size={cardSize}
                     />
                   ))}
                 </div>
@@ -159,7 +192,12 @@ export default function StudyFolderPage() {
             <div>
               <h2 className="text-2xl font-bold font-headline mb-4">Study Goals</h2>
                {goals.length > 0 ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <div className={cn(
+                    "grid gap-6",
+                    cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                    cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+                    cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+                )}>
                     {goals.map(goal => (
                         <StudyGoalCard
                           key={goal.id}
@@ -167,6 +205,7 @@ export default function StudyFolderPage() {
                           folders={allFolders}
                           onDelete={() => handleDeleteGoal(goal.id)}
                           onMove={handleMoveGoalToFolder}
+                          size={cardSize}
                         />
                     ))}
                 </div>
