@@ -23,25 +23,25 @@ export const badges: Record<BadgeId, Badge> = {
   'subtopic-master-1': {
     id: 'subtopic-master-1',
     name: 'First Steps',
-    description: 'Complete your first subtopic.',
+    description: 'Complete your first topic.',
     icon: 'CheckCircle2',
   },
   'subtopic-master-10': {
     id: 'subtopic-master-10',
     name: 'Study Enthusiast',
-    description: 'Complete 10 subtopics.',
+    description: 'Complete 10 topics.',
     icon: 'BookOpen',
   },
   'subtopic-master-50': {
     id: 'subtopic-master-50',
     name: 'Topic Explorer',
-    description: 'Complete 50 subtopics.',
+    description: 'Complete 50 topics.',
     icon: 'Lightbulb',
   },
   'subtopic-master-100': {
     id: 'subtopic-master-100',
     name: 'Knowledge Navigator',
-    description: 'Complete 100 subtopics.',
+    description: 'Complete 100 topics.',
     icon: 'Rocket',
   },
   'goal-crusher-1': {
@@ -80,12 +80,12 @@ export const getXPForNextLevel = (level: number): number => {
 };
 
 // Points awarded for different actions
-const XP_PER_SUBTOPIC = 10;
+const XP_PER_TOPIC = 10;
 const XP_PER_GOAL_COMPLETION = 100;
 
 export const checkAndAwardBadges = async (
   userId: string,
-  eventType: 'subtopic' | 'goal' | 'chapter'
+  eventType: 'topic' | 'goal' | 'chapter'
 ): Promise<BadgeId[]> => {
   const settingsRef = doc(db, 'users', userId, 'profile', 'settings');
   const awardedBadges: BadgeId[] = [];
@@ -103,8 +103,8 @@ export const checkAndAwardBadges = async (
       };
 
       // --- Award XP ---
-      if (eventType === 'subtopic') {
-        profile.experiencePoints += XP_PER_SUBTOPIC;
+      if (eventType === 'topic') {
+        profile.experiencePoints += XP_PER_TOPIC;
       } else if (eventType === 'goal') {
         profile.experiencePoints += XP_PER_GOAL_COMPLETION;
       }
@@ -119,11 +119,11 @@ export const checkAndAwardBadges = async (
       }
 
       // --- Badge Checks ---
-      const allSubtopicsQuery = query(
-        collection(db, 'users', userId, 'studySubtopics')
+      const allTopicsQuery = query(
+        collection(db, 'users', userId, 'studyTopics')
       );
-      const allSubtopicsSnap = await getDocs(allSubtopicsQuery);
-      const completedSubtopics = allSubtopicsSnap.docs.filter(
+      const allTopicsSnap = await getDocs(allTopicsQuery);
+      const completedTopics = allTopicsSnap.docs.filter(
         (doc) => doc.data().isCompleted
       ).length;
 
@@ -134,15 +134,15 @@ export const checkAndAwardBadges = async (
         }
       };
 
-      if (completedSubtopics >= 1) checkAndAddBadge('subtopic-master-1');
-      if (completedSubtopics >= 10) checkAndAddBadge('subtopic-master-10');
-      if (completedSubtopics >= 50) checkAndAddBadge('subtopic-master-50');
-      if (completedSubtopics >= 100) checkAndAddBadge('subtopic-master-100');
+      if (completedTopics >= 1) checkAndAddBadge('subtopic-master-1');
+      if (completedTopics >= 10) checkAndAddBadge('subtopic-master-10');
+      if (completedTopics >= 50) checkAndAddBadge('subtopic-master-50');
+      if (completedTopics >= 100) checkAndAddBadge('subtopic-master-100');
       
       if (profile.currentStreak >= 7) checkAndAddBadge('perfect-week');
 
       // More complex checks can be added here
-      // For goal completion, you would need to fetch goal data and check if all subtopics are complete.
+      // For goal completion, you would need to fetch goal data and check if all topics are complete.
 
       transaction.set(settingsRef, { studyProfile: profile }, { merge: true });
     });

@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -252,7 +251,7 @@ export interface UserSettings {
     meetingNotesView?: 'card' | 'list';
     meetingNotesCardSize?: 'small' | 'medium' | 'large';
     notesView?: 'board' | 'canvas';
-    studyTrackerView?: 'card' | 'list';
+    studyTrackerView?: 'card' | 'list' | 'board';
     studyTrackerCardSize?: 'small' | 'medium' | 'large';
     goalsCardSize?: 'small' | 'medium' | 'large';
     flashcardsCardSize?: 'small' | 'medium' | 'large';
@@ -495,6 +494,7 @@ export const StudyGoalSchema = z.object({
     ownerId: z.string(),
     dueDate: FirebaseTimestampSchema.nullable().optional(),
     folderId: z.string().nullable().optional(),
+    status: z.enum(['Not Started', 'In Progress', 'Completed']).optional(),
 });
 export type StudyGoal = z.infer<typeof StudyGoalSchema>;
 
@@ -513,20 +513,22 @@ export const StudyChapterSchema = z.object({
     order: z.number(),
     createdAt: FirebaseTimestampSchema,
     ownerId: z.string(),
+    isCompleted: z.boolean().optional(),
+    timeSpentSeconds: z.number().optional(),
     dueDate: FirebaseTimestampSchema.nullable().optional(),
     reminder: z.enum(['none', 'on-due-date', '1-day', '2-days', '1-week']).optional(),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']).optional(),
 });
 export type StudyChapter = z.infer<typeof StudyChapterSchema>;
 
-export const StudySubtopicResourceSchema = z.object({
+export const StudyTopicResourceSchema = z.object({
     id: z.string(),
     title: z.string(),
     url: z.string(),
 });
-export type StudySubtopicResource = z.infer<typeof StudySubtopicResourceSchema>;
+export type StudyTopicResource = z.infer<typeof StudyTopicResourceSchema>;
 
-export const StudySubtopicSchema = z.object({
+export const StudyTopicSchema = z.object({
     id: z.string(),
     goalId: z.string(),
     chapterId: z.string(),
@@ -536,11 +538,11 @@ export const StudySubtopicSchema = z.object({
     createdAt: FirebaseTimestampSchema,
     ownerId: z.string(),
     notes: z.string().optional(),
-    resources: z.array(StudySubtopicResourceSchema).optional(),
+    resources: z.array(StudyTopicResourceSchema).optional(),
     timeSpentSeconds: z.number().optional(),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']).optional(),
 });
-export type StudySubtopic = z.infer<typeof StudySubtopicSchema>;
+export type StudyTopic = z.infer<typeof StudyTopicSchema>;
 
 export const StudySessionSchema = z.object({
     id: z.string(),

@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { StudyGoal, StudyProfile, StudySession, StudySubtopic } from '@/lib/types';
+import type { StudyGoal, StudyProfile, StudySession, StudyTopic } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Lightbulb, PlusSquare, Trash2, Flame, BarChart, Clock } from 'lucide-react';
@@ -26,7 +26,7 @@ import { Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart as Rech
 
 interface InsightsDashboardProps {
   goals: StudyGoal[];
-  subtopics: StudySubtopic[];
+  topics: StudyTopic[];
   sessions: StudySession[];
 }
 
@@ -41,7 +41,7 @@ function formatTime(totalSeconds: number): string {
     return parts.length > 0 ? parts.join(' ') : '0m';
 }
 
-export function InsightsDashboard({ goals, subtopics, sessions }: InsightsDashboardProps) {
+export function InsightsDashboard({ goals, topics, sessions }: InsightsDashboardProps) {
   const { user } = useAuth();
 
   const totalGoals = goals.length;
@@ -52,24 +52,24 @@ export function InsightsDashboard({ goals, subtopics, sessions }: InsightsDashbo
       return weeklySessions.reduce((acc, session) => acc + session.durationSeconds, 0);
   }, [sessions]);
   
-  const averageSubtopicTime = useMemo(() => {
-    const completedSubtopicsWithTime = subtopics.filter(s => s.isCompleted && (s.timeSpentSeconds || 0) > 0);
-    if (completedSubtopicsWithTime.length === 0) return 0;
-    const totalSeconds = completedSubtopicsWithTime.reduce((sum, s) => sum + (s.timeSpentSeconds || 0), 0);
-    return Math.round((totalSeconds / completedSubtopicsWithTime.length) / 60); // in minutes
-  }, [subtopics]);
+  const averageTopicTime = useMemo(() => {
+    const completedTopicsWithTime = topics.filter(s => s.isCompleted && (s.timeSpentSeconds || 0) > 0);
+    if (completedTopicsWithTime.length === 0) return 0;
+    const totalSeconds = completedTopicsWithTime.reduce((sum, s) => sum + (s.timeSpentSeconds || 0), 0);
+    return Math.round((totalSeconds / completedTopicsWithTime.length) / 60); // in minutes
+  }, [topics]);
   
   const progressPerGoal = useMemo(() => {
     return goals.map(goal => {
-        const goalSubtopics = subtopics.filter(s => s.goalId === goal.id);
-        const completedCount = goalSubtopics.filter(s => s.isCompleted).length;
-        const percentage = goalSubtopics.length > 0 ? (completedCount / goalSubtopics.length) * 100 : 0;
+        const goalTopics = topics.filter(s => s.goalId === goal.id);
+        const completedCount = goalTopics.filter(s => s.isCompleted).length;
+        const percentage = goalTopics.length > 0 ? (completedCount / goalTopics.length) * 100 : 0;
         return {
             name: goal.title.length > 15 ? `${goal.title.substring(0, 15)}...` : goal.title,
             progress: parseFloat(percentage.toFixed(1)),
         };
     }).sort((a,b) => b.progress - a.progress);
-  }, [goals, subtopics]);
+  }, [goals, topics]);
 
 
   return (
@@ -95,11 +95,11 @@ export function InsightsDashboard({ goals, subtopics, sessions }: InsightsDashbo
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Avg. Subtopic Time</CardTitle>
+                    <CardTitle className="text-sm font-medium">Avg. Topic Time</CardTitle>
                     <Lightbulb className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">~{averageSubtopicTime} min</div>
+                    <div className="text-2xl font-bold">~{averageTopicTime} min</div>
                 </CardContent>
             </Card>
         </div>
