@@ -1,7 +1,8 @@
 
 'use client';
 
-import type { StudyGoal, StudyProfile, StudySession, StudyTopic } from '@/lib/types';
+import { useMemo } from 'react';
+import type { StudyGoal, StudySession, StudyTopic } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Lightbulb, PlusSquare, Trash2, Flame, BarChart, Clock } from 'lucide-react';
@@ -19,7 +20,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import moment from 'moment';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart as RechartsBarChart } from 'recharts';
@@ -53,6 +54,7 @@ export function InsightsDashboard({ goals, topics, sessions }: InsightsDashboard
   }, [sessions]);
   
   const averageTopicTime = useMemo(() => {
+    if (!topics) return 0;
     const completedTopicsWithTime = topics.filter(s => s.isCompleted && (s.timeSpentSeconds || 0) > 0);
     if (completedTopicsWithTime.length === 0) return 0;
     const totalSeconds = completedTopicsWithTime.reduce((sum, s) => sum + (s.timeSpentSeconds || 0), 0);
@@ -60,6 +62,7 @@ export function InsightsDashboard({ goals, topics, sessions }: InsightsDashboard
   }, [topics]);
   
   const progressPerGoal = useMemo(() => {
+    if (!topics) return [];
     return goals.map(goal => {
         const goalTopics = topics.filter(s => s.goalId === goal.id);
         const completedCount = goalTopics.filter(s => s.isCompleted).length;
