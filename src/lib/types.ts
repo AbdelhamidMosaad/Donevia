@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -500,6 +501,7 @@ export type StudyFolder = {
   name: string;
   ownerId: string;
   createdAt: Timestamp;
+  parentId?: string | null;
 };
 
 export const StudyChapterSchema = z.object({

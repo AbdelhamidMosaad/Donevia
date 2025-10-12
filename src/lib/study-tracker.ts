@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   addDoc,
@@ -57,11 +58,12 @@ export const deleteStudyGoal = async (userId: string, goalId: string) => {
 
 
 // --- Folders ---
-export const addStudyFolder = async (userId: string, folderName: string) => {
+export const addStudyFolder = async (userId: string, folderName: string, parentId: string | null = null) => {
   const foldersRef = collection(db, 'users', userId, 'studyFolders');
   return await addDoc(foldersRef, {
     name: folderName,
     ownerId: userId,
+    parentId: parentId,
     createdAt: serverTimestamp(),
   });
 };
@@ -70,6 +72,11 @@ export const updateStudyFolder = async (userId: string, folderId: string, folder
   const folderRef = doc(db, 'users', userId, 'studyFolders', folderId);
   return await updateDoc(folderRef, folderData);
 };
+
+export const moveStudyFolder = async (userId: string, folderId: string, newParentId: string | null) => {
+    const folderRef = doc(db, 'users', userId, 'studyFolders', folderId);
+    return await updateDoc(folderRef, { parentId: newParentId });
+}
 
 export const deleteStudyFolder = async (userId: string, folderId: string) => {
   const folderRef = doc(db, 'users', userId, 'studyFolders', folderId);
