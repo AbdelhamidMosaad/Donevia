@@ -11,7 +11,7 @@ import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, updateDoc 
 import { db } from '@/lib/firebase';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
 import { StudyGoalCard } from '@/components/study-tracker/study-goal-card';
-import { deleteStudyGoal, addStudyFolder, deleteStudyFolder } from '@/lib/study-tracker';
+import { deleteStudyGoal, addStudyFolder, deleteStudyFolder, moveStudyFolder } from '@/lib/study-tracker';
 import { useToast } from '@/hooks/use-toast';
 import { InsightsDashboard } from '@/components/study-tracker/insights-dashboard';
 import { GamificationProfile } from '@/components/study-tracker/gamification-profile';
@@ -21,6 +21,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { StudyFolderCard } from '@/components/study-tracker/study-folder-card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 
 type View = 'card' | 'list';
@@ -33,7 +45,9 @@ export default function StudyTrackerPage() {
   const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [folders, setFolders] = useState<StudyFolder[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
+  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
   const [view, setView] = useState<View>('card');
 
   useEffect(() => {
@@ -109,13 +123,18 @@ export default function StudyTrackerPage() {
   };
   
   const handleAddFolder = async () => {
-      if (!user) return;
-      try {
-          await addStudyFolder(user.uid, 'New Folder');
-          toast({ title: '✓ Folder Created' });
-      } catch(e) {
-          toast({ variant: 'destructive', title: 'Error creating folder.'});
-      }
+    if (!user || !newFolderName.trim()) {
+        toast({ variant: 'destructive', title: 'Folder name cannot be empty.' });
+        return;
+    }
+    try {
+        await addStudyFolder(user.uid, newFolderName, null);
+        toast({ title: '✓ Folder Created' });
+        setIsNewFolderDialogOpen(false);
+        setNewFolderName('');
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error creating folder.'});
+    }
   };
   
   const handleMoveGoalToFolder = async (goalId: string, folderId: string | null) => {
@@ -126,6 +145,16 @@ export default function StudyTrackerPage() {
         toast({ title: '✓ Goal Moved' });
     } catch(e) {
         toast({ variant: 'destructive', title: 'Error moving goal.'});
+    }
+  };
+  
+  const handleMoveFolder = async (folderId: string, newParentId: string | null) => {
+    if (!user) return;
+    try {
+      await moveStudyFolder(user.uid, folderId, newParentId);
+      toast({ title: '✓ Folder Moved' });
+    } catch(e) {
+      toast({ variant: 'destructive', title: 'Error moving folder.'});
     }
   };
 
@@ -140,6 +169,7 @@ export default function StudyTrackerPage() {
     }
   };
   
+  const topLevelFolders = folders.filter(f => !f.parentId);
   const unfiledGoals = goals.filter(g => !g.folderId);
 
   if (loading || !user) {
@@ -179,8 +209,8 @@ export default function StudyTrackerPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                             <DropdownMenuItem onSelect={() => setIsAddDialogOpen(true)}>New Study Goal</DropdownMenuItem>
-                             <DropdownMenuItem onSelect={handleAddFolder}><FolderIcon className="mr-2 h-4 w-4"/>New Folder</DropdownMenuItem>
+                             <DropdownMenuItem onSelect={() => setIsAddGoalDialogOpen(true)}>New Study Goal</DropdownMenuItem>
+                             <DropdownMenuItem onSelect={() => setIsNewFolderDialogOpen(true)}><FolderIcon className="mr-2 h-4 w-4"/>New Folder</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -193,12 +223,12 @@ export default function StudyTrackerPage() {
                     </div>
                 ) : (
                     <div className="flex-1 space-y-8">
-                        {folders.length > 0 && (
+                        {topLevelFolders.length > 0 && (
                             <div>
                                 <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                                    {folders.map(folder => (
-                                        <StudyFolderCard key={folder.id} folder={folder} onDelete={() => handleDeleteFolder(folder.id)} />
+                                    {topLevelFolders.map(folder => (
+                                        <StudyFolderCard key={folder.id} folder={folder} allFolders={folders} onDelete={() => handleDeleteFolder(folder.id)} onMove={handleMoveFolder} />
                                     ))}
                                 </div>
                             </div>
@@ -235,7 +265,30 @@ export default function StudyTrackerPage() {
             </TabsContent>
         </Tabs>
 
-      <AddStudyGoalDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+      <AddStudyGoalDialog open={isAddGoalDialogOpen} onOpenChange={setIsAddGoalDialogOpen} />
+      
+       <AlertDialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create New Folder</AlertDialogTitle>
+            <AlertDialogDescription>Enter a name for your new study folder.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="folder-name" className="sr-only">Folder Name</Label>
+            <Input
+              id="folder-name"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="e.g., Q4 Exams"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddFolder()}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAddFolder} disabled={!newFolderName.trim()}>Create</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
