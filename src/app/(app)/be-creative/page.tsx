@@ -6,10 +6,12 @@ import { BeCreativeIcon } from '@/components/icons/tools/be-creative-icon';
 import { BrainstormingIcon } from '@/components/icons/tools/brainstorming-icon';
 import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
 import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
+import { PresentationIcon } from '@/components/icons/tools/presentation-icon';
 
 import BrainstormingPage from '../brainstorming/page';
 import WhiteboardDashboardPage from '../whiteboard/page';
 import MindMapDashboardPage from '../mind-map/page';
+import { PresentationGenerator } from '@/components/be-creative/presentation-generator';
 
 export default function BeCreativePage() {
   return (
@@ -38,6 +40,10 @@ export default function BeCreativePage() {
             <MindMapIcon className="mr-2 h-4 w-4" />
             Mind Map
           </TabsTrigger>
+           <TabsTrigger value="presentation">
+            <PresentationIcon className="mr-2 h-4 w-4" />
+            Presentation
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="brainstorming" className="flex-1 mt-4">
@@ -48,6 +54,9 @@ export default function BeCreativePage() {
         </TabsContent>
         <TabsContent value="mind-map" className="flex-1 mt-4">
             <MindMapDashboardPage />
+        </TabsContent>
+        <TabsContent value="presentation" className="flex-1 mt-4">
+            <PresentationGenerator />
         </TabsContent>
       </Tabs>
     </div>
