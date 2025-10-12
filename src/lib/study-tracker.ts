@@ -56,6 +56,27 @@ export const deleteStudyGoal = async (userId: string, goalId: string) => {
 };
 
 
+// --- Folders ---
+export const addStudyFolder = async (userId: string, folderName: string) => {
+  const foldersRef = collection(db, 'users', userId, 'studyFolders');
+  return await addDoc(foldersRef, {
+    name: folderName,
+    ownerId: userId,
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const updateStudyFolder = async (userId: string, folderId: string, folderData: { name: string }) => {
+  const folderRef = doc(db, 'users', userId, 'studyFolders', folderId);
+  return await updateDoc(folderRef, folderData);
+};
+
+export const deleteStudyFolder = async (userId: string, folderId: string) => {
+  const folderRef = doc(db, 'users', userId, 'studyFolders', folderId);
+  return await deleteDoc(folderRef);
+};
+
+
 // --- Chapters ---
 export const addStudyChapter = async (userId: string, chapterData: Omit<StudyChapter, 'id' | 'createdAt' | 'ownerId'>) => {
   const chaptersRef = collection(db, 'users', userId, 'studyChapters');

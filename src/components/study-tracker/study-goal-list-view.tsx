@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import type { StudyGoal, StudySubtopic } from '@/lib/types';
+import type { StudyGoal, StudySubtopic, StudyFolder } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -11,8 +12,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, GraduationCap } from 'lucide-react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { MoreHorizontal, Edit, Trash2, GraduationCap, Move, Folder } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useAuth } from '@/hooks/use-auth';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -24,10 +25,12 @@ import { AddStudyGoalDialog } from './add-study-goal-dialog';
 
 interface StudyGoalListViewProps {
   goals: StudyGoal[];
+  folders: StudyFolder[];
   onDelete: (goalId: string) => void;
+  onMove: (goalId: string, folderId: string | null) => void;
 }
 
-function GoalRow({ goal, onDelete }: { goal: StudyGoal; onDelete: (goalId: string) => void }) {
+function GoalRow({ goal, folders, onDelete, onMove }: { goal: StudyGoal; folders: StudyFolder[]; onDelete: (goalId: string) => void; onMove: (goalId: string, folderId: string | null) => void; }) {
   const { user } = useAuth();
   const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -50,7 +53,6 @@ function GoalRow({ goal, onDelete }: { goal: StudyGoal; onDelete: (goalId: strin
   }, [subtopics]);
 
   const handleRowClick = (e: React.MouseEvent) => {
-      // Don't navigate if clicking on dropdown trigger
       if((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
           e.preventDefault();
           return;
@@ -82,6 +84,19 @@ function GoalRow({ goal, onDelete }: { goal: StudyGoal; onDelete: (goalId: strin
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+               <DropdownMenuSub>
+                <DropdownMenuSubTrigger><Move className="mr-2 h-4 w-4" />Move to Folder</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                    {goal.folderId && <DropdownMenuItem onSelect={() => onMove(goal.id, null)}>Remove from folder</DropdownMenuItem>}
+                    {folders.map(folder => (
+                        <DropdownMenuItem key={folder.id} onSelect={() => onMove(goal.id, folder.id)} disabled={goal.folderId === folder.id}>
+                            <Folder className="mr-2 h-4 w-4" /> {folder.name}
+                        </DropdownMenuItem>
+                    ))}
+                    {folders.length === 0 && <DropdownMenuItem disabled>No folders available</DropdownMenuItem>}
+                </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
@@ -104,7 +119,7 @@ function GoalRow({ goal, onDelete }: { goal: StudyGoal; onDelete: (goalId: strin
   );
 }
 
-export function StudyGoalListView({ goals, onDelete }: StudyGoalListViewProps) {
+export function StudyGoalListView({ goals, folders, onDelete, onMove }: StudyGoalListViewProps) {
   return (
     <div className="border rounded-lg">
       <Table>
@@ -119,7 +134,7 @@ export function StudyGoalListView({ goals, onDelete }: StudyGoalListViewProps) {
         </TableHeader>
         <TableBody>
           {goals.map(goal => (
-            <GoalRow key={goal.id} goal={goal} onDelete={onDelete} />
+            <GoalRow key={goal.id} goal={goal} folders={folders} onDelete={onDelete} onMove={onMove} />
           ))}
         </TableBody>
       </Table>

@@ -491,8 +491,16 @@ export const StudyGoalSchema = z.object({
     updatedAt: FirebaseTimestampSchema,
     ownerId: z.string(),
     dueDate: FirebaseTimestampSchema.nullable().optional(),
+    folderId: z.string().nullable().optional(),
 });
 export type StudyGoal = z.infer<typeof StudyGoalSchema>;
+
+export type StudyFolder = {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: Timestamp;
+};
 
 export const StudyChapterSchema = z.object({
     id: z.string(),
