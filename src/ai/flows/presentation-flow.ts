@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview An AI flow for generating presentation slides.
- * - generatePresentation - Creates presentation content based on a topic.
+ * - generatePresentation - Creates presentation content based on a topic or source text.
  */
 
 import { ai } from '@/ai/genkit';
@@ -17,18 +17,34 @@ const presentationPrompt = ai.definePrompt({
     You are a world-class presentation creator. Your task is to generate a compelling presentation based on the user's request.
 
     **User Request:**
-    - **Topic:** {{topic}}
     - **Audience:** {{audience}}
     - **Number of Slides:** {{numSlides}}
+    - **Tone/Style:** {{tone}}
 
-    **Instructions:**
+    {{#if (eq generationType "from_topic")}}
+    - **Topic:** {{topic}}
+    {{else}}
+    - **Source Text:** 
+      ---
+      {{{sourceText}}}
+      ---
+    {{/if}}
 
-    1.  **Title**: Create a strong, engaging title for the entire presentation.
-    2.  **Slides**: Generate exactly {{numSlides}} slides. One of these must be a Title slide and another a 'Thank You' or 'Q&A' slide.
-    3.  **Slide Content**: For each slide:
+    **Your Instructions:**
+
+    1.  **Analyze Request**:
+        -   If a 'topic' is provided, generate a presentation structure and content from scratch about that topic.
+        -   If 'sourceText' is provided, your entire presentation MUST be a summary and structured representation of that text. Do not introduce outside information.
+
+    2.  **Title**: Create a strong, engaging title for the entire presentation.
+
+    3.  **Slides**: Generate exactly {{numSlides}} slides. One of these must be a Title slide and another a 'Thank You' or 'Q&A' slide at the end.
+
+    4.  **Slide Content**: For each slide:
         -   **Title**: Give each slide a clear and concise title.
-        -   **Content**: Provide 3-5 bullet points of content. The language and complexity should be appropriate for the specified **{{audience}}**.
+        -   **Content**: Provide 3-5 bullet points of content. The language, complexity, and tone should be appropriate for the specified **{{audience}}** and **{{tone}}**.
         -   **Speaker Notes**: Write brief speaker notes for each slide to guide the presenter.
+        -   **Visual Suggestion**: Provide a very brief (1-3 words) suggestion for a visual aid, like "bar chart", "team photo", "lightbulb icon", "process flowchart". This should be placed in the \`visualSuggestion\` field.
 
     Ensure your entire output is a single, valid JSON object.
   `,

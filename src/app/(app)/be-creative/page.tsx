@@ -26,7 +26,7 @@ export default function BeCreativePage() {
         </div>
       </div>
 
-      <Tabs defaultValue="brainstorming" className="flex-1 flex flex-col min-h-0">
+      <Tabs defaultValue="presentation" className="flex-1 flex flex-col min-h-0">
         <TabsList>
           <TabsTrigger value="brainstorming">
             <BrainstormingIcon className="mr-2 h-4 w-4" />
