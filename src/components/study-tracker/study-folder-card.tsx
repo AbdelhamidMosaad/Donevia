@@ -3,25 +3,26 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { StudyFolder } from '@/lib/types';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { Folder, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Folder, MoreHorizontal, Edit, Trash2, Move } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { updateStudyFolder } from '@/lib/study-tracker';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface StudyFolderCardProps {
   folder: StudyFolder;
+  allFolders: StudyFolder[];
   onDelete: () => void;
+  onMove: (folderId: string, newParentId: string | null) => void;
 }
 
-export function StudyFolderCard({ folder, onDelete }: StudyFolderCardProps) {
+export function StudyFolderCard({ folder, allFolders, onDelete, onMove }: StudyFolderCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(folder.name);
   const { user } = useAuth();
@@ -105,6 +106,19 @@ export function StudyFolderCard({ folder, onDelete }: StudyFolderCardProps) {
                 <DropdownMenuItem onSelect={() => setIsEditing(true)}>
                   <Edit className="mr-2 h-4 w-4" /> Rename
                 </DropdownMenuItem>
+                 <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <Move className="mr-2 h-4 w-4" />Move
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                        {folder.parentId && <DropdownMenuItem onSelect={() => onMove(folder.id, null)}>Move to Root</DropdownMenuItem>}
+                        {allFolders.filter(f => f.id !== folder.id && f.parentId !== folder.id).map(f => (
+                             <DropdownMenuItem key={f.id} onSelect={() => onMove(folder.id, f.id)} disabled={folder.parentId === f.id}>
+                                <Folder className="mr-2 h-4 w-4" /> {f.name}
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuSubContent>
+                </DropdownMenuSub>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">

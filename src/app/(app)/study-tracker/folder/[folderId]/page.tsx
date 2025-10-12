@@ -11,7 +11,8 @@ import { collection, onSnapshot, query, doc, addDoc, Timestamp, where, updateDoc
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { StudyGoalCard } from '@/components/study-tracker/study-goal-card';
-import { deleteStudyGoal } from '@/lib/study-tracker';
+import { deleteStudyGoal, deleteStudyFolder, moveStudyFolder } from '@/lib/study-tracker';
+import { StudyFolderCard } from '@/components/study-tracker/study-folder-card';
 
 export default function StudyFolderPage() {
   const { user, loading } = useAuth();
@@ -21,6 +22,7 @@ export default function StudyFolderPage() {
   const { toast } = useToast();
   
   const [goals, setGoals] = useState<StudyGoal[]>([]);
+  const [subFolders, setSubFolders] = useState<StudyFolder[]>([]);
   const [allFolders, setAllFolders] = useState<StudyFolder[]>([]);
   const [currentFolder, setCurrentFolder] = useState<StudyFolder | null>(null);
 
@@ -46,6 +48,12 @@ export default function StudyFolderPage() {
       const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => {
         setGoals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyGoal)));
       });
+      
+      const subFoldersQuery = query(collection(db, 'users', user.uid, 'studyFolders'), where('parentId', '==', folderId));
+      const unsubscribeSubFolders = onSnapshot(subFoldersQuery, (snapshot) => {
+        setSubFolders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyFolder)));
+      });
+
 
       const allFoldersQuery = query(collection(db, 'users', user.uid, 'studyFolders'));
        const unsubscribeAllFolders = onSnapshot(allFoldersQuery, (snapshot) => {
@@ -56,6 +64,7 @@ export default function StudyFolderPage() {
         unsubscribeFolder();
         unsubscribeGoals();
         unsubscribeAllFolders();
+        unsubscribeSubFolders();
       };
     }
   }, [user, folderId, router, toast]);
@@ -81,6 +90,29 @@ export default function StudyFolderPage() {
     }
   };
 
+  const handleDeleteFolder = async (folderIdToDelete: string) => {
+    if (!user) return;
+    try {
+      await deleteStudyFolder(user.uid, folderIdToDelete);
+      toast({ title: 'Folder deleted' });
+    } catch(e) {
+       console.error("Error deleting folder: ", e);
+       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete folder.' });
+    }
+  };
+
+  const handleMoveFolder = async (folderToMoveId: string, newParentId: string | null) => {
+    if (!user) return;
+    try {
+      await moveStudyFolder(user.uid, folderToMoveId, newParentId);
+      toast({ title: '✓ Folder Moved' });
+    } catch (e) {
+      console.error("Error moving folder: ", e);
+      toast({ variant: 'destructive', title: 'Error moving folder.' });
+    }
+  };
+
+
   if (loading || !user || !currentFolder) {
     return <div>Loading folder...</div>;
   }
@@ -89,33 +121,59 @@ export default function StudyFolderPage() {
     <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
          <div className='flex items-center gap-4'>
-            <Button variant="outline" size="icon" onClick={() => router.push('/study-tracker')}><ArrowLeft /></Button>
+            <Button variant="outline" size="icon" onClick={() => router.push(currentFolder.parentId ? `/study-tracker/folder/${currentFolder.parentId}` : '/study-tracker')}><ArrowLeft /></Button>
             <div>
                  <div className="flex items-center gap-2">
                     <FolderIcon className="h-7 w-7 text-primary"/>
                     <h1 className="text-3xl font-bold font-headline">{currentFolder.name}</h1>
                 </div>
-                <p className="text-muted-foreground">Manage study goals in this folder.</p>
+                <p className="text-muted-foreground">Manage study goals and folders.</p>
             </div>
         </div>
       </div>
       
-       {goals.length === 0 ? (
+       {goals.length === 0 && subFolders.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
             <h3 className="text-xl font-semibold font-headline">This folder is empty</h3>
-            <p className="text-muted-foreground">This folder doesn't contain any study goals yet.</p>
+            <p className="text-muted-foreground">This folder doesn't contain any study goals or sub-folders yet.</p>
         </div>
       ) : (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {goals.map(goal => (
-                <StudyGoalCard
-                  key={goal.id}
-                  goal={goal}
-                  folders={allFolders}
-                  onDelete={() => handleDeleteGoal(goal.id)}
-                  onMove={handleMoveGoalToFolder}
-                />
-            ))}
+        <div className="flex-1 space-y-8">
+            {subFolders.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold font-headline mb-4">Sub-folders</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                  {subFolders.map(folder => (
+                    <StudyFolderCard 
+                        key={folder.id} 
+                        folder={folder}
+                        allFolders={allFolders}
+                        onDelete={() => handleDeleteFolder(folder.id)}
+                        onMove={handleMoveFolder}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div>
+              <h2 className="text-2xl font-bold font-headline mb-4">Study Goals</h2>
+               {goals.length > 0 ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {goals.map(goal => (
+                        <StudyGoalCard
+                          key={goal.id}
+                          goal={goal}
+                          folders={allFolders}
+                          onDelete={() => handleDeleteGoal(goal.id)}
+                          onMove={handleMoveGoalToFolder}
+                        />
+                    ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No study goals in this folder.</p>
+              )}
+            </div>
         </div>
       )}
     </div>
