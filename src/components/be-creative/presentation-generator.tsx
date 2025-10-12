@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart, Users, Settings, Code, FlaskConical, Palette } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
@@ -21,6 +21,8 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
+import Image from 'next/image';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 
 const templates: { id: PresentationTemplate; name: string; bg: string, text: string, accent: string }[] = [
@@ -43,7 +45,8 @@ const toneOptions = [
 type PresentationFormValues = z.infer<typeof PresentationRequestSchema>;
 
 const iconMap: { [key: string]: React.ElementType } = {
-    chart: BarChart,
+    chart: BarChartIcon,
+    pie: PieChartIcon,
     icon: Lightbulb,
     team: Users,
     settings: Settings,
@@ -52,19 +55,65 @@ const iconMap: { [key: string]: React.ElementType } = {
     palette: Palette,
 };
 
-const VisualSuggestion = ({ suggestion }: { suggestion?: string }) => {
+const chartData = [
+  { name: 'A', value: 400 },
+  { name: 'B', value: 300 },
+  { name: 'C', value: 200 },
+  { name: 'D', value: 278 },
+];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+const VisualSuggestion = ({ suggestion, index }: { suggestion?: string; index: number }) => {
     if (!suggestion) return <ImageIcon className="text-muted-foreground" />;
     
     const lowerSuggestion = suggestion.toLowerCase();
+
+    if (lowerSuggestion.includes('bar chart')) {
+        return (
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <XAxis dataKey="name" fontSize={10} />
+                    <YAxis fontSize={10} />
+                    <Tooltip wrapperClassName="text-xs" />
+                    <Bar dataKey="value" fill="hsl(var(--primary))" />
+                </BarChart>
+            </ResponsiveContainer>
+        )
+    }
+     if (lowerSuggestion.includes('pie chart')) {
+        return (
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={50} fill="#8884d8">
+                         {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip wrapperClassName="text-xs" />
+                </PieChart>
+            </ResponsiveContainer>
+        )
+    }
+
     const IconComponent = Object.keys(iconMap).find(key => lowerSuggestion.includes(key));
     
-    const Icon = IconComponent ? iconMap[IconComponent] : ImageIcon;
+    if (IconComponent) {
+        const Icon = iconMap[IconComponent];
+        return (
+            <div className="flex flex-col items-center justify-center h-full bg-muted/50 rounded-lg p-4 text-center">
+                <Icon className="h-12 w-12 text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground">Visual: {suggestion}</p>
+            </div>
+        );
+    }
     
     return (
-        <div className="flex flex-col items-center justify-center h-full bg-muted/50 rounded-lg p-4 text-center">
-            <Icon className="h-12 w-12 text-muted-foreground mb-2" />
-            <p className="text-xs text-muted-foreground">Visual: {suggestion}</p>
-        </div>
+        <Image 
+            src={`https://picsum.photos/seed/${suggestion.replace(/\s+/g, '-')}-${index}/600/400`}
+            alt={suggestion}
+            width={600}
+            height={400}
+            data-ai-hint={suggestion}
+            className="w-full h-full object-cover rounded-lg shadow-sm"
+        />
     )
 }
 
@@ -299,30 +348,49 @@ export function PresentationGenerator() {
     if (!response) return null;
     const templateStyle = templates.find(t => t.id === selectedTemplate) || templates[0];
     const currentSlide = response.slides[currentSlideIndex];
+    
+    const getLayoutClasses = (layout: Slide['layout']) => {
+        switch (layout) {
+            case 'title': return 'flex-col items-center justify-center text-center';
+            case 'text-only': return 'flex-col justify-center';
+            case 'visual-only': return 'flex-col items-center justify-center';
+            case 'text-and-visual':
+            default:
+                return 'grid md:grid-cols-2 gap-6 items-center';
+        }
+    }
 
     return (
       <div className="flex flex-col h-full gap-4">
-        <h2 className={`text-2xl font-bold text-center ${templateStyle.text}`}>{response.title}</h2>
-        <Carousel className="w-full max-w-4xl mx-auto" setApi={setApi}>
+        <h2 className={`text-3xl font-bold text-center font-headline ${templateStyle.text}`}>{response.title}</h2>
+        <Carousel className="w-full max-w-5xl mx-auto" setApi={setApi}>
           <CarouselContent>
             {response.slides.map((slide, index) => (
               <CarouselItem key={index}>
-                <Card className={`h-full flex flex-col ${templateStyle.bg} ${templateStyle.text}`}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <span className={`h-2 w-8 rounded-full ${templateStyle.accent}`} />
-                        {index + 1}. {slide.title}
+                <Card className={cn(
+                    `h-full flex flex-col aspect-[16/9] ${templateStyle.bg} ${templateStyle.text}`,
+                    getLayoutClasses(slide.layout)
+                )}>
+                  <CardHeader className={cn(slide.layout === 'title' && 'items-center')}>
+                    <CardTitle className="flex items-center gap-2 text-4xl">
+                        <span className={cn('h-2 w-16 rounded-full', templateStyle.accent)} />
+                        {slide.title}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid md:grid-cols-2 gap-6 flex-1">
-                    <div className="space-y-4">
-                      <h4 className="font-semibold">Content</h4>
-                      <ul className="list-disc pl-5 space-y-2">
-                        {slide.content.map((point, i) => <li key={i}>{point}</li>)}
-                      </ul>
-                    </div>
-                    <div className="flex-1">
-                        <VisualSuggestion suggestion={slide.visualSuggestion} />
+                  <CardContent className="flex-1 w-full flex items-center justify-center">
+                    <div className={cn('w-full h-full', getLayoutClasses(slide.layout))}>
+                        {slide.layout !== 'visual-only' && (
+                            <div className={cn("space-y-4", slide.layout === 'title' && 'max-w-xl')}>
+                              <ul className="list-disc pl-5 space-y-2 text-xl">
+                                {slide.content.map((point, i) => <li key={i}>{point}</li>)}
+                              </ul>
+                            </div>
+                        )}
+                        {(slide.layout === 'text-and-visual' || slide.layout === 'visual-only') && (
+                            <div className="h-full w-full min-h-[200px]">
+                                <VisualSuggestion suggestion={slide.visualSuggestion} index={index} />
+                            </div>
+                        )}
                     </div>
                   </CardContent>
                 </Card>

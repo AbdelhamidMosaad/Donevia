@@ -32,6 +32,7 @@ export const SlideSchema = z.object({
   title: z.string().describe("The title of the slide."),
   content: z.array(z.string()).describe("An array of bullet points for the slide's main content."),
   speakerNotes: z.string().describe("Notes for the presenter for this specific slide."),
+  layout: z.enum(['text-and-visual', 'text-only', 'visual-only', 'title']).describe("The suggested layout for the slide.").optional(),
   visualSuggestion: z.string().optional().describe("A brief, one or two-word suggestion for a visual element (e.g., 'bar chart', 'lightbulb icon', 'team photo')."),
 });
 

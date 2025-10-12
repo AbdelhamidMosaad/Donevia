@@ -38,13 +38,17 @@ const presentationPrompt = ai.definePrompt({
 
     2.  **Title**: Create a strong, engaging title for the entire presentation.
 
-    3.  **Slides**: Generate exactly {{numSlides}} slides. One of these must be a Title slide and another a 'Thank You' or 'Q&A' slide at the end.
+    3.  **Slides**: Generate exactly {{numSlides}} slides. 
+        - The first slide MUST be a 'title' layout.
+        - The last slide should be a 'Thank You' or 'Q&A' slide, likely with a 'text-only' layout.
+        - For the slides in between, vary the layout ('text-and-visual', 'text-only', 'visual-only') to keep the presentation engaging.
 
     4.  **Slide Content**: For each slide:
         -   **Title**: Give each slide a clear and concise title.
         -   **Content**: Provide 3-5 bullet points of content. The language, complexity, and tone should be appropriate for the specified **{{audience}}** and **{{tone}}**.
         -   **Speaker Notes**: Write brief speaker notes for each slide to guide the presenter.
-        -   **Visual Suggestion**: Provide a very brief (1-3 words) suggestion for a visual aid, like "bar chart", "team photo", "lightbulb icon", "process flowchart". This should be placed in the \`visualSuggestion\` field.
+        -   **Visual Suggestion**: Provide a very brief (1-3 words) suggestion for a visual aid, like "bar chart showing growth", "team photo", "lightbulb icon", "process flowchart". This should be placed in the \`visualSuggestion\` field. If a slide layout is 'text-only', you can omit this or provide a simple icon suggestion.
+        -   **Layout**: Assign a layout for each slide from: 'title', 'text-and-visual', 'text-only', 'visual-only'.
 
     Ensure your entire output is a single, valid JSON object.
   `,
