@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, BarChart3, Folder as FolderIcon, GripHorizontal, Minus, Plus } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, BarChart3, Folder as FolderIcon, GripHorizontal, Minus, Plus, Kanban } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import type { StudyGoal, StudySubtopic, StudySession, StudyFolder } from '@/lib/types';
+import type { StudyGoal, StudyTopic, StudySession, StudyFolder } from '@/lib/types';
 import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AddStudyGoalDialog } from '@/components/study-tracker/add-study-goal-dialog';
@@ -34,9 +34,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { StudyGoalBoard } from '@/components/study-tracker/study-goal-board';
 
 
-type View = 'card' | 'list';
+type View = 'card' | 'list' | 'board';
 type CardSize = 'small' | 'medium' | 'large';
 
 export default function StudyTrackerPage() {
@@ -44,7 +45,7 @@ export default function StudyTrackerPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [goals, setGoals] = useState<StudyGoal[]>([]);
-  const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
+  const [topics, setTopics] = useState<StudyTopic[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [folders, setFolders] = useState<StudyFolder[]>([]);
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
@@ -85,10 +86,10 @@ export default function StudyTrackerPage() {
         setGoals(goalsData);
       });
 
-      const subtopicsQuery = query(collection(db, 'users', user.uid, 'studySubtopics'));
-      const unsubscribeSubtopics = onSnapshot(subtopicsQuery, (snapshot) => {
-        const subtopicsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySubtopic));
-        setSubtopics(subtopicsData);
+      const topicsQuery = query(collection(db, 'users', user.uid, 'topics'));
+      const unsubscribeTopics = onSnapshot(topicsQuery, (snapshot) => {
+        const topicsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudyTopic));
+        setTopics(topicsData);
       });
       
       const sessionsQuery = query(collection(db, 'users', user.uid, 'studySessions'));
@@ -104,7 +105,7 @@ export default function StudyTrackerPage() {
 
       return () => {
         unsubscribeGoals();
-        unsubscribeSubtopics();
+        unsubscribeTopics();
         unsubscribeSessions();
         unsubscribeFolders();
       }
@@ -194,6 +195,29 @@ export default function StudyTrackerPage() {
     return <div>Loading...</div>;
   }
 
+  const renderGoalsView = () => {
+    switch(view) {
+        case 'list':
+            return <StudyGoalListView goals={unfiledGoals} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} />;
+        case 'board':
+            return <StudyGoalBoard goals={unfiledGoals} />;
+        case 'card':
+        default:
+            return (
+                <div className={cn(
+                    "grid gap-6",
+                    cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                    cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+                    cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+                )}>
+                    {unfiledGoals.map(goal => (
+                        <StudyGoalCard key={goal.id} goal={goal} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} size={cardSize} />
+                    ))}
+                </div>
+            );
+    }
+  }
+
   return (
     <div className="flex flex-col h-full gap-6">
        <div className="flex items-center gap-4">
@@ -218,6 +242,9 @@ export default function StudyTrackerPage() {
                         </ToggleGroupItem>
                         <ToggleGroupItem value="list" aria-label="List view">
                             <List />
+                        </ToggleGroupItem>
+                         <ToggleGroupItem value="board" aria-label="Board view">
+                            <Kanban />
                         </ToggleGroupItem>
                     </ToggleGroup>
                     {view === 'card' && (
@@ -248,7 +275,7 @@ export default function StudyTrackerPage() {
                     </div>
                 ) : (
                     <div className="flex-1 space-y-8">
-                        {topLevelFolders.length > 0 && (
+                        {topLevelFolders.length > 0 && view !== 'board' && (
                             <div>
                                 <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
                                 <div className={cn(
@@ -266,20 +293,7 @@ export default function StudyTrackerPage() {
                         <div>
                              <h2 className="text-2xl font-bold font-headline mb-4">Study Goals</h2>
                              {unfiledGoals.length > 0 ? (
-                                 view === 'list' ? (
-                                    <StudyGoalListView goals={unfiledGoals} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} />
-                                ) : (
-                                    <div className={cn(
-                                        "grid gap-6",
-                                        cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
-                                        cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
-                                        cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
-                                    )}>
-                                        {unfiledGoals.map(goal => (
-                                            <StudyGoalCard key={goal.id} goal={goal} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} size={cardSize} />
-                                        ))}
-                                    </div>
-                                )
+                                renderGoalsView()
                              ) : (
                                 <p className="text-muted-foreground text-sm">No goals outside of folders.</p>
                              )}
@@ -292,8 +306,7 @@ export default function StudyTrackerPage() {
                  <div className="grid lg:grid-cols-[1fr_350px] gap-6">
                     <InsightsDashboard 
                         goals={goals} 
-                        subtopics={subtopics} 
-                        sessions={sessions}
+                        topics={topics} 
                     />
                     <GamificationProfile />
                 </div>
