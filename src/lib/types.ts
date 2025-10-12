@@ -790,3 +790,5 @@ export type MindMapType = {
     scale?: number;
     pan?: { x: number, y: number };
 };
+
+    
