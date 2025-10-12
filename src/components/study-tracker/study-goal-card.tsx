@@ -20,15 +20,17 @@ import { StudyTrackerIcon } from '../icons/tools/study-tracker-icon';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '../ui/input';
+import { cn } from '@/lib/utils';
 
 interface StudyGoalCardProps {
   goal: StudyGoal;
   folders: StudyFolder[];
   onDelete: (goalId: string) => void;
   onMove: (goalId: string, folderId: string | null) => void;
+  size?: 'small' | 'medium' | 'large';
 }
 
-export function StudyGoalCard({ goal, folders, onDelete, onMove }: StudyGoalCardProps) {
+export function StudyGoalCard({ goal, folders, onDelete, onMove, size = 'large' }: StudyGoalCardProps) {
   const { user } = useAuth();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [subtopics, setSubtopics] = useState<StudySubtopic[]>([]);
@@ -108,8 +110,8 @@ export function StudyGoalCard({ goal, folders, onDelete, onMove }: StudyGoalCard
     <>
       <div onClick={handleCardClick} className="group block h-full">
         <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
-           <div className="p-6 flex flex-col items-center text-center">
-                <StudyTrackerIcon className="h-24 w-24 mb-4" />
+           <div className={cn("p-6 flex flex-col items-center text-center h-full justify-center", size === 'medium' && 'p-4', size === 'small' && 'p-3')}>
+                <StudyTrackerIcon className={cn("mb-4", size === 'large' && "h-24 w-24", size === 'medium' && "h-16 w-16", size === 'small' && "h-12 w-12 mb-2")} />
                 {isEditing ? (
                   <Input
                     ref={inputRef}
@@ -121,13 +123,16 @@ export function StudyGoalCard({ goal, folders, onDelete, onMove }: StudyGoalCard
                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
-                  <h3 className="text-lg font-bold font-headline text-foreground">{goal.title}</h3>
+                  <h3 className={cn("font-bold font-headline text-foreground", size === 'large' && 'text-lg', size === 'medium' && 'text-base', size === 'small' && 'text-sm')}>{goal.title}</h3>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Target: {goal.dueDate ? moment(goal.dueDate.toDate()).format('MMM D, YYYY') : 'Not set'}</p>
-                <div className="w-full mt-4">
-                    <Progress value={progressPercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground mt-1">{Math.round(progressPercentage)}% complete</p>
-                </div>
+                {size !== 'small' && <p className="text-xs text-muted-foreground mt-1">Target: {goal.dueDate ? moment(goal.dueDate.toDate()).format('MMM D, YYYY') : 'Not set'}</p>}
+                
+                {size === 'large' && (
+                    <div className="w-full mt-4">
+                        <Progress value={progressPercentage} className="h-2" />
+                        <p className="text-xs text-muted-foreground mt-1">{Math.round(progressPercentage)}% complete</p>
+                    </div>
+                )}
             </div>
              <DropdownMenu>
               <DropdownMenuTrigger asChild>

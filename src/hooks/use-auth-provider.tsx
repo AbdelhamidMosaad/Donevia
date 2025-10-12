@@ -42,6 +42,7 @@ const defaultSettings: UserSettings = {
     meetingNotesCardSize: 'large',
     notesView: 'board',
     studyTrackerView: 'card',
+    studyTrackerCardSize: 'large',
     goalsCardSize: 'large',
     flashcardsCardSize: 'large',
     whiteboardCardSize: 'large',

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, BarChart3, Folder as FolderIcon } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, BarChart3, Folder as FolderIcon, GripHorizontal, Minus, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { StudyGoal, StudySubtopic, StudySession, StudyFolder } from '@/lib/types';
@@ -33,12 +33,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 
 type View = 'card' | 'list';
+type CardSize = 'small' | 'medium' | 'large';
 
 export default function StudyTrackerPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, settings } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [goals, setGoals] = useState<StudyGoal[]>([]);
@@ -49,6 +51,14 @@ export default function StudyTrackerPage() {
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [view, setView] = useState<View>('card');
+  const [cardSize, setCardSize] = useState<CardSize>(settings.studyTrackerCardSize || 'large');
+  
+  useEffect(() => {
+    if(settings.studyTrackerCardSize) {
+        setCardSize(settings.studyTrackerCardSize);
+    }
+  }, [settings.studyTrackerCardSize]);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -168,6 +178,14 @@ export default function StudyTrackerPage() {
         }
     }
   };
+
+  const handleCardSizeChange = async (newSize: CardSize) => {
+    if (newSize && user) {
+        setCardSize(newSize);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { studyTrackerCardSize: newSize }, { merge: true });
+    }
+  }
   
   const topLevelFolders = folders.filter(f => !f.parentId);
   const unfiledGoals = goals.filter(g => !g.folderId);
@@ -202,6 +220,13 @@ export default function StudyTrackerPage() {
                             <List />
                         </ToggleGroupItem>
                     </ToggleGroup>
+                    {view === 'card' && (
+                        <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                            <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                            <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                            <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+                        </ToggleGroup>
+                    )}
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button>
@@ -226,9 +251,14 @@ export default function StudyTrackerPage() {
                         {topLevelFolders.length > 0 && (
                             <div>
                                 <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                <div className={cn(
+                                    "grid gap-6",
+                                    cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                                    cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+                                    cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+                                )}>
                                     {topLevelFolders.map(folder => (
-                                        <StudyFolderCard key={folder.id} folder={folder} allFolders={folders} onDelete={() => handleDeleteFolder(folder.id)} onMove={handleMoveFolder} />
+                                        <StudyFolderCard key={folder.id} folder={folder} allFolders={folders} onDelete={() => handleDeleteFolder(folder.id)} onMove={handleMoveFolder} size={cardSize} />
                                     ))}
                                 </div>
                             </div>
@@ -239,9 +269,14 @@ export default function StudyTrackerPage() {
                                  view === 'list' ? (
                                     <StudyGoalListView goals={unfiledGoals} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} />
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className={cn(
+                                        "grid gap-6",
+                                        cardSize === 'large' && "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                                        cardSize === 'medium' && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+                                        cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+                                    )}>
                                         {unfiledGoals.map(goal => (
-                                            <StudyGoalCard key={goal.id} goal={goal} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} />
+                                            <StudyGoalCard key={goal.id} goal={goal} folders={folders} onDelete={handleDeleteGoal} onMove={handleMoveGoalToFolder} size={cardSize} />
                                         ))}
                                     </div>
                                 )

@@ -253,6 +253,7 @@ export interface UserSettings {
     meetingNotesCardSize?: 'small' | 'medium' | 'large';
     notesView?: 'board' | 'canvas';
     studyTrackerView?: 'card' | 'list';
+    studyTrackerCardSize?: 'small' | 'medium' | 'large';
     goalsCardSize?: 'small' | 'medium' | 'large';
     flashcardsCardSize?: 'small' | 'medium' | 'large';
     whiteboardCardSize?: 'small' | 'medium' | 'large';
