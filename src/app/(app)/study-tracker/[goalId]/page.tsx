@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -30,7 +31,7 @@ export default function StudyGoalDetailPage() {
   const params = useParams();
   const { toast } = useToast();
   const goalId = params.goalId as string;
-  const { activeTopic, elapsedTime, toggleTimer } = useStudyTimer();
+  const { activeItem, elapsedTime, toggleTimer } = useStudyTimer();
 
   const [goal, setGoal] = useState<StudyGoal | null>(null);
   const [chapters, setChapters] = useState<StudyChapter[]>([]);
@@ -129,8 +130,8 @@ export default function StudyGoalDetailPage() {
   }, [user, goalId, router]);
 
 
-  const handleToggleTimer = (topic: StudyTopic) => {
-    toggleTimer(topic.id, topic.title);
+  const handleToggleTimer = (itemId: string, itemTitle: string, itemType: 'topic' | 'chapter') => {
+    toggleTimer(itemId, itemTitle, itemType);
   };
 
 
@@ -143,8 +144,10 @@ export default function StudyGoalDetailPage() {
   const flagPosition = `${progressPercentage}%`;
   
   const totalTimeSpent = useMemo(() => {
-      return topics.reduce((acc, s) => acc + (s.timeSpentSeconds || 0), 0);
-  }, [topics]);
+    const chapterTime = chapters.reduce((acc, c) => acc + (c.timeSpentSeconds || 0), 0);
+    const topicTime = topics.reduce((acc, t) => acc + (t.timeSpentSeconds || 0), 0);
+    return chapterTime + topicTime;
+  }, [chapters, topics]);
 
   const adaptivePlan = useMemo(() => {
     if (!goal?.dueDate) return null;
@@ -318,7 +321,7 @@ export default function StudyGoalDetailPage() {
                                                         chapter={chapter} 
                                                         topics={topics.filter(s => s.chapterId === chapter.id)}
                                                         chaptersCount={chapters.length}
-                                                        activeTimer={activeTopic}
+                                                        activeTimer={activeItem}
                                                         onToggleTimer={handleToggleTimer}
                                                     />
                                                 </div>
@@ -364,7 +367,7 @@ export default function StudyGoalDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-center text-muted-foreground italic text-sm">
-                            {activeTopic ? `Timer running... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a topic to track your time."}
+                            {activeItem ? `Timer running... ${formatTime(Math.floor(elapsedTime / 1000))}` : "Start a timer on a topic to track your time."}
                         </div>
                     </CardContent>
                 </Card>

@@ -8,17 +8,18 @@ import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { logStudySession } from '@/lib/study-tracker';
 
 interface StudyTimerState {
-  activeTopicId: string | null;
-  activeTopicTitle: string | null;
+  activeItemId: string | null;
+  activeItemTitle: string | null;
+  activeItemType: 'topic' | 'chapter' | null;
   startTime: number | null; // epoch time
   isActive: boolean;
 }
 
 interface StudyTimerContextType extends StudyTimerState {
   elapsedTime: number;
-  toggleTimer: (topicId: string, topicTitle: string) => void;
+  toggleTimer: (itemId: string, itemTitle: string, itemType: 'topic' | 'chapter') => void;
   stopTimer: () => void;
-  activeTopic: { topicId: string, title: string | null } | null;
+  activeItem: { itemId: string, title: string | null } | null;
 }
 
 const StudyTimerContext = createContext<StudyTimerContextType | undefined>(undefined);
@@ -34,8 +35,9 @@ export function useStudyTimer() {
 export function StudyTimerProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const [state, setState] = useState<StudyTimerState>({
-        activeTopicId: null,
-        activeTopicTitle: null,
+        activeItemId: null,
+        activeItemTitle: null,
+        activeItemType: null,
         startTime: null,
         isActive: false,
     });
@@ -79,15 +81,16 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
     }, [user]);
 
     const stopTimer = useCallback(async () => {
-        if (!user || !state.activeTopicId || !state.startTime) return;
+        if (!user || !state.activeItemId || !state.startTime || !state.activeItemType) return;
         
         const durationSeconds = Math.floor((Date.now() - state.startTime) / 1000);
         
-        await logStudySession(user.uid, state.activeTopicId, durationSeconds);
+        await logStudySession(user.uid, state.activeItemId, state.activeItemType, durationSeconds);
 
         const newState: StudyTimerState = {
-            activeTopicId: null,
-            activeTopicTitle: null,
+            activeItemId: null,
+            activeItemTitle: null,
+            activeItemType: null,
             startTime: null,
             isActive: false,
         };
@@ -97,32 +100,34 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
     }, [user, state, updateFirestoreState]);
 
 
-    const toggleTimer = useCallback(async (topicId: string, topicTitle: string) => {
+    const toggleTimer = useCallback(async (itemId: string, itemTitle: string, itemType: 'topic' | 'chapter') => {
         if (!user) return;
         
-        const isDifferentTopic = state.activeTopicId !== topicId;
+        const isDifferentItem = state.activeItemId !== itemId;
 
         // If a timer is active, stop it first
         if(state.isActive) {
-            const oldTopicId = state.activeTopicId;
+            const oldItemId = state.activeItemId;
+            const oldItemType = state.activeItemType;
             const oldStartTime = state.startTime;
             
-            if(oldTopicId && oldStartTime) {
+            if(oldItemId && oldStartTime && oldItemType) {
                  const durationSeconds = Math.floor((Date.now() - oldStartTime) / 1000);
-                 await logStudySession(user.uid, oldTopicId, durationSeconds);
+                 await logStudySession(user.uid, oldItemId, oldItemType, durationSeconds);
             }
         }
         
-        // If it's the same topic being toggled off, or a different topic was stopped
-        if (!isDifferentTopic && state.isActive) {
-             const newState: StudyTimerState = { activeTopicId: null, activeTopicTitle: null, startTime: null, isActive: false };
+        // If it's the same item being toggled off, or a different item was stopped
+        if (!isDifferentItem && state.isActive) {
+             const newState: StudyTimerState = { activeItemId: null, activeItemTitle: null, activeItemType: null, startTime: null, isActive: false };
              setState(newState);
              await updateFirestoreState(newState);
         } else {
              // Starting a new timer (or switching)
             const newState: StudyTimerState = {
-                activeTopicId: topicId,
-                activeTopicTitle: topicTitle,
+                activeItemId: itemId,
+                activeItemTitle: itemTitle,
+                activeItemType: itemType,
                 startTime: Date.now(),
                 isActive: true,
             };
@@ -135,12 +140,9 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const handleBeforeUnload = () => {
             // This logic relies on the state when the event listener was added.
-            // A more robust solution might involve reading directly from a ref
-            // if state updates aren't guaranteed to be flushed.
-            if (state.isActive && state.activeTopicId && state.startTime) {
+            if (state.isActive && state.activeItemId && state.startTime && state.activeItemType) {
                  const durationSeconds = Math.floor((Date.now() - state.startTime) / 1000);
-                 logStudySession(user!.uid, state.activeTopicId, durationSeconds);
-                 // We don't need to update state or firestore here as the session is ending.
+                 logStudySession(user!.uid, state.activeItemId, state.activeItemType, durationSeconds);
             }
         };
 
@@ -149,12 +151,12 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
-    }, [state.isActive, state.activeTopicId, state.startTime, user]);
+    }, [state.isActive, state.activeItemId, state.activeItemType, state.startTime, user]);
 
 
     const value = {
         ...state,
-        activeTopic: state.activeTopicId ? { topicId: state.activeTopicId, title: state.activeTopicTitle } : null,
+        activeItem: state.activeItemId ? { itemId: state.activeItemId, title: state.activeItemTitle } : null,
         elapsedTime,
         toggleTimer,
         stopTimer,

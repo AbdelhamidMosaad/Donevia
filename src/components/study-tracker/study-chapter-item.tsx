@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -6,7 +5,7 @@ import type { StudyChapter, StudyTopic } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { deleteStudyChapter, toggleChapterCompletion } from '@/lib/study-tracker';
 import { cn } from '@/lib/utils';
-import { MoreHorizontal, Edit, Trash2, PlusCircle, GripVertical, ChevronRight, Calendar } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, PlusCircle, GripVertical, ChevronRight, Calendar, Play, Pause } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -34,14 +33,15 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/colla
 import moment from 'moment';
 import { Progress } from '../ui/progress';
 import { Checkbox } from '../ui/checkbox';
+import { deleteStudyTopic } from '@/lib/study-tracker';
 
 
 interface StudyChapterItemProps {
   chapter: StudyChapter;
   topics: StudyTopic[];
   chaptersCount: number;
-  activeTimer: { topicId: string, title: string } | null;
-  onToggleTimer: (topic: StudyTopic) => void;
+  activeTimer: { itemId: string, title: string } | null;
+  onToggleTimer: (itemId: string, itemTitle: string, itemType: 'topic' | 'chapter') => void;
 }
 
 export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, onToggleTimer }: StudyChapterItemProps) {
@@ -65,8 +65,7 @@ export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, 
   const handleDeleteTopic = async (topicId: string) => {
     if(!user) return;
     try {
-        // Corrected function name
-        // await deleteStudyTopic(user.uid, topicId);
+        await deleteStudyTopic(user.uid, topicId);
         toast({ title: "Topic deleted successfully" });
     } catch (e) {
         toast({ variant: "destructive", title: "Error deleting topic" });
@@ -89,6 +88,8 @@ export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, 
         toast({ variant: "destructive", title: "Error updating chapter completion" });
     }
   }
+
+  const isChapterTimerActive = activeTimer?.itemId === chapter.id;
 
   return (
     <>
@@ -128,6 +129,9 @@ export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, 
                 )}
             </div>
             <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => onToggleTimer(chapter.id, chapter.title, 'chapter')}>
+                    {isChapterTimerActive ? <Pause className="h-4 w-4 text-primary" /> : <Play className="h-4 w-4" />}
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => setIsAddTopicOpen(true)}>
                     <PlusCircle />
                     Add Topic
@@ -178,8 +182,8 @@ export function StudyChapterItem({ chapter, topics, chaptersCount, activeTimer, 
                                         topic={topic}
                                         onDelete={() => handleDeleteTopic(topic.id)}
                                         onEdit={() => setEditingTopic(topic)}
-                                        isTimerActive={activeTimer?.topicId === topic.id}
-                                        onToggleTimer={() => onToggleTimer(topic)}
+                                        isTimerActive={activeTimer?.itemId === topic.id}
+                                        onToggleTimer={() => onToggleTimer(topic.id, topic.title, 'topic')}
                                     />
                                 </div>
                             )}

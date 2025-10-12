@@ -46,7 +46,7 @@ const formatTime = (seconds: number) => {
     const s = seconds % 60;
     return [h, m, s]
         .map(v => v < 10 ? '0' + v : v)
-        .filter((v, i) => v !== '00' || i > 0)
+        .filter((v, i) => v !== '00' || i > 0 || (h === 0 && m === 0))
         .join(':');
 }
 
@@ -202,5 +202,3 @@ export function StudyTopicItem({
     </>
   );
 }
-
-    

@@ -110,7 +110,12 @@ export const toggleChapterCompletion = async (userId: string, chapterId: string,
         batch.update(topicDoc.ref, { isCompleted });
     });
 
-    return await batch.commit();
+    await batch.commit();
+
+    if(isCompleted) {
+        await logStudyActivity(userId);
+        await checkAndAwardBadges(userId, 'chapter');
+    }
 }
 
 
@@ -158,7 +163,7 @@ export const deleteStudyTopic = async (userId: string, topicId: string) => {
 
 
 // --- Time Tracking ---
-export const logStudySession = async (userId: string, topicId: string, durationSeconds: number) => {
+export const logStudySession = async (userId: string, itemId: string, itemType: 'topic' | 'chapter', durationSeconds: number) => {
     if (durationSeconds <= 0) return;
 
     const batch = writeBatch(db);
@@ -166,15 +171,16 @@ export const logStudySession = async (userId: string, topicId: string, durationS
     // Log the individual session
     const sessionRef = doc(collection(db, 'users', userId, 'studySessions'));
     batch.set(sessionRef, {
-        topicId,
+        itemId,
+        itemType,
         ownerId: userId,
         durationSeconds,
         date: serverTimestamp(),
     });
 
-    // Increment the total time on the topic
-    const topicRef = doc(db, 'users', userId, 'studyTopics', topicId);
-    batch.update(topicRef, {
+    // Increment the total time on the topic/chapter
+    const itemRef = doc(db, 'users', userId, itemType === 'topic' ? 'studyTopics' : 'studyChapters', itemId);
+    batch.update(itemRef, {
         timeSpentSeconds: increment(durationSeconds)
     });
     
