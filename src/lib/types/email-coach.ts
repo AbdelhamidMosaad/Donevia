@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const EmailCoachRequestSchema = z.object({
   emailText: z.string().min(20, { message: 'Email text must be at least 20 characters.' }),
-  context: z.string().min(5, { message: 'Context must be at least 5 characters.' }),
+  context: z.string().min(1, { message: 'Context cannot be empty.' }),
 });
 export type EmailCoachRequest = z.infer<typeof EmailCoachRequestSchema>;
 
