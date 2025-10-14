@@ -63,20 +63,20 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
         let text = `${result.title}\n\n`;
         result.quizContent.forEach((q, i) => {
             text += `Q${i+1}: ${q.questionText}\n`;
-            q.options?.forEach((opt, j) => text += `${j+1}. ${opt}\n`);
+            q.options?.forEach((opt, j) => text += `${String.fromCharCode(97 + j)}) ${opt}\n`);
             text += `\nCorrect Answer: ${q.correctAnswer}\n`;
             text += `Explanation: ${q.explanation}\n\n`;
         });
         navigator.clipboard.writeText(text);
         toast({ title: '✓ Copied to clipboard!' });
     };
-
+    
     const handleDownload = () => {
         if (!result?.quizContent) return;
-        let text = `${result.title}\n\n`;
+         let text = `${result.title}\n\n`;
         result.quizContent.forEach((q, i) => {
             text += `Q${i+1}: ${q.questionText}\n`;
-            q.options?.forEach((opt, j) => text += `${j+1}. ${opt}\n`);
+            q.options?.forEach((opt, j) => text += `${String.fromCharCode(97 + j)}) ${opt}\n`);
             text += `\nCorrect Answer: ${q.correctAnswer}\n`;
             text += `Explanation: ${q.explanation}\n\n`;
         });
@@ -135,7 +135,7 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                                 const userAnswerIndex = userAnswers[index] as number;
                                 const options = q.questionType === 'true-false' ? ['True', 'False'] : q.options || [];
                                 const userAnswerText = options[userAnswerIndex] ?? userAnswers[index];
-                                const isCorrect = q.questionType !== 'short-answer' ? (userAnswerIndex === options.findIndex(opt => opt.toLowerCase() === q.correctAnswer.toLowerCase())) : false;
+                                const isCorrect = q.questionType !== 'short-answer' ? (userAnswerIndex === options.findIndex(opt => opt === q.correctAnswer)) : false;
                                 const isScorable = q.questionType !== 'short-answer';
 
                                 return (
