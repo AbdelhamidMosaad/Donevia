@@ -9,7 +9,7 @@ export const NotesOptionsSchema = z.object({
 });
 
 export const QuizOptionsSchema = z.object({
-  numQuestions: z.number().min(1).max(20),
+  numQuestions: z.number().min(1).max(50),
   questionTypes: z.array(z.enum(['multiple-choice', 'true-false', 'short-answer'])),
   difficulty: z.enum(['easy', 'medium', 'hard']),
 });

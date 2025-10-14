@@ -19,7 +19,7 @@ const notesSchema = z.object({
 });
 
 const quizSchema = z.object({
-    numQuestions: z.coerce.number().min(1).max(20),
+    numQuestions: z.coerce.number().min(1).max(50),
     questionTypes: z.array(z.string()).refine(value => value.some(item => item), {
         message: "You have to select at least one item.",
     }),
@@ -149,7 +149,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Number of Questions</FormLabel>
-                                    <FormControl><Input type="number" min="1" max="20" {...field} /></FormControl>
+                                    <FormControl><Input type="number" min="1" max="50" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
