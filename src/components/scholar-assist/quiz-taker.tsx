@@ -214,7 +214,7 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                      <Button variant="outline" onClick={() => setCurrentQuestionIndex(i => i - 1)} disabled={currentQuestionIndex === 0}>
                         <ChevronLeft/> Previous
                     </Button>
-                    <Button onClick={checkAllAnswers} disabled={!allQuestionsAnswered}>Submit & See Results</Button>
+                    <Button onClick={checkAllAnswers} disabled={score !== null || !allQuestionsAnswered}>Submit</Button>
                      <Button variant="outline" onClick={() => setCurrentQuestionIndex(i => i + 1)} disabled={currentQuestionIndex === totalQuestions - 1}>
                         Next <ChevronRight/>
                     </Button>
