@@ -46,9 +46,8 @@ If the generation type is 'quiz', you must follow these instructions:
 1.  **Number of Questions**: Generate exactly {{quizOptions.numQuestions}} questions.
 2.  **Question Types**: The quiz must include the following question types: {{#each quizOptions.questionTypes}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}.
 3.  **Difficulty**: The difficulty level for the questions must be "{{quizOptions.difficulty}}".
-4.  **Content**: All questions must be based *only* on the provided source text.
+4.  **Content**: All questions must be based *only* on the provided source text. The generated questions and explanations should be self-contained and should not refer to "the provided text" or "the passage".
 5.  **Explanations**: Provide a brief, clear explanation for why the correct answer is correct for every question.
-6.  **Options**: For multiple-choice questions, provide exactly four options.
 
 ---
 **FLASHCARDS INSTRUCTIONS**
