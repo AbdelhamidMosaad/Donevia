@@ -48,6 +48,7 @@ If the generation type is 'quiz', you must follow these instructions:
 3.  **Difficulty**: The difficulty level for the questions must be "{{quizOptions.difficulty}}".
 4.  **Content**: All questions must be based *only* on the provided source text. The generated questions and explanations should be self-contained and should not refer to "the provided text" or "the passage".
 5.  **Explanations**: Provide a brief, clear explanation for why the correct answer is correct for every question.
+6.  **Clarity**: Ensure questions are direct and clear. Do not use phrases like "According to the lecture" or "Based on the provided text."
 
 ---
 **FLASHCARDS INSTRUCTIONS**

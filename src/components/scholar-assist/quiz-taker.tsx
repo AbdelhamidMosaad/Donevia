@@ -43,12 +43,12 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
         let correctCount = 0;
         result.quizContent.forEach((q, index) => {
             const userAnswer = userAnswers[index];
-            if (q.questionType === 'multiple-choice' || q.questionType === 'true-false') {
-                const options = q.questionType === 'true-false' ? ['True', 'False'] : q.options || [];
-                const correctIndex = options.findIndex(opt => opt.toLowerCase() === q.correctAnswer.toLowerCase());
-                if (userAnswer === correctIndex) {
-                    correctCount++;
-                }
+            if (q.questionType === 'multiple-choice') {
+                const isCorrect = q.options?.findIndex(opt => opt === q.correctAnswer) === userAnswer;
+                if (isCorrect) correctCount++;
+            } else if (q.questionType === 'true-false') {
+               const correctIndex = q.correctAnswer.toLowerCase() === 'true' ? 0 : 1;
+               if (userAnswer === correctIndex) correctCount++;
             }
         });
         
@@ -135,7 +135,7 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                                 const userAnswerIndex = userAnswers[index] as number;
                                 const options = q.questionType === 'true-false' ? ['True', 'False'] : q.options || [];
                                 const userAnswerText = options[userAnswerIndex] ?? userAnswers[index];
-                                const isCorrect = userAnswerText === q.correctAnswer;
+                                const isCorrect = q.questionType !== 'short-answer' ? (userAnswerIndex === options.findIndex(opt => opt.toLowerCase() === q.correctAnswer.toLowerCase())) : false;
                                 const isScorable = q.questionType !== 'short-answer';
 
                                 return (
