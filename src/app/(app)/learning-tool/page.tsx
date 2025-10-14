@@ -5,8 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LectureNotesGenerator } from '@/components/scholar-assist/lecture-notes-generator';
 import { QuizGenerator } from '@/components/scholar-assist/quiz-generator';
 import { FlashcardGenerator } from '@/components/scholar-assist/flashcard-generator';
-import { FileText, HelpCircle, Layers } from 'lucide-react';
+import { FileText, HelpCircle, Layers, Save } from 'lucide-react';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
+import { SavedQuizzes } from '@/components/scholar-assist/saved-quizzes';
 
 export default function LearningToolPage() {
   return (
@@ -31,6 +32,10 @@ export default function LearningToolPage() {
              <HelpCircle className="mr-2 h-4 w-4" />
             Quiz Generator
           </TabsTrigger>
+           <TabsTrigger value="saved-quizzes">
+            <Save className="mr-2 h-4 w-4" />
+            Saved Quizzes
+          </TabsTrigger>
           <TabsTrigger value="flashcards">
             <Layers className="mr-2 h-4 w-4" />
             Flashcards
@@ -42,6 +47,9 @@ export default function LearningToolPage() {
         </TabsContent>
         <TabsContent value="quiz" className="flex-1 mt-4">
             <QuizGenerator />
+        </TabsContent>
+         <TabsContent value="saved-quizzes" className="flex-1 mt-4">
+            <SavedQuizzes />
         </TabsContent>
         <TabsContent value="flashcards" className="flex-1 mt-4">
             <FlashcardGenerator />
