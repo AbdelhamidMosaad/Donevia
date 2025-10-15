@@ -32,7 +32,7 @@ Follow these instructions precisely based on the requested 'generationType'.
 **NOTES INSTRUCTIONS**
 If the generationType is 'notes', you must follow these instructions:
 1.  **Title**: Create a direct and concise title for the material based on its content. Do NOT use prefixes like "Lecture Notes for..." or "University Notes on...". Just state the topic.
-2.  **Output Format**: Produce a well-structured JSON output. Do not use Markdown for formatting within the JSON fields, but you MUST wrap key terms with **markdown bold**.
+2.  **Output Format**: Produce a well-structured JSON output. Do not use any Markdown formatting (like **bold** or *italics*) within the JSON fields. Key terms should be presented as plain text.
 3.  **Introduction**: Start with a concise introductory paragraph in the 'introduction' field that provides context for the entire text.
 4.  **Structure**:
     -   Create distinct sections for each major topic. Each section should have a clear 'heading'.
