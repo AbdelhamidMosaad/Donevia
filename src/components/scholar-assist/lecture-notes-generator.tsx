@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Bullet, Indent, Spacing } from 'docx';
 import { saveAs } from 'file-saver';
 
 interface LectureNotesGeneratorProps {
@@ -90,7 +90,15 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     text += `${result.notesContent.introduction}\n\n`;
     result.notesContent.sections.forEach(section => {
         text += `## ${section.heading}\n\n`;
-        section.content.forEach(point => text += `- ${point.text}\n`);
+        section.content.forEach(item => {
+            if (item.type === 'paragraph') {
+                text += `${item.content}\n\n`;
+            } else if (Array.isArray(item.content)) {
+                const prefix = item.type === 'bullet-list' ? '- ' : '1. ';
+                item.content.forEach(listItem => text += `${prefix}${listItem}\n`);
+                text += '\n';
+            }
+        });
         
         if (section.table) {
             text += `\n| ${section.table.headers.join(' | ')} |\n`;
@@ -103,7 +111,15 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         if (section.subsections) {
             section.subsections.forEach(subsection => {
                 text += `\n### ${subsection.subheading}\n`;
-                subsection.content.forEach(subPoint => text += `  - ${subPoint.text}\n`);
+                subsection.content.forEach(item => {
+                   if (item.type === 'paragraph') {
+                        text += `${item.content}\n\n`;
+                    } else if (Array.isArray(item.content)) {
+                        const prefix = item.type === 'bullet-list' ? '  - ' : '  1. ';
+                        item.content.forEach(listItem => text += `${prefix}${listItem}\n`);
+                        text += '\n';
+                    }
+                });
                  if (subsection.table) {
                     text += `\n| ${subsection.table.headers.join(' | ')} |\n`;
                     text += `| ${subsection.table.headers.map(() => '---').join(' | ')} |\n`;
@@ -152,40 +168,53 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
     const children: any[] = [
         new Paragraph({ text: title, heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
-        new Paragraph({ text: notesContent.introduction, style: "italic" }),
+        new Paragraph({ text: notesContent.introduction, style: "italic", spacing: { after: 200 } }),
     ];
 
-    notesContent.sections.forEach(section => {
-        children.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2 }));
-        section.content.forEach(point => {
-            const textRuns = point.text.split(/(\*\*.*?\*\*)/g).map(part => {
-                 if (part.startsWith('**') && part.endsWith('**')) {
-                    return new TextRun({ text: part.slice(2, -2), bold: true });
-                }
-                return new TextRun(part);
-            });
-            children.push(new Paragraph({ children: textRuns, bullet: { level: 0 } }));
-        });
-        
-        // Note: docx library doesn't support tables directly in this simple conversion.
-        // For now, we'll skip tables in the .docx export.
-
-        if (section.subsections) {
-            section.subsections.forEach(subsection => {
-                children.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3 }));
-                subsection.content.forEach(subPoint => {
-                    const textRuns = subPoint.text.split(/(\*\*.*?\*\*)/g).map(part => {
+    const processContentItems = (items: any[], level: number = 0) => {
+        items.forEach(item => {
+            const indent = level * 360; // 360 TWIPs = 0.25 inch
+            if (item.type === 'paragraph' && typeof item.content === 'string') {
+                 const textRuns = item.content.split(/(\*\*.*?\*\*)/g).map((part: string) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                        return new TextRun({ text: part.slice(2, -2), bold: true });
+                    }
+                    return new TextRun(part);
+                });
+                children.push(new Paragraph({ children: textRuns, indent: { left: indent }, spacing: { after: 100 } }));
+            } else if (Array.isArray(item.content)) {
+                item.content.forEach((listItem: string) => {
+                    const textRuns = listItem.split(/(\*\*.*?\*\*)/g).map((part: string) => {
                          if (part.startsWith('**') && part.endsWith('**')) {
                             return new TextRun({ text: part.slice(2, -2), bold: true });
                         }
                         return new TextRun(part);
                     });
-                    children.push(new Paragraph({ children: textRuns, bullet: { level: 1 } }));
+                     children.push(new Paragraph({ 
+                         children: textRuns, 
+                         bullet: { level: level },
+                         numbering: item.type === 'numbered-list' ? { reference: "default-numbering", level: level } : undefined,
+                     }));
                 });
+                children.push(new Paragraph("")); // Add space after a list
+            }
+        });
+    };
+
+    notesContent.sections.forEach(section => {
+        children.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }));
+        processContentItems(section.content);
+        
+        // Note: docx library table generation is complex and not suitable for this simple conversion.
+        
+        if (section.subsections) {
+            section.subsections.forEach(subsection => {
+                children.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, spacing: { before: 200 } }));
+                processContentItems(subsection.content, 1);
             });
         }
         if (section.addDividerAfter) {
-            children.push(new Paragraph({ text: '', border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }));
+            children.push(new Paragraph({ text: '', border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } }, spacing: { before: 200, after: 200 } }));
         }
     });
 
@@ -194,6 +223,15 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
             properties: {},
             children: children,
         }],
+        numbering: {
+            config: [{
+                reference: "default-numbering",
+                levels: [
+                    { level: 0, format: "decimal", text: "%1." },
+                    { level: 1, format: "lowerLetter", text: "%2)" },
+                ],
+            }],
+        },
         styles: {
             paragraphStyles: [
                 {
@@ -201,9 +239,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     name: "Italic",
                     basedOn: "Normal",
                     next: "Normal",
-                    run: {
-                        italics: true,
-                    },
+                    run: { italics: true },
                 },
             ],
         },
@@ -236,7 +272,18 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         const tiptapContent = result.notesContent.sections.flatMap(section => {
             const sectionContent: any[] = [
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: `${section.heading}` }] },
-                ...section.content.map(point => ({ type: 'paragraph', content: [{ type: 'text', text: `• ${point.text}` }] }))
+                ...section.content.flatMap(item => {
+                    if(item.type === 'paragraph') {
+                        return [{ type: 'paragraph', content: [{ type: 'text', text: item.content }] }];
+                    }
+                    return [{
+                        type: item.type === 'bullet-list' ? 'bulletList' : 'orderedList',
+                        content: (item.content as string[]).map(listItem => ({
+                            type: 'listItem',
+                            content: [{ type: 'paragraph', content: [{ type: 'text', text: listItem }] }]
+                        }))
+                    }];
+                })
             ];
              if (section.table) {
                 sectionContent.push({
@@ -251,7 +298,18 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
             if (section.subsections) {
                 section.subsections.forEach(sub => {
                     sectionContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: `${sub.subheading}` }] });
-                    sectionContent.push(...sub.content.map(subPoint => ({ type: 'paragraph', content: [{ type: 'text', text: `  - ${subPoint.text}` }] })));
+                     sectionContent.push(...sub.content.flatMap(item => {
+                        if(item.type === 'paragraph') {
+                            return [{ type: 'paragraph', content: [{ type: 'text', text: item.content }] }];
+                        }
+                        return [{
+                            type: item.type === 'bullet-list' ? 'bulletList' : 'orderedList',
+                            content: (item.content as string[]).map(listItem => ({
+                                type: 'listItem',
+                                content: [{ type: 'paragraph', content: [{ type: 'text', text: listItem }] }]
+                            }))
+                        }];
+                    }));
                     if (sub.table) {
                          sectionContent.push({
                             type: 'table',
@@ -314,13 +372,23 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
             {sections.map((section, secIndex) => (
                 <React.Fragment key={secIndex}>
                     <h2>{section.heading}</h2>
-                    <ul>
-                        {section.content.map((point, pointIndex) => (
-                            <li key={pointIndex} className={cn(point.isKeyPoint && "font-semibold bg-primary/10 p-2 rounded-md")}>
-                                <InlineMarkdown text={point.text} />
-                            </li>
-                        ))}
-                    </ul>
+                    {section.content.map((item, itemIndex) => (
+                        <div key={itemIndex} className={cn(item.isKeyPoint && "font-semibold bg-primary/10 p-2 rounded-md")}>
+                            {item.type === 'paragraph' && typeof item.content === 'string' && (
+                                <p><InlineMarkdown text={item.content} /></p>
+                            )}
+                            {item.type === 'bullet-list' && Array.isArray(item.content) && (
+                                <ul>
+                                    {item.content.map((listItem, liIndex) => <li key={liIndex}><InlineMarkdown text={listItem} /></li>)}
+                                </ul>
+                            )}
+                             {item.type === 'numbered-list' && Array.isArray(item.content) && (
+                                <ol>
+                                    {item.content.map((listItem, liIndex) => <li key={liIndex}><InlineMarkdown text={listItem} /></li>)}
+                                </ol>
+                            )}
+                        </div>
+                    ))}
                      {section.table && (
                         <div className="my-4">
                             <Table>
@@ -343,13 +411,23 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     {section.subsections && section.subsections.map((sub, subIndex) => (
                         <div key={subIndex} className="ml-6">
                             <h3>{sub.subheading}</h3>
-                            <ul>
-                                {sub.content.map((subPoint, subPointIndex) => (
-                                    <li key={subPointIndex} className={cn(subPoint.isKeyPoint && "font-semibold bg-primary/10 p-2 rounded-md")}>
-                                        <InlineMarkdown text={subPoint.text} />
-                                    </li>
-                                ))}
-                            </ul>
+                            {sub.content.map((item, itemIndex) => (
+                                <div key={itemIndex} className={cn(item.isKeyPoint && "font-semibold bg-primary/10 p-2 rounded-md")}>
+                                    {item.type === 'paragraph' && typeof item.content === 'string' && (
+                                        <p><InlineMarkdown text={item.content} /></p>
+                                    )}
+                                    {item.type === 'bullet-list' && Array.isArray(item.content) && (
+                                        <ul>
+                                            {item.content.map((listItem, liIndex) => <li key={liIndex}><InlineMarkdown text={listItem} /></li>)}
+                                        </ul>
+                                    )}
+                                    {item.type === 'numbered-list' && Array.isArray(item.content) && (
+                                        <ol>
+                                            {item.content.map((listItem, liIndex) => <li key={liIndex}><InlineMarkdown text={listItem} /></li>)}
+                                        </ol>
+                                    )}
+                                </div>
+                            ))}
                             {sub.table && (
                                 <div className="my-4">
                                     <Table>

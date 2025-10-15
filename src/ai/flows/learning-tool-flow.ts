@@ -48,10 +48,15 @@ export const FlashcardSchema = z.object({
 export type Flashcard = z.infer<typeof FlashcardSchema>;
 
 // Notes (structured)
-const NotePointSchema = z.object({
-  text: z.string().describe('The text of the bullet point. Key terms should be wrapped in **markdown bold**.'),
-  isKeyPoint: z.boolean().optional().describe('Set to true if this is a critical key point.'),
+const NoteContentItemSchema = z.object({
+  type: z.enum(['paragraph', 'bullet-list', 'numbered-list']),
+  content: z.union([
+    z.string().describe('A single paragraph of text.'),
+    z.array(z.string()).describe('An array of strings, where each string is a list item.')
+  ]),
+  isKeyPoint: z.boolean().optional().describe('Set to true if this block is a critical key point.'),
 });
+
 
 const TableSchema = z.object({
     headers: z.array(z.string()).describe('The header row for the table.'),
@@ -60,11 +65,11 @@ const TableSchema = z.object({
 
 export const LectureNoteSectionSchema = z.object({
   heading: z.string().describe('Section heading (e.g., "Introduction to Accounting").'),
-  content: z.array(NotePointSchema).describe('An array of bullet points for the section. Key terms should be wrapped in **markdown bold**.'),
+  content: z.array(NoteContentItemSchema).describe('An array of content blocks for the section. Key terms in text should be wrapped in **markdown bold**.'),
   table: TableSchema.optional().describe('A table extracted from the source text, if applicable.'),
   subsections: z.array(z.object({
     subheading: z.string().describe('Subsection heading (e.g., "Three Basic Activities of Accounting").'),
-    content: z.array(NotePointSchema).describe('An array of bullet points for the subsection.'),
+    content: z.array(NoteContentItemSchema).describe('An array of content blocks for the subsection.'),
     table: TableSchema.optional().describe('A table for this subsection.'),
   })).optional(),
   addDividerAfter: z.boolean().optional().describe('If true, a horizontal line (---) should be added after this section.')
@@ -79,7 +84,7 @@ export const NotesContentSchema = z.object({
 export const StudyMaterialResponseSchema = z.object({
   title: z.string().describe('A concise and relevant title for the generated material.'),
   materialType: z.enum(['notes', 'quiz', 'flashcards']),
-  notesContent: NotesContentSchema.optional().describe('Structured lecture notes with sections, bullet points, subsections, and optional dividers. Required if materialType is "notes".'),
+  notesContent: NotesContentSchema.optional().describe('Structured lecture notes with sections, paragraphs, lists, subsections, and optional dividers. Required if materialType is "notes".'),
   quizContent: z.array(QuizQuestionSchema).optional().describe('An array of quiz questions. Required if materialType is "quiz".'),
   flashcardContent: z.array(FlashcardSchema).optional().describe('An array of flashcards. Required if materialType is "flashcards".'),
   tags: z.array(z.string()).optional(),
