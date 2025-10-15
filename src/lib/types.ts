@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -555,7 +556,9 @@ export type StudySession = z.infer<typeof StudySessionSchema>;
 /** Learning Tool Feature */
 export const StudyMaterialRequestSchema = GenkitStudyMaterialRequestSchema;
 export type StudyMaterialRequest = z.infer<typeof StudyMaterialRequestSchema>;
-export const StudyMaterialResponseSchema = GenkitStudyMaterialResponseSchema;
+export const StudyMaterialResponseSchema = GenkitStudyMaterialResponseSchema.extend({
+    tags: z.array(z.string()).optional(),
+});
 export type StudyMaterialResponse = z.infer<typeof StudyMaterialResponseSchema>;
 export const QuizQuestionSchema = GenkitQuizQuestionSchema;
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;

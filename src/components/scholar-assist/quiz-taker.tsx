@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
+import { SaveQuizDialog } from './shared/save-quiz-dialog';
 
 interface QuizTakerProps {
     result: StudyMaterialResponse & { id?: string };
@@ -30,7 +31,7 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
     const [userAnswers, setUserAnswers] = useState<Record<number, string | number>>({});
     const [isQuizFinished, setIsQuizFinished] = useState(false);
     const [score, setScore] = useState<number | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
+    const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
     const totalQuestions = result?.quizContent?.length || 0;
     const totalScorableQuestions = useMemo(() => result.quizContent.filter(q => q.questionType !== 'short-answer').length, [result.quizContent]);
@@ -117,21 +118,6 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
         toast({ title: '✓ Exporting as Word document' });
     };
 
-
-    const handleSaveQuiz = async () => {
-        if (!user || !result) return;
-        setIsSaving(true);
-        try {
-            await saveQuiz(user.uid, result);
-            toast({ title: 'Quiz Saved!', description: 'You can retake this quiz from the "Saved Quizzes" tab.' });
-        } catch (e) {
-            console.error("Error saving quiz: ", e);
-            toast({ variant: 'destructive', title: 'Error saving quiz.' });
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
     const currentQuestion = result?.quizContent?.[currentQuestionIndex];
     const allQuestionsAnswered = Object.keys(userAnswers).length === totalQuestions;
     
@@ -140,65 +126,72 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
         const isExcellentScore = percentage >= 70;
 
         return (
-            <Card className="flex-1 flex flex-col h-full">
-                <CardHeader>
-                    <CardTitle>Quiz Results: {result.title}</CardTitle>
-                    <CardDescription>Review your answers and the explanations below.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 space-y-4">
-                     <div className="text-center p-4 bg-muted rounded-lg">
-                        <p className="text-xl font-bold">Quiz Complete!</p>
-                        {score !== null && (
-                            <>
-                            <p className="text-2xl font-headline">Your Score: {score}/{totalScorableQuestions} ({percentage.toFixed(0)}%)</p>
-                            {isExcellentScore && <p className="text-green-600 font-semibold mt-1">Excellent work! Keep it up!</p>}
-                            </>
-                        )}
-                    </div>
-                    <ScrollArea className="h-[400px] pr-4">
-                        <div className="space-y-4">
-                            {result.quizContent.map((q, index) => {
-                                const userAnswerIndex = userAnswers[index] as number;
-                                const options = q.questionType === 'true-false' ? ['True', 'False'] : q.options || [];
-                                const userAnswerText = options[userAnswerIndex] ?? userAnswers[index];
-                                const isCorrect = q.questionType !== 'short-answer' ? (userAnswerIndex === options.findIndex(opt => opt === q.correctAnswer)) : false;
-                                const isScorable = q.questionType !== 'short-answer';
-
-                                return (
-                                    <div key={index} className="p-4 border rounded-lg">
-                                        <p className="font-semibold">{index + 1}. {q.questionText}</p>
-                                        <div className="mt-2 text-sm">
-                                            {isScorable ? (
-                                                <>
-                                                    <p className={cn("flex items-center", isCorrect ? 'text-green-600' : 'text-destructive')}>
-                                                        {isCorrect ? <CheckCircle className="mr-2 h-4 w-4"/> : <XCircle className="mr-2 h-4 w-4"/>}
-                                                        Your Answer: {userAnswerText ?? "Not answered"}
-                                                    </p>
-                                                    {!isCorrect && <p className="text-green-600 mt-1">Correct Answer: {q.correctAnswer}</p>}
-                                                </>
-                                            ) : (
-                                                <p className="text-muted-foreground">Your Answer: {userAnswerText ?? "Not answered"}</p>
-                                            )}
-                                            <p className="mt-2 text-muted-foreground italic pl-4 border-l-2 ml-2">
-                                                <strong>Explanation:</strong> {q.explanation}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )
-                            })}
+             <>
+                <Card className="flex-1 flex flex-col h-full">
+                    <CardHeader>
+                        <CardTitle>Quiz Results: {result.title}</CardTitle>
+                        <CardDescription>Review your answers and the explanations below.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1 space-y-4">
+                        <div className="text-center p-4 bg-muted rounded-lg">
+                            <p className="text-xl font-bold">Quiz Complete!</p>
+                            {score !== null && (
+                                <>
+                                <p className="text-2xl font-headline">Your Score: {score}/{totalScorableQuestions} ({percentage.toFixed(0)}%)</p>
+                                {isExcellentScore && <p className="text-green-600 font-semibold mt-1">Excellent work! Keep it up!</p>}
+                                </>
+                            )}
                         </div>
-                    </ScrollArea>
-                </CardContent>
-                <CardFooter className="justify-end gap-2">
-                     <Button variant="outline" onClick={onReset}>Generate New Quiz</Button>
-                     {!isSavedQuiz && (
-                        <Button onClick={handleSaveQuiz} disabled={isSaving}>
-                            <Save /> {isSaving ? 'Saving...' : 'Save This Quiz'}
-                        </Button>
-                     )}
-                     <Button variant="outline" onClick={handleExportWord}><Download/> Export .docx</Button>
-                </CardFooter>
-            </Card>
+                        <ScrollArea className="h-[400px] pr-4">
+                            <div className="space-y-4">
+                                {result.quizContent.map((q, index) => {
+                                    const userAnswerIndex = userAnswers[index] as number;
+                                    const options = q.questionType === 'true-false' ? ['True', 'False'] : q.options || [];
+                                    const userAnswerText = options[userAnswerIndex] ?? userAnswers[index];
+                                    const isCorrect = q.questionType !== 'short-answer' ? (userAnswerIndex === options.findIndex(opt => opt === q.correctAnswer)) : false;
+                                    const isScorable = q.questionType !== 'short-answer';
+
+                                    return (
+                                        <div key={index} className="p-4 border rounded-lg">
+                                            <p className="font-semibold">{index + 1}. {q.questionText}</p>
+                                            <div className="mt-2 text-sm">
+                                                {isScorable ? (
+                                                    <>
+                                                        <p className={cn("flex items-center", isCorrect ? 'text-green-600' : 'text-destructive')}>
+                                                            {isCorrect ? <CheckCircle className="mr-2 h-4 w-4"/> : <XCircle className="mr-2 h-4 w-4"/>}
+                                                            Your Answer: {userAnswerText ?? "Not answered"}
+                                                        </p>
+                                                        {!isCorrect && <p className="text-green-600 mt-1">Correct Answer: {q.correctAnswer}</p>}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-muted-foreground">Your Answer: {userAnswerText ?? "Not answered"}</p>
+                                                )}
+                                                <p className="mt-2 text-muted-foreground italic pl-4 border-l-2 ml-2">
+                                                    <strong>Explanation:</strong> {q.explanation}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </ScrollArea>
+                    </CardContent>
+                    <CardFooter className="justify-end gap-2">
+                        <Button variant="outline" onClick={onReset}>Generate New Quiz</Button>
+                        {!isSavedQuiz && (
+                            <Button onClick={() => setIsSaveDialogOpen(true)}>
+                                <Save /> Save This Quiz
+                            </Button>
+                        )}
+                        <Button variant="outline" onClick={handleExportWord}><Download/> Export .docx</Button>
+                    </CardFooter>
+                </Card>
+                <SaveQuizDialog
+                    isOpen={isSaveDialogOpen}
+                    onOpenChange={setIsSaveDialogOpen}
+                    quiz={result}
+                />
+            </>
         )
     }
 
@@ -256,14 +249,19 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                     {isSavedQuiz ? (
                         onDelete && <Button variant="destructive" onClick={onDelete}><Trash2/> Delete Quiz</Button>
                     ) : (
-                         <Button onClick={handleSaveQuiz} disabled={isSaving}>
-                            <Save /> {isSaving ? 'Saving...' : 'Save Quiz'}
+                         <Button onClick={() => setIsSaveDialogOpen(true)}>
+                            <Save /> Save Quiz
                         </Button>
                     )}
                     <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
                     <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
                 </div>
             </CardFooter>
+             <SaveQuizDialog
+                isOpen={isSaveDialogOpen}
+                onOpenChange={setIsSaveDialogOpen}
+                quiz={result}
+            />
         </Card>
     )
 }

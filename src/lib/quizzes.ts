@@ -9,10 +9,12 @@ import {
 import { db } from './firebase';
 import type { StudyMaterialResponse } from './types';
 
-export const saveQuiz = async (userId: string, quizData: StudyMaterialResponse) => {
+export const saveQuiz = async (userId: string, quizData: StudyMaterialResponse, title: string, tags: string[]) => {
   const savedQuizzesRef = collection(db, 'users', userId, 'savedQuizzes');
   return await addDoc(savedQuizzesRef, {
     ...quizData,
+    title,
+    tags,
     ownerId: userId,
     createdAt: serverTimestamp(),
   });
