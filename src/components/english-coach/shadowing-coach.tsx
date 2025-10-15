@@ -33,13 +33,16 @@ type SessionState = 'idle' | 'playing' | 'paused' | 'generating';
 type TtsEngine = 'gemini' | 'browser';
 const geminiVoices = ['Algenib', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Sirius', 'Spica', 'Vega'];
 
+interface ShadowingCoachProps {
+    result: ShadowingResponse | null;
+    setResult: (result: ShadowingResponse | null) => void;
+}
 
-export function ShadowingCoach() {
+export function ShadowingCoach({ result: article, setResult: setArticle }: ShadowingCoachProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     
     const [topic, setTopic] = useState<string>('Technology');
-    const [article, setArticle] = useState<ShadowingResponse | null>(null);
     const [sessionState, setSessionState] = useState<SessionState>('idle');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [ttsEngine, setTtsEngine] = useState<TtsEngine>('gemini');

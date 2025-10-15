@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GrammarCoach } from '@/components/english-coach/grammar-coach';
 import { BookOpen, Mail, Mic, MessageSquareQuote, BookMarked, Waves, Repeat as RephraseIcon, Linkedin, MessageCircle } from 'lucide-react';
@@ -15,7 +16,28 @@ import { RephraseCoach } from '@/components/english-coach/rephrase-coach';
 import { LinkedInEnhancer } from '@/components/english-coach/linkedin-enhancer';
 import { ConversationCoach } from '@/components/english-coach/conversation-coach';
 
+import type { GrammarCorrectionResponse } from '@/lib/types/grammar';
+import type { RephraseResponse } from '@/lib/types/rephrase';
+import type { LinkedInPostResponse } from '@/lib/types/linkedin-post';
+import type { VocabularyCoachResponse } from '@/lib/types/vocabulary';
+import type { ConversationTextResponse } from '@/ai/flows/conversation-coach-flow';
+import type { EmailCoachResponse } from '@/lib/types/email-coach';
+import type { ShadowingResponse } from '@/ai/flows/shadowing-coach-flow';
+import type { PronunciationPracticeResponse } from '@/ai/flows/pronunciation-coach-flow';
+import type { ReadingComprehensionExercise } from '@/lib/types/reading-comprehension';
+
 export default function EnglishCoachPage() {
+  // State lifted from child components
+  const [grammarResult, setGrammarResult] = useState<GrammarCorrectionResponse | null>(null);
+  const [rephraseResult, setRephraseResult] = useState<RephraseResponse | null>(null);
+  const [linkedinResult, setLinkedinResult] = useState<LinkedInPostResponse | null>(null);
+  const [vocabularyResult, setVocabularyResult] = useState<VocabularyCoachResponse | null>(null);
+  const [conversationResult, setConversationResult] = useState<ConversationTextResponse | null>(null);
+  const [emailResult, setEmailResult] = useState<EmailCoachResponse | null>(null);
+  const [shadowingResult, setShadowingResult] = useState<ShadowingResponse | null>(null);
+  const [pronunciationResult, setPronunciationResult] = useState<PronunciationPracticeResponse | null>(null);
+  const [readingResult, setReadingResult] = useState<ReadingComprehensionExercise | null>(null);
+
   return (
     <div className="flex flex-col h-full gap-6">
       <div className="flex items-center gap-4">
@@ -73,34 +95,34 @@ export default function EnglishCoachPage() {
         </TabsList>
 
         <TabsContent value="grammar" className="flex-1 mt-4">
-           <GrammarCoach />
+           <GrammarCoach result={grammarResult} setResult={setGrammarResult}/>
         </TabsContent>
         <TabsContent value="rephrase" className="flex-1 mt-4">
-            <RephraseCoach />
+            <RephraseCoach result={rephraseResult} setResult={setRephraseResult} />
         </TabsContent>
         <TabsContent value="linkedin" className="flex-1 mt-4">
-            <LinkedInEnhancer />
+            <LinkedInEnhancer result={linkedinResult} setResult={setLinkedinResult} />
         </TabsContent>
         <TabsContent value="vocabulary" className="flex-1 mt-4">
-            <VocabularyCoach />
+            <VocabularyCoach result={vocabularyResult} setResult={setVocabularyResult} />
         </TabsContent>
          <TabsContent value="conversation" className="flex-1 mt-4">
-            <ConversationCoach />
+            <ConversationCoach result={conversationResult} setResult={setConversationResult} />
         </TabsContent>
          <TabsContent value="new-words" className="flex-1 mt-4">
             <NewWordsLibrary />
         </TabsContent>
         <TabsContent value="email" className="flex-1 mt-4">
-            <EmailCoach />
+            <EmailCoach result={emailResult} setResult={setEmailResult} />
         </TabsContent>
         <TabsContent value="shadowing" className="flex-1 mt-4">
-            <ShadowingCoach />
+            <ShadowingCoach result={shadowingResult} setResult={setShadowingResult} />
         </TabsContent>
         <TabsContent value="pronunciation" className="flex-1 mt-4">
-            <PronunciationCoach />
+            <PronunciationCoach result={pronunciationResult} setResult={setPronunciationResult} />
         </TabsContent>
          <TabsContent value="reading" className="flex-1 mt-4">
-            <ReadingCoach />
+            <ReadingCoach result={readingResult} setResult={setReadingResult} />
         </TabsContent>
       </Tabs>
     </div>

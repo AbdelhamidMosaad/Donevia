@@ -15,11 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 interface GrammarCoachProps {
     text?: string;
     onCorrection?: (correctedText: string) => void;
+    result: GrammarCorrectionResponse | null;
+    setResult: (result: GrammarCorrectionResponse | null) => void;
 }
 
-export function GrammarCoach({ text, onCorrection }: GrammarCoachProps) {
+export function GrammarCoach({ text, onCorrection, result, setResult }: GrammarCoachProps) {
   const [inputText, setInputText] = useState(text || '');
-  const [result, setResult] = useState<GrammarCorrectionResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 

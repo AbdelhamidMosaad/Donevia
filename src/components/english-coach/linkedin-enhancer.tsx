@@ -14,10 +14,14 @@ import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { enhanceLinkedInPost } from '@/ai/flows/linkedin-post-flow';
 
-export function LinkedInEnhancer() {
+interface LinkedInEnhancerProps {
+    result: LinkedInPostResponse | null;
+    setResult: (result: LinkedInPostResponse | null) => void;
+}
+
+export function LinkedInEnhancer({ result, setResult }: LinkedInEnhancerProps) {
   const [draftText, setDraftText] = useState('');
   const [notes, setNotes] = useState('');
-  const [result, setResult] = useState<LinkedInPostResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();

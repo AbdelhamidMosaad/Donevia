@@ -37,6 +37,10 @@ const topics = [
 type TtsEngine = 'gemini' | 'browser';
 const geminiVoices = ['Algenib', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Sirius', 'Spica', 'Vega'];
 
+interface PronunciationCoachProps {
+    result: PronunciationPracticeResponse | null;
+    setResult: (result: PronunciationPracticeResponse | null) => void;
+}
 
 function HighlightedText({ text }: { text: string }) {
     const parts = text.split(/(\*\*.*?\*\*)/g);
@@ -52,13 +56,12 @@ function HighlightedText({ text }: { text: string }) {
     );
 }
 
-export function PronunciationCoach() {
+export function PronunciationCoach({ result, setResult }: PronunciationCoachProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
   const [topic, setTopic] = useState(topics[0]);
-  const [result, setResult] = useState<PronunciationPracticeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [audioState, setAudioState] = useState<Record<string, { loading: boolean, data: string | null }>>({});
 

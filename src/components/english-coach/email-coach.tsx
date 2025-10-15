@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -13,10 +14,14 @@ import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { improveEmail } from '@/ai/flows/email-coach-flow';
 
-export function EmailCoach() {
+interface EmailCoachProps {
+    result: EmailCoachResponse | null;
+    setResult: (result: EmailCoachResponse | null) => void;
+}
+
+export function EmailCoach({ result, setResult }: EmailCoachProps) {
   const [emailText, setEmailText] = useState('');
   const [context, setContext] = useState('');
-  const [result, setResult] = useState<EmailCoachResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();

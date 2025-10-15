@@ -26,8 +26,13 @@ const topics = ['Technology', 'Health', 'Travel', 'Work', 'Movies', 'Books', 'Fo
 type SessionState = 'idle' | 'playing' | 'paused' | 'generating';
 type TtsEngine = 'gemini' | 'browser';
 
+interface ConversationCoachProps {
+    result: ConversationTextResponse | null;
+    setResult: (result: ConversationTextResponse | null) => void;
+}
 
-export function ConversationCoach() {
+
+export function ConversationCoach({ result, setResult }: ConversationCoachProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -37,7 +42,6 @@ export function ConversationCoach() {
   const [numSpeakers, setNumSpeakers] = useState<2|3>(2);
   
   const [sessionState, setSessionState] = useState<SessionState>('idle');
-  const [result, setResult] = useState<ConversationTextResponse | null>(null);
   
   const [audioState, setAudioState] = useState<Record<string, { loading: boolean; data: string | null }>>({});
   const [currentIndex, setCurrentIndex] = useState(0);

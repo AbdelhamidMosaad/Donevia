@@ -34,10 +34,13 @@ function highlightStory(story: string, isDarkMode: boolean): React.ReactNode {
 type TtsEngine = 'gemini' | 'browser';
 const geminiVoices = ['Algenib', 'Antares', 'Arcturus', 'Capella', 'Deneb', 'Hadrian', 'Mira', 'Procyon', 'Regulus', 'Sirius', 'Spica', 'Vega'];
 
+interface VocabularyCoachProps {
+    result: VocabularyCoachResponse | null;
+    setResult: (result: VocabularyCoachResponse | null) => void;
+}
 
-export function VocabularyCoach() {
+export function VocabularyCoach({ result, setResult }: VocabularyCoachProps) {
   const [level, setLevel] = useState<VocabularyLevel>('B1');
-  const [result, setResult] = useState<VocabularyCoachResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaveToDeckOpen, setIsSaveToDeckOpen] = useState(false);
@@ -380,5 +383,3 @@ export function VocabularyCoach() {
     </>
   );
 }
-
-  

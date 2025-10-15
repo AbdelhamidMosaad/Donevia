@@ -13,13 +13,16 @@ import { ScrollArea } from '../ui/scroll-area';
 import { generateReadingExercise } from '@/ai/flows/reading-comprehension-flow';
 import type { ReadingComprehensionExercise } from '@/lib/types/reading-comprehension';
 
+interface ReadingCoachProps {
+    result: ReadingComprehensionExercise | null;
+    setResult: (result: ReadingComprehensionExercise | null) => void;
+}
 
 const topics = ['Daily Life', 'Business', 'Travel', 'Culture', 'Technology', 'Health'];
 
-export function ReadingCoach() {
+export function ReadingCoach({ result, setResult }: ReadingCoachProps) {
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
   const [topic, setTopic] = useState('Daily Life');
-  const [result, setResult] = useState<ReadingComprehensionExercise | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();

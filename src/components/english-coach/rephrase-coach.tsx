@@ -12,9 +12,13 @@ import type { RephraseResponse } from '@/ai/flows/rephrase-flow';
 import { rephraseText } from '@/ai/flows/rephrase-flow';
 import { ScrollArea } from '../ui/scroll-area';
 
-export function RephraseCoach() {
+interface RephraseCoachProps {
+    result: RephraseResponse | null;
+    setResult: (result: RephraseResponse | null) => void;
+}
+
+export function RephraseCoach({ result, setResult }: RephraseCoachProps) {
   const [inputText, setInputText] = useState('');
-  const [result, setResult] = useState<RephraseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
