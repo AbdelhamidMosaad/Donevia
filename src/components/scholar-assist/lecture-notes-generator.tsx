@@ -18,11 +18,12 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, ShadingType } from 'docx';
 import { saveAs } from 'file-saver';
-import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter, DialogClose } from '../ui/dialog';
+import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter, DialogClose, DialogDescription } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface LectureNotesGeneratorProps {
   result: StudyMaterialResponse | null;
@@ -43,6 +44,16 @@ function InlineMarkdown({ text }: { text: string }) {
     );
 }
 
+const fonts = [
+    { name: 'Arial', value: 'Arial' },
+    { name: 'Calibri', value: 'Calibri' },
+    { name: 'Times New Roman', value: 'Times New Roman' },
+    { name: 'Courier New', value: 'Courier New' },
+    { name: 'Verdana', value: 'Verdana' },
+    { name: 'Georgia', value: 'Georgia' },
+];
+
+
 export function LectureNotesGenerator({ result, setResult }: LectureNotesGeneratorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -52,6 +63,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
   const [isExportingWord, setIsExportingWord] = useState(false);
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [fileName, setFileName] = useState('');
+  const [selectedFont, setSelectedFont] = useState('Arial');
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -175,12 +187,14 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
     const { title, notesContent } = result;
 
-    const createTextRuns = (text: string, isBold: boolean = false) => {
+    const createTextRuns = (text: string, isKeyPoint: boolean = false) => {
         return text.split(/(\*\*.*?\*\*)/g).map(part => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-                return new TextRun({ text: part.slice(2, -2), bold: true });
-            }
-            return new TextRun({ text: part, bold: isBold });
+            const isBoldPart = part.startsWith('**') && part.endsWith('**');
+            return new TextRun({
+                text: isBoldPart ? part.slice(2, -2) : part,
+                bold: isBoldPart || isKeyPoint,
+                font: selectedFont,
+            });
         });
     };
 
@@ -189,30 +203,32 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
         items.forEach(item => {
             const isKeyPoint = !!item.isKeyPoint;
+            const shading = isKeyPoint ? { type: ShadingType.CLEAR, fill: "E0E7FF" } : undefined;
+
             if (item.type === 'paragraph' && typeof item.content === 'string') {
-                docxElements.push(new Paragraph({ children: createTextRuns(item.content, isKeyPoint), spacing: { after: 100 } }));
+                docxElements.push(new Paragraph({ children: createTextRuns(item.content, isKeyPoint), shading }));
             } else if (item.type === 'bullet-list' && Array.isArray(item.content)) {
                 item.content.forEach((listItem: string) => {
-                     docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), bullet: { level: level } }));
+                     docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), bullet: { level: level }, shading }));
                 });
                 docxElements.push(new Paragraph("")); // Space after list
             } else if (item.type === 'numbered-list' && Array.isArray(item.content)) {
                  item.content.forEach((listItem: string) => {
-                    docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), numbering: { reference: "default-numbering", level: level } }));
+                    docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), numbering: { reference: "default-numbering", level: level }, shading }));
                 });
                 docxElements.push(new Paragraph(""));
             }
         });
         return docxElements;
     };
-
+    
     const docChildren: any[] = [
-        new Paragraph({ text: title, heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
-        new Paragraph({ text: notesContent.introduction, style: "italic", spacing: { after: 200 } }),
+        new Paragraph({ text: title, heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER, style: "headline" }),
+        new Paragraph({ children: [new TextRun({ text: notesContent.introduction, italics: true, font: selectedFont })], spacing: { after: 200 } }),
     ];
 
     notesContent.sections.forEach(section => {
-        docChildren.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }));
+        docChildren.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, style: "headline", spacing: { before: 200 } }));
         docChildren.push(...processContentItems(section.content));
         
         if (section.table) {
@@ -220,11 +236,11 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                 rows: [
                     new DocxTableRow({
                         children: section.table.headers.map(header => new DocxTableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
+                            children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, font: selectedFont })] })],
                         })),
                     }),
                     ...section.table.rows.map(row => new DocxTableRow({
-                        children: row.map(cell => new DocxTableCell({ children: [new Paragraph(cell)] }))
+                        children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({text: cell, font: selectedFont})]})] }))
                     })),
                 ],
                 width: { size: 100, type: WidthType.PERCENTAGE },
@@ -233,18 +249,18 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
         if (section.subsections) {
             section.subsections.forEach(subsection => {
-                docChildren.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, spacing: { before: 200 } }));
+                docChildren.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, style: "headline", spacing: { before: 200 } }));
                 docChildren.push(...processContentItems(subsection.content, 1));
                  if (subsection.table) {
                     docChildren.push(new DocxTable({
                         rows: [
                             new DocxTableRow({
                                 children: subsection.table.headers.map(header => new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, font: selectedFont })] })],
                                 })),
                             }),
                             ...subsection.table.rows.map(row => new DocxTableRow({
-                                children: row.map(cell => new DocxTableCell({ children: [new Paragraph(cell)] }))
+                                children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({text: cell, font: selectedFont})]})] }))
                             })),
                         ],
                         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -258,7 +274,12 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     });
 
     const doc = new Document({
-         numbering: {
+        styles: {
+            paragraphStyles: [
+                { id: "headline", name: "Headline", run: { font: selectedFont }},
+            ],
+        },
+        numbering: {
             config: [
                 {
                     reference: "default-numbering",
@@ -268,9 +289,6 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     ],
                 },
             ],
-        },
-        styles: {
-            paragraphStyles: [{ id: "italic", name: "Italic", run: { italics: true } }],
         },
         sections: [{ children: docChildren }],
     });
@@ -405,7 +423,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                 <React.Fragment key={secIndex}>
                     <h2>{section.heading}</h2>
                     {section.content.map((item, itemIndex) => (
-                        <div key={itemIndex} className={cn(item.isKeyPoint && "font-semibold bg-primary/10 p-2 rounded-md")}>
+                        <div key={itemIndex} className={cn(item.isKeyPoint && "font-semibold bg-blue-100 dark:bg-blue-900/30 p-2 rounded-md")}>
                             {item.type === 'paragraph' && typeof item.content === 'string' && (
                                 <p><InlineMarkdown text={item.content} /></p>
                             )}
@@ -444,7 +462,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                         <div key={subIndex} className="ml-6">
                             <h3>{sub.subheading}</h3>
                             {sub.content.map((item, itemIndex) => (
-                                <div key={itemIndex} className={cn(item.isKeyPoint && "font-semibold bg-primary/10 p-2 rounded-md")}>
+                                <div key={itemIndex} className={cn(item.isKeyPoint && "font-semibold bg-blue-100 dark:bg-blue-900/30 p-2 rounded-md")}>
                                     {item.type === 'paragraph' && typeof item.content === 'string' && (
                                         <p><InlineMarkdown text={item.content} /></p>
                                     )}
@@ -534,19 +552,38 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
           <DialogContent>
               <DialogHeader>
                   <DialogTitle>Export as Word Document</DialogTitle>
+                  <DialogDescription>
+                    You can rename the file and choose a font for the export. Please note that "Protected View" is a standard security feature in Microsoft Word for downloaded files. You can click "Enable Editing" in Word to view it normally.
+                  </DialogDescription>
               </DialogHeader>
-              <div className="py-4 space-y-2">
-                  <Label htmlFor="file-name">File Name</Label>
-                  <Input 
-                    id="file-name" 
-                    value={fileName} 
-                    onChange={(e) => setFileName(e.target.value)} 
-                    onKeyDown={(e) => { if(e.key === 'Enter') handleExportWord() }}
-                   />
+              <div className="py-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="file-name">File Name</Label>
+                    <Input 
+                        id="file-name" 
+                        value={fileName} 
+                        onChange={(e) => setFileName(e.target.value)} 
+                        onKeyDown={(e) => { if(e.key === 'Enter') handleExportWord() }}
+                    />
+                  </div>
+                   <div className="space-y-2">
+                        <Label htmlFor="font-select">Font</Label>
+                        <Select value={selectedFont} onValueChange={setSelectedFont}>
+                            <SelectTrigger id="font-select">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {fonts.map(font => <SelectItem key={font.value} value={font.value} style={{fontFamily: font.value}}>{font.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                   </div>
               </div>
               <DialogFooter>
                   <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                  <Button onClick={handleExportWord}>Export</Button>
+                  <Button onClick={handleExportWord} disabled={isExportingWord}>
+                      {isExportingWord && <Loader2 className="animate-spin mr-2"/>}
+                      Export
+                  </Button>
               </DialogFooter>
           </DialogContent>
       </Dialog>
