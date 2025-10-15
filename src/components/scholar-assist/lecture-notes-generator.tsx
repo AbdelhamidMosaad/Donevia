@@ -508,7 +508,12 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
               </DialogHeader>
               <div className="py-4 space-y-2">
                   <Label htmlFor="file-name">File Name</Label>
-                  <Input id="file-name" value={fileName} onChange={(e) => setFileName(e.target.value)} />
+                  <Input 
+                    id="file-name" 
+                    value={fileName} 
+                    onChange={(e) => setFileName(e.target.value)} 
+                    onKeyDown={(e) => { if(e.key === 'Enter') handleExportWord() }}
+                   />
               </div>
               <DialogFooter>
                   <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
