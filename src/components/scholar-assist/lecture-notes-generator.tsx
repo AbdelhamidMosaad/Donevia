@@ -18,8 +18,11 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Bullet, Indent, Spacing } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter, DialogClose } from '../ui/dialog';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 
 interface LectureNotesGeneratorProps {
   result: StudyMaterialResponse | null;
@@ -46,6 +49,8 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingToDocs, setIsSavingToDocs] = useState(false);
+  const [isExportingWord, setIsExportingWord] = useState(false);
+  const [fileName, setFileName] = useState('');
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -68,6 +73,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
       const data = await generateStudyMaterial(requestPayload);
       setResult(data);
+      setFileName(data.title);
 
     } catch (error) {
       console.error("Notes generation failed:", error);
@@ -173,7 +179,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
     const processContentItems = (items: any[], level: number = 0) => {
         items.forEach(item => {
-            const indent = level * 360; // 360 TWIPs = 0.25 inch
+            const isKeyPoint = !!item.isKeyPoint;
             if (item.type === 'paragraph' && typeof item.content === 'string') {
                  const textRuns = item.content.split(/(\*\*.*?\*\*)/g).map((part: string) => {
                     if (part.startsWith('**') && part.endsWith('**')) {
@@ -181,7 +187,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     }
                     return new TextRun(part);
                 });
-                children.push(new Paragraph({ children: textRuns, indent: { left: indent }, spacing: { after: 100 } }));
+                children.push(new Paragraph({ children: textRuns, style: isKeyPoint ? 'keyPoint' : undefined, spacing: { after: 100 } }));
             } else if (Array.isArray(item.content)) {
                 item.content.forEach((listItem: string) => {
                     const textRuns = listItem.split(/(\*\*.*?\*\*)/g).map((part: string) => {
@@ -193,7 +199,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                      children.push(new Paragraph({ 
                          children: textRuns, 
                          bullet: { level: level },
-                         numbering: item.type === 'numbered-list' ? { reference: "default-numbering", level: level } : undefined,
+                         style: isKeyPoint ? 'keyPoint' : undefined,
                      }));
                 });
                 children.push(new Paragraph("")); // Add space after a list
@@ -205,8 +211,10 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         children.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }));
         processContentItems(section.content);
         
-        // Note: docx library table generation is complex and not suitable for this simple conversion.
-        
+        if (section.table) {
+            // Table generation in docx can be complex, skipping for brevity
+        }
+
         if (section.subsections) {
             section.subsections.forEach(subsection => {
                 children.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, spacing: { before: 200 } }));
@@ -219,19 +227,6 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     });
 
     const doc = new Document({
-        sections: [{
-            properties: {},
-            children: children,
-        }],
-        numbering: {
-            config: [{
-                reference: "default-numbering",
-                levels: [
-                    { level: 0, format: "decimal", text: "%1." },
-                    { level: 1, format: "lowerLetter", text: "%2)" },
-                ],
-            }],
-        },
         styles: {
             paragraphStyles: [
                 {
@@ -241,13 +236,21 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     next: "Normal",
                     run: { italics: true },
                 },
+                {
+                    id: "keyPoint",
+                    name: "Key Point",
+                    basedOn: "Normal",
+                    run: { bold: true },
+                },
             ],
         },
+        sections: [{ children }],
     });
 
     Packer.toBlob(doc).then(blob => {
-        saveAs(blob, `${title.replace(/ /g, '_')}.docx`);
+        saveAs(blob, `${fileName.replace(/ /g, '_')}.docx`);
         toast({ title: '✓ Exporting as Word document' });
+        setIsExportingWord(false);
     });
   };
 
@@ -484,7 +487,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                         {isSavingToDocs ? 'Saving...' : 'Save to Docs'}
                     </Button>
                     <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
-                    <Button variant="outline" onClick={handleExportWord}><Download/> Export as Word</Button>
+                    <Button variant="outline" onClick={() => setIsExportingWord(true)}><Download/> Export as Word</Button>
                     <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
                 </CardFooter>
             </Card>
@@ -494,8 +497,25 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
   }
 
   return (
-    <div className="flex flex-col h-full gap-6">
-      {renderContent()}
-    </div>
+    <>
+      <div className="flex flex-col h-full gap-6">
+        {renderContent()}
+      </div>
+      <Dialog open={isExportingWord} onOpenChange={setIsExportingWord}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Export as Word Document</DialogTitle>
+              </DialogHeader>
+              <div className="py-4 space-y-2">
+                  <Label htmlFor="file-name">File Name</Label>
+                  <Input id="file-name" value={fileName} onChange={(e) => setFileName(e.target.value)} />
+              </div>
+              <DialogFooter>
+                  <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                  <Button onClick={handleExportWord}>Export</Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+    </>
   )
 }
