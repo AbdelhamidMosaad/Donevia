@@ -37,7 +37,11 @@ If the generationType is 'notes', you must follow these instructions:
     -   Create distinct sections for each major topic. Each section should have a clear 'heading'.
     -   For each section, provide the main content as an array of 'content' bullet points.
     -   Where appropriate, break down complex sections into smaller 'subsections', each with its own 'subheading' and 'content' points.
-4.  **Content Style**: Use a mix of short paragraphs and bullet points. Combine related ideas into a single bullet point to improve readability. Ensure the note style is '{{notesOptions.style}}' and complexity matches '{{notesOptions.complexity}}'.
+4.  **Content Style (CRITICAL)**: You MUST use a mix of short paragraphs and bullet points for the content.
+    -   **DO NOT** make every sentence a separate bullet point. This is bad practice and hard to read.
+    -   Combine related sentences into a single, coherent paragraph within one bullet point's 'text' field.
+    -   Use bullet points only for actual lists (e.g., a list of characteristics, steps in a process, or key examples).
+    -   The note style should be '{{notesOptions.style}}' and complexity must match '{{notesOptions.complexity}}'.
 5.  **Key Points**: In each section or subsection's content, identify 1-2 "key points" that are critical to understand. For these specific bullet points, set the 'isKeyPoint' flag to true.
 6.  **Tables**: If the source text contains tabular data, you MUST represent it as a table in your JSON output. Fill the 'table' field for the relevant section or subsection.
 7.  **Source Adherence**: Use only the provided source text. Do not add external content.
