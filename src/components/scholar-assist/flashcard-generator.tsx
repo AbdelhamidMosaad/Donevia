@@ -13,10 +13,14 @@ import { cn } from '@/lib/utils';
 import { SaveToDeckDialog } from './shared/save-to-deck-dialog';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 
-export function FlashcardGenerator() {
+interface FlashcardGeneratorProps {
+  result: StudyMaterialResponse | null;
+  setResult: (result: StudyMaterialResponse | null) => void;
+}
+
+export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [result, setResult] = useState<StudyMaterialResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaveOpen, setIsSaveOpen] = useState(false);
 

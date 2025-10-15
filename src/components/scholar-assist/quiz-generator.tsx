@@ -15,12 +15,15 @@ import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 import { Input } from '../ui/input';
 import { QuizTaker } from './quiz-taker';
 
-export function QuizGenerator() {
+interface QuizGeneratorProps {
+  result: StudyMaterialResponse | null;
+  setResult: (result: StudyMaterialResponse | null) => void;
+}
+
+export function QuizGenerator({ result, setResult }: QuizGeneratorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [result, setResult] = useState<StudyMaterialResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaveOpen, setIsSaveOpen] = useState(false);
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {

@@ -21,6 +21,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
+interface LectureNotesGeneratorProps {
+  result: StudyMaterialResponse | null;
+  setResult: (result: StudyMaterialResponse | null) => void;
+}
 
 function InlineMarkdown({ text }: { text: string }) {
     const parts = text.split(/(\*\*.*?\*\*)/g);
@@ -36,11 +40,10 @@ function InlineMarkdown({ text }: { text: string }) {
     );
 }
 
-export function LectureNotesGenerator() {
+export function LectureNotesGenerator({ result, setResult }: LectureNotesGeneratorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const [result, setResult] = useState<StudyMaterialResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingToDocs, setIsSavingToDocs] = useState(false);
 
