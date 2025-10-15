@@ -17,8 +17,8 @@ import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow as UITableRow } from '../ui/table';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table as DocxTable, TableRow, TableCell as DocxTableCell, WidthType } from 'docx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType } from 'docx';
 import { saveAs } from 'file-saver';
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter, DialogClose } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -50,6 +50,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingToDocs, setIsSavingToDocs] = useState(false);
   const [isExportingWord, setIsExportingWord] = useState(false);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [fileName, setFileName] = useState('');
 
   const handleGenerate = async (values: InputFormValues) => {
@@ -217,12 +218,12 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         if (section.table) {
             docChildren.push(new DocxTable({
                 rows: [
-                    new TableRow({
+                    new DocxTableRow({
                         children: section.table.headers.map(header => new DocxTableCell({
                             children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
                         })),
                     }),
-                    ...section.table.rows.map(row => new TableRow({
+                    ...section.table.rows.map(row => new DocxTableRow({
                         children: row.map(cell => new DocxTableCell({ children: [new Paragraph(cell)] }))
                     })),
                 ],
@@ -237,12 +238,12 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                  if (subsection.table) {
                     docChildren.push(new DocxTable({
                         rows: [
-                            new TableRow({
+                            new DocxTableRow({
                                 children: subsection.table.headers.map(header => new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
                                 })),
                             }),
-                            ...subsection.table.rows.map(row => new TableRow({
+                            ...subsection.table.rows.map(row => new DocxTableRow({
                                 children: row.map(cell => new DocxTableCell({ children: [new Paragraph(cell)] }))
                             })),
                         ],
@@ -278,7 +279,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         saveAs(blob, `${fileName.replace(/ /g, '_')}.docx`);
         toast({ title: '✓ Exporting as Word document' });
         setIsExportingWord(false);
-        onOpenChange(false);
+        setIsFileDialogOpen(false);
     });
   };
 
@@ -422,20 +423,20 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     ))}
                      {section.table && (
                         <div className="my-4">
-                            <UITable>
+                            <Table>
                                 <TableHeader>
-                                    <UITableRow>
+                                    <TableRow>
                                         {section.table.headers.map(header => <TableHead key={header}>{header}</TableHead>)}
-                                    </UITableRow>
+                                    </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {section.table.rows.map((row, rowIndex) => (
-                                        <UITableRow key={rowIndex}>
+                                        <TableRow key={rowIndex}>
                                             {row.map((cell, cellIndex) => <TableCell key={cellIndex}>{cell}</TableCell>)}
-                                        </UITableRow>
+                                        </TableRow>
                                     ))}
                                 </TableBody>
-                            </UITable>
+                            </Table>
                         </div>
                     )}
 
@@ -461,20 +462,20 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                             ))}
                             {sub.table && (
                                 <div className="my-4">
-                                    <UITable>
+                                    <Table>
                                         <TableHeader>
-                                            <UITableRow>
+                                            <TableRow>
                                                 {sub.table.headers.map(header => <TableHead key={header}>{header}</TableHead>)}
-                                            </UITableRow>
+                                            </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {sub.table.rows.map((row, rowIndex) => (
-                                                <UITableRow key={rowIndex}>
+                                                <TableRow key={rowIndex}>
                                                     {row.map((cell, cellIndex) => <TableCell key={cellIndex}>{cell}</TableCell>)}
-                                                </UITableRow>
+                                                </TableRow>
                                             ))}
                                         </TableBody>
-                                    </UITable>
+                                    </Table>
                                 </div>
                             )}
                         </div>
@@ -515,7 +516,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                         {isSavingToDocs ? 'Saving...' : 'Save to Docs'}
                     </Button>
                     <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
-                    <Button variant="outline" onClick={() => setIsExportingWord(true)}><Download/> Export as Word</Button>
+                    <Button variant="outline" onClick={() => setIsFileDialogOpen(true)}><Download/> Export as Word</Button>
                     <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
                 </CardFooter>
             </Card>
@@ -529,7 +530,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
       <div className="flex flex-col h-full gap-6">
         {renderContent()}
       </div>
-      <Dialog open={isExportingWord} onOpenChange={setIsExportingWord}>
+      <Dialog open={isFileDialogOpen} onOpenChange={setIsFileDialogOpen}>
           <DialogContent>
               <DialogHeader>
                   <DialogTitle>Export as Word Document</DialogTitle>
