@@ -17,8 +17,8 @@ import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow as UITableRow } from '../ui/table';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table as DocxTable, TableRow, TableCell as DocxTableCell, WidthType } from 'docx';
 import { saveAs } from 'file-saver';
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter, DialogClose } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -170,87 +170,115 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         return;
     }
     
+    setIsExportingWord(true);
+
     const { title, notesContent } = result;
 
-    const children: any[] = [
+    const createTextRuns = (text: string, isBold: boolean = false) => {
+        return text.split(/(\*\*.*?\*\*)/g).map(part => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return new TextRun({ text: part.slice(2, -2), bold: true });
+            }
+            return new TextRun({ text: part, bold: isBold });
+        });
+    };
+
+    const processContentItems = (items: any[], level: number = 0) => {
+        const docxElements: (Paragraph | DocxTable)[] = [];
+
+        items.forEach(item => {
+            const isKeyPoint = !!item.isKeyPoint;
+            if (item.type === 'paragraph' && typeof item.content === 'string') {
+                docxElements.push(new Paragraph({ children: createTextRuns(item.content, isKeyPoint), spacing: { after: 100 } }));
+            } else if (item.type === 'bullet-list' && Array.isArray(item.content)) {
+                item.content.forEach((listItem: string) => {
+                     docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), bullet: { level: level } }));
+                });
+                docxElements.push(new Paragraph("")); // Space after list
+            } else if (item.type === 'numbered-list' && Array.isArray(item.content)) {
+                 item.content.forEach((listItem: string) => {
+                    docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), numbering: { reference: "default-numbering", level: level } }));
+                });
+                docxElements.push(new Paragraph(""));
+            }
+        });
+        return docxElements;
+    };
+
+    const docChildren: any[] = [
         new Paragraph({ text: title, heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
         new Paragraph({ text: notesContent.introduction, style: "italic", spacing: { after: 200 } }),
     ];
 
-    const processContentItems = (items: any[], level: number = 0) => {
-        items.forEach(item => {
-            const isKeyPoint = !!item.isKeyPoint;
-            if (item.type === 'paragraph' && typeof item.content === 'string') {
-                 const textRuns = item.content.split(/(\*\*.*?\*\*)/g).map((part: string) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                        return new TextRun({ text: part.slice(2, -2), bold: true });
-                    }
-                    return new TextRun(part);
-                });
-                children.push(new Paragraph({ children: textRuns, style: isKeyPoint ? 'keyPoint' : undefined, spacing: { after: 100 } }));
-            } else if (Array.isArray(item.content)) {
-                item.content.forEach((listItem: string) => {
-                    const textRuns = listItem.split(/(\*\*.*?\*\*)/g).map((part: string) => {
-                         if (part.startsWith('**') && part.endsWith('**')) {
-                            return new TextRun({ text: part.slice(2, -2), bold: true });
-                        }
-                        return new TextRun(part);
-                    });
-                     children.push(new Paragraph({ 
-                         children: textRuns, 
-                         bullet: { level: level },
-                         style: isKeyPoint ? 'keyPoint' : undefined,
-                     }));
-                });
-                children.push(new Paragraph("")); // Add space after a list
-            }
-        });
-    };
-
     notesContent.sections.forEach(section => {
-        children.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }));
-        processContentItems(section.content);
+        docChildren.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }));
+        docChildren.push(...processContentItems(section.content));
         
         if (section.table) {
-            // Table generation in docx can be complex, skipping for brevity
+            docChildren.push(new DocxTable({
+                rows: [
+                    new TableRow({
+                        children: section.table.headers.map(header => new DocxTableCell({
+                            children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
+                        })),
+                    }),
+                    ...section.table.rows.map(row => new TableRow({
+                        children: row.map(cell => new DocxTableCell({ children: [new Paragraph(cell)] }))
+                    })),
+                ],
+                width: { size: 100, type: WidthType.PERCENTAGE },
+            }));
         }
 
         if (section.subsections) {
             section.subsections.forEach(subsection => {
-                children.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, spacing: { before: 200 } }));
-                processContentItems(subsection.content, 1);
+                docChildren.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, spacing: { before: 200 } }));
+                docChildren.push(...processContentItems(subsection.content, 1));
+                 if (subsection.table) {
+                    docChildren.push(new DocxTable({
+                        rows: [
+                            new TableRow({
+                                children: subsection.table.headers.map(header => new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
+                                })),
+                            }),
+                            ...subsection.table.rows.map(row => new TableRow({
+                                children: row.map(cell => new DocxTableCell({ children: [new Paragraph(cell)] }))
+                            })),
+                        ],
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                    }));
+                }
             });
         }
         if (section.addDividerAfter) {
-            children.push(new Paragraph({ text: '', border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } }, spacing: { before: 200, after: 200 } }));
+            docChildren.push(new Paragraph({ text: '', border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } }, spacing: { before: 200, after: 200 } }));
         }
     });
 
     const doc = new Document({
-        styles: {
-            paragraphStyles: [
+         numbering: {
+            config: [
                 {
-                    id: "italic",
-                    name: "Italic",
-                    basedOn: "Normal",
-                    next: "Normal",
-                    run: { italics: true },
-                },
-                {
-                    id: "keyPoint",
-                    name: "Key Point",
-                    basedOn: "Normal",
-                    run: { bold: true },
+                    reference: "default-numbering",
+                    levels: [
+                        { level: 0, format: "decimal", text: "%1.", alignment: AlignmentType.START },
+                        { level: 1, format: "lowerLetter", text: "%2)", alignment: AlignmentType.START, indent: { left: 720 } },
+                    ],
                 },
             ],
         },
-        sections: [{ children }],
+        styles: {
+            paragraphStyles: [{ id: "italic", name: "Italic", run: { italics: true } }],
+        },
+        sections: [{ children: docChildren }],
     });
 
     Packer.toBlob(doc).then(blob => {
         saveAs(blob, `${fileName.replace(/ /g, '_')}.docx`);
         toast({ title: '✓ Exporting as Word document' });
         setIsExportingWord(false);
+        onOpenChange(false);
     });
   };
 
@@ -394,20 +422,20 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     ))}
                      {section.table && (
                         <div className="my-4">
-                            <Table>
+                            <UITable>
                                 <TableHeader>
-                                    <TableRow>
+                                    <UITableRow>
                                         {section.table.headers.map(header => <TableHead key={header}>{header}</TableHead>)}
-                                    </TableRow>
+                                    </UITableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {section.table.rows.map((row, rowIndex) => (
-                                        <TableRow key={rowIndex}>
+                                        <UITableRow key={rowIndex}>
                                             {row.map((cell, cellIndex) => <TableCell key={cellIndex}>{cell}</TableCell>)}
-                                        </TableRow>
+                                        </UITableRow>
                                     ))}
                                 </TableBody>
-                            </Table>
+                            </UITable>
                         </div>
                     )}
 
@@ -433,20 +461,20 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                             ))}
                             {sub.table && (
                                 <div className="my-4">
-                                    <Table>
+                                    <UITable>
                                         <TableHeader>
-                                            <TableRow>
+                                            <UITableRow>
                                                 {sub.table.headers.map(header => <TableHead key={header}>{header}</TableHead>)}
-                                            </TableRow>
+                                            </UITableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {sub.table.rows.map((row, rowIndex) => (
-                                                <TableRow key={rowIndex}>
+                                                <UITableRow key={rowIndex}>
                                                     {row.map((cell, cellIndex) => <TableCell key={cellIndex}>{cell}</TableCell>)}
-                                                </TableRow>
+                                                </UITableRow>
                                             ))}
                                         </TableBody>
-                                    </Table>
+                                    </UITable>
                                 </div>
                             )}
                         </div>
