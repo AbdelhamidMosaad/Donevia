@@ -5,16 +5,16 @@ import { useState, useMemo } from 'react';
 import type { StudyMaterialResponse } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
-import { ChevronLeft, ChevronRight, Copy, Download, RefreshCw, Save, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, RefreshCw, Save, Trash2, CheckCircle, XCircle, Flag } from 'lucide-react';
 import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { saveQuiz } from '@/lib/quizzes';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
 import { SaveQuizDialog } from './shared/save-quiz-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 
 interface QuizTakerProps {
     result: StudyMaterialResponse & { id?: string };
@@ -32,6 +32,8 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
     const [isQuizFinished, setIsQuizFinished] = useState(false);
     const [score, setScore] = useState<number | null>(null);
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+    const [markedQuestions, setMarkedQuestions] = useState<Set<number>>(new Set());
+
 
     const totalQuestions = result?.quizContent?.length || 0;
     const totalScorableQuestions = useMemo(() => result.quizContent.filter(q => q.questionType !== 'short-answer').length, [result.quizContent]);
@@ -60,40 +62,6 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
         }
         setIsQuizFinished(true);
     };
-
-    const handleCopy = () => {
-        if (!result?.quizContent) return;
-        let text = `${result.title}\n\n`;
-        result.quizContent.forEach((q, i) => {
-            text += `Q${i+1}: ${q.questionText}\n`;
-            q.options?.forEach((opt, j) => text += `${String.fromCharCode(97 + j)}) ${opt}\n`);
-            text += `\nCorrect Answer: ${q.correctAnswer}\n`;
-            text += `Explanation: ${q.explanation}\n\n`;
-        });
-        navigator.clipboard.writeText(text);
-        toast({ title: '✓ Copied to clipboard!' });
-    };
-    
-    const handleDownload = () => {
-        if (!result?.quizContent) return;
-         let text = `${result.title}\n\n`;
-        result.quizContent.forEach((q, i) => {
-            text += `Q${i+1}: ${q.questionText}\n`;
-            q.options?.forEach((opt, j) => text += `${String.fromCharCode(97 + j)}) ${opt}\n`);
-            text += `\nCorrect Answer: ${q.correctAnswer}\n`;
-            text += `Explanation: ${q.explanation}\n\n`;
-        });
-        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${result.title.replace(/ /g, '_')}.txt`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-        toast({ title: '✓ Download started' });
-    };
     
     const handleExportWord = () => {
         if (!result?.quizContent) return;
@@ -116,6 +84,20 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
             saveAs(blob, `${result.title.replace(/ /g, '_')}.docx`);
         });
         toast({ title: '✓ Exporting as Word document' });
+    };
+
+    const toggleMarkQuestion = () => {
+        const newMarked = new Set(markedQuestions);
+        if (newMarked.has(currentQuestionIndex)) {
+            newMarked.delete(currentQuestionIndex);
+        } else {
+            newMarked.add(currentQuestionIndex);
+        }
+        setMarkedQuestions(newMarked);
+    };
+
+    const handleJumpToQuestion = (index: number) => {
+        setCurrentQuestionIndex(index);
     };
 
     const currentQuestion = result?.quizContent?.[currentQuestionIndex];
@@ -239,7 +221,35 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                      <Button variant="outline" onClick={() => setCurrentQuestionIndex(i => i - 1)} disabled={currentQuestionIndex === 0}>
                         <ChevronLeft/> Previous
                     </Button>
-                    <Button onClick={checkAllAnswers} disabled={score !== null || !allQuestionsAnswered}>Submit</Button>
+
+                    <div className="flex items-center gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline">Jump to...</Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto">
+                                <div className="grid grid-cols-5 gap-1">
+                                    {Array.from({length: totalQuestions}).map((_, i) => (
+                                        <Button
+                                            key={i}
+                                            variant={currentQuestionIndex === i ? 'default' : 'outline'}
+                                            size="icon"
+                                            className={cn("h-8 w-8 relative", markedQuestions.has(i) && 'ring-2 ring-yellow-400')}
+                                            onClick={() => handleJumpToQuestion(i)}
+                                        >
+                                            {i + 1}
+                                            {userAnswers[i] !== undefined && <CheckCircle className="h-3 w-3 absolute -top-1 -right-1 text-green-500 bg-background rounded-full"/>}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                        <Button variant="outline" onClick={toggleMarkQuestion} title="Mark for Review">
+                            <Flag className={cn("h-4 w-4", markedQuestions.has(currentQuestionIndex) && "fill-current text-yellow-500")} />
+                        </Button>
+                        <Button onClick={checkAllAnswers} disabled={score !== null || !allQuestionsAnswered}>Submit</Button>
+                    </div>
+
                      <Button variant="outline" onClick={() => setCurrentQuestionIndex(i => i + 1)} disabled={currentQuestionIndex === totalQuestions - 1}>
                         Next <ChevronRight/>
                     </Button>
