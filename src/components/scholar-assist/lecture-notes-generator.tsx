@@ -163,20 +163,6 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     toast({ title: '✓ Copied to clipboard!' });
   };
   
-  const handleDownload = () => {
-    const fullText = convertNotesToText();
-    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${result?.title.replace(/ /g, '_') || 'notes'}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-    toast({ title: '✓ Download started' });
-  };
-  
  const handleExportWord = () => {
     if (!result?.notesContent || typeof result.notesContent === 'string') {
         toast({ variant: 'destructive', title: 'Cannot export empty notes.' });
@@ -542,7 +528,6 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     </Button>
                     <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
                     <Button variant="outline" onClick={() => setIsFileDialogOpen(true)}><Download/> Export as Word</Button>
-                    <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
                 </CardFooter>
             </Card>
         )
@@ -597,5 +582,3 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     </>
   )
 }
-
-    
