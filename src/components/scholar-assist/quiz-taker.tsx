@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { saveQuiz } from '@/lib/quizzes';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { saveAs } from 'file-saver';
 
 interface QuizTakerProps {
     result: StudyMaterialResponse & { id?: string };
@@ -91,6 +93,30 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
         URL.revokeObjectURL(link.href);
         toast({ title: '✓ Download started' });
     };
+    
+    const handleExportWord = () => {
+        if (!result?.quizContent) return;
+        
+        const children = [new Paragraph({ text: result.title, heading: HeadingLevel.TITLE })];
+
+        result.quizContent.forEach((q, i) => {
+            children.push(new Paragraph({ text: `${i + 1}. ${q.questionText}`, heading: HeadingLevel.HEADING_2 }));
+            if (q.options) {
+                q.options.forEach(opt => children.push(new Paragraph({ text: `- ${opt}`, bullet: { level: 0 } })));
+            }
+            children.push(new Paragraph({ children: [new TextRun({ text: "Correct Answer: ", bold: true }), new TextRun(q.correctAnswer)] }));
+            children.push(new Paragraph({ children: [new TextRun({ text: "Explanation: ", bold: true }), new TextRun(q.explanation)] }));
+            children.push(new Paragraph(" "));
+        });
+
+        const doc = new Document({ sections: [{ children }] });
+
+        Packer.toBlob(doc).then(blob => {
+            saveAs(blob, `${result.title.replace(/ /g, '_')}.docx`);
+        });
+        toast({ title: '✓ Exporting as Word document' });
+    };
+
 
     const handleSaveQuiz = async () => {
         if (!user || !result) return;
@@ -165,6 +191,12 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                 </CardContent>
                 <CardFooter className="justify-end gap-2">
                      <Button variant="outline" onClick={onReset}>Generate New Quiz</Button>
+                     {!isSavedQuiz && (
+                        <Button onClick={handleSaveQuiz} disabled={isSaving}>
+                            <Save /> {isSaving ? 'Saving...' : 'Save This Quiz'}
+                        </Button>
+                     )}
+                     <Button variant="outline" onClick={handleExportWord}><Download/> Export .docx</Button>
                 </CardFooter>
             </Card>
         )
@@ -222,7 +254,7 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                 <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={onReset}>Generate New Quiz</Button>
                     {isSavedQuiz ? (
-                        <Button variant="destructive" onClick={onDelete}><Trash2/> Delete Quiz</Button>
+                        onDelete && <Button variant="destructive" onClick={onDelete}><Trash2/> Delete Quiz</Button>
                     ) : (
                          <Button onClick={handleSaveQuiz} disabled={isSaving}>
                             <Save /> {isSaving ? 'Saving...' : 'Save Quiz'}
