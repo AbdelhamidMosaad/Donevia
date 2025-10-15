@@ -253,8 +253,6 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                             <Save /> Save Quiz
                         </Button>
                     )}
-                    <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
-                    <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
                 </div>
             </CardFooter>
              <SaveQuizDialog
