@@ -44,6 +44,15 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+   experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+      serverActions: true,
+      allowedOrigins: [
+        "6000-firebase-studio-*.cluster-*.cloudworkstations.dev"
+      ],
+    },
+  },
 };
 
 
@@ -52,6 +61,7 @@ const isDev = process.env.NODE_ENV === 'development';
 if (isDev) {
     nextConfig.reactStrictMode = false;
     nextConfig.experimental = {
+        ...(nextConfig.experimental || {}),
         allowedDevOrigins: ["https://6000-firebase-studio-*.cluster-*.cloudworkstations.dev"],
     }
 }
