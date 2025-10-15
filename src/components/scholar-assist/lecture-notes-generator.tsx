@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import type { StudyMaterialRequest, StudyMaterialResponse } from '@/lib/types';
+import type { StudyMaterialRequest, StudyMaterialResponse, Flashcard } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Loader2, Copy, Download, Save } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
@@ -177,7 +177,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     toast({ title: '✓ Download started' });
   };
   
-  const handleExportWord = () => {
+ const handleExportWord = () => {
     if (!result?.notesContent || typeof result.notesContent === 'string') {
         toast({ variant: 'destructive', title: 'Cannot export empty notes.' });
         return;
@@ -203,18 +203,18 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
         items.forEach(item => {
             const isKeyPoint = !!item.isKeyPoint;
-            const shading = isKeyPoint ? { type: ShadingType.CLEAR, fill: "E0E7FF" } : undefined;
-
+            
             if (item.type === 'paragraph' && typeof item.content === 'string') {
+                 const shading = isKeyPoint ? { type: ShadingType.CLEAR, fill: "E5E7EB" } : undefined;
                 docxElements.push(new Paragraph({ children: createTextRuns(item.content, isKeyPoint), shading }));
             } else if (item.type === 'bullet-list' && Array.isArray(item.content)) {
                 item.content.forEach((listItem: string) => {
-                     docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), bullet: { level: level }, shading }));
+                     docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), bullet: { level: level } }));
                 });
                 docxElements.push(new Paragraph("")); // Space after list
             } else if (item.type === 'numbered-list' && Array.isArray(item.content)) {
                  item.content.forEach((listItem: string) => {
-                    docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), numbering: { reference: "default-numbering", level: level }, shading }));
+                    docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), numbering: { reference: "default-numbering", level: level } }));
                 });
                 docxElements.push(new Paragraph(""));
             }
@@ -223,12 +223,12 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     };
     
     const docChildren: any[] = [
-        new Paragraph({ text: title, heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER, style: "headline" }),
-        new Paragraph({ children: [new TextRun({ text: notesContent.introduction, italics: true, font: selectedFont })], spacing: { after: 200 } }),
+        new Paragraph({ text: title, heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
+        new Paragraph({ children: [new TextRun({ text: notesContent.introduction, italics: true})], spacing: { after: 200 } }),
     ];
 
     notesContent.sections.forEach(section => {
-        docChildren.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, style: "headline", spacing: { before: 200 } }));
+        docChildren.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }));
         docChildren.push(...processContentItems(section.content));
         
         if (section.table) {
@@ -236,11 +236,11 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                 rows: [
                     new DocxTableRow({
                         children: section.table.headers.map(header => new DocxTableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, font: selectedFont })] })],
+                            children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
                         })),
                     }),
                     ...section.table.rows.map(row => new DocxTableRow({
-                        children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({text: cell, font: selectedFont})]})] }))
+                        children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({text: cell})]})] }))
                     })),
                 ],
                 width: { size: 100, type: WidthType.PERCENTAGE },
@@ -249,18 +249,18 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
         if (section.subsections) {
             section.subsections.forEach(subsection => {
-                docChildren.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, style: "headline", spacing: { before: 200 } }));
+                docChildren.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, spacing: { before: 200 } }));
                 docChildren.push(...processContentItems(subsection.content, 1));
                  if (subsection.table) {
                     docChildren.push(new DocxTable({
                         rows: [
                             new DocxTableRow({
                                 children: subsection.table.headers.map(header => new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, font: selectedFont })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
                                 })),
                             }),
                             ...subsection.table.rows.map(row => new DocxTableRow({
-                                children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({text: cell, font: selectedFont})]})] }))
+                                children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({text: cell})]})] }))
                             })),
                         ],
                         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -275,9 +275,11 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
     const doc = new Document({
         styles: {
-            paragraphStyles: [
-                { id: "headline", name: "Headline", run: { font: selectedFont }},
-            ],
+            default: {
+                document: {
+                    run: { font: selectedFont }
+                }
+            }
         },
         numbering: {
             config: [
@@ -300,6 +302,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         setIsFileDialogOpen(false);
     });
   };
+
 
   const handleSaveToDocs = async () => {
     if (!user || !result || !result.notesContent) {
@@ -423,9 +426,11 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                 <React.Fragment key={secIndex}>
                     <h2>{section.heading}</h2>
                     {section.content.map((item, itemIndex) => (
-                        <div key={itemIndex} className={cn(item.isKeyPoint && "font-semibold bg-blue-100 dark:bg-blue-900/30 p-2 rounded-md")}>
+                        <div key={itemIndex}>
                             {item.type === 'paragraph' && typeof item.content === 'string' && (
-                                <p><InlineMarkdown text={item.content} /></p>
+                                <p className={cn(item.isKeyPoint && "font-semibold bg-gray-100 dark:bg-gray-800 p-2 rounded-md")}>
+                                    <InlineMarkdown text={item.content} />
+                                </p>
                             )}
                             {item.type === 'bullet-list' && Array.isArray(item.content) && (
                                 <ul>
@@ -462,9 +467,11 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                         <div key={subIndex} className="ml-6">
                             <h3>{sub.subheading}</h3>
                             {sub.content.map((item, itemIndex) => (
-                                <div key={itemIndex} className={cn(item.isKeyPoint && "font-semibold bg-blue-100 dark:bg-blue-900/30 p-2 rounded-md")}>
+                                <div key={itemIndex}>
                                     {item.type === 'paragraph' && typeof item.content === 'string' && (
-                                        <p><InlineMarkdown text={item.content} /></p>
+                                        <p className={cn(item.isKeyPoint && "font-semibold bg-gray-100 dark:bg-gray-800 p-2 rounded-md")}>
+                                            <InlineMarkdown text={item.content} />
+                                        </p>
                                     )}
                                     {item.type === 'bullet-list' && Array.isArray(item.content) && (
                                         <ul>
@@ -590,3 +597,5 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     </>
   )
 }
+
+    
