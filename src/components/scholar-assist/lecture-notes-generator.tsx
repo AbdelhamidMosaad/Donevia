@@ -316,7 +316,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     <h2>{section.heading}</h2>
                     <ul>
                         {section.content.map((point, pointIndex) => (
-                            <li key={pointIndex} className={cn(point.isKeyPoint && "font-semibold")}>
+                            <li key={pointIndex} className={cn(point.isKeyPoint && "font-semibold bg-primary/10 p-2 rounded-md")}>
                                 <InlineMarkdown text={point.text} />
                             </li>
                         ))}
@@ -345,7 +345,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                             <h3>{sub.subheading}</h3>
                             <ul>
                                 {sub.content.map((subPoint, subPointIndex) => (
-                                    <li key={subPointIndex} className={cn(subPoint.isKeyPoint && "font-semibold")}>
+                                    <li key={subPointIndex} className={cn(subPoint.isKeyPoint && "font-semibold bg-primary/10 p-2 rounded-md")}>
                                         <InlineMarkdown text={subPoint.text} />
                                     </li>
                                 ))}

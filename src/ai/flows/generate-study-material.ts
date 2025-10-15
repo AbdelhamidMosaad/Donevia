@@ -18,7 +18,7 @@ const studyMaterialPrompt = ai.definePrompt({
   input: { schema: StudyMaterialRequestSchema },
   output: { schema: StudyMaterialResponseSchema },
   prompt: `
-You are a professional academic lecturer. Generate lecture notes for a university-level from the provided text.The notes should be structured, easy to read, and highlight key terms.
+You are a professional academic lecturer. Your goal is to generate exceptional study materials from a source text.
 Follow these instructions precisely based on the requested 'generationType'.
 
 ---
@@ -30,19 +30,21 @@ Follow these instructions precisely based on the requested 'generationType'.
 
 ---
 **NOTES INSTRUCTIONS**
-If the generation type is 'notes', you must follow these instructions:
-1. **Output Format**: You must produce a structured JSON output. Do not use Markdown.
-2. **Key Points**: For each section's content, identify 1-2 "key points" that are critical to understand. For these specific bullet points, set the 'isKeyPoint' flag to true. For all other points, do not set this field.
-3. **Tables & Graphs**: If the source text contains tabular data, you MUST represent it as a table in your JSON output. Fill the 'table' field for the relevant section. If the source text contains a graph or chart, provide a concise description of it as a bullet point.
-4. **Note Style**: The notes must follow the structure requested in 'notesOptions.style' and be formatted like professional lecture notes.
-5. **Complexity**: Must match "{{notesOptions.complexity}}".
-6. **Content**: Use only the provided source text. Do not add external content.
-7. **Structure**: The notes should start with a clear, concise title and an introductory summary. Use distinct headings for each major topic covered in the source text. Use bold text to highlight key terms and concepts, and use bullet points to break down complex information into digestible points.
-8. **Tone**: Adopt a tone appropriate for a university-level lecture, making the content easy to understand and follow.
+If the generationType is 'notes', you must follow these instructions:
+1.  **Output Format**: Produce a well-structured JSON output. Do not use Markdown for formatting within the JSON fields, but you MUST wrap key terms in the 'text' fields with **markdown bold**.
+2.  **Introduction**: Start with a concise introductory paragraph in the 'introduction' field that provides context for the entire text.
+3.  **Structure**:
+    -   Create distinct sections for each major topic. Each section should have a clear 'heading'.
+    -   For each section, provide the main content as an array of 'content' bullet points.
+    -   Where appropriate, break down complex sections into smaller 'subsections', each with its own 'subheading' and 'content' points.
+4.  **Content Style**: Use a mix of short paragraphs and bullet points. Combine related ideas into a single bullet point to improve readability. Ensure the note style is '{{notesOptions.style}}' and complexity matches '{{notesOptions.complexity}}'.
+5.  **Key Points**: In each section or subsection's content, identify 1-2 "key points" that are critical to understand. For these specific bullet points, set the 'isKeyPoint' flag to true.
+6.  **Tables**: If the source text contains tabular data, you MUST represent it as a table in your JSON output. Fill the 'table' field for the relevant section or subsection.
+7.  **Source Adherence**: Use only the provided source text. Do not add external content.
 
 ---
 **QUIZ INSTRUCTIONS**
-If the generation type is 'quiz', you must follow these instructions:
+If the generationType is 'quiz', you must follow these instructions:
 1.  **Number of Questions**: Generate exactly {{quizOptions.numQuestions}} questions.
 2.  **Question Types**: The quiz must include the following question types: {{#each quizOptions.questionTypes}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}.
 3.  **Difficulty**: The difficulty level for the questions must be "{{quizOptions.difficulty}}".
@@ -52,7 +54,7 @@ If the generation type is 'quiz', you must follow these instructions:
 
 ---
 **FLASHCARDS INSTRUCTIONS**
-If the generation type is 'flashcards', you must follow these instructions:
+If the generationType is 'flashcards', you must follow these instructions:
 1.  **Number of Flashcards**: Generate exactly {{flashcardsOptions.numCards}} flashcards.
 2.  **Card Style**: The flashcards must be in the "{{flashcardsOptions.style}}" style.
 3.  **Content**: All flashcards must be based *only* on the provided source text. Create concise terms/questions for the front and clear, comprehensive definitions/answers for the back.

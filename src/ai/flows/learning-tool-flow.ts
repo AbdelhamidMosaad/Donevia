@@ -49,7 +49,7 @@ export type Flashcard = z.infer<typeof FlashcardSchema>;
 
 // Notes (structured)
 const NotePointSchema = z.object({
-  text: z.string().describe('The text of the bullet point.'),
+  text: z.string().describe('The text of the bullet point. Key terms should be wrapped in **markdown bold**.'),
   isKeyPoint: z.boolean().optional().describe('Set to true if this is a critical key point.'),
 });
 
@@ -60,19 +60,19 @@ const TableSchema = z.object({
 
 export const LectureNoteSectionSchema = z.object({
   heading: z.string().describe('Section heading (e.g., "Introduction to Accounting").'),
-  content: z.array(NotePointSchema).describe('Bullet-point content for the section.'),
+  content: z.array(NotePointSchema).describe('An array of bullet points for the section. Key terms should be wrapped in **markdown bold**.'),
   table: TableSchema.optional().describe('A table extracted from the source text, if applicable.'),
   subsections: z.array(z.object({
     subheading: z.string().describe('Subsection heading (e.g., "Three Basic Activities of Accounting").'),
-    content: z.array(NotePointSchema).describe('Bullet-point content for the subsection.'),
+    content: z.array(NotePointSchema).describe('An array of bullet points for the subsection.'),
     table: TableSchema.optional().describe('A table for this subsection.'),
   })).optional(),
   addDividerAfter: z.boolean().optional().describe('If true, a horizontal line (---) should be added after this section.')
 });
 
 export const NotesContentSchema = z.object({
-  introduction: z.string().describe('A short overview paragraph for context.'),
-  sections: z.array(LectureNoteSectionSchema).describe('Organized sections of the lecture notes.')
+  introduction: z.string().describe('A short overview paragraph providing context for the notes.'),
+  sections: z.array(LectureNoteSectionSchema).describe('An organized array of the main lecture note sections.')
 });
 
 // Main Response
@@ -82,5 +82,6 @@ export const StudyMaterialResponseSchema = z.object({
   notesContent: NotesContentSchema.optional().describe('Structured lecture notes with sections, bullet points, subsections, and optional dividers. Required if materialType is "notes".'),
   quizContent: z.array(QuizQuestionSchema).optional().describe('An array of quiz questions. Required if materialType is "quiz".'),
   flashcardContent: z.array(FlashcardSchema).optional().describe('An array of flashcards. Required if materialType is "flashcards".'),
+  tags: z.array(z.string()).optional(),
 });
 export type StudyMaterialResponse = z.infer<typeof StudyMaterialResponseSchema>;
