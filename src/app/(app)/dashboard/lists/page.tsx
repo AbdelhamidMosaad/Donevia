@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { deleteTaskFolder } from '@/lib/tasks';
+import { deleteTaskFolder, deleteTaskList } from '@/lib/tasks';
 
 
 type View = 'card' | 'list';
@@ -105,36 +105,14 @@ export default function TaskListsPage() {
   }
   
     const handleDeleteList = async (listId: string) => {
-    if (!user) return;
-
-    try {
-      const batch = writeBatch(db);
-
-      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-      batch.delete(listRef);
-
-      const tasksRef = collection(db, 'users', user.uid, 'tasks');
-      const q = query(tasksRef, where('listId', '==', listId));
-      const tasksSnapshot = await getDocs(q);
-
-      tasksSnapshot.forEach((taskDoc) => {
-        batch.delete(taskDoc.ref);
-      });
-
-      await batch.commit();
-      toast({
-        title: '✓ List Deleted',
-        description: 'The list and all its tasks have been deleted.',
-      });
-    } catch (e) {
-      console.error('Error deleting list and its tasks: ', e);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to delete task list. Please try again.',
-      });
-    }
-  };
+        if (!user) return;
+        try {
+            await deleteTaskList(user.uid, listId);
+            toast({ title: 'List deleted successfully.' });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Error deleting list.' });
+        }
+    };
 
   const handleAddList = async () => {
     if (!user || !newListName.trim()) {

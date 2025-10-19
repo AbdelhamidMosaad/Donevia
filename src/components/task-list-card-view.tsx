@@ -1,17 +1,19 @@
 
 'use client';
-import type { TaskList } from '@/lib/types';
+import type { TaskList, TaskFolder } from '@/lib/types';
 import { TaskListCard } from './task-list-card';
 import { TasksIcon } from './icons/tools/tasks-icon';
 import { cn } from '@/lib/utils';
 
 interface TaskListCardViewProps {
   taskLists: TaskList[];
+  folders: TaskFolder[];
   onDelete: (listId: string) => void;
+  onMove: (listId: string, folderId: string | null) => void;
   cardSize?: 'small' | 'medium' | 'large';
 }
 
-export function TaskListCardView({ taskLists, onDelete, cardSize = 'large' }: TaskListCardViewProps) {
+export function TaskListCardView({ taskLists, folders, onDelete, onMove, cardSize = 'large' }: TaskListCardViewProps) {
   if (taskLists.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
@@ -30,7 +32,7 @@ export function TaskListCardView({ taskLists, onDelete, cardSize = 'large' }: Ta
         cardSize === 'small' && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
     )}>
       {taskLists.map(list => (
-        <TaskListCard key={list.id} list={list} onDelete={() => onDelete(list.id)} size={cardSize} />
+        <TaskListCard key={list.id} list={list} folders={folders} onDelete={() => onDelete(list.id)} onMove={onMove} size={cardSize} />
       ))}
     </div>
   );
