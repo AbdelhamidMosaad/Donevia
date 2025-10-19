@@ -3,22 +3,23 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table, ArrowLeft, Loader2 } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table, ArrowLeft, Loader2, BarChart3 } from 'lucide-react';
 import { TaskCalendar } from '@/components/task-calendar';
 import { TaskList } from '@/components/task-list';
 import { TaskBoard } from '@/components/task-board';
 import { TaskTable } from '@/components/task-table';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Tabs, TabsTrigger, TabsList, TabsContent } from "@/components/ui/tabs"
 import { AddTaskDialog } from '@/components/add-task-dialog';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
 import { useTasks } from '@/hooks/use-tasks';
 import { BoardSettings } from '@/components/board-settings';
+import { AnalyticsDashboard } from '@/components/analytics-dashboard';
 
-type View = 'calendar' | 'list' | 'board' | 'table';
+type View = 'board' | 'list' | 'table' | 'calendar' | 'analytics';
 
 export default function TaskListPage() {
   const { user, loading: authLoading } = useAuth();
@@ -94,7 +95,7 @@ export default function TaskListPage() {
     return <div>List not found. Redirecting...</div>;
   }
 
-  const renderView = () => {
+  const renderView = (currentView: View) => {
     if (tasksLoading) {
       return (
         <div className="flex items-center justify-center h-full">
@@ -103,7 +104,7 @@ export default function TaskListPage() {
         </div>
       );
     }
-    switch (view) {
+    switch (currentView) {
       case 'list':
         return <TaskList tasks={tasks} stages={stages} onDeleteTask={deleteTask} onUpdateTask={updateTask} />;
       case 'board':
@@ -111,8 +112,9 @@ export default function TaskListPage() {
       case 'table':
         return <TaskTable listId={listId} tasks={tasks} stages={stages} />;
       case 'calendar':
-      default:
         return <TaskCalendar listId={listId} tasks={tasks} onUpdateTask={updateTask} />;
+      case 'analytics':
+        return <AnalyticsDashboard tasks={tasks} stages={stages} />;
     }
   }
 
@@ -131,20 +133,6 @@ export default function TaskListPage() {
         </div>
         <div className="flex items-center gap-2">
             {view === 'board' && <BoardSettings listId={listId} currentStages={stages} />}
-           <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task view">
-              <ToggleGroupItem value="board" aria-label="Board view">
-                <LayoutGrid />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="list" aria-label="List view">
-                <List />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="table" aria-label="Table view">
-                <Table />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                <CalendarIcon />
-              </ToggleGroupItem>
-            </ToggleGroup>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle />
               New Task
@@ -152,9 +140,21 @@ export default function TaskListPage() {
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto">
-        {renderView()}
-      </div>
+       <Tabs value={view} onValueChange={(v) => handleViewChange(v as View)} className="flex-1 flex flex-col min-h-0">
+          <TabsList>
+            <TabsTrigger value="board"><LayoutGrid /> Board</TabsTrigger>
+            <TabsTrigger value="list"><List /> List</TabsTrigger>
+            <TabsTrigger value="table"><Table /> Table</TabsTrigger>
+            <TabsTrigger value="calendar"><CalendarIcon /> Calendar</TabsTrigger>
+            <TabsTrigger value="analytics"><BarChart3 /> Analytics</TabsTrigger>
+          </TabsList>
+          <TabsContent value="board" className="flex-1 mt-4 overflow-y-auto">{renderView('board')}</TabsContent>
+          <TabsContent value="list" className="flex-1 mt-4 overflow-y-auto">{renderView('list')}</TabsContent>
+          <TabsContent value="table" className="flex-1 mt-4 overflow-y-auto">{renderView('table')}</TabsContent>
+          <TabsContent value="calendar" className="flex-1 mt-4 overflow-y-auto">{renderView('calendar')}</TabsContent>
+          <TabsContent value="analytics" className="flex-1 mt-4 overflow-y-auto">{renderView('analytics')}</TabsContent>
+       </Tabs>
+
        <AddTaskDialog 
           listId={listId} 
           open={isAddDialogOpen} 
@@ -165,3 +165,4 @@ export default function TaskListPage() {
     </div>
   );
 }
+

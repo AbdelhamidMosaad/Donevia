@@ -31,7 +31,7 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
   const doneStageIds = useMemo(() => stages.filter(s => s.name.toLowerCase() === 'done').map(s => s.id), [stages]);
 
   const tasksCompleted = useMemo(() => tasks.filter(t => doneStageIds.includes(t.status)).length, [tasks, doneStageIds]);
-  const tasksOverdue = useMemo(() => tasks.filter(t => moment(t.dueDate.toDate()).isBefore(moment(), 'day') && !doneStageIds.includes(t.status)).length, [tasks, doneStageIds]);
+  const tasksOverdue = useMemo(() => tasks.filter(t => t.dueDate && moment(t.dueDate.toDate()).isBefore(moment(), 'day') && !doneStageIds.includes(t.status)).length, [tasks, doneStageIds]);
   const totalTasks = tasks.length;
   const completionRate = totalTasks > 0 ? (tasksCompleted / totalTasks) * 100 : 0;
   
@@ -51,7 +51,9 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
     });
     
     // Ensure Uncategorized is added if it exists
-    if(!counts['Uncategorized']) counts['Uncategorized'] = 0;
+    if(tasks.some(t => !stageMap.has(t.status)) && !counts['Uncategorized']) {
+        counts['Uncategorized'] = tasks.filter(t => !stageMap.has(t.status)).length;
+    }
 
 
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
@@ -178,3 +180,4 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
     </div>
   );
 }
+
