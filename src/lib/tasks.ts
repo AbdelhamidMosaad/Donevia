@@ -12,7 +12,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Task, TaskFolder } from './types';
+import type { Task, TaskFolder, TaskList } from './types';
 
 // This function is now only used for seeding/testing if needed.
 // The primary addTask logic is in the useTasks hook for optimistic updates.
@@ -39,6 +39,18 @@ export const deleteTaskFromDb = async (userId: string, taskId: string) => {
     // Soft delete can be re-introduced if a trash/archive feature is needed.
     return await deleteDoc(taskRef);
 };
+
+export const deleteTaskList = async (userId: string, listId: string) => {
+    const batch = writeBatch(db);
+    const listRef = doc(db, 'users', userId, 'taskLists', listId);
+    batch.delete(listRef);
+
+    const tasksQuery = query(collection(db, 'users', userId, 'tasks'), where('listId', '==', listId));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    tasksSnapshot.forEach(taskDoc => batch.delete(taskDoc.ref));
+
+    await batch.commit();
+}
 
 export const deleteTaskFolder = async (userId: string, folderId: string) => {
     const batch = writeBatch(db);
