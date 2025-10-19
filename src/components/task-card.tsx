@@ -1,11 +1,12 @@
 
+
 'use client'
 
 import type { Task } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, MoreHorizontal, Flag, Edit, Trash2 } from 'lucide-react';
+import { Calendar, MoreHorizontal, Flag, Edit, Trash2, Play, Pause } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import moment from 'moment';
 import { cn } from '@/lib/utils';
 import { useTasks } from '@/hooks/use-tasks';
+import { useTaskTimer } from '@/hooks/use-task-timer';
 
 
 interface TaskCardProps {
@@ -33,10 +35,22 @@ const priorityIcons = {
   High: <Flag className="h-4 w-4 text-red-500" />,
 };
 
+const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return [h, m, s]
+        .map(v => v < 10 ? '0' + v : v)
+        .filter((v, i) => v !== '00' || i > 0 || (h === 0 && m === 0))
+        .join(':');
+}
+
+
 export function TaskCard({ task }: TaskCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { deleteTask, updateTask } = useTasks(task.listId);
   const { toast } = useToast();
+  const { activeItem, toggleTimer, elapsedTime } = useTaskTimer();
 
   const handleDelete = async () => {
     try {
@@ -49,11 +63,15 @@ export function TaskCard({ task }: TaskCardProps) {
   
   const isDueSoon = moment(task.dueDate.toDate()).isBefore(moment().add(3, 'days'));
   const isOverdue = moment(task.dueDate.toDate()).isBefore(moment(), 'day');
+  const isTimerActive = activeItem?.itemId === task.id;
 
   return (
     <>
     <Card 
-        className={cn("hover:shadow-md transition-shadow duration-200 cursor-pointer active:cursor-grabbing text-[hsl(var(--card-foreground))] hover:bg-opacity-80")}
+        className={cn(
+            "hover:shadow-md transition-shadow duration-200 cursor-pointer active:cursor-grabbing text-[hsl(var(--card-foreground))] hover:bg-opacity-80",
+            isTimerActive && "ring-2 ring-primary"
+        )}
         style={{ backgroundColor: task.color }}
         onClick={() => setIsEditDialogOpen(true)}
     >
@@ -113,6 +131,19 @@ export function TaskCard({ task }: TaskCardProps) {
                             <span>{moment(task.dueDate.toDate()).format('MMM D')}</span>
                         </div>
                     )}
+                </div>
+                 <div className="flex items-center gap-1">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7" 
+                        onClick={(e) => { e.stopPropagation(); toggleTimer(task.id, task.title); }}
+                    >
+                        {isTimerActive ? <Pause className="h-4 w-4 text-primary" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    <span className="font-mono text-xs">
+                        {isTimerActive ? formatTime(elapsedTime) : (task.timeSpentSeconds ? formatTime(task.timeSpentSeconds) : '0:00')}
+                    </span>
                 </div>
             </div>
             {task.tags && task.tags.length > 0 && (

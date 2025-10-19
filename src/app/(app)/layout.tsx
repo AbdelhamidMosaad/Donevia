@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { AppHeader } from '@/components/app-header';
@@ -17,6 +18,7 @@ import { PlannerReminderProvider } from '@/hooks/use-planner-reminders';
 import { ReminderDialogProvider } from '@/hooks/use-reminder-dialog';
 import { ReminderDialog } from '@/components/reminder-dialog';
 import { StudyTimerProvider } from '@/hooks/use-study-timer';
+import { TaskTimerProvider } from '@/hooks/use-task-timer';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -59,19 +61,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <ReminderDialogProvider>
           <PlannerReminderProvider>
             <PomodoroProvider>
-              <StudyTimerProvider>
-                <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
-                  <AppSidebar />
-                  <SidebarInset>
-                      <div className="flex flex-col h-screen">
-                        <AppHeader />
-                        <main className="flex-1 overflow-y-auto px-4 md:px-6">
-                            {children}
-                        </main>
-                      </div>
-                  </SidebarInset>
-                </SidebarProvider>
-              </StudyTimerProvider>
+                <TaskTimerProvider>
+                  <StudyTimerProvider>
+                    <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
+                      <AppSidebar />
+                      <SidebarInset>
+                          <div className="flex flex-col h-screen">
+                            <AppHeader />
+                            <main className="flex-1 overflow-y-auto px-4 md:px-6">
+                                {children}
+                            </main>
+                          </div>
+                      </SidebarInset>
+                    </SidebarProvider>
+                  </StudyTimerProvider>
+                </TaskTimerProvider>
             </PomodoroProvider>
           </PlannerReminderProvider>
            <ReminderDialog />

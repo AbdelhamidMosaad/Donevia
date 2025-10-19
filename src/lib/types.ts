@@ -49,6 +49,7 @@ export const TaskSchema = z.object({
     subtasks: z.array(SubtaskSchema).optional(),
     deleted: z.boolean().optional(),
     deletedAt: FirebaseTimestampSchema.optional(),
+    timeSpentSeconds: z.number().optional(),
 });
 export type Task = z.infer<typeof TaskSchema>;
 
@@ -59,6 +60,15 @@ export type TaskList = {
     ownerId: string;
     createdAt: Timestamp;
     stages?: Stage[];
+    folderId?: string | null;
+};
+
+export type TaskFolder = {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: Timestamp;
+  parentId?: string | null;
 };
 
 export type BoardTemplate = {

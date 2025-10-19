@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -29,6 +30,7 @@ import moment from 'moment';
 import { useTaskReminders } from '@/hooks/use-task-reminders';
 import { PomodoroHeaderWidget } from './pomodoro-header-widget';
 import { StudyTimerHeaderWidget } from './study-tracker/study-timer-header-widget';
+import { TaskTimerHeaderWidget } from './tasks/task-timer-header-widget';
 
 export function AppHeader() {
   const [isClient, setIsClient] = React.useState(false);
@@ -96,6 +98,7 @@ export function AppHeader() {
         )}
       </div>
 
+       <TaskTimerHeaderWidget />
        <StudyTimerHeaderWidget />
        <PomodoroHeaderWidget />
 

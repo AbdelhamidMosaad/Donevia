@@ -10,6 +10,7 @@ import {
   query,
   where,
   getDocs,
+  increment,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Task, TaskFolder, TaskList } from './types';
@@ -31,6 +32,14 @@ export const updateTaskInDb = async (userId: string, taskId: string, taskData: P
         ...taskData,
         updatedAt: serverTimestamp()
     });
+};
+
+export const logTimeOnTask = async (userId: string, taskId: string, seconds: number) => {
+  const taskRef = doc(db, 'users', userId, 'tasks', taskId);
+  return await updateDoc(taskRef, {
+    timeSpentSeconds: increment(seconds),
+    updatedAt: serverTimestamp(),
+  });
 };
 
 export const deleteTaskFromDb = async (userId: string, taskId: string) => {
