@@ -1,11 +1,11 @@
 
 'use client';
-import type { TaskList, Task } from '@/lib/types';
+import type { TaskList, Task, TaskFolder } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Move, Folder as FolderIcon } from 'lucide-react';
 import { Button } from './ui/button';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuSeparator } from './ui/dropdown-menu';
 import { useState, useRef, useEffect } from 'react';
 import { Input } from './ui/input';
 import { useAuth } from '@/hooks/use-auth';
@@ -18,10 +18,12 @@ import { TasksIcon } from './icons/tools/tasks-icon';
 
 interface TaskListListViewProps {
   taskLists: TaskList[];
+  folders: TaskFolder[];
   onDelete: (listId: string) => void;
+  onMove: (listId: string, folderId: string | null) => void;
 }
 
-export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps) {
+export function TaskListListView({ taskLists, folders, onDelete, onMove }: TaskListListViewProps) {
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingListName, setEditingListName] = useState('');
   const { user } = useAuth();
@@ -147,6 +149,27 @@ export function TaskListListView({ taskLists, onDelete }: TaskListListViewProps)
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem onSelect={() => handleStartEdit(list)}><Edit className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
+                       <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Move className="mr-2 h-4 w-4" />
+                            Move to Folder
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {list.folderId && 
+                                <DropdownMenuItem onSelect={() => onMove(list.id, null)}>
+                                    Remove from folder
+                                </DropdownMenuItem>
+                            }
+                            {folders.map(folder => (
+                              <DropdownMenuItem key={folder.id} onSelect={() => onMove(list.id, folder.id)} disabled={list.folderId === folder.id}>
+                                <FolderIcon className="mr-2 h-4 w-4" />
+                                {folder.name}
+                              </DropdownMenuItem>
+                            ))}
+                            {folders.length === 0 && <DropdownMenuItem disabled>No folders created</DropdownMenuItem>}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSeparator />
                        <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
