@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, Minus, Plus, GripHorizontal, Folder as FolderIcon } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Minus, Plus, GripHorizontal, Folder as FolderIcon, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import type { TaskList as TaskListType, TaskFolder } from '@/lib/types';
+import type { TaskList as TaskListType, TaskFolder, Task, Stage } from '@/lib/types';
 import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, writeBatch, where, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { deleteTaskFolder, deleteTaskList } from '@/lib/tasks';
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AnalyticsDashboard } from '@/components/analytics-dashboard';
 
 type View = 'card' | 'list';
 type CardSize = 'small' | 'medium' | 'large';
@@ -34,6 +35,8 @@ export default function TaskListsPage() {
   const [view, setView] = useState<View>('card');
   const [cardSize, setCardSize] = useState<CardSize>(settings.taskListsCardSize || 'large');
   const [taskLists, setTaskLists] = useState<TaskListType[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [allStages, setAllStages] = useState<Stage[]>([]);
   const [folders, setFolders] = useState<TaskFolder[]>([]);
 
   const [isNewListDialogOpen, setIsNewListDialogOpen] = useState(false);
@@ -70,6 +73,14 @@ export default function TaskListsPage() {
       const unsubscribeLists = onSnapshot(listsQuery, (snapshot) => {
         const listsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TaskListType));
         setTaskLists(listsData);
+        
+        const stagesData: Stage[] = [];
+        listsData.forEach(list => {
+            if(list.stages) {
+                stagesData.push(...list.stages);
+            }
+        });
+        setAllStages(stagesData.filter((stage, index, self) => index === self.findIndex(s => s.id === stage.id && s.name === stage.name)));
       });
       
       const foldersQuery = query(collection(db, 'users', user.uid, 'taskFolders'));
@@ -77,9 +88,15 @@ export default function TaskListsPage() {
         setFolders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TaskFolder)));
       });
 
+      const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'));
+        const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
+        setAllTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
+      });
+
       return () => {
           unsubscribeLists();
           unsubscribeFolders();
+          unsubscribeTasks();
       };
     }
   }, [user]);
@@ -200,80 +217,92 @@ export default function TaskListsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
-            <TasksIcon className="h-10 w-10 text-primary" />
-            <div>
-                <h1 className="text-3xl font-bold font-headline">Task Lists</h1>
-                <p className="text-muted-foreground">Organize your tasks into lists.</p>
-            </div>
-        </div>
-        <div className="flex items-center gap-2">
-           <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task list view">
-              <ToggleGroupItem value="card" aria-label="Card view">
-                <LayoutGrid />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="list" aria-label="List view">
-                <List />
-              </ToggleGroupItem>
-            </ToggleGroup>
-            {view === 'card' && (
-                 <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
-                    <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
-                    <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
-                    <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
-                </ToggleGroup>
-            )}
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button>
-                    <PlusCircle />
-                    New
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem onSelect={() => setIsNewListDialogOpen(true)}>New Task List</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setIsNewFolderDialogOpen(true)}><FolderIcon className="mr-2 h-4 w-4" />New Folder</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-      </div>
-      
-       {taskLists.length === 0 && folders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-            <TasksIcon className="h-24 w-24 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold font-headline">No Task Lists Yet</h3>
-            <p className="text-muted-foreground">Click "New" to create your first list or folder.</p>
-        </div>
-      ) : (
-         <div className="flex-1 space-y-8">
-            {topLevelFolders.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                  {topLevelFolders.map(folder => (
-                    <FolderCard 
-                        key={folder.id} 
-                        folder={folder}
-                        allFolders={folders}
-                        onDelete={() => handleDeleteFolder(folder.id)}
-                        onMove={handleMoveFolder}
-                        size={cardSize}
-                    />
-                  ))}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-4">
+                <TasksIcon className="h-10 w-10 text-primary" />
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">Task Management</h1>
+                    <p className="text-muted-foreground">Organize your tasks into lists and folders.</p>
                 </div>
-              </div>
-            )}
-            <div>
-              <h2 className="text-2xl font-bold font-headline mb-4">Task Lists</h2>
-                {view === 'card' ? (
-                <TaskListCardView taskLists={unfiledLists} folders={folders} onDelete={handleDeleteList} onMove={handleMoveList} cardSize={cardSize} />
-                ) : (
-                <TaskListListView taskLists={unfiledLists} folders={folders} onDelete={handleDeleteList} onMove={handleMoveList} />
-                )}
             </div>
         </div>
-      )}
+      
+        <Tabs defaultValue="lists" className="flex-1 flex flex-col min-h-0">
+            <TabsList>
+                <TabsTrigger value="lists">Lists</TabsTrigger>
+                <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/>Analytics</TabsTrigger>
+            </TabsList>
+            <TabsContent value="lists" className="flex-1 mt-4 flex flex-col min-h-0">
+                 <div className="flex items-center justify-end gap-2 mb-4">
+                    <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task list view">
+                        <ToggleGroupItem value="card" aria-label="Card view">
+                            <LayoutGrid />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="list" aria-label="List view">
+                            <List />
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                    {view === 'card' && (
+                        <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                            <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                            <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                            <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+                        </ToggleGroup>
+                    )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button>
+                            <PlusCircle />
+                            New
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => setIsNewListDialogOpen(true)}>New Task List</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setIsNewFolderDialogOpen(true)}><FolderIcon className="mr-2 h-4 w-4" />New Folder</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                {taskLists.length === 0 && folders.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
+                        <TasksIcon className="h-24 w-24 text-muted-foreground mb-4" />
+                        <h3 className="text-xl font-semibold font-headline">No Task Lists Yet</h3>
+                        <p className="text-muted-foreground">Click "New" to create your first list or folder.</p>
+                    </div>
+                ) : (
+                    <div className="flex-1 space-y-8">
+                        {topLevelFolders.length > 0 && (
+                        <div>
+                            <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                            {topLevelFolders.map(folder => (
+                                <FolderCard 
+                                    key={folder.id} 
+                                    folder={folder}
+                                    allFolders={folders}
+                                    onDelete={() => handleDeleteFolder(folder.id)}
+                                    onMove={handleMoveFolder}
+                                    size={cardSize}
+                                />
+                            ))}
+                            </div>
+                        </div>
+                        )}
+                        <div>
+                        <h2 className="text-2xl font-bold font-headline mb-4">Task Lists</h2>
+                            {view === 'card' ? (
+                            <TaskListCardView taskLists={unfiledLists} folders={folders} onDelete={handleDeleteList} onMove={handleMoveList} cardSize={cardSize} />
+                            ) : (
+                            <TaskListListView taskLists={unfiledLists} folders={folders} onDelete={handleDeleteList} onMove={handleMoveList} />
+                            )}
+                        </div>
+                    </div>
+                )}
+            </TabsContent>
+            <TabsContent value="analytics" className="flex-1 mt-4">
+                <AnalyticsDashboard tasks={allTasks} stages={allStages} />
+            </TabsContent>
+        </Tabs>
+      
 
         <Dialog open={isNewListDialogOpen} onOpenChange={setIsNewListDialogOpen}>
             <DialogContent>
@@ -323,5 +352,3 @@ export default function TaskListsPage() {
     </div>
   );
 }
-
-    

@@ -36,13 +36,23 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
   const completionRate = totalTasks > 0 ? (tasksCompleted / totalTasks) * 100 : 0;
   
   const tasksByStatus = useMemo(() => {
+    if (stages.length === 0) return [];
+    
     const stageMap = new Map(stages.map(s => [s.id, s.name]));
     const counts: Record<string, number> = {};
     
+    stages.forEach(stage => {
+        counts[stage.name] = 0;
+    });
+
     tasks.forEach(task => {
         const stageName = stageMap.get(task.status) || 'Uncategorized';
         counts[stageName] = (counts[stageName] || 0) + 1;
     });
+    
+    // Ensure Uncategorized is added if it exists
+    if(!counts['Uncategorized']) counts['Uncategorized'] = 0;
+
 
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
 
@@ -53,7 +63,7 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
     return last7Days.map(day => {
         const count = tasks.filter(task => 
             doneStageIds.includes(task.status) && 
-            moment(task.updatedAt?.toDate() || task.createdAt?.toDate()).isSame(day, 'day')
+            task.updatedAt && moment(task.updatedAt.toDate()).isSame(day, 'day')
         ).length;
         return {
             date: day.format('ddd'),
@@ -71,19 +81,27 @@ export function AnalyticsDashboard({ tasks, stages }: AnalyticsDashboardProps) {
   const highPriorityTasks = useMemo(() => {
     return tasks
         .filter(t => t.priority === 'High' && !doneStageIds.includes(t.status))
-        .sort((a,b) => a.dueDate.toMillis() - b.dueDate.toMillis())
+        .sort((a,b) => (a.dueDate?.toMillis() || 0) - (b.dueDate?.toMillis() || 0))
         .slice(0, 5);
   }, [tasks, doneStageIds]);
   
   const dueSoonTasks = useMemo(() => {
     const now = moment();
     return tasks
-        .filter(t => !doneStageIds.includes(t.status) && moment(t.dueDate.toDate()).isBetween(now, now.clone().add(3, 'days')))
-        .sort((a,b) => a.dueDate.toMillis() - b.dueDate.toMillis())
+        .filter(t => t.dueDate && !doneStageIds.includes(t.status) && moment(t.dueDate.toDate()).isBetween(now, now.clone().add(3, 'days')))
+        .sort((a,b) => (a.dueDate?.toMillis() || 0) - (b.dueDate?.toMillis() || 0))
         .slice(0, 5);
   }, [tasks, doneStageIds]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+  if (tasks.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center p-8 border rounded-lg bg-muted/50">
+        <p className="text-muted-foreground">No tasks to analyze yet. Add some tasks to see your analytics.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="grid gap-6">
