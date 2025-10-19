@@ -23,37 +23,30 @@ interface TaskListListViewProps {
   onMove: (listId: string, folderId: string | null) => void;
 }
 
-export function TaskListListView({ taskLists, folders, onDelete, onMove }: TaskListListViewProps) {
+function ListRow({ list, folders, onDelete, onMove }: { list: TaskList; folders: TaskFolder[]; onDelete: (listId: string) => void; onMove: (listId: string, folderId: string | null) => void; }) {
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingListName, setEditingListName] = useState('');
+  const [taskCount, setTaskCount] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
-  
+
   useEffect(() => {
     if (editingListId && inputRef.current) {
         inputRef.current.focus();
         inputRef.current.select();
     }
   }, [editingListId]);
-
+  
   useEffect(() => {
-    if (!user) return;
-    
-    const unsubscribes = taskLists.map(list => {
-      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', list.id));
-      return onSnapshot(q, (snapshot) => {
-        setTaskCounts(prevCounts => ({
-          ...prevCounts,
-          [list.id]: snapshot.size,
-        }));
-      });
-    });
-
-    return () => unsubscribes.forEach(unsub => unsub());
-
-  }, [user, taskLists]);
+    if (user && list.id) {
+        const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', list.id));
+        const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
+            setTaskCount(snapshot.size);
+        });
+        return () => unsubscribe();
+    }
+  }, [user, list.id]);
 
   const handleStartEdit = (list: TaskList) => {
     setEditingListId(list.id);
@@ -67,8 +60,7 @@ export function TaskListListView({ taskLists, folders, onDelete, onMove }: TaskL
 
   const handleFinishEdit = async (listId: string) => {
     if (!user) return;
-
-    const originalList = taskLists.find(l => l.id === listId);
+    const originalList = list;
     const trimmedName = editingListName.trim();
     
     if (!trimmedName || !originalList || (originalList.name === trimmedName)) {
@@ -94,7 +86,88 @@ export function TaskListListView({ taskLists, folders, onDelete, onMove }: TaskL
     else if (e.key === 'Escape') handleCancelEdit();
   };
 
-    if (taskLists.length === 0) {
+  return (
+     <TableRow key={list.id}>
+      <TableCell>
+        {editingListId === list.id ? (
+          <div className="flex items-center gap-2">
+            <TasksIcon className="h-5 w-5 shrink-0" />
+            <Input 
+              ref={inputRef}
+              value={editingListName}
+              onChange={(e) => setEditingListName(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, list.id)}
+              onBlur={() => handleFinishEdit(list.id)}
+              className="h-8"
+              onClick={e => e.stopPropagation()}
+            />
+          </div>
+        ) : (
+          <Link href={`/dashboard/list/${list.id}`} className="flex items-center gap-2 font-medium text-primary hover:underline">
+              <TasksIcon className="h-5 w-5" />
+              {list.name}
+          </Link>
+        )}
+      </TableCell>
+      <TableCell>{list.createdAt.toDate().toLocaleDateString()}</TableCell>
+      <TableCell>{taskCount}</TableCell>
+      <TableCell>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+            </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onSelect={() => handleStartEdit(list)}><Edit className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
+              <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Move className="mr-2 h-4 w-4" />
+                    Move to Folder
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {list.folderId && 
+                        <DropdownMenuItem onSelect={() => onMove(list.id, null)}>
+                            Remove from folder
+                        </DropdownMenuItem>
+                    }
+                    {folders.map(folder => (
+                      <DropdownMenuItem key={folder.id} onSelect={() => onMove(list.id, folder.id)} disabled={list.folderId === folder.id}>
+                        <FolderIcon className="mr-2 h-4 w-4" />
+                        {folder.name}
+                      </DropdownMenuItem>
+                    ))}
+                    {folders.length === 0 && <DropdownMenuItem disabled>No folders created</DropdownMenuItem>}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+               <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the "{list.name}" list and all of its tasks. This action cannot be undone.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDelete(list.id)} variant="destructive">Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+
+export function TaskListListView({ taskLists, folders, onDelete, onMove }: TaskListListViewProps) {
+  if (taskLists.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
             <TasksIcon className="h-24 w-24 text-muted-foreground mb-4" />
@@ -103,6 +176,7 @@ export function TaskListListView({ taskLists, folders, onDelete, onMove }: TaskL
         </div>
     )
   }
+  
   return (
     <div className="border rounded-lg">
       <Table>
@@ -116,81 +190,7 @@ export function TaskListListView({ taskLists, folders, onDelete, onMove }: TaskL
         </TableHeader>
         <TableBody>
           {taskLists.map(list => (
-            <TableRow key={list.id}>
-              <TableCell>
-                {editingListId === list.id ? (
-                  <div className="flex items-center gap-2">
-                    <TasksIcon className="h-5 w-5 shrink-0" />
-                    <Input 
-                      ref={inputRef}
-                      value={editingListName}
-                      onChange={(e) => setEditingListName(e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(e, list.id)}
-                      onBlur={() => handleFinishEdit(list.id)}
-                      className="h-8"
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </div>
-                ) : (
-                  <Link href={`/dashboard/list/${list.id}`} className="flex items-center gap-2 font-medium text-primary hover:underline">
-                      <TasksIcon className="h-5 w-5" />
-                      {list.name}
-                  </Link>
-                )}
-              </TableCell>
-              <TableCell>{list.createdAt.toDate().toLocaleDateString()}</TableCell>
-              <TableCell>{taskCounts[list.id] || 0}</TableCell>
-              <TableCell>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onSelect={() => handleStartEdit(list)}><Edit className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
-                       <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <Move className="mr-2 h-4 w-4" />
-                            Move to Folder
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            {list.folderId && 
-                                <DropdownMenuItem onSelect={() => onMove(list.id, null)}>
-                                    Remove from folder
-                                </DropdownMenuItem>
-                            }
-                            {folders.map(folder => (
-                              <DropdownMenuItem key={folder.id} onSelect={() => onMove(list.id, folder.id)} disabled={list.folderId === folder.id}>
-                                <FolderIcon className="mr-2 h-4 w-4" />
-                                {folder.name}
-                              </DropdownMenuItem>
-                            ))}
-                            {folders.length === 0 && <DropdownMenuItem disabled>No folders created</DropdownMenuItem>}
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                        <DropdownMenuSeparator />
-                       <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                              <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will permanently delete the "{list.name}" list and all of its tasks. This action cannot be undone.
-                                  </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => onDelete(list.id)} variant="destructive">Delete</AlertDialogAction>
-                              </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
+            <ListRow key={list.id} list={list} folders={folders} onDelete={onDelete} onMove={onMove} />
           ))}
         </TableBody>
       </Table>

@@ -1,15 +1,15 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import type { TaskFolder, TaskList } from '@/lib/types';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import type { Task, TaskFolder, TaskList } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { MoreHorizontal, Edit, Trash2, Move, Folder as FolderIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
   AlertDialog,
@@ -35,6 +35,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { TasksIcon } from './icons/tools/tasks-icon';
 import { cn } from '@/lib/utils';
+import { Progress } from './ui/progress';
 
 interface TaskListCardProps {
   list: TaskList;
@@ -51,6 +52,7 @@ export function TaskListCard({ list, folders, onDelete, onMove, size = 'large' }
   const { toast } = useToast();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -59,6 +61,30 @@ export function TaskListCard({ list, folders, onDelete, onMove, size = 'large' }
     }
   }, [isEditing]);
   
+  useEffect(() => {
+    if (user && list.id) {
+        const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', list.id));
+        const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
+            const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+            setTasks(tasksData);
+        });
+        return () => unsubscribe();
+    }
+  }, [user, list.id]);
+
+  const { completedCount, totalCount, progressPercentage } = useMemo(() => {
+    if (tasks.length === 0) return { completedCount: 0, totalCount: 0, progressPercentage: 0 };
+    
+    const doneStageId = list.stages?.find(s => s.name.toLowerCase() === 'done')?.id;
+    const completed = tasks.filter(t => t.status === doneStageId).length;
+    
+    return {
+      completedCount: completed,
+      totalCount: tasks.length,
+      progressPercentage: (completed / tasks.length) * 100,
+    };
+  }, [tasks, list.stages]);
+
   const handleRename = async () => {
     if (!user || !editingName.trim() || editingName === list.name) {
       setIsEditing(false);
@@ -132,7 +158,15 @@ export function TaskListCard({ list, folders, onDelete, onMove, size = 'large' }
                     size === 'small' && 'text-sm'
                 )}>{list.name}</h3>
             )}
-            {size === 'large' && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">Created on {list.createdAt.toDate().toLocaleDateString()}</p>}
+            {size === 'large' && (
+                <div className="w-full mt-4">
+                    <Progress value={progressPercentage} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-1">{completedCount} / {totalCount} tasks</p>
+                </div>
+            )}
+             {size === 'medium' && (
+                <p className="text-xs text-muted-foreground mt-1">{completedCount} / {totalCount} tasks</p>
+            )}
         </div>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
