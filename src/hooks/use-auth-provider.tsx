@@ -61,6 +61,8 @@ const defaultSettings: UserSettings = {
     bookmarksView: 'card',
     bookmarkCardSize: 'x-small',
     homeCardSize: 'large',
+    homeView: 'overview',
+    listViews: {},
     tableColumns: {},
     sidebarOrder: [],
     toolOrder: [],

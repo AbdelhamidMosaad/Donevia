@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -271,6 +270,7 @@ export interface UserSettings {
     bookmarksView?: 'card' | 'list';
     bookmarkCardSize?: 'x-small' |'small' | 'large';
     homeCardSize?: 'small' | 'medium' | 'large';
+    homeView?: 'overview' | 'analytics';
     listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
     tasksView?: 'board' | 'list' | 'table' | 'calendar' | 'analytics';
     taskSettings?: {

@@ -80,6 +80,7 @@ const allTools = [
 ];
 
 type CardSize = 'small' | 'medium' | 'large';
+type View = 'overview' | 'analytics';
 
 export default function HomePage() {
   const { user, loading, settings } = useAuth();
@@ -88,6 +89,16 @@ export default function HomePage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [orderedTools, setOrderedTools] = useState(allTools);
   const [cardSize, setCardSize] = useState<CardSize>(settings.homeCardSize || 'large');
+  const [activeTab, setActiveTab] = useState<View>(settings.homeView || 'overview');
+
+  useEffect(() => {
+    if (settings.homeView) {
+      setActiveTab(settings.homeView);
+    }
+    if (settings.homeCardSize) {
+      setCardSize(settings.homeCardSize);
+    }
+  }, [settings.homeView, settings.homeCardSize]);
 
   useEffect(() => {
     if (settings.toolOrder) {
@@ -132,6 +143,14 @@ export default function HomePage() {
     }
   }, [user]);
   
+  const handleTabChange = async (newView: View) => {
+    if(newView && user) {
+        setActiveTab(newView);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { homeView: newView }, { merge: true });
+    }
+  }
+
   const handleCardSizeChange = async (newSize: CardSize) => {
     if (newSize && user) {
         setCardSize(newSize);
@@ -172,14 +191,16 @@ export default function HomePage() {
                     <p className="text-muted-foreground">{welcomeMessage}</p>
                 </div>
             </div>
-            <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
-                <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
-                <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
-                <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
-            </ToggleGroup>
+            {activeTab === 'overview' && (
+                <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
+                    <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
+                    <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
+                    <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
+                </ToggleGroup>
+            )}
         </div>
         
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+        <Tabs value={activeTab} onValueChange={(v) => handleTabChange(v as View)} className="flex-1 flex flex-col min-h-0">
             <TabsList>
                 <TabsTrigger value="overview"><Home className="mr-2 h-4 w-4"/> Overview</TabsTrigger>
                 <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/> Analytics</TabsTrigger>
