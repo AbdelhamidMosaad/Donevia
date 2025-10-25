@@ -48,7 +48,7 @@ const formatTime = (seconds: number) => {
 
 export function TaskCard({ task }: TaskCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { deleteTask, updateTask } = useTasks(task.listId);
+  const { deleteTask, updateTask, categories } = useTasks();
   const { toast } = useToast();
   const { activeItem, toggleTimer, elapsedTime } = useTaskTimer();
 
@@ -159,11 +159,12 @@ export function TaskCard({ task }: TaskCardProps) {
       }
     </Card>
     <AddTaskDialog 
-        listId={task.listId}
         task={task}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        onTaskUpdated={(id, updates) => updateTask(id, updates)}
+        onTaskAdded={useTasks().addTask}
+        onTaskUpdated={updateTask}
+        categories={categories}
     />
     </>
   );

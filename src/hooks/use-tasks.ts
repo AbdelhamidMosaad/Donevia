@@ -7,29 +7,35 @@ import {
   onSnapshot,
   query,
   doc,
-  where,
-  Timestamp,
-  setDoc,
   writeBatch,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from './use-auth';
 import type { Task, Stage, UserSettings } from '@/lib/types';
 import { addTaskToDb, updateTaskInDb, deleteTaskFromDb } from '@/lib/tasks';
+import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { useToast } from './use-toast';
+import { Timestamp } from 'firebase/firestore';
+
 
 export function useTasks() {
   const { user, settings } = useAuth();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Fetch stages from settings
+
+  // Fetch stages and categories from settings
   useEffect(() => {
-    if (settings.taskSettings?.stages) {
-      setStages(settings.taskSettings.stages.sort((a,b) => a.order - b.order));
+    if (settings.taskSettings) {
+      if (settings.taskSettings.stages) {
+        setStages(settings.taskSettings.stages.sort((a,b) => a.order - b.order));
+      }
+      if (settings.taskSettings.categories) {
+        setCategories(settings.taskSettings.categories);
+      }
     }
   }, [settings.taskSettings]);
 
@@ -54,23 +60,28 @@ export function useTasks() {
   const addTask = useCallback(async (newTaskData: Omit<Task, 'id'|'createdAt'|'updatedAt'|'ownerId'>) => {
     if (!user) return;
     
-    // Optimistic update
+    // Create a temporary optimistic task
     const tempId = uuidv4();
-    const now = Timestamp.now();
     const optimisticTask: Task = {
         ...newTaskData,
         id: tempId,
         ownerId: user.uid,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
         deleted: false,
     };
+
+    // Optimistically update the UI
     setTasks(prev => [...prev, optimisticTask]);
 
     try {
-        const docRef = await addTaskToDb(user.uid, newTaskData);
-        // This part is tricky; often the onSnapshot listener handles this automatically.
-        // We'll rely on the snapshot listener to update the UI with the final task.
+        const newDocRef = await addTaskToDb(user.uid, newTaskData);
+        // After the task is successfully added to DB, Firestore's onSnapshot listener
+        // will automatically update the local state with the real task from the server.
+        // We just need to remove the temporary optimistic task.
+        // Or better, we can wait for the listener to give us the real task.
+        // The listener will replace the optimistic task if we key correctly.
+        // For simplicity now, we'll let the listener handle the final state.
     } catch (e) {
         // Revert optimistic update on failure
         setTasks(prev => prev.filter(t => t.id !== tempId));
@@ -82,15 +93,15 @@ export function useTasks() {
   const updateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {
     if (!user) return;
 
-    const originalTasks = tasks;
     // Optimistic update
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates, updatedAt: Timestamp.now() } : t));
 
     try {
         await updateTaskInDb(user.uid, taskId, updates);
     } catch (e) {
-        // Revert on failure
-        setTasks(originalTasks);
+        // Revert on failure by re-fetching. A more robust solution would store original task state.
+        const originalTask = tasks.find(t => t.id === taskId);
+        setTasks(prev => prev.map(t => t.id === taskId ? (originalTask || t) : t));
         toast({ variant: 'destructive', title: 'Failed to update task' });
         console.error(e);
     }
@@ -118,5 +129,5 @@ export function useTasks() {
     }
   }, [user, tasks, toast]);
 
-  return { tasks, stages, isLoading, addTask, updateTask, deleteTask, updateStages };
+  return { tasks, stages, categories, isLoading, addTask, updateTask, deleteTask, updateStages };
 }

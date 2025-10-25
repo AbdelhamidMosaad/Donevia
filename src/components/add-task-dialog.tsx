@@ -31,8 +31,8 @@ import { useTasks } from '@/hooks/use-tasks';
 interface AddTaskDialogProps {
   children?: ReactNode;
   task?: Task | null;
-  onTaskAdded?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => void;
-  onTaskUpdated?: (id: string, updates: Partial<Task>) => void;
+  onTaskAdded: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => void;
+  onTaskUpdated: (id: string, updates: Partial<Task>) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   defaultDueDate?: Date;
@@ -97,7 +97,7 @@ export function AddTaskDialog({
     setReminder('none');
     setColor(getRandomColor());
     setSubtasks([]);
-    setCategory(categories[0] || 'general');
+    setCategory(categories?.[0] || 'general');
     if (stages.length > 0) {
       setStatus(stages[0].id);
     } else {
@@ -162,7 +162,7 @@ export function AddTaskDialog({
     }
 
     setIsSaving(true);
-    const taskData: Partial<Task> = {
+    const taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'> = {
         title,
         description,
         reflection,
@@ -172,7 +172,7 @@ export function AddTaskDialog({
         reminder,
         color,
         subtasks,
-        category,
+        category: category || 'general',
         tags: task?.tags || [],
         deleted: false,
     };
@@ -185,7 +185,7 @@ export function AddTaskDialog({
             description: `"${title}" has been updated.`,
           });
       } else if (onTaskAdded) {
-          onTaskAdded(taskData as Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'deleted'>);
+          onTaskAdded(taskData);
           toast({
             title: 'Task Added',
             description: `"${title}" has been added successfully.`,
