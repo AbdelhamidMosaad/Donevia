@@ -53,7 +53,7 @@ import { BeCreativeIcon } from './icons/tools/be-creative-icon';
 const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
     { href: '/planner', icon: <PlannerIcon />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
-    { href: '/dashboard/lists', icon: <TasksIcon />, label: 'Task Management', tooltip: 'Task Management', id: 'tasks' },
+    { href: '/dashboard/lists', icon: <TasksIcon />, label: 'Tasks', tooltip: 'Task Management', id: 'tasks' },
     { href: '/crm', icon: <CrmIcon />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
     { href: '/journal', icon: <JournalIcon />, label: 'Journal', tooltip: 'Journal', id: 'journal' },
     { href: '/habits', icon: <HabitsIcon />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
@@ -102,7 +102,7 @@ export function AppSidebar() {
       return pathname === '/home';
     }
      if (href === '/dashboard/lists') {
-      return pathname.startsWith('/dashboard/lists') || pathname.startsWith('/dashboard/list');
+      return pathname.startsWith('/dashboard');
     }
      if (href === '/crm') {
       return pathname === '/crm' || pathname.startsWith('/crm/');

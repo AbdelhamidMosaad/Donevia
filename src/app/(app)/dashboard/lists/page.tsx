@@ -1,354 +1,336 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, Minus, Plus, GripHorizontal, Folder as FolderIcon, BarChart3 } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table, Loader2, BarChart3, FolderPlus, Edit, Trash2 } from 'lucide-react';
+import { TaskCalendar } from '@/components/task-calendar';
+import { TaskList } from '@/components/task-list';
+import { TaskBoard } from '@/components/task-board';
+import { TaskTable } from '@/components/task-table';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import type { TaskList as TaskListType, TaskFolder, Task, Stage } from '@/lib/types';
-import { collection, onSnapshot, query, doc, getDoc, setDoc, addDoc, Timestamp, writeBatch, where, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
+import { Tabs, TabsTrigger, TabsList, TabsContent } from "@/components/ui/tabs"
+import { AddTaskDialog } from '@/components/add-task-dialog';
+import { doc, getDoc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
-import { TaskListCardView } from '@/components/task-list-card-view';
-import { TaskListListView } from '@/components/task-list-list-view';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
-import { v4 as uuidv4 } from 'uuid';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { FolderCard } from '@/components/tasks/folder-card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useTasks } from '@/hooks/use-tasks';
+import { BoardSettings } from '@/components/board-settings';
+import { AnalyticsDashboard } from '@/components/analytics-dashboard';
+import type { UserSettings } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { deleteTaskFolder, deleteTaskList } from '@/lib/tasks';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AnalyticsDashboard } from '@/components/analytics-dashboard';
 
-type View = 'card' | 'list';
-type CardSize = 'small' | 'medium' | 'large';
+type View = 'board' | 'list' | 'table' | 'calendar' | 'analytics';
+const DEFAULT_CATEGORIES = ['general', 'work', 'personal'];
 
 export default function TaskListsPage() {
-  const { user, loading, settings } = useAuth();
+  const { user, settings, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { tasks, stages, addTask, updateTask, deleteTask, isLoading: tasksLoading } = useTasks();
   const { toast } = useToast();
-  const [view, setView] = useState<View>('card');
-  const [cardSize, setCardSize] = useState<CardSize>(settings.taskListsCardSize || 'large');
-  const [taskLists, setTaskLists] = useState<TaskListType[]>([]);
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
-  const [allStages, setAllStages] = useState<Stage[]>([]);
-  const [folders, setFolders] = useState<TaskFolder[]>([]);
 
-  const [isNewListDialogOpen, setIsNewListDialogOpen] = useState(false);
-  const [newListName, setNewListName] = useState('');
-  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
+  const [view, setView] = useState<View>('board');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+  const [isRenameCategoryOpen, setIsRenameCategoryOpen] = useState(false);
+  const [categoryToRename, setCategoryToRename] = useState<string | null>(null);
+  const [renamedCategory, setRenamedCategory] = useState('');
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.push('/');
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (settings?.tasksView) {
+      setView(settings.tasksView);
+    }
+    if (settings.taskSettings?.categories) {
+        setCustomCategories(settings.taskSettings.categories);
+    }
+  }, [settings]);
   
-  useEffect(() => {
-    if (user) {
-      const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-      getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists()) {
-          const userSettings = docSnap.data();
-          if (userSettings.taskListsView) {
-            setView(userSettings.taskListsView);
-          }
-          if (userSettings.taskListsCardSize) {
-            setCardSize(userSettings.taskListsCardSize);
-          }
-        }
-      });
+  const allCategories = useMemo(() => {
+    const combined = [...DEFAULT_CATEGORIES, ...customCategories];
+    return ['all', ...Array.from(new Set(combined))];
+  }, [customCategories]);
+
+  const filteredTasks = useMemo(() => {
+    if (activeCategory === 'all') {
+      return tasks;
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (user) {
-      const listsQuery = query(collection(db, 'users', user.uid, 'taskLists'));
-      const unsubscribeLists = onSnapshot(listsQuery, (snapshot) => {
-        const listsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TaskListType));
-        setTaskLists(listsData);
-        
-        const stagesData: Stage[] = [];
-        listsData.forEach(list => {
-            if(list.stages) {
-                stagesData.push(...list.stages);
-            }
-        });
-        setAllStages(stagesData.filter((stage, index, self) => index === self.findIndex(s => s.id === stage.id && s.name === stage.name)));
-      });
-      
-      const foldersQuery = query(collection(db, 'users', user.uid, 'taskFolders'));
-      const unsubscribeFolders = onSnapshot(foldersQuery, (snapshot) => {
-        setFolders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TaskFolder)));
-      });
-
-      const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'));
-        const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
-        setAllTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
-      });
-
-      return () => {
-          unsubscribeLists();
-          unsubscribeFolders();
-          unsubscribeTasks();
-      };
-    }
-  }, [user]);
+    return tasks.filter(task => (task.category || 'general') === activeCategory);
+  }, [tasks, activeCategory]);
 
   const handleViewChange = async (newView: View) => {
-    if (newView) {
+    if (newView && user) {
         setView(newView);
-        if (user) {
-            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            await setDoc(settingsRef, { taskListsView: newView }, { merge: true });
-        }
-    }
-  }
-
-  const handleCardSizeChange = async (newSize: CardSize) => {
-    if (newSize) {
-        setCardSize(newSize);
-        if (user) {
-            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            await setDoc(settingsRef, { taskListsCardSize: newSize }, { merge: true });
-        }
-    }
-  }
-  
-    const handleDeleteList = async (listId: string) => {
-        if (!user) return;
-        try {
-            await deleteTaskList(user.uid, listId);
-            toast({ title: 'List deleted successfully.' });
-        } catch (e) {
-            toast({ variant: 'destructive', title: 'Error deleting list.' });
-        }
-    };
-
-  const handleAddList = async () => {
-    if (!user || !newListName.trim()) {
-        toast({ variant: 'destructive', title: 'List name cannot be empty.' });
-        return;
-    }
-    try {
-      const newListRef = await addDoc(collection(db, 'users', user.uid, 'taskLists'), {
-        name: newListName.trim(),
-        ownerId: user.uid,
-        createdAt: Timestamp.now(),
-        stages: [
-            { id: uuidv4(), name: 'Backlog', order: 0 },
-            { id: uuidv4(), name: 'To Do', order: 1 },
-            { id: uuidv4(), name: 'In Progress', order: 2 },
-            { id: uuidv4(), name: 'Done', order: 3 },
-        ],
-        folderId: null,
-      });
-      setIsNewListDialogOpen(false);
-      setNewListName('');
-      router.push(`/dashboard/list/${newListRef.id}`);
-    } catch (e) {
-      console.error("Error adding document: ", e);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to add task list. Please try again.',
-      });
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+        await setDoc(settingsRef, { tasksView: newView }, { merge: true });
     }
   };
 
-  const handleAddFolder = async () => {
-    if (!user || !newFolderName.trim()) {
-        toast({ variant: 'destructive', title: 'Folder name cannot be empty.'});
+  const handleSaveSettings = async (newSettings: Partial<UserSettings['taskSettings']>) => {
+    if(!user) return;
+    const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
+    await setDoc(settingsRef, {
+        taskSettings: {
+            ...settings.taskSettings,
+            ...newSettings,
+        }
+    }, { merge: true });
+  }
+
+  const handleAddNewCategory = async () => {
+    if (!newCategory.trim()) return;
+    const lowerCaseCategory = newCategory.trim().toLowerCase();
+    
+    if (allCategories.includes(lowerCaseCategory)) {
+        toast({ variant: 'destructive', title: 'Category already exists' });
         return;
     }
-    try {
-        await addDoc(collection(db, 'users', user.uid, 'taskFolders'), {
-            name: newFolderName.trim(),
-            ownerId: user.uid,
-            createdAt: Timestamp.now(),
-            parentId: null,
-        });
-        toast({ title: "✓ Folder Created" });
-        setIsNewFolderDialogOpen(false);
-        setNewFolderName('');
-    } catch (e) {
-        console.error("Error creating folder:", e);
-        toast({ variant: 'destructive', title: 'Failed to create folder.' });
+
+    const newCategories = [...customCategories, lowerCaseCategory];
+    await handleSaveSettings({ categories: newCategories });
+    toast({ title: 'Category Added', description: `"${newCategory}" has been added.`});
+    setIsAddCategoryOpen(false);
+    setNewCategory('');
+  };
+
+  const handleRenameCategory = async () => {
+    if (!categoryToRename || !renamedCategory.trim()) return;
+    
+    const lowerCaseNewCategory = renamedCategory.trim().toLowerCase();
+    if(lowerCaseNewCategory === categoryToRename) {
+        setIsRenameCategoryOpen(false);
+        return;
     }
+
+    if(allCategories.includes(lowerCaseNewCategory)) {
+        toast({ variant: 'destructive', title: 'Category already exists' });
+        return;
+    }
+
+    const newCategories = customCategories.map(c => c === categoryToRename ? lowerCaseNewCategory : c);
+    await handleSaveSettings({ categories: newCategories });
+    
+    const tasksToUpdate = tasks.filter(t => t.category === categoryToRename);
+    for (const task of tasksToUpdate) {
+        await updateTask(task.id, { category: lowerCaseNewCategory });
+    }
+
+    toast({ title: "Category Renamed", description: `"${categoryToRename}" is now "${lowerCaseNewCategory}".`});
+    if(activeCategory === categoryToRename) {
+        setActiveCategory(lowerCaseNewCategory);
+    }
+    setIsRenameCategoryOpen(false);
+    setCategoryToRename(null);
   };
   
-  const handleDeleteFolder = async (folderId: string) => {
-    if (!user) return;
-    try {
-        await deleteTaskFolder(user.uid, folderId);
-        toast({ title: '✓ Folder Deleted'});
-    } catch (e) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete folder.'});
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    const newCategories = customCategories.filter(c => c !== categoryToDelete);
+    await handleSaveSettings({ categories: newCategories });
+
+    const tasksToUpdate = tasks.filter(t => t.category === categoryToDelete);
+    for (const task of tasksToUpdate) {
+        await updateTask(task.id, { category: 'general' });
     }
+
+    toast({ title: 'Category Deleted', description: `Bookmarks from "${categoryToDelete}" were moved to "general".` });
+    if(activeCategory === categoryToDelete) {
+        setActiveCategory('general');
+    }
+    setCategoryToDelete(null);
+  };
+    
+  if (authLoading || !user) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            <p className="ml-2">Loading Tasks...</p>
+        </div>
+    );
   }
-  
-  const handleMoveList = async (listId: string, folderId: string | null) => {
-    if (!user) return;
-    const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-    await updateDoc(listRef, { folderId });
-    toast({ title: '✓ List Moved' });
-  }
 
-  const handleMoveFolder = async (folderId: string, newParentId: string | null) => {
-    if (!user) return;
-    const folderRef = doc(db, 'users', user.uid, 'taskFolders', folderId);
-    await updateDoc(folderRef, { parentId: newParentId });
-    toast({ title: '✓ Folder Moved'});
-  }
-
-  const unfiledLists = taskLists.filter(l => !l.folderId);
-  const topLevelFolders = folders.filter(f => !f.parentId);
-
-
-  if (loading || !user) {
-    return <div>Loading...</div>;
+  const renderView = (currentView: View) => {
+    if (tasksLoading) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+          <p className="ml-2">Loading tasks...</p>
+        </div>
+      );
+    }
+    switch (currentView) {
+      case 'list':
+        return <TaskList tasks={filteredTasks} stages={stages} onDeleteTask={deleteTask} onUpdateTask={updateTask} />;
+      case 'board':
+        return <TaskBoard listId="all-tasks" />; // Using a dummy listId since it's global now
+      case 'table':
+        return <TaskTable listId="all-tasks" tasks={filteredTasks} stages={stages} />;
+      case 'calendar':
+        return <TaskCalendar listId="all-tasks" tasks={filteredTasks} onUpdateTask={updateTask} />;
+      case 'analytics':
+        return <AnalyticsDashboard tasks={filteredTasks} stages={stages} />;
+    }
   }
 
   return (
     <div className="flex flex-col h-full">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-4">
-                <TasksIcon className="h-10 w-10 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Task Management</h1>
-                    <p className="text-muted-foreground">Organize your tasks into lists and folders.</p>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4">
+            <div>
+                 <div className="flex items-center gap-2">
+                    <TasksIcon className="h-7 w-7 text-primary" />
+                    <h1 className="text-3xl font-bold font-headline capitalize">Tasks</h1>
                 </div>
+                <p className="text-muted-foreground">Manage all your tasks in one place.</p>
             </div>
         </div>
-      
-        <Tabs defaultValue="lists" className="flex-1 flex flex-col min-h-0">
-            <TabsList>
-                <TabsTrigger value="lists">Lists</TabsTrigger>
-                <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/>Analytics</TabsTrigger>
-            </TabsList>
-            <TabsContent value="lists" className="flex-1 mt-4 flex flex-col min-h-0">
-                 <div className="flex items-center justify-end gap-2 mb-4">
-                    <ToggleGroup type="single" value={view} onValueChange={handleViewChange} aria-label="Task list view">
-                        <ToggleGroupItem value="card" aria-label="Card view">
-                            <LayoutGrid />
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="list" aria-label="List view">
-                            <List />
-                        </ToggleGroupItem>
-                    </ToggleGroup>
-                    {view === 'card' && (
-                        <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
-                            <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
-                            <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
-                            <ToggleGroupItem value="large" aria-label="Large cards"><Plus/></ToggleGroupItem>
-                        </ToggleGroup>
-                    )}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button>
-                            <PlusCircle />
-                            New
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => setIsNewListDialogOpen(true)}>New Task List</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => setIsNewFolderDialogOpen(true)}><FolderIcon className="mr-2 h-4 w-4" />New Folder</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-                {taskLists.length === 0 && folders.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-muted/50">
-                        <TasksIcon className="h-24 w-24 text-muted-foreground mb-4" />
-                        <h3 className="text-xl font-semibold font-headline">No Task Lists Yet</h3>
-                        <p className="text-muted-foreground">Click "New" to create your first list or folder.</p>
-                    </div>
-                ) : (
-                    <div className="flex-1 space-y-8">
-                        {topLevelFolders.length > 0 && (
-                        <div>
-                            <h2 className="text-2xl font-bold font-headline mb-4">Folders</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            {topLevelFolders.map(folder => (
-                                <FolderCard 
-                                    key={folder.id} 
-                                    folder={folder}
-                                    allFolders={folders}
-                                    onDelete={() => handleDeleteFolder(folder.id)}
-                                    onMove={handleMoveFolder}
-                                    size={cardSize}
-                                />
-                            ))}
-                            </div>
-                        </div>
-                        )}
-                        <div>
-                        <h2 className="text-2xl font-bold font-headline mb-4">Task Lists</h2>
-                            {view === 'card' ? (
-                            <TaskListCardView taskLists={unfiledLists} folders={folders} onDelete={handleDeleteList} onMove={handleMoveList} cardSize={cardSize} />
-                            ) : (
-                            <TaskListListView taskLists={unfiledLists} folders={folders} onDelete={handleDeleteList} onMove={handleMoveList} />
-                            )}
-                        </div>
-                    </div>
-                )}
-            </TabsContent>
-            <TabsContent value="analytics" className="flex-1 mt-4">
-                <AnalyticsDashboard tasks={allTasks} stages={allStages} />
-            </TabsContent>
-        </Tabs>
-      
+        <div className="flex items-center gap-2">
+            {view === 'board' && <BoardSettings currentStages={stages} />}
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle />
+              New Task
+            </Button>
+        </div>
+      </div>
 
-        <Dialog open={isNewListDialogOpen} onOpenChange={setIsNewListDialogOpen}>
-            <DialogContent>
-                 <DialogHeader>
-                    <DialogTitle>Create New Task List</DialogTitle>
-                    <DialogDescription>Enter a name for your new task list.</DialogDescription>
-                </DialogHeader>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+          {allCategories.map(category => {
+              const isCustom = !DEFAULT_CATEGORIES.includes(category) && category !== 'all';
+              return (
+                <div key={category}>
+                    <Button
+                      variant={activeCategory === category ? 'default' : 'outline'}
+                      onClick={() => setActiveCategory(category)}
+                      className="capitalize"
+                    >
+                      {category}
+                      {isCustom && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 -mr-2" onClick={e=>e.stopPropagation()}><MoreHorizontal className="h-4 w-4"/></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onSelect={() => {setCategoryToRename(category); setRenamedCategory(category); setIsRenameCategoryOpen(true);}}>
+                                   <Edit className="mr-2 h-4 w-4"/> Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setCategoryToDelete(category)} className="text-destructive focus:text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4"/> Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </Button>
+                </div>
+              );
+          })}
+           <Button variant="outline" size="sm" onClick={() => setIsAddCategoryOpen(true)}>
+                <FolderPlus /> New Category
+            </Button>
+        </div>
+      
+       <Tabs value={view} onValueChange={(v) => handleViewChange(v as View)} className="flex-1 flex flex-col min-h-0">
+          <TabsList>
+            <TabsTrigger value="board"><LayoutGrid /> Board</TabsTrigger>
+            <TabsTrigger value="list"><List /> List</TabsTrigger>
+            <TabsTrigger value="table"><Table /> Table</TabsTrigger>
+            <TabsTrigger value="calendar"><CalendarIcon /> Calendar</TabsTrigger>
+            <TabsTrigger value="analytics"><BarChart3 /> Analytics</TabsTrigger>
+          </TabsList>
+          <TabsContent value="board" className="flex-1 mt-4 overflow-y-auto">{renderView('board')}</TabsContent>
+          <TabsContent value="list" className="flex-1 mt-4 overflow-y-auto">{renderView('list')}</TabsContent>
+          <TabsContent value="table" className="flex-1 mt-4 overflow-y-auto">{renderView('table')}</TabsContent>
+          <TabsContent value="calendar" className="flex-1 mt-4 overflow-y-auto">{renderView('calendar')}</TabsContent>
+          <TabsContent value="analytics" className="flex-1 mt-4 overflow-y-auto">{renderView('analytics')}</TabsContent>
+       </Tabs>
+
+       <AddTaskDialog 
+          open={isAddDialogOpen} 
+          onOpenChange={setIsAddDialogOpen} 
+          onTaskAdded={addTask} 
+          onTaskUpdated={updateTask}
+          categories={allCategories.filter(c => c !== 'all')}
+        />
+        
+        <AlertDialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Add New Category</AlertDialogTitle>
+                    <AlertDialogDescription>Enter a name for your new task category.</AlertDialogDescription>
+                </AlertDialogHeader>
                 <div className="py-4">
-                    <Label htmlFor="list-name">List Name</Label>
+                    <Label htmlFor="new-category-name" className="sr-only">Category Name</Label>
                     <Input
-                        id="list-name"
-                        value={newListName}
-                        onChange={(e) => setNewListName(e.target.value)}
-                        placeholder="e.g., Q4 Marketing Plan"
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddList()}
+                        id="new-category-name"
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        placeholder="e.g., Marketing"
                     />
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsNewListDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAddList} disabled={!newListName.trim()}>Create</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setNewCategory('')}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleAddNewCategory} disabled={!newCategory.trim()}>Add</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
-        <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
-            <DialogContent>
-                 <DialogHeader>
-                    <DialogTitle>Create New Folder</DialogTitle>
-                    <DialogDescription>Enter a name for your new folder.</DialogDescription>
-                </DialogHeader>
+        <AlertDialog open={isRenameCategoryOpen} onOpenChange={setIsRenameCategoryOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Rename Category</AlertDialogTitle>
+                    <AlertDialogDescription>Enter a new name for the category "{categoryToRename}".</AlertDialogDescription>
+                </AlertDialogHeader>
                 <div className="py-4">
-                    <Label htmlFor="folder-name">Folder Name</Label>
+                    <Label htmlFor="rename-category-name" className="sr-only">New Name</Label>
                     <Input
-                        id="folder-name"
-                        value={newFolderName}
-                        onChange={(e) => setNewFolderName(e.target.value)}
-                        placeholder="e.g., Work Projects"
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddFolder()}
+                        id="rename-category-name"
+                        value={renamedCategory}
+                        onChange={(e) => setRenamedCategory(e.target.value)}
                     />
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAddFolder} disabled={!newFolderName.trim()}>Create</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRenameCategory} disabled={!renamedCategory.trim()}>Rename</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        
+        <AlertDialog open={!!categoryToDelete} onOpenChange={() => setCategoryToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will delete the category "{categoryToDelete}". Tasks using this category will be moved to "general".
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteCategory} variant="destructive">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }

@@ -6,7 +6,8 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { WelcomeScreen } from '@/components/welcome-screen';
-import type { UserSettings } from '@/lib/types';
+import type { UserSettings, Stage } from '@/lib/types';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AuthContextType {
   user: User | null;
@@ -28,14 +29,24 @@ const fonts: Record<string, string> = {
     bahnschrift: 'Bahnschrift, sans-serif',
 };
 
+const defaultStages: Stage[] = [
+    { id: uuidv4(), name: 'Backlog', order: 0 },
+    { id: uuidv4(), name: 'To Do', order: 1 },
+    { id: uuidv4(), name: 'In Progress', order: 2 },
+    { id: uuidv4(), name: 'Done', order: 3 },
+];
+
 const defaultSettings: UserSettings = {
     theme: 'light',
     font: 'inter',
     sidebarVariant: 'sidebar',
     sidebarOpen: true,
     notificationSound: true,
-    taskListsView: 'card',
-    taskListsCardSize: 'large',
+    tasksView: 'board',
+    taskSettings: {
+        stages: defaultStages,
+        categories: ['general', 'work', 'personal'],
+    },
     docsView: 'card',
     docsCardSize: 'large',
     meetingNotesView: 'card',
@@ -50,7 +61,6 @@ const defaultSettings: UserSettings = {
     bookmarksView: 'card',
     bookmarkCardSize: 'x-small',
     homeCardSize: 'large',
-    listViews: {},
     tableColumns: {},
     sidebarOrder: [],
     toolOrder: [],
@@ -99,6 +109,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetStyling(); // Reset before applying new styles
         if (doc.exists() && doc.data()) {
             const userSettings = { ...defaultSettings, ...doc.data() } as UserSettings;
+            if (!userSettings.taskSettings) { // Ensure taskSettings exist
+                userSettings.taskSettings = defaultSettings.taskSettings;
+            }
             setSettings(userSettings);
             
             body.classList.add(userSettings.theme);

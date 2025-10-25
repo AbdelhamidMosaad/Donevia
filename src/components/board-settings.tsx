@@ -7,21 +7,22 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Input } from './ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDocs, collection, addDoc, query, where, writeBatch } from 'firebase/firestore';
-import type { Stage, BoardTemplate } from '@/lib/types';
+import { doc, updateDoc, getDocs, collection, addDoc, query, where, writeBatch, setDoc } from 'firebase/firestore';
+import type { Stage, BoardTemplate, UserSettings } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
+import { useTasks } from '@/hooks/use-tasks';
 
 interface BoardSettingsProps {
-    listId: string;
     currentStages: Stage[];
 }
 
-export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
+export function BoardSettings({ currentStages }: BoardSettingsProps) {
     const { user } = useAuth();
     const { toast } = useToast();
+    const { updateStages: updateStagesInDb } = useTasks();
     const [open, setOpen] = useState(false);
     const [stages, setStages] = useState<Stage[]>([]);
     const [newStageName, setNewStageName] = useState('');
@@ -69,13 +70,13 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
         if (!result.destination) return;
         const items = Array.from(stages);
         const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
+        items.splice(destination.index, 0, reorderedItem);
         setStages(items.map((item, index) => ({ ...item, order: index })));
     };
     
     const handleSaveChanges = async () => {
         if (!user) return;
-        const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
+        const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
 
         const batch = writeBatch(db);
 
@@ -85,20 +86,26 @@ export function BoardSettings({ listId, currentStages }: BoardSettingsProps) {
         
         if (deletedStageIds.length > 0 && stages.length > 0) {
             const tasksRef = collection(db, 'users', user.uid, 'tasks');
-            const q = query(tasksRef, where('listId', '==', listId), where('status', 'in', deletedStageIds));
+            const q = query(tasksRef, where('status', 'in', deletedStageIds));
             const tasksToUpdateSnap = await getDocs(q);
             const firstStageId = stages[0].id;
             tasksToUpdateSnap.forEach(taskDoc => {
                 batch.update(taskDoc.ref, { status: firstStageId });
             });
         }
-
-        batch.update(listRef, { stages: stages.map(({ ...rest }, i) => ({...rest, order: i})) });
-
-        await batch.commit();
-
-        toast({ title: "Board settings saved!" });
-        setOpen(false);
+        
+        const finalStages = stages.map(({ ...rest }, i) => ({...rest, order: i}));
+        batch.set(settingsRef, { taskSettings: { stages: finalStages } }, { merge: true });
+        
+        try {
+            await batch.commit();
+            updateStagesInDb(finalStages); // Update local hook state
+            toast({ title: "Board settings saved!" });
+            setOpen(false);
+        } catch (e) {
+            console.error("Error saving board settings: ", e);
+            toast({ variant: 'destructive', title: 'Error saving settings.' });
+        }
     };
     
     const handleSaveAsTemplate = async () => {

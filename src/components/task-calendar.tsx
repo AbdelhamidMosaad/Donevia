@@ -73,12 +73,12 @@ const CustomEvent = ({ event }: EventProps<Task>) => {
 interface DayCellWrapperProps {
     children: React.ReactNode;
     value: Date;
-    listId: string;
 }
 
-const DayCellWrapper = ({ children, value, listId }: DayCellWrapperProps) => {
+const DayCellWrapper = ({ children, value }: DayCellWrapperProps) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const { addTask, updateTask } = useTasks(listId);
+    const { addTask, updateTask } = useTasks();
+    const categories = useAuth().settings.taskSettings?.categories || [];
 
     const handleOpenDialog = (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).classList.contains('rbc-day-bg')) {
@@ -88,12 +88,12 @@ const DayCellWrapper = ({ children, value, listId }: DayCellWrapperProps) => {
     
     return (
       <AddTaskDialog 
-        listId={listId} 
         defaultDueDate={value} 
         open={isDialogOpen} 
         onOpenChange={setIsDialogOpen} 
         onTaskAdded={addTask}
         onTaskUpdated={updateTask}
+        categories={categories}
       >
         <div className="relative h-full" onClick={handleOpenDialog}>
             {children}
@@ -103,12 +103,11 @@ const DayCellWrapper = ({ children, value, listId }: DayCellWrapperProps) => {
 };
 
 interface TaskCalendarProps {
-    listId: string;
     tasks: Task[];
     onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
 }
 
-export function TaskCalendar({ listId, tasks, onUpdateTask }: TaskCalendarProps) {
+export function TaskCalendar({ tasks, onUpdateTask }: TaskCalendarProps) {
   const [events, setEvents] = useState<Task[]>([]);
   const [view, setView] = useState<keyof typeof Views>(Views.MONTH);
   const [date, setDate] = useState(new Date());
@@ -172,13 +171,13 @@ export function TaskCalendar({ listId, tasks, onUpdateTask }: TaskCalendarProps)
                     </div>
                 );
             },
-            dayWrapper: (props) => <DayCellWrapper {...props} listId={listId} />,
+            dayWrapper: (props) => <DayCellWrapper {...props} />,
           },
           week: {
-             dayWrapper: (props) => <DayCellWrapper {...props} listId={listId} />,
+             dayWrapper: (props) => <DayCellWrapper {...props} />,
           },
           day: {
-             dayWrapper: (props) => <DayCellWrapper {...props} listId={listId} />,
+             dayWrapper: (props) => <DayCellWrapper {...props} />,
           }
         }}
       />

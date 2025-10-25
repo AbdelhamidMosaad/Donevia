@@ -9,40 +9,35 @@ import {
   doc,
   where,
   Timestamp,
+  setDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from './use-auth';
-import type { Task, Stage } from '@/lib/types';
+import type { Task, Stage, UserSettings } from '@/lib/types';
 import { addTaskToDb, updateTaskInDb, deleteTaskFromDb } from '@/lib/tasks';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from './use-toast';
 
-export function useTasks(listId: string) {
-  const { user } = useAuth();
+export function useTasks() {
+  const { user, settings } = useAuth();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Fetch stages for the current list
+  // Fetch stages from settings
   useEffect(() => {
-    if (user && listId) {
-      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-      const unsubscribe = onSnapshot(listRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const listData = docSnap.data();
-          setStages(listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || []);
-        }
-      });
-      return () => unsubscribe();
+    if (settings.taskSettings?.stages) {
+      setStages(settings.taskSettings.stages.sort((a,b) => a.order - b.order));
     }
-  }, [user, listId]);
+  }, [settings.taskSettings]);
 
-  // Fetch tasks for the current list
+  // Fetch all tasks for the user
   useEffect(() => {
-    if (user && listId) {
+    if (user) {
       setIsLoading(true);
-      const q = query(collection(db, 'users', user.uid, 'tasks'), where('listId', '==', listId));
+      const q = query(collection(db, 'users', user.uid, 'tasks'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)).filter(task => !task.deleted);
         setTasks(tasksData);
@@ -54,7 +49,7 @@ export function useTasks(listId: string) {
       });
       return () => unsubscribe();
     }
-  }, [user, listId, toast]);
+  }, [user, toast]);
 
   const addTask = useCallback(async (newTaskData: Omit<Task, 'id'|'createdAt'|'updatedAt'|'ownerId'>) => {
     if (!user) return;
@@ -74,9 +69,8 @@ export function useTasks(listId: string) {
 
     try {
         const docRef = await addTaskToDb(user.uid, newTaskData);
-        // Replace temp task with real one from Firestore if needed for other operations
         // This part is tricky; often the onSnapshot listener handles this automatically.
-        // For now, we assume the snapshot will update the UI correctly.
+        // We'll rely on the snapshot listener to update the UI with the final task.
     } catch (e) {
         // Revert optimistic update on failure
         setTasks(prev => prev.filter(t => t.id !== tempId));
@@ -101,6 +95,11 @@ export function useTasks(listId: string) {
         console.error(e);
     }
   }, [user, tasks, toast]);
+  
+  const updateStages = useCallback(async (newStages: Stage[]) => {
+      setStages(newStages); // Optimistic update
+      // The saving logic is handled in BoardSettings component
+  }, []);
 
   const deleteTask = useCallback(async (taskId: string) => {
     if (!user) return;
@@ -118,24 +117,6 @@ export function useTasks(listId: string) {
         console.error(e);
     }
   }, [user, tasks, toast]);
-  
-  const tasksByStage = useMemo(() => {
-    const initial: Record<string, Task[]> = {};
-    stages.forEach(stage => initial[stage.id] = []);
-    return tasks.reduce((acc, task) => {
-      const stageId = task.status;
-      if (acc[stageId]) {
-        acc[stageId].push(task);
-      } else if (!acc['uncategorized']) {
-        // Handle tasks with a status that no longer exists
-        acc['uncategorized'] = [task];
-      } else {
-        acc['uncategorized'].push(task);
-      }
-      return acc;
-    }, initial);
-  }, [tasks, stages]);
 
-
-  return { tasks, stages, isLoading, addTask, updateTask, deleteTask, tasksByStage };
+  return { tasks, stages, isLoading, addTask, updateTask, deleteTask, updateStages };
 }

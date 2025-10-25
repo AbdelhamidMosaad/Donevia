@@ -12,7 +12,6 @@ import { Card } from './ui/card';
 import { useTasks } from '@/hooks/use-tasks';
 
 interface BoardTaskCreatorProps {
-    listId: string;
     stageId: string;
 }
 
@@ -33,8 +32,8 @@ const cardColors = [
 
 const getRandomColor = () => cardColors[Math.floor(Math.random() * cardColors.length)];
 
-export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
-    const { addTask } = useTasks(listId);
+export function BoardTaskCreator({ stageId }: BoardTaskCreatorProps) {
+    const { addTask } = useTasks();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState('');
     const { user } = useAuth();
@@ -59,7 +58,6 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
         try {
             await addTask({
                 title: title.trim(),
-                listId,
                 status: stageId,
                 priority: 'Medium',
                 dueDate: Timestamp.now(),
@@ -67,6 +65,7 @@ export function BoardTaskCreator({ listId, stageId }: BoardTaskCreatorProps) {
                 ownerId: user.uid,
                 color: getRandomColor(),
                 deleted: false,
+                category: 'general',
             });
             setTitle(''); // Reset for next task
             document.getElementById(`task-creator-input-${stageId}`)?.focus();

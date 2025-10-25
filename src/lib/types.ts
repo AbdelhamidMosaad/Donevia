@@ -40,9 +40,9 @@ export const TaskSchema = z.object({
     status: z.string(), // Customizable stage name
     priority: z.enum(['Low', 'Medium', 'High']),
     dueDate: FirebaseTimestampSchema,
-    tags: z.array(z.string()),
+    tags: z.array(z.string()).optional(),
+    category: z.string().optional(), // New category field
     createdAt: FirebaseTimestampSchema.optional(),
-    listId: z.string(),
     ownerId: z.string(),
     reminder: z.enum(['none', '5m', '10m', '30m', '1h']).optional(),
     color: z.string().optional(),
@@ -272,6 +272,11 @@ export interface UserSettings {
     bookmarkCardSize?: 'x-small' |'small' | 'large';
     homeCardSize?: 'small' | 'medium' | 'large';
     listViews?: { [listId: string]: 'board' | 'list' | 'table' | 'calendar' };
+    tasksView?: 'board' | 'list' | 'table' | 'calendar' | 'analytics';
+    taskSettings?: {
+        stages: Stage[];
+        categories: string[];
+    };
     tableColumns?: { [listId: string]: string[] };
     sidebarOrder?: string[];
     toolOrder?: string[];

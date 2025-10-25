@@ -35,39 +35,40 @@ const priorityColors = {
 };
 
 interface TaskTableProps {
-    listId: string;
     tasks: Task[];
     stages: Stage[];
 }
 
-type Column = 'title' | 'status' | 'priority' | 'dueDate' | 'tags' | 'createdAt';
+type Column = 'title' | 'status' | 'priority' | 'dueDate' | 'tags' | 'createdAt' | 'category';
 
 const allColumns: { id: Column; label: string }[] = [
     { id: 'title', label: 'Task' },
     { id: 'status', label: 'Status' },
     { id: 'priority', label: 'Priority' },
     { id: 'dueDate', label: 'Due Date' },
+    { id: 'category', label: 'Category' },
     { id: 'tags', label: 'Tags' },
     { id: 'createdAt', label: 'Created At' },
 ];
 
-export function TaskTable({ listId, tasks, stages }: TaskTableProps) {
+export function TaskTable({ tasks, stages }: TaskTableProps) {
   const { user } = useAuth();
-  const [visibleColumns, setVisibleColumns] = useState<Column[]>(['title', 'status', 'priority', 'dueDate']);
+  const [visibleColumns, setVisibleColumns] = useState<Column[]>(['title', 'status', 'priority', 'dueDate', 'category']);
 
   useEffect(() => {
-    if (user && listId) {
+    if (user) {
       const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
       getDoc(settingsRef).then(docSnap => {
         if (docSnap.exists()) {
           const tableColumns = docSnap.data().tableColumns || {};
-          if (tableColumns[listId]) {
-            setVisibleColumns(tableColumns[listId]);
+          // Using a generic key 'tasks' since lists are removed
+          if (tableColumns['tasks']) {
+            setVisibleColumns(tableColumns['tasks']);
           }
         }
       });
     }
-  }, [user, listId]);
+  }, [user]);
 
   const getStageName = (statusId: string) => {
       return stages.find(s => s.id === statusId)?.name || statusId;
@@ -84,7 +85,7 @@ export function TaskTable({ listId, tasks, stages }: TaskTableProps) {
         const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
         await setDoc(settingsRef, {
             tableColumns: {
-                [listId]: newVisibleColumns
+                tasks: newVisibleColumns // Using a generic key 'tasks'
             }
         }, { merge: true });
     }
@@ -143,7 +144,7 @@ export function TaskTable({ listId, tasks, stages }: TaskTableProps) {
                  <TableCell key={column.id}>
                     {column.id === 'title' && <span className="font-medium">{task.title}</span>}
                     {column.id === 'status' && (
-                        <Badge variant={task.status === doneStageId ? 'default' : 'secondary'} className={task.status === doneStageId ? 'bg-green-600/80 text-primary-foreground' : ''}>
+                        <Badge variant={task.status === doneStageId ? 'default' : 'secondary'} className={task.status === doneStageId ? 'bg-green-500' : ''}>
                             {getStageName(task.status)}
                         </Badge>
                     )}
@@ -154,6 +155,7 @@ export function TaskTable({ listId, tasks, stages }: TaskTableProps) {
                         </div>
                     )}
                     {column.id === 'dueDate' && task.dueDate && moment(task.dueDate.toDate()).format('MMM D, YYYY')}
+                    {column.id === 'category' && task.category && <Badge variant="outline" className="capitalize">{task.category}</Badge>}
                     {column.id === 'tags' && task.tags?.join(', ')}
                     {column.id === 'createdAt' && task.createdAt && moment(task.createdAt.toDate()).format('MMM D, YYYY')}
                  </TableCell>

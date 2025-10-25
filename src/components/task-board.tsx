@@ -15,13 +15,12 @@ import { cn } from '@/lib/utils';
 import { useTasks } from '@/hooks/use-tasks';
 
 interface TaskBoardProps {
-  listId: string;
 }
 
-export function TaskBoard({ listId }: TaskBoardProps) {
+export function TaskBoard({}: TaskBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { tasks, stages: allStages, isLoading, updateTask: updateTaskInDb, updateStages: updateStagesInDb } = useTasks(listId);
+  const { tasks, stages: allStages, isLoading, updateTask: updateTaskInDb, updateStages: updateStagesInDb } = useTasks();
   const [stages, setStages] = useState<Stage[]>(allStages);
 
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
@@ -31,15 +30,15 @@ export function TaskBoard({ listId }: TaskBoardProps) {
   }, [allStages]);
 
   useEffect(() => {
-      const storedCollapsedState = localStorage.getItem(`collapsed-stages-${listId}`);
+      const storedCollapsedState = localStorage.getItem(`collapsed-stages-global`);
       if (storedCollapsedState) {
           setCollapsedStages(JSON.parse(storedCollapsedState));
       }
-  }, [listId]);
+  }, []);
 
   const updateCollapsedState = (newState: Record<string, boolean>) => {
       setCollapsedStages(newState);
-      localStorage.setItem(`collapsed-stages-${listId}`, JSON.stringify(newState));
+      localStorage.setItem(`collapsed-stages-global`, JSON.stringify(newState));
   }
 
   const toggleCollapseStage = (stageId: string) => {
@@ -194,7 +193,7 @@ export function TaskBoard({ listId }: TaskBoardProps) {
                                             </div>
                                         </div>
                                         <div className="p-1 border-t mt-auto">
-                                          <BoardTaskCreator listId={listId} stageId={stage.id} />
+                                          <BoardTaskCreator stageId={stage.id} />
                                         </div>
                                         </>
                                     )}

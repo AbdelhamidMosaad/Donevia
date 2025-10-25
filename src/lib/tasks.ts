@@ -48,30 +48,3 @@ export const deleteTaskFromDb = async (userId: string, taskId: string) => {
     // Soft delete can be re-introduced if a trash/archive feature is needed.
     return await deleteDoc(taskRef);
 };
-
-export const deleteTaskList = async (userId: string, listId: string) => {
-    const batch = writeBatch(db);
-    const listRef = doc(db, 'users', userId, 'taskLists', listId);
-    batch.delete(listRef);
-
-    const tasksQuery = query(collection(db, 'users', userId, 'tasks'), where('listId', '==', listId));
-    const tasksSnapshot = await getDocs(tasksQuery);
-    tasksSnapshot.forEach(taskDoc => batch.delete(taskDoc.ref));
-
-    await batch.commit();
-}
-
-export const deleteTaskFolder = async (userId: string, folderId: string) => {
-    const batch = writeBatch(db);
-    const folderRef = doc(db, 'users', userId, 'taskFolders', folderId);
-    batch.delete(folderRef);
-
-    // Find lists in this folder and move them to root
-    const listsQuery = query(collection(db, 'users', userId, 'taskLists'), where('folderId', '==', folderId));
-    const listsSnapshot = await getDocs(listsQuery);
-    listsSnapshot.forEach((doc) => {
-        batch.update(doc.ref, { folderId: null });
-    });
-
-    return await batch.commit();
-}

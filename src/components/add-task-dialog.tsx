@@ -26,16 +26,17 @@ import { DialogTrigger } from './ui/dialog';
 import { PlusCircle, Trash2, Save, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from './ui/checkbox';
+import { useTasks } from '@/hooks/use-tasks';
 
 interface AddTaskDialogProps {
   children?: ReactNode;
-  listId: string;
   task?: Task | null;
-  onTaskAdded?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'deleted'>) => void;
+  onTaskAdded?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => void;
   onTaskUpdated?: (id: string, updates: Partial<Task>) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   defaultDueDate?: Date;
+  categories: string[];
 }
 
 const cardColors = [
@@ -57,19 +58,19 @@ const getRandomColor = () => cardColors[Math.floor(Math.random() * cardColors.le
 
 export function AddTaskDialog({
   children,
-  listId,
   task,
   onTaskAdded,
   onTaskUpdated,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
   defaultDueDate,
+  categories,
 }: AddTaskDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [stages, setStages] = useState<Stage[]>([]);
+  const { stages } = useTasks();
 
   const isEditMode = !!task;
   const open = controlledOpen ?? internalOpen;
@@ -85,6 +86,7 @@ export function AddTaskDialog({
   const [color, setColor] = useState<string | undefined>(task?.color);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [category, setCategory] = useState<string>('');
 
   const resetForm = () => {
     setTitle('');
@@ -95,6 +97,7 @@ export function AddTaskDialog({
     setReminder('none');
     setColor(getRandomColor());
     setSubtasks([]);
+    setCategory(categories[0] || 'general');
     if (stages.length > 0) {
       setStatus(stages[0].id);
     } else {
@@ -103,21 +106,10 @@ export function AddTaskDialog({
   }
 
   useEffect(() => {
-    if (user && listId) {
-      const listRef = doc(db, 'users', user.uid, 'taskLists', listId);
-      const unsubscribe = onSnapshot(listRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const listData = docSnap.data();
-          const listStages = listData.stages?.sort((a: Stage, b: Stage) => a.order - b.order) || [];
-          setStages(listStages);
-          if (!isEditMode && listStages.length > 0) {
-            setStatus(listStages[0].id);
-          }
-        }
-      });
-      return () => unsubscribe();
+    if (stages.length > 0 && !status) {
+        setStatus(stages[0].id);
     }
-  }, [user, listId, isEditMode]);
+  }, [stages, status]);
 
   useEffect(() => {
     if (open) {
@@ -131,13 +123,14 @@ export function AddTaskDialog({
         setReminder(task.reminder || 'none');
         setColor(task.color);
         setSubtasks(task.subtasks || []);
+        setCategory(task.category || 'general');
       } else {
         resetForm();
       }
     } else {
       resetForm();
     }
-  }, [open, task, isEditMode, stages, defaultDueDate]);
+  }, [open, task, isEditMode, stages, defaultDueDate, categories]);
 
   const handleAddSubtask = () => {
     if (!newSubtaskTitle.trim()) return;
@@ -179,8 +172,8 @@ export function AddTaskDialog({
         reminder,
         color,
         subtasks,
+        category,
         tags: task?.tags || [],
-        listId,
         deleted: false,
     };
 
@@ -272,6 +265,17 @@ export function AddTaskDialog({
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dueDate" className="text-right">Due Date</Label>
             <Input id="dueDate" type="date" value={moment(dueDate).format('YYYY-MM-DD')} onChange={(e) => setDueDate(new Date(e.target.value))} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="category" className="text-right">Category</Label>
+            <Select onValueChange={setCategory} value={category}>
+              <SelectTrigger className="col-span-3 capitalize"><SelectValue placeholder="Select a category"/></SelectTrigger>
+              <SelectContent>
+                {categories.map(cat => (
+                    <SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="priority" className="text-right">Priority</Label>
