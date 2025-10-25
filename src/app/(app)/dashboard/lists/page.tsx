@@ -186,7 +186,7 @@ export default function TaskListsPage() {
       case 'list':
         return <TaskList tasks={filteredTasks} stages={stages} onDeleteTask={deleteTask} onUpdateTask={updateTask} />;
       case 'board':
-        return <TaskBoard listId="all-tasks" />; // Using a dummy listId since it's global now
+        return <TaskBoard />; // Using a dummy listId since it's global now
       case 'table':
         return <TaskTable tasks={filteredTasks} stages={stages} />;
       case 'calendar':
@@ -220,31 +220,43 @@ export default function TaskListsPage() {
       <div className="flex flex-wrap items-center gap-2 mb-4">
           {allCategories.map(category => {
               const isCustom = !DEFAULT_CATEGORIES.includes(category) && category !== 'all';
+              if (isCustom) {
+                  return (
+                    <div key={category} className="inline-flex">
+                      <Button
+                        variant={activeCategory === category ? 'default' : 'outline'}
+                        onClick={() => setActiveCategory(category)}
+                        className="capitalize rounded-r-none"
+                      >
+                        {category}
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant={activeCategory === category ? 'default' : 'outline'} size="icon" className="h-full w-8 rounded-l-none border-l-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onSelect={() => {setCategoryToRename(category); setRenamedCategory(category); setIsRenameCategoryOpen(true);}}>
+                            <Edit className="mr-2 h-4 w-4"/> Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => setCategoryToDelete(category)} className="text-destructive focus:text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4"/> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )
+              }
               return (
-                <div key={category}>
-                    <Button
-                      variant={activeCategory === category ? 'default' : 'outline'}
-                      onClick={() => setActiveCategory(category)}
-                      className="capitalize"
-                    >
-                      {category}
-                      {isCustom && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 -mr-2" onClick={e=>e.stopPropagation()}><MoreHorizontal className="h-4 w-4"/></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem onSelect={() => {setCategoryToRename(category); setRenamedCategory(category); setIsRenameCategoryOpen(true);}}>
-                                   <Edit className="mr-2 h-4 w-4"/> Rename
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setCategoryToDelete(category)} className="text-destructive focus:text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4"/> Delete
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </Button>
-                </div>
+                  <Button
+                    key={category}
+                    variant={activeCategory === category ? 'default' : 'outline'}
+                    onClick={() => setActiveCategory(category)}
+                    className="capitalize"
+                  >
+                    {category}
+                  </Button>
               );
           })}
            <Button variant="outline" size="sm" onClick={() => setIsAddCategoryOpen(true)}>
