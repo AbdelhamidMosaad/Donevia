@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table, Loader2, BarChart3, FolderPlus, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, LayoutGrid, List, Table, Loader2, BarChart3, FolderPlus, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { TaskCalendar } from '@/components/task-calendar';
 import { TaskList } from '@/components/task-list';
 import { TaskBoard } from '@/components/task-board';
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 type View = 'board' | 'list' | 'table' | 'calendar' | 'analytics';
 const DEFAULT_CATEGORIES = ['general', 'work', 'personal'];
@@ -39,7 +40,7 @@ const DEFAULT_CATEGORIES = ['general', 'work', 'personal'];
 export default function TaskListsPage() {
   const { user, settings, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { tasks, stages, addTask, updateTask, deleteTask, isLoading: tasksLoading } = useTasks();
+  const { tasks, stages, addTask, updateTask, deleteTask, isLoading: tasksLoading, categories } = useTasks();
   const { toast } = useToast();
 
   const [view, setView] = useState<View>('board');
@@ -187,9 +188,9 @@ export default function TaskListsPage() {
       case 'board':
         return <TaskBoard listId="all-tasks" />; // Using a dummy listId since it's global now
       case 'table':
-        return <TaskTable listId="all-tasks" tasks={filteredTasks} stages={stages} />;
+        return <TaskTable tasks={filteredTasks} stages={stages} />;
       case 'calendar':
-        return <TaskCalendar listId="all-tasks" tasks={filteredTasks} onUpdateTask={updateTask} />;
+        return <TaskCalendar tasks={filteredTasks} onUpdateTask={updateTask} />;
       case 'analytics':
         return <AnalyticsDashboard tasks={filteredTasks} stages={stages} />;
     }
