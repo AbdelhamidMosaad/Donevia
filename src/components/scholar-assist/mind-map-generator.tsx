@@ -14,6 +14,7 @@ import { addMindMap, updateMindMap } from '@/lib/mind-maps';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import type { MindMapNode } from '@/lib/types';
+import jsPDF from 'jspdf';
 
 
 interface MindMapGeneratorProps {
@@ -23,7 +24,7 @@ interface MindMapGeneratorProps {
 
 const colors = ['#8b5cf6', '#3b82f6', '#14b8a6', '#f97316', '#ef4444'];
 
-const MindMapVisualizer = ({ data }: { data: MindMapResponse }) => {
+const MindMapVisualizer = ({ data, onExportPDF }: { data: MindMapResponse, onExportPDF: (canvas: HTMLCanvasElement) => void }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -46,7 +47,7 @@ const MindMapVisualizer = ({ data }: { data: MindMapResponse }) => {
         const nodeWidth = 150;
         const nodeHeight = 40;
         const horizontalGap = 80;
-        const verticalGap = 20;
+        const verticalGap = 40;
 
         const drawNode = (node: { text: string, x: number, y: number, color: string, children: any[] }, isRoot = false) => {
             ctx.fillStyle = node.color;
@@ -65,7 +66,6 @@ const MindMapVisualizer = ({ data }: { data: MindMapResponse }) => {
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(from.x, from.y);
-            // Create a simple curve
             ctx.bezierCurveTo(from.x + horizontalGap / 2, from.y, to.x - horizontalGap / 2, to.y, to.x, to.y);
             ctx.stroke();
         };
@@ -73,25 +73,11 @@ const MindMapVisualizer = ({ data }: { data: MindMapResponse }) => {
         const rootNode = { text: data.centralTopic, x: 0, y: 0, color: colors[0], children: data.mainBranches };
         drawNode(rootNode, true);
         
-        const calculateTotalHeight = (nodes: any[]): number => {
-            let height = nodes.length * nodeHeight;
-            if (nodes.length > 1) {
-                height += (nodes.length - 1) * verticalGap;
-            }
-            nodes.forEach(node => {
-                if (node.children && node.children.length > 0) {
-                    height += calculateTotalHeight(node.children) - nodeHeight;
-                }
-            });
-            return height;
-        }
-
-        const layoutChildren = (children: any[], parentX: number, parentY: number, currentY: number, depth: number) => {
-            let y = currentY;
-            children.forEach(child => {
-                const childHeight = calculateTotalHeight(child.children || []) || nodeHeight;
-                const childX = parentX + nodeWidth / 2 + horizontalGap + nodeWidth / 2;
-                const childY = y + childHeight / 2 - (children.length > 1 ? (calculateTotalHeight(children) / 2) : 0) + (nodeHeight / children.length) ;
+        const layoutChildren = (children: any[], parentX: number, parentY: number, startAngle: number, angleSpan: number, radius: number, depth: number) => {
+            children.forEach((child, index) => {
+                const angle = startAngle + (index / children.length) * angleSpan;
+                const childX = parentX + Math.cos(angle) * radius;
+                const childY = parentY + Math.sin(angle) * radius;
 
                 const childNode = {
                     text: child.text,
@@ -101,36 +87,16 @@ const MindMapVisualizer = ({ data }: { data: MindMapResponse }) => {
                     children: child.children || []
                 };
 
-                drawLine({ x: parentX, y: parentY }, { x: childX - nodeWidth/2, y: childY });
+                drawLine({ x: parentX, y: parentY }, { x: childX, y: childY });
                 drawNode(childNode);
                 
                 if (child.children && child.children.length > 0) {
-                     layoutChildren(child.children, childX, childY, y, depth + 1);
+                     layoutChildren(child.children, childX, childY, angle - (Math.PI / 4), Math.PI / 2, radius * 0.8, depth + 1);
                 }
-                
-                y += childHeight + verticalGap;
             });
         };
         
-        const totalHeight = calculateTotalHeight(data.mainBranches);
-        let startY = -totalHeight / 2;
-
-        data.mainBranches.forEach(branch => {
-            const branchHeight = calculateTotalHeight(branch.children || []) || nodeHeight;
-            const branchX = rootNode.x + nodeWidth / 2 + horizontalGap + nodeWidth / 2;
-            const branchY = startY + branchHeight / 2;
-            
-            const branchNode = { text: branch.text, x: branchX, y: branchY, color: colors[1], children: branch.children || [] };
-
-            drawLine(rootNode, {x: branchX - nodeWidth/2, y: branchY});
-            drawNode(branchNode);
-
-            if (branch.children && branch.children.length > 0) {
-                layoutChildren(branch.children, branchX, branchY, startY, 2);
-            }
-            
-            startY += branchHeight + verticalGap;
-        });
+        layoutChildren(data.mainBranches, 0, 0, -Math.PI / 2, Math.PI * 2, 250, 1);
         
         ctx.restore();
     }, [data, zoom, pan]);
@@ -147,6 +113,7 @@ const MindMapVisualizer = ({ data }: { data: MindMapResponse }) => {
                 <Button variant="outline" size="icon" onClick={() => setZoom(z => z * 1.2)}><ZoomIn/></Button>
                 <Button variant="outline" size="icon" onClick={() => setZoom(z => z / 1.2)}><ZoomOut/></Button>
                 <Button variant="outline" size="icon" onClick={() => { setZoom(1); setPan({x:0, y:0})}}><Maximize/></Button>
+                <Button variant="outline" size="icon" onClick={() => onExportPDF(canvasRef.current!)}><Download/></Button>
             </div>
         </div>
     )
@@ -170,6 +137,27 @@ export function MindMapGenerator({ result, setResult }: MindMapGeneratorProps) {
       toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleExportPDF = (canvas: HTMLCanvasElement) => {
+    if (!canvas) {
+        toast({ variant: 'destructive', title: 'Canvas not ready for export.'});
+        return;
+    };
+    
+    try {
+        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+        const pdf = new jsPDF({
+            orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
+        pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`${result?.centralTopic || 'mind-map'}.pdf`);
+        toast({ title: 'Exporting as PDF...' });
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'PDF export failed.' });
     }
   };
   
@@ -251,7 +239,7 @@ export function MindMapGenerator({ result, setResult }: MindMapGeneratorProps) {
       return (
         <Card className="flex-1 flex flex-col h-full">
             <CardHeader><CardTitle>{result.centralTopic}</CardTitle></CardHeader>
-            <CardContent className="flex-1 min-h-0"><MindMapVisualizer data={result} /></CardContent>
+            <CardContent className="flex-1 min-h-0"><MindMapVisualizer data={result} onExportPDF={handleExportPDF} /></CardContent>
             <CardFooter className="justify-end gap-2">
                 <Button variant="outline" onClick={() => setResult(null)}>Generate New</Button>
                 <Button onClick={handleSaveMindMap} disabled={isSaving}>
