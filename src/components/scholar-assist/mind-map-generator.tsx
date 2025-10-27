@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
@@ -9,7 +10,7 @@ import { Button } from '../ui/button';
 import { Loader2, Download, Save, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import type { MindMapResponse, MindMapNode as ResponseNode } from '@/lib/types/mindmap-generator';
 import { generateMindMap } from '@/ai/flows/mind-map-flow';
-import { addMindMap } from '@/lib/mind-maps';
+import { addMindMap, updateMindMap } from '@/lib/mind-maps';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import type { MindMapNode } from '@/lib/types';
