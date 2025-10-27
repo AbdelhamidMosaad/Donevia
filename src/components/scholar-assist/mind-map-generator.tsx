@@ -34,24 +34,30 @@ const MindMapVisualizer = ({ data }: { data: MindMapResponse }) => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+        canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+        canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
-        ctx.translate(canvas.width / 2 + pan.x, canvas.height / 2 + pan.y);
+        ctx.translate(canvas.offsetWidth / 2 + pan.x, canvas.offsetHeight / 2 + pan.y);
         ctx.scale(zoom, zoom);
+
+        const nodeWidth = 150;
+        const nodeHeight = 40;
+        const horizontalGap = 80;
+        const verticalGap = 20;
 
         const drawNode = (node: { text: string, x: number, y: number, color: string, children: any[] }, isRoot = false) => {
             ctx.fillStyle = node.color;
             ctx.beginPath();
-            ctx.roundRect(node.x - 75, node.y - 20, 150, 40, 10);
+            ctx.roundRect(node.x - nodeWidth / 2, node.y - nodeHeight / 2, nodeWidth, nodeHeight, 10);
             ctx.fill();
             ctx.fillStyle = 'white';
             ctx.font = `${isRoot ? 'bold ' : ''}14px Poppins`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(node.text, node.x, node.y);
+            ctx.fillText(node.text, node.x, node.y, nodeWidth - 10);
         };
 
         const drawLine = (from: {x:number, y:number}, to: {x:number, y:number}) => {
@@ -59,39 +65,76 @@ const MindMapVisualizer = ({ data }: { data: MindMapResponse }) => {
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(from.x, from.y);
-            ctx.lineTo(to.x, to.y);
+            // Create a simple curve
+            ctx.bezierCurveTo(from.x + horizontalGap / 2, from.y, to.x - horizontalGap / 2, to.y, to.x, to.y);
             ctx.stroke();
         };
-        
+
         const rootNode = { text: data.centralTopic, x: 0, y: 0, color: colors[0], children: data.mainBranches };
         drawNode(rootNode, true);
-
-        const drawnPositions = new Set<string>();
-
-        const traverse = (node: { text: string, x: number, y: number, color: string, children: any[] }, angleOffset: number, radius: number, depth: number) => {
-            node.children.forEach((child, index) => {
-                const angle = angleOffset + (index / node.children.length) * (Math.PI * 1.5) - (Math.PI / 2) * 1.5 / 2;
-                
-                const childX = node.x + Math.cos(angle) * radius;
-                const childY = node.y + Math.sin(angle) * radius;
-
-                if (drawnPositions.has(`${childX},${childY}`)) return;
-                drawnPositions.add(`${childX},${childY}`);
-                
-                const childNode = { text: child.text, x: childX, y: childY, color: colors[depth % colors.length], children: child.children || [] };
-
-                drawLine(node, childNode);
-                drawNode(childNode);
-
-                if (child.children) {
-                    traverse(childNode, angle - Math.PI / 4, radius * 0.7, depth + 1);
+        
+        const calculateTotalHeight = (nodes: any[]): number => {
+            let height = nodes.length * nodeHeight;
+            if (nodes.length > 1) {
+                height += (nodes.length - 1) * verticalGap;
+            }
+            nodes.forEach(node => {
+                if (node.children && node.children.length > 0) {
+                    height += calculateTotalHeight(node.children) - nodeHeight;
                 }
             });
-        };
+            return height;
+        }
 
-        traverse(rootNode, 0, 250, 1);
+        const layoutChildren = (children: any[], parentX: number, parentY: number, currentY: number, depth: number) => {
+            let y = currentY;
+            children.forEach(child => {
+                const childHeight = calculateTotalHeight(child.children || []) || nodeHeight;
+                const childX = parentX + nodeWidth / 2 + horizontalGap + nodeWidth / 2;
+                const childY = y + childHeight / 2 - (children.length > 1 ? (calculateTotalHeight(children) / 2) : 0) + (nodeHeight / children.length) ;
+
+                const childNode = {
+                    text: child.text,
+                    x: childX,
+                    y: childY,
+                    color: colors[depth % colors.length],
+                    children: child.children || []
+                };
+
+                drawLine({ x: parentX, y: parentY }, { x: childX - nodeWidth/2, y: childY });
+                drawNode(childNode);
+                
+                if (child.children && child.children.length > 0) {
+                     layoutChildren(child.children, childX, childY, y, depth + 1);
+                }
+                
+                y += childHeight + verticalGap;
+            });
+        };
+        
+        const totalHeight = calculateTotalHeight(data.mainBranches);
+        let startY = -totalHeight / 2;
+
+        data.mainBranches.forEach(branch => {
+            const branchHeight = calculateTotalHeight(branch.children || []) || nodeHeight;
+            const branchX = rootNode.x + nodeWidth / 2 + horizontalGap + nodeWidth / 2;
+            const branchY = startY + branchHeight / 2;
+            
+            const branchNode = { text: branch.text, x: branchX, y: branchY, color: colors[1], children: branch.children || [] };
+
+            drawLine(rootNode, {x: branchX - nodeWidth/2, y: branchY});
+            drawNode(branchNode);
+
+            if (branch.children && branch.children.length > 0) {
+                layoutChildren(branch.children, branchX, branchY, startY, 2);
+            }
+            
+            startY += branchHeight + verticalGap;
+        });
+        
         ctx.restore();
     }, [data, zoom, pan]);
+
 
     useEffect(() => {
         drawMindMap();
