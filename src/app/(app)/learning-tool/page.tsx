@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -6,15 +5,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LectureNotesGenerator } from '@/components/scholar-assist/lecture-notes-generator';
 import { QuizGenerator } from '@/components/scholar-assist/quiz-generator';
 import { FlashcardGenerator } from '@/components/scholar-assist/flashcard-generator';
-import { FileText, HelpCircle, Layers, Save } from 'lucide-react';
+import { MindMapGenerator } from '@/components/scholar-assist/mind-map-generator';
+import { FileText, HelpCircle, Layers, Save, GitBranch } from 'lucide-react';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { SavedQuizzes } from '@/components/scholar-assist/saved-quizzes';
 import type { StudyMaterialResponse } from '@/lib/types';
+import type { MindMapResponse } from '@/lib/types/mindmap-generator';
 
 export default function LearningToolPage() {
   const [notesResult, setNotesResult] = useState<StudyMaterialResponse | null>(null);
   const [quizResult, setQuizResult] = useState<StudyMaterialResponse | null>(null);
   const [flashcardsResult, setFlashcardsResult] = useState<StudyMaterialResponse | null>(null);
+  const [mindMapResult, setMindMapResult] = useState<MindMapResponse | null>(null);
 
   return (
     <div className="flex flex-col h-full gap-6">
@@ -46,6 +48,10 @@ export default function LearningToolPage() {
             <Layers className="mr-2 h-4 w-4" />
             Flashcards
           </TabsTrigger>
+          <TabsTrigger value="mindmap">
+            <GitBranch className="mr-2 h-4 w-4" />
+            Mind Map
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="notes" className="flex-1 mt-4">
@@ -59,6 +65,9 @@ export default function LearningToolPage() {
         </TabsContent>
         <TabsContent value="flashcards" className="flex-1 mt-4">
             <FlashcardGenerator result={flashcardsResult} setResult={setFlashcardsResult} />
+        </TabsContent>
+         <TabsContent value="mindmap" className="flex-1 mt-4">
+            <MindMapGenerator result={mindMapResult} setResult={setMindMapResult} />
         </TabsContent>
       </Tabs>
     </div>
