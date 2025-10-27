@@ -2,10 +2,11 @@
 import type {Metadata} from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
-import { Poppins, Inter, Roboto, Open_Sans, Lato, Source_Sans_3, Nunito, Montserrat, Playfair_Display, JetBrains_Mono } from 'next/font/google';
+import { Poppins, Inter, Roboto, Open_Sans, Lato, Source_Sans_3, Nunito, Montserrat, Playfair_Display, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import { AuthProvider } from '@/hooks/use-auth-provider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const space_grotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' });
 const roboto = Roboto({ weight: ['400', '500', '700'], subsets: ['latin'], variable: '--font-roboto' });
 const openSans = Open_Sans({ subsets: ['latin'], variable: '--font-open-sans' });
 const lato = Lato({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-lato' });
@@ -31,9 +32,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
        <head>
-        <meta name="theme-color" content="#3399FF" />
+        <meta name="theme-color" content="#00AEEF" />
       </head>
-      <body className={`antialiased ${inter.variable} ${roboto.variable} ${openSans.variable} ${lato.variable} ${poppins.variable} ${sourceSansPro.variable} ${nunito.variable} ${montserrat.variable} ${playfairDisplay.variable} ${jetbrainsMono.variable}`}>
+      <body className={`antialiased ${inter.variable} ${roboto.variable} ${openSans.variable} ${lato.variable} ${poppins.variable} ${sourceSansPro.variable} ${nunito.variable} ${montserrat.variable} ${playfairDisplay.variable} ${jetbrainsMono.variable} ${space_grotesk.variable}`}>
         <AuthProvider>
             {children}
         </AuthProvider>
