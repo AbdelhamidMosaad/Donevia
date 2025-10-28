@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, enablePersistence, initializeFirestore } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,7 +21,7 @@ const db = getFirestore(app);
 
 // Enable persistence on the client-side
 if (typeof window !== 'undefined') {
-    enablePersistence(db).catch((err) => {
+    enableIndexedDbPersistence(db).catch((err) => {
         if (err.code == 'failed-precondition') {
             // Multiple tabs open, persistence can only be enabled in one tab at a time.
             console.warn('Firestore persistence failed: multiple tabs open.');
