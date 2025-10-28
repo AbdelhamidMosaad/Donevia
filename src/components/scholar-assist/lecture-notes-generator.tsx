@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyMaterialRequest, StudyMaterialResponse, Flashcard } from '@/lib/types';
 import { Button } from '../ui/button';
-import { Loader2, Copy, Download, Save } from 'lucide-react';
+import { Loader2, Copy, Download, Save, FileText } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { addDoc as addFirestoreDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -24,6 +24,8 @@ import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter, DialogC
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface LectureNotesGeneratorProps {
   result: StudyMaterialResponse | null;
@@ -60,10 +62,11 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingToDocs, setIsSavingToDocs] = useState(false);
-  const [isExportingWord, setIsExportingWord] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [fileName, setFileName] = useState('');
   const [selectedFont, setSelectedFont] = useState('Arial');
+  const exportRef = useRef<HTMLDivElement>(null);
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -169,7 +172,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         return;
     }
     
-    setIsExportingWord(true);
+    setIsExporting(true);
 
     const { title, notesContent } = result;
 
@@ -284,9 +287,60 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     Packer.toBlob(doc).then(blob => {
         saveAs(blob, `${fileName.replace(/ /g, '_')}.docx`);
         toast({ title: '✓ Exporting as Word document' });
-        setIsExportingWord(false);
+        setIsExporting(false);
         setIsFileDialogOpen(false);
     });
+  };
+
+  const handleExportPDF = async () => {
+    if (!exportRef.current) {
+        toast({ variant: 'destructive', title: 'Export failed', description: 'Could not find the content to export.' });
+        return;
+    }
+    setIsExporting(true);
+    toast({ title: 'Generating PDF...', description: 'Please wait.' });
+
+    try {
+        const canvas = await html2canvas(exportRef.current, {
+            scale: 2, // Higher scale for better quality
+            useCORS: true,
+            windowWidth: exportRef.current.scrollWidth,
+            windowHeight: exportRef.current.scrollHeight
+        });
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasHeight / canvasWidth;
+        
+        const imgWidth = pdfWidth - 20; // with margins
+        const imgHeight = imgWidth * ratio;
+        
+        let heightLeft = imgHeight;
+        let position = 10; // top margin
+
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= (pdfHeight - 20);
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight + 10;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+            heightLeft -= (pdfHeight - 20);
+        }
+
+        pdf.save(`${fileName.replace(/ /g, '_')}.pdf`);
+        toast({ title: '✓ PDF Exported Successfully' });
+    } catch (e) {
+        console.error("PDF Export failed:", e);
+        toast({ variant: 'destructive', title: 'PDF Export Failed', description: 'There was an issue generating the PDF.'});
+    } finally {
+        setIsExporting(false);
+    }
   };
 
 
@@ -406,7 +460,8 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     const { introduction, sections } = result.notesContent;
 
     return (
-        <div className="prose prose-sm dark:prose-invert max-w-none">
+        <div ref={exportRef} className="prose prose-sm dark:prose-invert max-w-none p-4 bg-background text-foreground">
+            <h1>{result.title}</h1>
             <p className="lead italic">{introduction}</p>
             {sections.map((section, secIndex) => (
                 <React.Fragment key={secIndex}>
@@ -516,7 +571,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     <CardDescription>Your AI-generated notes are ready.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
-                    <ScrollArea className="h-full border rounded-md p-4 bg-background">
+                    <ScrollArea className="h-full border rounded-md">
                        {renderStructuredNotes()}
                     </ScrollArea>
                 </CardContent>
@@ -528,6 +583,10 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     </Button>
                     <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
                     <Button variant="outline" onClick={() => setIsFileDialogOpen(true)}><Download/> Export as Word</Button>
+                    <Button variant="outline" onClick={handleExportPDF} disabled={isExporting}>
+                        {isExporting ? <Loader2 className="animate-spin" /> : <FileText/>}
+                        Export PDF
+                    </Button>
                 </CardFooter>
             </Card>
         )
@@ -572,8 +631,8 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
               </div>
               <DialogFooter>
                   <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                  <Button onClick={handleExportWord} disabled={isExportingWord}>
-                      {isExportingWord && <Loader2 className="animate-spin mr-2"/>}
+                  <Button onClick={handleExportWord} disabled={isExporting}>
+                      {isExporting && <Loader2 className="animate-spin mr-2"/>}
                       Export
                   </Button>
               </DialogFooter>

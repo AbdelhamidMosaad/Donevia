@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { StudyMaterialResponse } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
-import { ChevronLeft, ChevronRight, Download, RefreshCw, Save, Trash2, CheckCircle, XCircle, Flag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, RefreshCw, Save, Trash2, CheckCircle, XCircle, Flag, FileText } from 'lucide-react';
 import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,8 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
 import { SaveQuizDialog } from './shared/save-quiz-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface QuizTakerProps {
     result: StudyMaterialResponse & { id?: string };
@@ -33,7 +35,8 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
     const [score, setScore] = useState<number | null>(null);
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
     const [markedQuestions, setMarkedQuestions] = useState<Set<number>>(new Set());
-
+    const exportRef = useRef<HTMLDivElement>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     const totalQuestions = result?.quizContent?.length || 0;
     const totalScorableQuestions = useMemo(() => result.quizContent.filter(q => q.questionType !== 'short-answer').length, [result.quizContent]);
@@ -86,6 +89,47 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
         toast({ title: '✓ Exporting as Word document' });
     };
 
+    const handleExportPDF = async () => {
+        if (!exportRef.current) return;
+        setIsExporting(true);
+        toast({ title: 'Generating PDF...' });
+        try {
+            const canvas = await html2canvas(exportRef.current, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / canvasHeight;
+            let imgWidth = pdfWidth - 20;
+            let imgHeight = imgWidth / ratio;
+            let heightLeft = imgHeight;
+            let position = 10;
+            if (imgHeight > pdfHeight - 20) {
+                imgHeight = pdfHeight - 20;
+                imgWidth = imgHeight * ratio;
+            }
+
+            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight - 20;
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight + 10;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= pdfHeight - 20;
+            }
+
+            pdf.save(`${result.title.replace(/ /g, '_')}.pdf`);
+            toast({ title: '✓ PDF Exported' });
+        } catch(e) {
+             toast({ variant: 'destructive', title: 'PDF Export Failed' });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const toggleMarkQuestion = () => {
         const newMarked = new Set(markedQuestions);
         if (newMarked.has(currentQuestionIndex)) {
@@ -114,17 +158,18 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                         <CardTitle>Quiz Results: {result.title}</CardTitle>
                         <CardDescription>Review your answers and the explanations below.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-1 space-y-4">
-                        <div className="text-center p-4 bg-muted rounded-lg">
-                            <p className="text-xl font-bold">Quiz Complete!</p>
-                            {score !== null && (
-                                <>
-                                <p className="text-2xl font-headline">Your Score: {score}/{totalScorableQuestions} ({percentage.toFixed(0)}%)</p>
-                                {isExcellentScore && <p className="text-green-600 font-semibold mt-1">Excellent work! Keep it up!</p>}
-                                </>
-                            )}
-                        </div>
-                        <ScrollArea className="h-[400px] pr-4">
+                    <CardContent className="flex-1 min-h-0">
+                        <ScrollArea className="h-full pr-4">
+                           <div ref={exportRef} className="p-4 bg-background">
+                            <div className="text-center p-4 bg-muted rounded-lg mb-4">
+                                <p className="text-xl font-bold">Quiz Complete!</p>
+                                {score !== null && (
+                                    <>
+                                    <p className="text-2xl font-headline">Your Score: {score}/{totalScorableQuestions} ({percentage.toFixed(0)}%)</p>
+                                    {isExcellentScore && <p className="text-green-600 font-semibold mt-1">Excellent work! Keep it up!</p>}
+                                    </>
+                                )}
+                            </div>
                             <div className="space-y-4">
                                 {result.quizContent.map((q, index) => {
                                     const userAnswerIndex = userAnswers[index] as number;
@@ -156,6 +201,7 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                                     )
                                 })}
                             </div>
+                            </div>
                         </ScrollArea>
                     </CardContent>
                     <CardFooter className="justify-end gap-2">
@@ -166,6 +212,9 @@ export function QuizTaker({ result, onReset, onDelete, isSavedQuiz = false }: Qu
                             </Button>
                         )}
                         <Button variant="outline" onClick={handleExportWord}><Download/> Export .docx</Button>
+                        <Button variant="outline" onClick={handleExportPDF} disabled={isExporting}>
+                            {isExporting ? <Loader2 className="animate-spin" /> : <FileText />} Export PDF
+                        </Button>
                     </CardFooter>
                 </Card>
                 <SaveQuizDialog

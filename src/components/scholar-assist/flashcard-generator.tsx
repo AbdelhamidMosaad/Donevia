@@ -1,17 +1,19 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyMaterialRequest, StudyMaterialResponse, Flashcard } from '@/lib/types';
 import { Button } from '../ui/button';
-import { Loader2, Copy, Download, ChevronLeft, ChevronRight, RefreshCw, Save } from 'lucide-react';
+import { Loader2, Copy, Download, ChevronLeft, ChevronRight, RefreshCw, Save, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SaveToDeckDialog } from './shared/save-to-deck-dialog';
 import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface FlashcardGeneratorProps {
   result: StudyMaterialResponse | null;
@@ -22,10 +24,17 @@ export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProp
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [isSaveOpen, setIsSaveOpen] = useState(false);
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  
+  const flashcardRefs = useRef<Array<HTMLDivElement | null>>([]);
+  if(result && flashcardRefs.current.length !== result.flashcardContent?.length) {
+      flashcardRefs.current = Array(result.flashcardContent?.length).fill(null).map((_, i) => flashcardRefs.current[i] || React.createRef());
+  }
+
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -94,6 +103,58 @@ export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProp
     toast({ title: '✓ Download started' });
   };
   
+  const handleExportPDF = async () => {
+    if (!result || !result.flashcardContent) return;
+    setIsExporting(true);
+    toast({ title: 'Generating PDF...', description: 'This may take a moment for many cards.' });
+
+    try {
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const margin = 10;
+        const cardWidth = (pdfWidth - 3 * margin) / 2;
+        const cardHeight = cardWidth * (2/3); // Aspect ratio
+        
+        let x = margin;
+        let y = margin;
+        let pageCount = 1;
+
+        for (let i = 0; i < result.flashcardContent.length; i++) {
+            const cardData = result.flashcardContent[i];
+
+            for (const side of ['front', 'back']) {
+                if (y + cardHeight > pdfHeight - margin) {
+                    pdf.addPage();
+                    pageCount++;
+                    y = margin;
+                }
+                 if (x + cardWidth > pdfWidth - margin) {
+                    x = margin;
+                    y += cardHeight + margin;
+                }
+                
+                 if (y + cardHeight > pdfHeight - margin && pageCount > 1) { // Check again after moving to next row
+                    pdf.addPage();
+                    y = margin;
+                }
+                
+                const canvas = await html2canvas(document.getElementById(`flashcard-export-${i}-${side}`)!, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
+                x += cardWidth + margin;
+            }
+        }
+
+        pdf.save(`${result.title.replace(/ /g, '_')}.pdf`);
+        toast({ title: '✓ PDF Exported Successfully' });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error exporting PDF' });
+    } finally {
+        setIsExporting(false);
+    }
+  };
+  
   const navigateCard = (direction: 'prev' | 'next') => {
     setIsFlipped(false);
     if (direction === 'prev') {
@@ -111,6 +172,19 @@ export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProp
     
     return (
       <>
+        {/* Hidden elements for export */}
+        <div className="absolute -left-[9999px] -top-[9999px]">
+            {result.flashcardContent.map((card, index) => (
+                <React.Fragment key={index}>
+                    <div id={`flashcard-export-${index}-front`} className="w-[300px] h-[200px] p-4 flex items-center justify-center text-center bg-primary text-primary-foreground">
+                        <p className="text-lg font-bold">{card.front}</p>
+                    </div>
+                     <div id={`flashcard-export-${index}-back`} className="w-[300px] h-[200px] p-4 flex items-center justify-center text-center bg-card border">
+                        <p className="text-sm">{card.back}</p>
+                    </div>
+                </React.Fragment>
+            ))}
+        </div>
         <Card className="flex-1 flex flex-col h-full">
             <CardHeader>
                 <CardTitle>{result.title}</CardTitle>
@@ -151,6 +225,10 @@ export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProp
                 <Button onClick={() => setIsSaveOpen(true)}><Save/> Save to Deck</Button>
                 <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
                 <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
+                <Button variant="outline" onClick={handleExportPDF} disabled={isExporting}>
+                    {isExporting ? <Loader2 className="animate-spin"/> : <FileText />}
+                    Export PDF
+                </Button>
             </CardFooter>
         </Card>
         <SaveToDeckDialog
