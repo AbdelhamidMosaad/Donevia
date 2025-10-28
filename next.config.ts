@@ -1,11 +1,4 @@
 
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development'
-});
-
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -46,27 +39,10 @@ const nextConfig: NextConfig = {
   },
    experimental: {
     serverActions: {
-      bodySizeLimit: '2mb',
-      serverActions: true,
-      allowedOrigins: [
-        "6000-firebase-studio-*.cluster-*.cloudworkstations.dev"
-      ],
+        bodySizeLimit: '2mb',
     },
   },
+  reactStrictMode: false,
 };
 
-
-const isDev = process.env.NODE_ENV === 'development';
-
-if (isDev) {
-    nextConfig.reactStrictMode = false;
-    nextConfig.experimental = {
-        ...(nextConfig.experimental || {}),
-        allowedDevOrigins: ["https://6000-firebase-studio-*.cluster-*.cloudworkstations.dev"],
-    }
-}
-
-// Only wrap with PWA config in production.
-const config = isDev ? nextConfig : withPWA(nextConfig);
-
-export default config;
+export default nextConfig;
