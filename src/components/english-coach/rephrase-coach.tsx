@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import type { RephraseResponse } from '@/ai/flows/rephrase-flow';
@@ -50,6 +49,11 @@ export function RephraseCoach({ result, setResult }: RephraseCoachProps) {
     }
   };
 
+  const handleCopy = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    toast({ title: '✓ Copied to clipboard!' });
+  };
+
   const renderResults = () => {
     if (!result) {
       return (
@@ -62,8 +66,11 @@ export function RephraseCoach({ result, setResult }: RephraseCoachProps) {
       <div className="space-y-4">
         {result.rephrasedVersions.map((item, index) => (
           <Card key={index}>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Version {index + 1}</CardTitle>
+              <Button variant="ghost" size="icon" onClick={() => handleCopy(item.version)}>
+                <Copy className="h-4 w-4" />
+              </Button>
             </CardHeader>
             <CardContent>
               <p className="text-lg font-semibold text-primary">{item.version}</p>
