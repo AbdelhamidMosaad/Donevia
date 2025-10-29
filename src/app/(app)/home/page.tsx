@@ -34,6 +34,7 @@ import { InterviewPrepIcon } from '@/components/icons/tools/interview-prep-icon'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { JournalIcon } from '@/components/icons/tools/journal-icon';
 import { BeCreativeIcon } from '@/components/icons/tools/be-creative-icon';
+import { CreateWithAiIcon } from '@/components/icons/tools/create-with-ai-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -51,6 +52,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     'english-coach': EnglishCoachIcon,
     'interview-prep': InterviewPrepIcon,
     'be-creative': BeCreativeIcon,
+    'create-with-ai': CreateWithAiIcon,
     docs: DocsIcon,
     'learning-tool': LearningAssistantIcon,
     pomodoro: PomodoroIcon,
@@ -73,6 +75,7 @@ const allTools = [
     { id: 'english-coach', href: '/english-coach', title: 'English Coach', description: 'Improve your English with AI-powered tools.' },
     { id: 'interview-prep', href: '/interview-prep', title: 'Interview Prep', description: 'Practice for your next job interview.' },
     { id: 'be-creative', href: '/be-creative', title: 'Be Creative', description: 'A suite of tools for brainstorming and creativity.' },
+    { id: 'create-with-ai', href: '/create-with-ai', title: 'Create with AI', description: 'AI-powered writing assistance tools.' },
     { id: 'docs', href: '/docs', title: 'Docs', description: 'A powerful, feature-rich document editor.' },
     { id: 'learning-tool', href: '/learning-tool', title: 'Learning Assistant', description: 'Generate study materials with AI.' },
     { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },

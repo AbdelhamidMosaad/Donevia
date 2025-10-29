@@ -4,24 +4,18 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GrammarCoach } from '@/components/english-coach/grammar-coach';
-import { BookOpen, Mail, Mic, MessageSquareQuote, BookMarked, Waves, Repeat as RephraseIcon, Linkedin, MessageCircle } from 'lucide-react';
+import { BookOpen, Mic, MessageSquareQuote, MessageCircle, BookMarked, Waves } from 'lucide-react';
 import { VocabularyCoach } from '@/components/english-coach/vocabulary-coach';
-import { EmailCoach } from '@/components/english-coach/email-coach';
 import { ShadowingCoach } from '@/components/english-coach/shadowing-coach';
 import { NewWordsLibrary } from '@/components/english-coach/new-words-library';
 import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
 import { ReadingCoach } from '@/components/english-coach/reading-coach';
 import { PronunciationCoach } from '@/components/english-coach/pronunciation-coach';
-import { RephraseCoach } from '@/components/english-coach/rephrase-coach';
-import { LinkedInEnhancer } from '@/components/english-coach/linkedin-enhancer';
 import { ConversationCoach } from '@/components/english-coach/conversation-coach';
 
 import type { GrammarCorrectionResponse } from '@/lib/types/grammar';
-import type { RephraseResponse } from '@/lib/types/rephrase';
-import type { LinkedInPostResponse } from '@/lib/types/linkedin-post';
 import type { VocabularyCoachResponse } from '@/lib/types/vocabulary';
 import type { ConversationTextResponse } from '@/ai/flows/conversation-coach-flow';
-import type { EmailCoachResponse } from '@/lib/types/email-coach';
 import type { ShadowingResponse } from '@/ai/flows/shadowing-coach-flow';
 import type { PronunciationPracticeResponse } from '@/ai/flows/pronunciation-coach-flow';
 import type { ReadingComprehensionExercise } from '@/lib/types/reading-comprehension';
@@ -29,11 +23,8 @@ import type { ReadingComprehensionExercise } from '@/lib/types/reading-comprehen
 export default function EnglishCoachPage() {
   // State lifted from child components
   const [grammarResult, setGrammarResult] = useState<GrammarCorrectionResponse | null>(null);
-  const [rephraseResult, setRephraseResult] = useState<RephraseResponse | null>(null);
-  const [linkedinResult, setLinkedinResult] = useState<LinkedInPostResponse | null>(null);
   const [vocabularyResult, setVocabularyResult] = useState<VocabularyCoachResponse | null>(null);
   const [conversationResult, setConversationResult] = useState<ConversationTextResponse | null>(null);
-  const [emailResult, setEmailResult] = useState<EmailCoachResponse | null>(null);
   const [shadowingResult, setShadowingResult] = useState<ShadowingResponse | null>(null);
   const [pronunciationResult, setPronunciationResult] = useState<PronunciationPracticeResponse | null>(null);
   const [readingResult, setReadingResult] = useState<ReadingComprehensionExercise | null>(null);
@@ -56,14 +47,6 @@ export default function EnglishCoachPage() {
             <MessageSquareQuote className="mr-2 h-4 w-4" />
             Grammar Coach
           </TabsTrigger>
-          <TabsTrigger value="rephrase">
-            <RephraseIcon className="mr-2 h-4 w-4" />
-            Rephrase
-          </TabsTrigger>
-          <TabsTrigger value="linkedin">
-            <Linkedin className="mr-2 h-4 w-4" />
-            LinkedIn
-          </TabsTrigger>
           <TabsTrigger value="vocabulary">
             <BookOpen className="mr-2 h-4 w-4" />
             Vocabulary Coach
@@ -75,10 +58,6 @@ export default function EnglishCoachPage() {
            <TabsTrigger value="new-words">
             <BookOpen className="mr-2 h-4 w-4" />
             New Words
-          </TabsTrigger>
-           <TabsTrigger value="email">
-            <Mail className="mr-2 h-4 w-4" />
-            Email Coach
           </TabsTrigger>
           <TabsTrigger value="shadowing">
             <Mic className="mr-2 h-4 w-4" />
@@ -97,12 +76,6 @@ export default function EnglishCoachPage() {
         <TabsContent value="grammar" className="flex-1 mt-4">
            <GrammarCoach result={grammarResult} setResult={setGrammarResult}/>
         </TabsContent>
-        <TabsContent value="rephrase" className="flex-1 mt-4">
-            <RephraseCoach result={rephraseResult} setResult={setRephraseResult} />
-        </TabsContent>
-        <TabsContent value="linkedin" className="flex-1 mt-4">
-            <LinkedInEnhancer result={linkedinResult} setResult={setLinkedinResult} />
-        </TabsContent>
         <TabsContent value="vocabulary" className="flex-1 mt-4">
             <VocabularyCoach result={vocabularyResult} setResult={setVocabularyResult} />
         </TabsContent>
@@ -111,9 +84,6 @@ export default function EnglishCoachPage() {
         </TabsContent>
          <TabsContent value="new-words" className="flex-1 mt-4">
             <NewWordsLibrary />
-        </TabsContent>
-        <TabsContent value="email" className="flex-1 mt-4">
-            <EmailCoach result={emailResult} setResult={setEmailResult} />
         </TabsContent>
         <TabsContent value="shadowing" className="flex-1 mt-4">
             <ShadowingCoach result={shadowingResult} setResult={setShadowingResult} />
