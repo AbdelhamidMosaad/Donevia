@@ -12,6 +12,7 @@ import { Loader2, Wand2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/hooks/use-auth';
 
 const notesSchema = z.object({
   noteStyle: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
@@ -41,7 +42,7 @@ export type InputFormValues = z.infer<typeof formSchema>;
 interface InputFormProps {
   onGenerate: (values: InputFormValues) => void;
   isLoading?: boolean;
-  generationType: 'notes' | 'quiz' | 'flashcards';
+  generationType: 'notes' | 'quiz' | 'flashcards' | 'mindmap';
 }
 
 const questionTypeItems = [
@@ -51,13 +52,15 @@ const questionTypeItems = [
 ]
 
 export function InputForm({ onGenerate, isLoading, generationType }: InputFormProps) {
+  const { settings } = useAuth();
+
   const form = useForm<InputFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       sourceText: "",
       // Notes defaults
-      noteStyle: 'detailed',
-      complexity: 'medium',
+      noteStyle: settings.defaultNoteStyle || 'detailed',
+      complexity: settings.defaultComplexity || 'medium',
       // Quiz defaults
       numQuestions: 5,
       questionTypes: ['multiple-choice'],
@@ -73,6 +76,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
         case 'notes': return 'Generate Notes';
         case 'quiz': return 'Generate Quiz';
         case 'flashcards': return 'Generate Flashcards';
+        case 'mindmap': return 'Generate Mind Map';
         default: return 'Generate';
     }
   }

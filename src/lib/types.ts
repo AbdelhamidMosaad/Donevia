@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -291,6 +292,8 @@ export interface UserSettings {
     pronunciationCoachVoice?: string;
     vocabularyCoachVoice?: string;
     shadowingCoachVoice?: string;
+    defaultNoteStyle?: 'detailed' | 'bullet' | 'outline' | 'summary' | 'concise';
+    defaultComplexity?: 'simple' | 'medium' | 'advanced';
 }
 
 /** Brainstorming */

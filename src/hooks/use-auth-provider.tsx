@@ -4,7 +4,7 @@
 import { createContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { WelcomeScreen } from '@/components/welcome-screen';
 import type { UserSettings, Stage } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -74,7 +74,9 @@ const defaultSettings: UserSettings = {
         level: 1,
         experiencePoints: 0,
         earnedBadges: [],
-    }
+    },
+    defaultNoteStyle: 'detailed',
+    defaultComplexity: 'medium',
 };
 
 

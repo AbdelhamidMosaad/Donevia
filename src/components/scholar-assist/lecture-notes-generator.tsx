@@ -108,50 +108,55 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         return typeof result?.notesContent === 'string' ? result.notesContent : '';
     };
     
-    let text = `${result.title}\n\n`;
-    text += `${result.notesContent.introduction}\n\n`;
+    let text = `# ${result.title}\n\n`;
+    text += `_${result.notesContent.introduction}_\n\n`;
     result.notesContent.sections.forEach(section => {
         text += `## ${section.heading}\n\n`;
         section.content.forEach(item => {
             if (item.type === 'paragraph') {
                 text += `${item.content}\n\n`;
             } else if (Array.isArray(item.content)) {
-                const prefix = item.type === 'bullet-list' ? '- ' : '1. ';
-                item.content.forEach(listItem => text += `${prefix}${listItem}\n`);
+                item.content.forEach(listItem => {
+                    const prefix = item.type === 'bullet-list' ? '- ' : '1. ';
+                    text += `${prefix}${listItem}\n`;
+                });
                 text += '\n';
             }
         });
         
         if (section.table) {
-            text += `\n| ${section.table.headers.join(' | ')} |\n`;
+            text += `| ${section.table.headers.join(' | ')} |\n`;
             text += `| ${section.table.headers.map(() => '---').join(' | ')} |\n`;
             section.table.rows.forEach(row => {
                 text += `| ${row.join(' | ')} |\n`;
             });
+            text += '\n';
         }
 
         if (section.subsections) {
             section.subsections.forEach(subsection => {
-                text += `\n### ${subsection.subheading}\n`;
+                text += `### ${subsection.subheading}\n\n`;
                 subsection.content.forEach(item => {
                    if (item.type === 'paragraph') {
                         text += `${item.content}\n\n`;
                     } else if (Array.isArray(item.content)) {
-                        const prefix = item.type === 'bullet-list' ? '  - ' : '  1. ';
-                        item.content.forEach(listItem => text += `${prefix}${listItem}\n`);
+                        item.content.forEach(listItem => {
+                            const prefix = item.type === 'bullet-list' ? '  - ' : '  1. ';
+                            text += `${prefix}${listItem}\n`;
+                        });
                         text += '\n';
                     }
                 });
                  if (subsection.table) {
-                    text += `\n| ${subsection.table.headers.join(' | ')} |\n`;
+                    text += `| ${subsection.table.headers.join(' | ')} |\n`;
                     text += `| ${subsection.table.headers.map(() => '---').join(' | ')} |\n`;
                     subsection.table.rows.forEach(row => {
                         text += `| ${row.join(' | ')} |\n`;
                     });
+                     text += '\n';
                 }
             });
         }
-        text += '\n';
         if (section.addDividerAfter) {
             text += '---\n\n';
         }
