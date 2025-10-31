@@ -95,6 +95,7 @@ const defaultSettings: UserSettings = {
     meetingNotesCardSize: 'large',
     notesView: 'board',
     studyTrackerView: 'card',
+    studyTrackerCardSize: 'large',
     goalsCardSize: 'large',
     flashcardsCardSize: 'large',
     whiteboardCardSize: 'large',
@@ -102,6 +103,7 @@ const defaultSettings: UserSettings = {
     bookmarksView: 'card',
     bookmarkCardSize: 'x-small',
     homeCardSize: 'large',
+    homeView: 'overview',
     listViews: {},
     tableColumns: {},
     sidebarOrder: [],
@@ -114,7 +116,9 @@ const defaultSettings: UserSettings = {
         level: 1,
         experiencePoints: 0,
         earnedBadges: [],
-    }
+    },
+    defaultNoteStyle: 'detailed',
+    defaultComplexity: 'medium',
 };
 
 
@@ -147,8 +151,8 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     const body = document.body;
     
     if (newSettings.theme) {
-        const themeClassesToRemove = themes.map(t => t.name);
-        body.classList.remove(...themeClassesToRemove);
+        const themeClasses: UserSettings['theme'][] = ['light', 'dark', 'theme-indigo', 'theme-purple', 'theme-green', 'theme-sunset', 'theme-mint', 'theme-jade', 'theme-periwinkle', 'theme-sky', 'theme-orchid', 'theme-oceanic', 'theme-aqua', 'theme-lime', 'theme-marigold', 'theme-ice', 'theme-sage', 'theme-coral'];
+        body.classList.remove(...themeClasses);
         body.classList.add(newSettings.theme);
     }
 
@@ -333,6 +337,47 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
                             </Select>
                         </div>
                         </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Learning Assistant Defaults</CardTitle>
+                        <CardDescription>Set your preferred defaults for the AI learning tools.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="note-style-select">Default Note Style</Label>
+                          <Select
+                            value={settings.defaultNoteStyle}
+                            onValueChange={(v: UserSettings['defaultNoteStyle']) => savePreferences({ defaultNoteStyle: v })}
+                          >
+                            <SelectTrigger id="note-style-select">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="detailed">Detailed Notes</SelectItem>
+                              <SelectItem value="concise">Concise Notes</SelectItem>
+                              <SelectItem value="bullet">Bullet Points</SelectItem>
+                              <SelectItem value="outline">Outline Format</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="complexity-select">Default Complexity Level</Label>
+                          <Select
+                            value={settings.defaultComplexity}
+                            onValueChange={(v: UserSettings['defaultComplexity']) => savePreferences({ defaultComplexity: v })}
+                          >
+                            <SelectTrigger id="complexity-select">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="simple">Simple</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="advanced">Advanced</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CardContent>
                     </Card>
                     <Card>
                         <CardHeader>
