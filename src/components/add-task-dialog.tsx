@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, Timestamp, doc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, doc, getDoc, updateDoc, serverTimestamp, onSnapshot, deleteField } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import moment from 'moment';
 import type { Task, Stage, Subtask } from '@/lib/types';
@@ -162,7 +162,9 @@ export function AddTaskDialog({
     }
 
     setIsSaving(true);
-    const taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'> = {
+    
+    // Explicitly handle the color field to avoid 'undefined'
+    const taskData: { [key: string]: any } = {
         title,
         description,
         reflection,
@@ -170,12 +172,18 @@ export function AddTaskDialog({
         priority,
         status,
         reminder,
-        color,
         subtasks,
         category: category || 'general',
         tags: task?.tags || [],
         deleted: false,
     };
+
+    if (color) {
+        taskData.color = color;
+    } else {
+        taskData.color = deleteField(); // Remove the field if color is not set
+    }
+
 
     try {
       if (isEditMode && task && onTaskUpdated) {
@@ -185,7 +193,7 @@ export function AddTaskDialog({
             description: `"${title}" has been updated.`,
           });
       } else if (onTaskAdded) {
-          onTaskAdded(taskData);
+          onTaskAdded(taskData as Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>);
           toast({
             title: 'Task Added',
             description: `"${title}" has been added successfully.`,
