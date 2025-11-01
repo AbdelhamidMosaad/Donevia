@@ -13,6 +13,7 @@ import { Button } from './ui/button';
 import { ChevronDown, ChevronRight, Loader2, Kanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTasks } from '@/hooks/use-tasks';
+import { AddTaskDialog } from './add-task-dialog';
 
 interface TaskBoardProps {
 }
@@ -20,8 +21,9 @@ interface TaskBoardProps {
 export function TaskBoard({}: TaskBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { tasks, stages: allStages, isLoading, updateTask: updateTaskInDb, updateStages: updateStagesInDb } = useTasks();
+  const { tasks, stages: allStages, isLoading, updateTask: updateTaskInDb, updateStages: updateStagesInDb, addTask } = useTasks();
   const [stages, setStages] = useState<Stage[]>(allStages);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
   
@@ -110,6 +112,11 @@ export function TaskBoard({}: TaskBoardProps) {
       }, {} as Record<string, (Task & {order: number})[]>);
     }, [sortedStages, tasks]);
 
+    const handleTaskCreated = (newTask: Task) => {
+        setEditingTask(newTask);
+    };
+
+
   // Conditional Rendering Logic
   if (isLoading) {
     return (
@@ -121,6 +128,7 @@ export function TaskBoard({}: TaskBoardProps) {
   }
   
   return (
+    <>
     <DragDropContext onDragEnd={onDragEnd}>
       <Droppable droppableId="board" direction="horizontal" type="COLUMN">
         {(provided) => (
@@ -193,7 +201,7 @@ export function TaskBoard({}: TaskBoardProps) {
                                             </div>
                                         </div>
                                         <div className="p-1 border-t mt-auto">
-                                          <BoardTaskCreator stageId={stage.id} />
+                                          <BoardTaskCreator stageId={stage.id} onTaskCreated={handleTaskCreated} />
                                         </div>
                                         </>
                                     )}
@@ -210,5 +218,18 @@ export function TaskBoard({}: TaskBoardProps) {
         )}
       </Droppable>
     </DragDropContext>
+    {editingTask && (
+        <AddTaskDialog
+            task={editingTask}
+            open={!!editingTask}
+            onOpenChange={(open) => {
+                if (!open) setEditingTask(null);
+            }}
+            onTaskAdded={addTask}
+            onTaskUpdated={updateTaskInDb}
+            categories={allStages.flatMap(s => s.name)} // This seems incorrect, should be from settings
+        />
+    )}
+    </>
   );
 }

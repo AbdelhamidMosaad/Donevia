@@ -13,26 +13,26 @@ import { Timestamp } from 'firebase/firestore';
 
 interface BoardTaskCreatorProps {
     stageId: string;
+    onTaskCreated: (newTask: Task) => void;
 }
 
-export function BoardTaskCreator({ stageId }: BoardTaskCreatorProps) {
+export function BoardTaskCreator({ stageId, onTaskCreated }: BoardTaskCreatorProps) {
     const { addTask, categories } = useTasks();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState('');
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const reset = () => {
         setTitle('');
         setIsEditing(false);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!title.trim()) {
             reset();
             return;
         }
 
-        const newTask: Partial<Task> = {
+        const newTaskData: Partial<Task> = {
             title: title.trim(),
             status: stageId,
             priority: 'Medium',
@@ -40,24 +40,15 @@ export function BoardTaskCreator({ stageId }: BoardTaskCreatorProps) {
             category: 'general',
         };
         
-        // Use the addTask function from the hook
-        addTask(newTask as any);
+        const newTask = await addTask(newTaskData as any);
+        
+        if (newTask) {
+            onTaskCreated(newTask);
+        }
         
         reset();
     };
     
-    const handleOpenDialog = () => {
-        const newTask: Partial<Task> = {
-            title: '',
-            status: stageId,
-            priority: 'Medium',
-            dueDate: Timestamp.now(),
-            category: categories?.[0] || 'general',
-        };
-        setIsDialogOpen(true);
-    };
-
-
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -70,17 +61,15 @@ export function BoardTaskCreator({ stageId }: BoardTaskCreatorProps) {
     
     if (!isEditing) {
         return (
-            <>
-                <Card 
-                    className="p-3 bg-transparent hover:bg-card-foreground/5 transition-colors duration-200 cursor-pointer"
-                    onClick={() => setIsEditing(true)}
-                >
-                   <div className="flex items-center text-muted-foreground">
-                     <Plus className="mr-2 h-4 w-4" />
-                     <span>Add a card</span>
-                   </div>
-                </Card>
-            </>
+            <Card 
+                className="p-3 bg-transparent hover:bg-card-foreground/5 transition-colors duration-200 cursor-pointer"
+                onClick={() => setIsEditing(true)}
+            >
+               <div className="flex items-center text-muted-foreground">
+                 <Plus className="mr-2 h-4 w-4" />
+                 <span>Add a card</span>
+               </div>
+            </Card>
         );
     }
 
@@ -104,14 +93,6 @@ export function BoardTaskCreator({ stageId }: BoardTaskCreatorProps) {
                     <span className="sr-only">Cancel</span>
                  </Button>
             </div>
-             <AddTaskDialog 
-                open={isDialogOpen} 
-                onOpenChange={setIsDialogOpen}
-                onTaskAdded={addTask}
-                onTaskUpdated={() => {}} // Not used here
-                categories={categories}
-                defaultDueDate={new Date()}
-            />
         </div>
     );
 }

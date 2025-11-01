@@ -58,35 +58,24 @@ export function useTasks() {
   }, [user, toast]);
 
   const addTask = useCallback(async (newTaskData: Omit<Task, 'id'|'createdAt'|'updatedAt'|'ownerId'>) => {
-    if (!user) return;
+    if (!user) return null;
     
-    // Create a temporary optimistic task
-    const tempId = uuidv4();
-    const optimisticTask: Task = {
-        ...newTaskData,
-        id: tempId,
-        ownerId: user.uid,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        deleted: false,
-    };
-
-    // Optimistically update the UI
-    setTasks(prev => [...prev, optimisticTask]);
-
     try {
         const newDocRef = await addTaskToDb(user.uid, newTaskData);
-        // After the task is successfully added to DB, Firestore's onSnapshot listener
-        // will automatically update the local state with the real task from the server.
-        // We just need to remove the temporary optimistic task.
-        // Or better, we can wait for the listener to give us the real task.
-        // The listener will replace the optimistic task if we key correctly.
-        // For simplicity now, we'll let the listener handle the final state.
+        const optimisticTask: Task = {
+            ...newTaskData,
+            id: newDocRef.id,
+            ownerId: user.uid,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+            deleted: false,
+        };
+        setTasks(prev => [...prev, optimisticTask]);
+        return optimisticTask;
     } catch (e) {
-        // Revert optimistic update on failure
-        setTasks(prev => prev.filter(t => t.id !== tempId));
         toast({ variant: 'destructive', title: 'Failed to add task' });
         console.error(e);
+        return null;
     }
   }, [user, toast]);
 
