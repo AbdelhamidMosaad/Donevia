@@ -10,38 +10,25 @@ import { useAuth } from '@/hooks/use-auth';
 import { Timestamp } from 'firebase/firestore';
 import { Card } from './ui/card';
 import { useTasks } from '@/hooks/use-tasks';
+import { AddTaskDialog } from './add-task-dialog';
+import type { Task } from '@/lib/types';
 
 interface BoardTaskCreatorProps {
     stageId: string;
 }
 
-const cardColors = [
-    '#FFFFFF', // White
-    '#FEE2E2', // red-100
-    '#FFEDD5', // orange-100
-    '#FEF9C3', // yellow-100
-    '#ECFCCB', // lime-100
-    '#D1FAE5', // emerald-100
-    '#CFFAFE', // cyan-100
-    '#DBEAFE', // blue-100
-    '#E0E7FF', // indigo-100
-    '#E5E0FF', // violet-100
-    '#F3E8FF', // purple-100
-    '#FAE8FF', // fuchsia-100
-];
-
-const getRandomColor = () => cardColors[Math.floor(Math.random() * cardColors.length)];
-
 export function BoardTaskCreator({ stageId }: BoardTaskCreatorProps) {
-    const { addTask } = useTasks();
+    const { addTask, categories } = useTasks();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState('');
     const { user } = useAuth();
     const { toast } = useToast();
+    const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null);
 
     const resetAndClose = () => {
         setTitle('');
         setIsEditing(false);
+        setEditingTask(null);
     };
 
     const handleStartEditing = () => {
@@ -55,25 +42,16 @@ export function BoardTaskCreator({ stageId }: BoardTaskCreatorProps) {
             return;
         }
         
-        try {
-            await addTask({
-                title: title.trim(),
-                status: stageId,
-                priority: 'Medium',
-                dueDate: Timestamp.now(),
-                tags: [],
-                ownerId: user.uid,
-                color: getRandomColor(),
-                deleted: false,
-                category: 'general',
-            });
-            setTitle(''); // Reset for next task
-            document.getElementById(`task-creator-input-${stageId}`)?.focus();
-        } catch (error) {
-            console.error("Error creating task: ", error);
-            toast({ variant: 'destructive', title: 'Failed to create task' });
-            resetAndClose();
-        }
+        const newTask: Partial<Task> = {
+            title: title.trim(),
+            status: stageId,
+            priority: 'Medium',
+            dueDate: Timestamp.now(),
+            category: 'general',
+        };
+
+        setEditingTask(newTask);
+        resetAndClose();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -88,15 +66,27 @@ export function BoardTaskCreator({ stageId }: BoardTaskCreatorProps) {
     
     if (!isEditing) {
         return (
-            <Card 
-                className="p-3 bg-transparent hover:bg-card-foreground/5 transition-colors duration-200 cursor-pointer"
-                onClick={handleStartEditing}
-            >
-               <div className="flex items-center text-muted-foreground">
-                 <Plus className="mr-2 h-4 w-4" />
-                 <span>Add a card</span>
-               </div>
-            </Card>
+            <>
+                <Card 
+                    className="p-3 bg-transparent hover:bg-card-foreground/5 transition-colors duration-200 cursor-pointer"
+                    onClick={handleStartEditing}
+                >
+                   <div className="flex items-center text-muted-foreground">
+                     <Plus className="mr-2 h-4 w-4" />
+                     <span>Add a card</span>
+                   </div>
+                </Card>
+                {editingTask && (
+                    <AddTaskDialog 
+                        task={editingTask as Task}
+                        open={!!editingTask}
+                        onOpenChange={(open) => { if(!open) setEditingTask(null) }}
+                        onTaskAdded={addTask}
+                        onTaskUpdated={() => {}} // Not used for new tasks
+                        categories={categories}
+                    />
+                )}
+            </>
         );
     }
 

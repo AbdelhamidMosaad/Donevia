@@ -116,7 +116,7 @@ export function TaskCard({ task }: TaskCardProps) {
           </DropdownMenu>
         </div>
       </CardHeader>
-      {(task.priority || task.dueDate || (task.tags && task.tags.length > 0)) &&
+      {(task.priority || task.dueDate || (task.tags && task.tags.length > 0) || task.category) &&
         <CardContent className="p-3 pt-0">
             <div className="flex items-center justify-between text-xs text-muted-foreground" style={{color: "hsl(var(--card-foreground))"}}>
                 <div className="flex items-center gap-2">
@@ -146,6 +146,11 @@ export function TaskCard({ task }: TaskCardProps) {
                     </span>
                 </div>
             </div>
+             {task.category && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="secondary" className="capitalize">{task.category}</Badge>
+                </div>
+            )}
             {task.tags && task.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
                 {task.tags.map((tag) => (
