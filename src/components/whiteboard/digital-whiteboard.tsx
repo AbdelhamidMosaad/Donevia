@@ -84,6 +84,7 @@ import { TemplateDialog } from './template-dialog';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '../ui/skeleton';
 import { WhiteboardCanvas } from './whiteboard-canvas';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 
 type Tool = 'select' | 'pen' | 'text' | 'sticky' | 'shape' | 'arrow' | 'connect' | 'image' | 'mindmap';
@@ -148,7 +149,6 @@ export default function DigitalWhiteboard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const whiteboardContainerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [layoutDirection, setLayoutDirection] = useState<LayoutDirection>('right');
   const [showMinimap, setShowMinimap] = useState(true);
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
@@ -692,103 +692,78 @@ export default function DigitalWhiteboard() {
                         </Avatar>
                     ))}
                  </div>
-                <TemplateDialog 
-                    isOpen={isTemplateDialogOpen}
-                    onOpenChange={setIsTemplateDialogOpen}
-                    onSaveTemplate={async (name) => {
-                        if (!user) return;
-                        const templateRef = doc(collection(db, 'users', user.uid, 'whiteboardTemplates'));
-                        await setDoc(templateRef, {
-                            name,
-                            ownerId: user.uid,
-                            createdAt: serverTimestamp(),
-                            nodes: Object.values(nodes),
-                            connections,
-                        });
-                        toast({ title: 'Template saved!' });
-                    }}
-                    onUseTemplate={async (template) => {
-                        if(!user) return;
-                        const batch = writeBatch(db);
-                        // Clear existing nodes first
-                        const currentNodesSnap = await getDocs(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
-                        currentNodesSnap.forEach(doc => batch.delete(doc.ref));
-
-                        // Add new nodes from template
-                        template.nodes.forEach(node => {
-                            const nodeRef = doc(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
-                            batch.set(nodeRef, {...node, id: nodeRef.id});
-                        });
-                        await batch.commit();
-
-                        // Update connections
-                        await updateDoc(getBoardDocRef()!, { connections: template.connections });
-                        toast({title: 'Template applied!'});
-                    }}
-                />
-                 <Button variant="outline" onClick={() => setIsTemplateDialogOpen(true)}><LayoutTemplate /> Templates</Button>
-                <Popover>
-                    <PopoverTrigger asChild><Button variant="outline"><Settings /> Settings</Button></PopoverTrigger>
-                    <PopoverContent className="w-80">
-                        <div className="grid gap-4">
-                            <div className="space-y-2"><h4 className="font-medium leading-none">Settings</h4></div>
-                            <div className="grid gap-2">
-                                <Label>Background Color</Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {backgroundColors.map(color => (
-                                        <button key={color} onClick={() => handleSettingChange({ backgroundColor: color })}
-                                            className={cn("w-8 h-8 rounded-full border", boardData.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
-                                            style={{ backgroundColor: color }} />
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>Grid Style</Label>
-                                <ToggleGroup type="single" value={boardData.backgroundGrid || 'dotted'} onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}>
-                                    <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
-                                    <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
-                                    <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
-                                </ToggleGroup>
-                            </div>
-                             <div className="grid gap-2">
-                                <Label>Layout Direction</Label>
-                                <ToggleGroup type="single" value={layoutDirection} onValueChange={(value: LayoutDirection) => value && setLayoutDirection(value)}>
-                                    <ToggleGroupItem value="right" aria-label="Layout Right"><ArrowRight /></ToggleGroupItem>
-                                    <ToggleGroupItem value="bottom" aria-label="Layout Down"><ArrowDown /></ToggleGroupItem>
-                                    <ToggleGroupItem value="left" aria-label="Layout Left"><ArrowLeft /></ToggleGroupItem>
-                                    <ToggleGroupItem value="top" aria-label="Layout Up"><ArrowUp /></ToggleGroupItem>
-                                </ToggleGroup>
-                            </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-                 <Button variant="outline" onClick={handleExportPNG}><Download /> Export PNG</Button>
-                <Button variant="outline" onClick={handleExportPDF}><Download /> Export PDF</Button>
             </div>
         </div>
 
         <div className="flex-1 relative">
-            <div className={cn("absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border", isToolbarCollapsed && 'items-center')}>
-                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)}>
-                    {isToolbarCollapsed ? <PanelLeftOpen/> : <PanelLeftClose />}
-                 </Button>
-                {!isToolbarCollapsed && (
+            {/* Main Toolbar */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border items-center">
+                <TooltipProvider>
                     <ToggleGroup type="single" value={tool} onValueChange={(t: Tool) => t && setTool(t)}>
-                        <ToggleGroupItem value="select"><MousePointer/></ToggleGroupItem>
-                        <ToggleGroupItem value="pen"><Pen/></ToggleGroupItem>
-                        <ToggleGroupItem value="text"><Type/></ToggleGroupItem>
-                        <ToggleGroupItem value="sticky"><StickyNote/></ToggleGroupItem>
-                        <ToggleGroupItem value="shape"><RectangleHorizontal/></ToggleGroupItem>
-                        <ToggleGroupItem value="arrow"><ArrowUpRight/></ToggleGroupItem>
-                        <ToggleGroupItem value="connect"><LinkIcon/></ToggleGroupItem>
-                        <ToggleGroupItem value="image" onClick={() => imageInputRef.current?.click()}><ImageIcon/></ToggleGroupItem>
-                        <ToggleGroupItem value="mindmap"><Map/></ToggleGroupItem>
-                         <input type="file" ref={imageInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="select"><MousePointer/></ToggleGroupItem></TooltipTrigger><TooltipContent>Select (V)</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="pen"><Pen/></ToggleGroupItem></TooltipTrigger><TooltipContent>Pen (P)</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="text"><Type/></ToggleGroupItem></TooltipTrigger><TooltipContent>Text (T)</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="sticky"><StickyNote/></ToggleGroupItem></TooltipTrigger><TooltipContent>Sticky Note</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="shape"><RectangleHorizontal/></ToggleGroupItem></TooltipTrigger><TooltipContent>Shape (R)</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="arrow"><ArrowUpRight/></ToggleGroupItem></TooltipTrigger><TooltipContent>Arrow</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="connect"><LinkIcon/></ToggleGroupItem></TooltipTrigger><TooltipContent>Connect (C)</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="image" onClick={() => imageInputRef.current?.click()}><ImageIcon/></ToggleGroupItem></TooltipTrigger><TooltipContent>Image</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><ToggleGroupItem value="mindmap"><Map/></ToggleGroupItem></TooltipTrigger><TooltipContent>Mind Map (M)</TooltipContent></Tooltip>
                     </ToggleGroup>
-                )}
+                    <Separator orientation="vertical" className="h-6 mx-1" />
+                    <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button></TooltipTrigger><TooltipContent>Undo (Ctrl+Z)</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1}><Redo/></Button></TooltipTrigger><TooltipContent>Redo (Ctrl+Y)</TooltipContent></Tooltip>
+                     <Separator orientation="vertical" className="h-6 mx-1" />
+                     <Popover>
+                        <PopoverTrigger asChild><Button variant="ghost" size="icon"><Settings /></Button></PopoverTrigger>
+                        <PopoverContent className="w-80">
+                            <div className="grid gap-4">
+                                <div className="space-y-2"><h4 className="font-medium leading-none">Settings</h4></div>
+                                <div className="grid gap-2">
+                                    <Label>Background Color</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {backgroundColors.map(color => (
+                                            <button key={color} onClick={() => handleSettingChange({ backgroundColor: color })}
+                                                className={cn("w-8 h-8 rounded-full border", boardData.backgroundColor === color && "ring-2 ring-primary ring-offset-2")}
+                                                style={{ backgroundColor: color }} />
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Grid Style</Label>
+                                    <ToggleGroup type="single" value={boardData.backgroundGrid || 'dotted'} onValueChange={(value) => value && handleSettingChange({ backgroundGrid: value as any })}>
+                                        <ToggleGroupItem value="dotted" aria-label="Dotted grid"><Grid3x3 /></ToggleGroupItem>
+                                        <ToggleGroupItem value="lined" aria-label="Lined"><List /></ToggleGroupItem>
+                                        <ToggleGroupItem value="plain" aria-label="Plain"><Baseline /></ToggleGroupItem>
+                                    </ToggleGroup>
+                                </div>
+                                 <div className="grid gap-2">
+                                    <Label>Layout Direction</Label>
+                                    <ToggleGroup type="single" value={layoutDirection} onValueChange={(value: LayoutDirection) => value && setLayoutDirection(value)}>
+                                        <ToggleGroupItem value="right" aria-label="Layout Right"><ArrowRight /></ToggleGroupItem>
+                                        <ToggleGroupItem value="bottom" aria-label="Layout Down"><ArrowDown /></ToggleGroupItem>
+                                        <ToggleGroupItem value="left" aria-label="Layout Left"><ArrowLeft /></ToggleGroupItem>
+                                        <ToggleGroupItem value="top" aria-label="Layout Up"><ArrowUp /></ToggleGroupItem>
+                                    </ToggleGroup>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Download/></Button></DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={handleExportPNG}>Export as PNG</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={handleExportPDF}>Export as PDF</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button variant="ghost" size="icon" onClick={() => setIsTemplateDialogOpen(true)}><LayoutTemplate /></Button>
+                    <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                        {isFullscreen ? <Minimize/> : <Maximize/>}
+                    </Button>
+                </TooltipProvider>
             </div>
             
-            {(tool === 'shape' && !isToolbarCollapsed) && (
+            {tool === 'shape' && (
                  <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border">
                     <ToggleGroup type="single" value={shapeType} onValueChange={(s: ShapeType) => s && setShapeType(s)}>
                         <ToggleGroupItem value="rectangle"><RectangleHorizontal/></ToggleGroupItem>
@@ -801,25 +776,10 @@ export default function DigitalWhiteboard() {
                 </div>
             )}
             
-            {selectedNodeIds.length > 1 && (
-                <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border">
-                    <Button variant="ghost" size="icon" onClick={() => handleAlign('left')}><AlignHorizontalJustifyStart/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleAlign('center-h')}><AlignHorizontalJustifyCenter/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleAlign('right')}><AlignHorizontalJustifyEnd/></Button>
-                    <Separator orientation="vertical" className="h-6 mx-1" />
-                    <Button variant="ghost" size="icon" onClick={() => handleAlign('top')}><AlignVerticalJustifyStart/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleAlign('center-v')}><AlignVerticalJustifyCenter/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleAlign('bottom')}><AlignVerticalJustifyEnd/></Button>
-                    <Separator orientation="vertical" className="h-6 mx-1" />
-                    <Button variant="ghost" size="icon" onClick={() => handleDistribute('horizontal')}><AlignHorizontalDistributeCenter/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDistribute('vertical')}><AlignVerticalDistributeCenter/></Button>
-                </div>
-            )}
-
-            {selectedNode && (
+            {(selectedNodeIds.length > 0) && (
                  <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border items-center">
                     <Popover>
-                        <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: selectedNode.color}}><Palette/></Button></PopoverTrigger>
+                        <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: selectedNode?.color}}><Palette/></Button></PopoverTrigger>
                         <PopoverContent className="w-auto p-2">
                            <div className="flex gap-1">
                             {colorPalette.map(c => (
@@ -828,23 +788,39 @@ export default function DigitalWhiteboard() {
                            </div>
                         </PopoverContent>
                     </Popover>
-                    <Separator orientation="vertical" className="h-6 mx-1" />
-                    {selectedNode.type !== 'pen' && selectedNode.type !== 'image' && (
+                    {selectedNode && selectedNode.type !== 'pen' && selectedNode.type !== 'image' && (
+                       <>
+                        <Separator orientation="vertical" className="h-6 mx-1" />
                         <Slider
                             value={[selectedNode.fontSize || 16]}
                             onValueChange={(v) => selectedNodeIds.forEach(id => handleNodeChange(id, { fontSize: v[0] }))}
                             onValueCommit={handleNodeChangeComplete}
                             max={64} min={8} step={1} className="w-24"
                         />
+                       </>
                     )}
-                     {selectedNode.type === 'pen' && (
+                     {selectedNode && selectedNode.type === 'pen' && (
+                        <>
+                        <Separator orientation="vertical" className="h-6 mx-1" />
                         <Slider
                             value={[selectedNode.strokeWidth || 4]}
                             onValueChange={(v) => selectedNodeIds.forEach(id => handleNodeChange(id, { strokeWidth: v[0] }))}
                             onValueCommit={handleNodeChangeComplete}
                             max={20} min={1} step={1} className="w-24"
                         />
+                        </>
                     )}
+                    <Separator orientation="vertical" className="h-6 mx-1" />
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('left')}><AlignHorizontalJustifyStart/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('center-h')}><AlignHorizontalJustifyCenter/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('right')}><AlignHorizontalJustifyEnd/></Button>
+                     <Separator orientation="vertical" className="h-6 mx-1" />
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('top')}><AlignVerticalJustifyStart/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('center-v')}><AlignVerticalJustifyCenter/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAlign('bottom')}><AlignVerticalJustifyEnd/></Button>
+                     <Separator orientation="vertical" className="h-6 mx-1" />
+                    <Button variant="ghost" size="icon" onClick={() => handleDistribute('horizontal')}><AlignHorizontalDistributeCenter/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDistribute('vertical')}><AlignVerticalDistributeCenter/></Button>
                     <Separator orientation="vertical" className="h-6 mx-1" />
                     <Button variant="ghost" size="icon" onClick={() => handleLayerAction('front')}><FlipVertical className="transform rotate-180" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => handleLayerAction('back')}><FlipVertical /></Button>
@@ -853,12 +829,8 @@ export default function DigitalWhiteboard() {
                  </div>
             )}
 
+            <input type="file" ref={imageInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
 
-            <div className="absolute bottom-4 left-4 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex flex-col gap-1 border">
-                <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
-                <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1}><Redo/></Button>
-            </div>
-            
             <div className="absolute bottom-4 right-4 z-20 flex items-end gap-2">
                  {showMinimap && (
                     <div className="w-48 h-36 bg-card/80 border rounded-lg overflow-hidden relative">
@@ -884,9 +856,6 @@ export default function DigitalWhiteboard() {
                         handleSettingChange({scale: newScale});
                     }}><Minus/></Button>
                     <Button variant="ghost" size="icon" onClick={() => {}}><Expand/></Button>
-                    <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
-                        {isFullscreen ? <Minimize/> : <Maximize/>}
-                    </Button>
                 </div>
             </div>
 
