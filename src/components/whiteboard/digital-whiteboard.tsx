@@ -210,16 +210,16 @@ export default function DigitalWhiteboard() {
         unsubPresence();
       };
     }
-  }, [user, whiteboardId, toast, router, getBoardDocRef, historyIndex, boardData?.connections]);
+  }, [user, whiteboardId, toast, router, getBoardDocRef]);
   
-  const pushToHistory = (newNodes: Record<string, WhiteboardNode>, newConnections: WhiteboardConnection[]) => {
+  const pushToHistory = useCallback((newNodes: Record<string, WhiteboardNode>, newConnections: WhiteboardConnection[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push({ nodes: newNodes, connections: newConnections });
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-  };
+  }, [history, historyIndex]);
 
-  const createNode = async (newNode: Omit<WhiteboardNode, 'id' | 'userId'| 'createdAt' | 'updatedAt' | 'zIndex'>): Promise<WhiteboardNode> => {
+  const createNode = useCallback(async (newNode: Omit<WhiteboardNode, 'id' | 'userId'| 'createdAt' | 'updatedAt' | 'zIndex'>): Promise<WhiteboardNode> => {
     if(!user) throw new Error("User not authenticated");
     const nodeRef = doc(collection(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes'));
     const maxZIndex = Math.max(0, ...Object.values(nodes).map(n => n.zIndex || 0));
@@ -228,10 +228,11 @@ export default function DigitalWhiteboard() {
     await setDoc(nodeRef, cleanedNode);
 
     const updatedNodes = { ...nodes, [nodeRef.id]: cleanedNode as WhiteboardNode };
+    setNodes(updatedNodes); // Immediately update local state
     pushToHistory(updatedNodes, connections);
 
     return cleanedNode as WhiteboardNode;
-  }
+  }, [user, whiteboardId, nodes, connections, pushToHistory]);
   
   const handleMapNameChange = useDebouncedCallback(async (newName: string) => {
     const boardRef = getBoardDocRef();
@@ -256,22 +257,16 @@ export default function DigitalWhiteboard() {
    }, 200), [user, whiteboardId]);
 
     const handleNodeChange = useDebouncedCallback((id: string, newAttrs: Partial<WhiteboardNode>) => {
-        setNodes(prev => ({
-            ...prev,
-            [id]: { ...prev[id], ...newAttrs } as WhiteboardNode,
-        }));
-        
-        if (!user) return;
         const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', id);
         const cleanedAttrs = deepCleanUndefined({ ...newAttrs, updatedAt: serverTimestamp() });
         updateDoc(nodeRef, cleanedAttrs);
     }, 50);
 
-    const handleNodeChangeComplete = () => {
+    const handleNodeChangeComplete = useCallback(() => {
         pushToHistory(nodes, connections);
-    };
+    }, [nodes, connections, pushToHistory]);
 
-    const deleteSelectedNodes = () => {
+    const deleteSelectedNodes = useCallback(() => {
         if (!user || selectedNodeIds.length === 0) return;
         
         const batch = writeBatch(db);
@@ -279,21 +274,20 @@ export default function DigitalWhiteboard() {
             const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', nodeId);
             batch.update(nodeRef, { isDeleted: true, updatedAt: serverTimestamp() });
         });
-
-        batch.commit();
-        
-        const newNodes = { ...nodes };
-        selectedNodeIds.forEach(id => delete newNodes[id]);
         
         const newConnections = connections.filter(c => !selectedNodeIds.includes(c.from) && !selectedNodeIds.includes(c.to));
-
-        pushToHistory(newNodes, newConnections);
-        if(boardData) {
-            updateDoc(getBoardDocRef()!, { connections: newConnections });
-        }
         
-        setSelectedNodeIds([]);
-    };
+        if (boardData) {
+            batch.update(getBoardDocRef()!, { connections: newConnections });
+        }
+
+        batch.commit().then(() => {
+            const newNodes = { ...nodes };
+            selectedNodeIds.forEach(id => delete newNodes[id]);
+            pushToHistory(newNodes, newConnections);
+            setSelectedNodeIds([]);
+        });
+    }, [user, selectedNodeIds, nodes, connections, getBoardDocRef, pushToHistory]);
 
     const handleLayerAction = (direction: 'front' | 'back') => {
         if (selectedNodeIds.length !== 1) return;
@@ -309,7 +303,9 @@ export default function DigitalWhiteboard() {
         } else { // back
             newZIndex = (sortedNodes[0]?.zIndex || 0) - 1;
         }
-
+        
+        const updatedNodes = {...nodes, [nodeId]: {...node, zIndex: newZIndex}};
+        setNodes(updatedNodes);
         handleNodeChange(nodeId, { zIndex: newZIndex });
         handleNodeChangeComplete();
     };
@@ -317,8 +313,8 @@ export default function DigitalWhiteboard() {
     const duplicateSelectedNodes = async () => {
         if (!user || selectedNodeIds.length === 0) return;
 
-        const newNodes: Record<string, WhiteboardNode> = { ...nodes };
         const batch = writeBatch(db);
+        const newLocalNodes = { ...nodes };
 
         for (const nodeId of selectedNodeIds) {
             const originalNode = nodes[nodeId];
@@ -334,23 +330,21 @@ export default function DigitalWhiteboard() {
                 };
                 const cleanedNode = deepCleanUndefined(newNodeData);
                 batch.set(newNodeRef, cleanedNode);
-                newNodes[newNodeRef.id] = cleanedNode as WhiteboardNode;
+                newLocalNodes[newNodeRef.id] = cleanedNode as WhiteboardNode;
             }
         }
 
         await batch.commit();
-        pushToHistory(newNodes, connections);
+        setNodes(newLocalNodes);
+        pushToHistory(newLocalNodes, connections);
         toast({ title: `${selectedNodeIds.length} object(s) duplicated` });
     };
 
-    const undo = () => {
+    const undo = useCallback(() => {
         if (historyIndex > 0) {
             const newIndex = historyIndex - 1;
             setHistoryIndex(newIndex);
-            const nodesToRestore = history[newIndex].nodes;
-            const connectionsToRestore = history[newIndex].connections;
-            setNodes(nodesToRestore);
-            setConnections(connectionsToRestore);
+            const { nodes: nodesToRestore, connections: connectionsToRestore } = history[newIndex];
             
             const batch = writeBatch(db);
             const currentIds = Object.keys(nodes);
@@ -373,16 +367,13 @@ export default function DigitalWhiteboard() {
 
             batch.commit();
         }
-    };
+    }, [historyIndex, history, nodes, user, whiteboardId, boardData, getBoardDocRef]);
 
-    const redo = () => {
+    const redo = useCallback(() => {
         if (historyIndex < history.length - 1) {
             const newIndex = historyIndex + 1;
             setHistoryIndex(newIndex);
-            const nodesToRedo = history[newIndex].nodes;
-            const connectionsToRedo = history[newIndex].connections;
-            setNodes(nodesToRedo);
-            setConnections(connectionsToRedo);
+            const { nodes: nodesToRedo, connections: connectionsToRedo } = history[newIndex];
 
             const batch = writeBatch(db);
             Object.values(nodesToRedo).forEach(node => {
@@ -394,7 +385,7 @@ export default function DigitalWhiteboard() {
             }
             batch.commit();
         }
-    };
+    }, [historyIndex, history, user, whiteboardId, boardData, getBoardDocRef]);
     
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -434,7 +425,7 @@ export default function DigitalWhiteboard() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedNodeIds, undo, redo, nodes]);
+    }, [selectedNodeIds, undo, redo, nodes, deleteSelectedNodes]);
 
 
   const toggleFullscreen = () => {
@@ -657,23 +648,23 @@ export default function DigitalWhiteboard() {
       handleNodeChangeComplete();
   }
 
-  const onConnectionCreate = (from: string, to: string) => {
+  const onConnectionCreate = useCallback((from: string, to: string) => {
       const newConnections = [...connections, { from, to, color: '#333', strokeWidth: 2 }];
       setConnections(newConnections);
       if(boardData) {
         updateDoc(getBoardDocRef()!, { connections: newConnections });
       }
       pushToHistory(nodes, newConnections);
-  }
+  }, [connections, boardData, getBoardDocRef, nodes, pushToHistory]);
 
-   const onConnectionDelete = (from: string, to: string) => {
+   const onConnectionDelete = useCallback((from: string, to: string) => {
         const newConnections = connections.filter(c => !(c.from === from && c.to === to));
         setConnections(newConnections);
         if(boardData) {
             updateDoc(getBoardDocRef()!, { connections: newConnections });
         }
         pushToHistory(nodes, newConnections);
-    }
+    }, [connections, boardData, getBoardDocRef, nodes, pushToHistory]);
 
 
   const selectedNode = selectedNodeIds.length === 1 ? nodes[selectedNodeIds[0]] : null;
@@ -909,7 +900,6 @@ export default function DigitalWhiteboard() {
                     } else if (tool === 'mindmap' && idOrFn) {
                          const parentNode = nodes[idOrFn];
                          if (parentNode) {
-                            // Calculate new node position
                             const children = connections.filter(c => c.from === parentNode.id);
                             const siblingGap = 20;
                             const childGap = 120;
@@ -917,16 +907,16 @@ export default function DigitalWhiteboard() {
 
                             if (layoutDirection === 'right') {
                                 newX += childGap;
-                                newY += children.length * (50 + siblingGap);
+                                newY += children.length > 0 ? (children.length * (50 + siblingGap)) - (children.length-1)*(50+siblingGap)/2 : 0;
                             } else if (layoutDirection === 'left') {
                                 newX -= childGap;
-                                newY += children.length * (50 + siblingGap);
+                                newY += children.length > 0 ? (children.length * (50 + siblingGap)) - (children.length-1)*(50+siblingGap)/2 : 0;
                             } else if (layoutDirection === 'bottom') {
                                 newY += childGap;
-                                newX += children.length * (150 + siblingGap);
+                                newX += children.length > 0 ? (children.length * (150 + siblingGap)) - (children.length-1)*(150+siblingGap)/2 : 0;
                             } else { // top
                                 newY -= childGap;
-                                newX += children.length * (150 + siblingGap);
+                                newX += children.length > 0 ? (children.length * (150 + siblingGap)) - (children.length-1)*(150+siblingGap)/2 : 0;
                             }
 
                             createNode({

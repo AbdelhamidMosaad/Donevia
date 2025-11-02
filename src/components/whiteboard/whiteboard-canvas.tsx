@@ -64,7 +64,7 @@ export function WhiteboardCanvas({
 }: WhiteboardCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const currentPathData = useRef<string>("");
+  const currentPathNodeId = useRef<string | null>(null);
   const [selectionRect, setSelectionRect] = useState({ x: 0, y: 0, width: 0, height: 0, visible: false });
   
   const getPointerPosition = (e: React.MouseEvent | React.TouchEvent) => {
@@ -85,14 +85,14 @@ export function WhiteboardCanvas({
     
     if (tool === 'pen' || tool === 'arrow') {
         setIsDrawing(true);
-        currentPathData.current = `M ${pos.x} ${pos.y}`;
-        onNodeCreate({
+        const newNode = await onNodeCreate({
             type: 'pen',
             x: pos.x, y: pos.y, points: [pos.x, pos.y],
             color: currentColor,
             strokeWidth: strokeWidth,
             isArrow: tool === 'arrow',
         });
+        currentPathNodeId.current = newNode.id;
     } else if (tool === 'select') {
         setSelectionRect({ x: pos.x, y: pos.y, width: 0, height: 0, visible: true });
         if(!e.shiftKey) {
@@ -107,9 +107,8 @@ export function WhiteboardCanvas({
     if(!pos) return;
     onUpdatePresence(pos);
 
-    if (isDrawing && (tool === 'pen' || tool === 'arrow')) {
-        currentPathData.current += ` L ${pos.x} ${pos.y}`;
-        const lastNode = nodes[nodes.length - 1]; // Assume last created node is the one being drawn
+    if (isDrawing && (tool === 'pen' || tool === 'arrow') && currentPathNodeId.current) {
+        const lastNode = nodes.find(n => n.id === currentPathNodeId.current);
         if (lastNode && lastNode.type === 'pen' && lastNode.points) {
             onNodeChange(lastNode.id, { points: [...lastNode.points, pos.x, pos.y] });
         }
@@ -126,8 +125,8 @@ export function WhiteboardCanvas({
     if (isMinimap) return;
     if (isDrawing) {
         setIsDrawing(false);
+        currentPathNodeId.current = null;
         onNodeChangeComplete();
-        currentPathData.current = "";
     }
     if (selectionRect.visible) {
         const selBox = {
