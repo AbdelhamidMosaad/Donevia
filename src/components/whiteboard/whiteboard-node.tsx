@@ -3,7 +3,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import type { WhiteboardNode } from '@/lib/types';
-import Rnd from 'react-rnd';
+import { Rnd } from 'react-rnd';
 
 interface WhiteboardNodeComponentProps {
   node: WhiteboardNode;

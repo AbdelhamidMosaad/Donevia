@@ -95,7 +95,9 @@ export function WhiteboardCanvas({
         });
     } else if (tool === 'select') {
         setSelectionRect({ x: pos.x, y: pos.y, width: 0, height: 0, visible: true });
-        onSelectNode(null);
+        if(!e.shiftKey) {
+          onSelectNode(null);
+        }
     }
   };
 
@@ -129,10 +131,10 @@ export function WhiteboardCanvas({
     }
     if (selectionRect.visible) {
         const selBox = {
-            x1: selectionRect.x,
-            y1: selectionRect.y,
-            x2: selectionRect.x + selectionRect.width,
-            y2: selectionRect.y + selectionRect.height,
+            x1: Math.min(selectionRect.x, selectionRect.x + selectionRect.width),
+            y1: Math.min(selectionRect.y, selectionRect.y + selectionRect.height),
+            x2: Math.max(selectionRect.x, selectionRect.x + selectionRect.width),
+            y2: Math.max(selectionRect.y, selectionRect.y + selectionRect.height),
         };
          const selected = nodes.filter(node => {
             const nodeBox = {
@@ -142,11 +144,12 @@ export function WhiteboardCanvas({
                 y2: node.y + (node.height ?? 0) / 2,
             };
             return (
-                Math.max(selBox.x1, nodeBox.x1) < Math.min(selBox.x2, nodeBox.x2) &&
-                Math.max(selBox.y1, nodeBox.y1) < Math.min(selBox.y2, nodeBox.y2)
+                selBox.x1 < nodeBox.x2 && selBox.x2 > nodeBox.x1 &&
+                selBox.y1 < nodeBox.y2 && selBox.y2 > nodeBox.y1
             );
         }).map(node => node.id);
-        onSelectNode(selected);
+        
+        onSelectNode((prev) => [...new Set([...prev, ...selected])]);
         setSelectionRect({ x: 0, y: 0, width: 0, height: 0, visible: false });
     }
   };
