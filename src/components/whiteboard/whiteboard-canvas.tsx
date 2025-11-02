@@ -228,6 +228,7 @@ export function WhiteboardCanvas({
                 onDoubleClick={() => onEditNode(node.id)}
                 onChange={(newAttrs) => onNodeChange(node.id, newAttrs)}
                 onDragEnd={onNodeChangeComplete}
+                onEditNode={onEditNode}
                 />
             ))}
             {/* Render Selection Rectangle */}

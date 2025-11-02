@@ -14,6 +14,7 @@ interface WhiteboardNodeComponentProps {
   onDoubleClick: () => void;
   onChange: (newAttrs: Partial<WhiteboardNode>) => void;
   onDragEnd: () => void;
+  onEditNode: (id: string | null) => void;
 }
 
 export function WhiteboardNodeComponent({
@@ -25,6 +26,7 @@ export function WhiteboardNodeComponent({
   onDoubleClick,
   onChange,
   onDragEnd,
+  onEditNode,
 }: WhiteboardNodeComponentProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   
