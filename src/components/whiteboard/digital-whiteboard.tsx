@@ -656,6 +656,24 @@ export default function DigitalWhiteboard() {
       handleNodeChangeComplete();
   }
 
+  const onConnectionCreate = (from: string, to: string) => {
+      const newConnections = [...connections, { from, to, color: '#333', strokeWidth: 2 }];
+      setConnections(newConnections);
+      if(boardData) {
+        updateDoc(getBoardDocRef()!, { connections: newConnections });
+      }
+      pushToHistory(nodes, newConnections);
+  }
+
+   const onConnectionDelete = (from: string, to: string) => {
+        const newConnections = connections.filter(c => !(c.from === from && c.to === to));
+        setConnections(newConnections);
+        if(boardData) {
+            updateDoc(getBoardDocRef()!, { connections: newConnections });
+        }
+        pushToHistory(nodes, newConnections);
+    }
+
 
   const selectedNode = selectedNodeIds.length === 1 ? nodes[selectedNodeIds[0]] : null;
 
