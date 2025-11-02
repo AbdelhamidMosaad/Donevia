@@ -36,23 +36,43 @@ export function WhiteboardNodeComponent({
 
   }, [node, isSelected, tool]);
 
+  const renderShape = () => {
+    const commonProps = {
+        width: node.width || 200,
+        height: node.height || 100,
+        fill: node.color || '#333',
+        stroke: 'black',
+        strokeWidth: 0,
+    };
+    switch (node.shape) {
+        case 'circle': return <ellipse cx={commonProps.width / 2} cy={commonProps.height / 2} rx={commonProps.width / 2} ry={commonProps.height / 2} {...commonProps} />;
+        case 'diamond': return <polygon points={`${commonProps.width / 2},0 0,${commonProps.height / 2} ${commonProps.width / 2},${commonProps.height} ${commonProps.width},${commonProps.height/2}`} {...commonProps} />;
+        case 'triangle': return <polygon points={`${commonProps.width / 2},0 0,${commonProps.height} ${commonProps.width},${commonProps.height}`} {...commonProps} />;
+        case 'arrow-right': return <polygon points={`0,${commonProps.height/4} ${commonProps.width - 20},${commonProps.height/4} ${commonProps.width-20},0 ${commonProps.width},${commonProps.height/2} ${commonProps.width-20},${commonProps.height} ${commonProps.width-20},${(commonProps.height*3)/4} 0,${(commonProps.height*3)/4}`} {...commonProps} />;
+        case 'arrow-left': return <polygon points={`${commonProps.width},${commonProps.height/4} 20,${commonProps.height/4} 20,0 0,${commonProps.height/2} 20,${commonProps.height} 20,${(commonProps.height*3)/4} ${commonProps.width},${(commonProps.height*3)/4}`} {...commonProps} />;
+        case 'rectangle':
+        default: return <rect x="0" y="0" {...commonProps} rx="8" />;
+    }
+  };
+
   const renderContent = () => {
     switch(node.type) {
         case 'text':
         case 'sticky':
+        case 'shape':
             if (isEditing) {
                 return (
                     <textarea 
                         value={node.text || ''} 
                         onChange={(e) => onChange({ text: e.target.value })}
                         onBlur={onDragEnd}
-                        className="w-full h-full bg-transparent border-none outline-none resize-none"
+                        className="w-full h-full bg-transparent border-none outline-none resize-none p-2"
                         style={{ color: node.color, fontSize: node.fontSize }}
                         autoFocus
                     />
                 );
             }
-            return <div style={{ fontSize: node.fontSize, fontWeight: node.isBold ? 'bold' : 'normal' }}>{node.text}</div>
+            return <div style={{ fontSize: node.fontSize, fontWeight: node.bold ? 'bold' : 'normal', color: node.type==='shape' ? 'white' : node.color }}>{node.text}</div>
         case 'image':
             return <img src={node.src} alt="whiteboard content" className="w-full h-full object-cover" />;
         case 'pen':
@@ -96,7 +116,7 @@ export function WhiteboardNodeComponent({
           topLeft: false,
           topRight: false,
         }}
-        className={`absolute flex items-center justify-center p-2 rounded-md shadow-lg ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+        className={`absolute flex items-center justify-center p-2 shadow-lg ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
         style={{
             backgroundColor: node.type === 'sticky' ? node.color : 'transparent',
             cursor: tool === 'select' ? 'move' : 'default',
@@ -105,7 +125,12 @@ export function WhiteboardNodeComponent({
         onDoubleClick={onDoubleClick}
     >
         <div ref={nodeRef} className="w-full h-full">
-            {renderContent()}
+            {node.type === 'shape' ? (
+                <svg width={node.width || 200} height={node.height || 100} className="overflow-visible">
+                    {renderShape()}
+                </svg>
+            ): null}
+            <div className="absolute inset-0 flex items-center justify-center p-2">{renderContent()}</div>
         </div>
     </Rnd>
   );
