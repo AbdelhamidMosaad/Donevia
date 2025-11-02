@@ -63,22 +63,24 @@ export function WhiteboardNodeComponent({
             if (isEditing) {
                 return (
                     <textarea 
-                        value={node.text || ''} 
-                        onChange={(e) => onChange({ text: e.target.value })}
-                        onBlur={onDragEnd}
+                        defaultValue={node.text || ''} 
+                        onBlur={(e) => {
+                            onChange({ text: e.target.value });
+                            onEditNode(null);
+                        }}
                         className="w-full h-full bg-transparent border-none outline-none resize-none p-2"
-                        style={{ color: node.color, fontSize: node.fontSize }}
+                        style={{ color: node.type === 'shape' ? 'white' : node.color, fontSize: node.fontSize }}
                         autoFocus
                     />
                 );
             }
-            return <div style={{ fontSize: node.fontSize, fontWeight: node.bold ? 'bold' : 'normal', color: node.type==='shape' ? 'white' : node.color }}>{node.text}</div>
+            return <div style={{ fontSize: node.fontSize, fontWeight: node.bold ? 'bold' : 'normal', color: node.type === 'shape' ? 'white' : node.textColor || '#333' }}>{node.text}</div>
         case 'image':
             return <img src={node.src} alt="whiteboard content" className="w-full h-full object-cover" />;
         case 'pen':
-            const pathData = node.points?.reduce((acc, point, i) => {
+            const pathData = node.points?.reduce((acc, val, i) => {
                 const command = i === 0 ? 'M' : 'L';
-                return `${acc} ${command} ${point}`;
+                return i % 2 === 0 ? `${acc} ${command} ${val}` : `${acc},${val}`;
             }, '');
             return <svg className="w-full h-full overflow-visible"><path d={pathData} stroke={node.color} strokeWidth={node.strokeWidth} fill="none" /></svg>
         default:
@@ -105,8 +107,8 @@ export function WhiteboardNodeComponent({
           });
           onDragEnd();
         }}
-        disableDragging={tool !== 'select'}
-        enableResizing={isSelected && tool === 'select' ? undefined : {
+        disableDragging={tool !== 'select' || isEditing}
+        enableResizing={isSelected && tool === 'select' && !isEditing ? undefined : {
           bottom: false,
           bottomLeft: false,
           bottomRight: false,
@@ -120,6 +122,7 @@ export function WhiteboardNodeComponent({
         style={{
             backgroundColor: node.type === 'sticky' ? node.color : 'transparent',
             cursor: tool === 'select' ? 'move' : 'default',
+            zIndex: node.zIndex,
         }}
         onClick={onSelect}
         onDoubleClick={onDoubleClick}

@@ -187,9 +187,8 @@ export default function DigitalWhiteboard() {
         });
         setNodes(newNodes);
 
-        if (historyIndex === -1 && Object.keys(newNodes).length > 0) {
-            setHistory([{ nodes: newNodes, connections: boardData?.connections || [] }]);
-            setHistoryIndex(0);
+        if (history.length === 0 && Object.keys(newNodes).length > 0) {
+            pushToHistory(newNodes, boardData?.connections || []);
         }
       });
       
@@ -257,6 +256,7 @@ export default function DigitalWhiteboard() {
    }, 200), [user, whiteboardId]);
 
     const handleNodeChange = useDebouncedCallback((id: string, newAttrs: Partial<WhiteboardNode>) => {
+        if(!user) return;
         const nodeRef = doc(db, 'users', user.uid, 'whiteboards', whiteboardId, 'nodes', id);
         const cleanedAttrs = deepCleanUndefined({ ...newAttrs, updatedAt: serverTimestamp() });
         updateDoc(nodeRef, cleanedAttrs);
@@ -284,6 +284,7 @@ export default function DigitalWhiteboard() {
         batch.commit().then(() => {
             const newNodes = { ...nodes };
             selectedNodeIds.forEach(id => delete newNodes[id]);
+            setNodes(newNodes);
             pushToHistory(newNodes, newConnections);
             setSelectedNodeIds([]);
         });
@@ -346,6 +347,9 @@ export default function DigitalWhiteboard() {
             setHistoryIndex(newIndex);
             const { nodes: nodesToRestore, connections: connectionsToRestore } = history[newIndex];
             
+            setNodes(nodesToRestore);
+            setConnections(connectionsToRestore);
+            
             const batch = writeBatch(db);
             const currentIds = Object.keys(nodes);
             const restoredIds = Object.keys(nodesToRestore);
@@ -374,6 +378,9 @@ export default function DigitalWhiteboard() {
             const newIndex = historyIndex + 1;
             setHistoryIndex(newIndex);
             const { nodes: nodesToRedo, connections: connectionsToRedo } = history[newIndex];
+            
+            setNodes(nodesToRedo);
+            setConnections(connectionsToRedo);
 
             const batch = writeBatch(db);
             Object.values(nodesToRedo).forEach(node => {
@@ -501,12 +508,12 @@ export default function DigitalWhiteboard() {
           exportCtx.lineJoin = 'round';
           exportCtx.beginPath();
           for(let i = 0; i < node.points.length; i += 2) {
-              const pointX = (node.points[i]) + drawOffsetX;
-              const pointY = (node.points[i+1]) + drawOffsetY;
+              const pointX = (node.points[i]);
+              const pointY = (node.points[i+1]);
               if (i === 0) {
-                  exportCtx.moveTo(pointX, pointY);
+                  exportCtx.moveTo(pointX+drawOffsetX, pointY+drawOffsetY);
               } else {
-                  exportCtx.lineTo(pointX, pointY);
+                  exportCtx.lineTo(pointX+drawOffsetX, pointY+drawOffsetY);
               }
           }
           exportCtx.stroke();
@@ -591,6 +598,7 @@ export default function DigitalWhiteboard() {
     const firstNode = selectedNodes[0];
     
     const newNodes = { ...nodes };
+    let changed = false;
 
     selectedNodes.forEach(node => {
         let newX = node.x;
@@ -603,10 +611,16 @@ export default function DigitalWhiteboard() {
             case 'center-v': newY = firstNode.y; break;
             case 'bottom': newY = firstNode.y + firstNode.height! / 2 - node.height! / 2; break;
         }
-        newNodes[node.id] = { ...node, x: newX, y: newY };
+        if (newX !== node.x || newY !== node.y) {
+            newNodes[node.id] = { ...node, x: newX, y: newY };
+            handleNodeChange(node.id, { x: newX, y: newY });
+            changed = true;
+        }
     });
-    setNodes(newNodes);
-    handleNodeChangeComplete();
+    if(changed) {
+        setNodes(newNodes);
+        handleNodeChangeComplete();
+    }
   }
 
   const handleDistribute = (type: 'horizontal' | 'vertical') => {
@@ -614,6 +628,7 @@ export default function DigitalWhiteboard() {
       const selectedNodes = selectedNodeIds.map(id => nodes[id]).filter(Boolean);
       
       const newNodes = { ...nodes };
+      let changed = false;
 
       if(type === 'horizontal') {
         const sorted = selectedNodes.sort((a,b) => a.x - b.x);
@@ -626,7 +641,12 @@ export default function DigitalWhiteboard() {
 
         for (let i = 1; i < sorted.length - 1; i++) {
             const node = sorted[i];
-            newNodes[node.id] = { ...node, x: currentX + node.width!/2 };
+            const newX = currentX + node.width!/2;
+            if(newX !== node.x) {
+                newNodes[node.id] = { ...node, x: newX };
+                handleNodeChange(node.id, {x: newX});
+                changed = true;
+            }
             currentX += node.width! + gap;
         }
       } else { // vertical
@@ -640,12 +660,19 @@ export default function DigitalWhiteboard() {
 
           for (let i = 1; i < sorted.length - 1; i++) {
               const node = sorted[i];
-              newNodes[node.id] = { ...node, y: currentY + node.height!/2 };
+              const newY = currentY + node.height!/2;
+              if (newY !== node.y) {
+                newNodes[node.id] = { ...node, y: newY };
+                handleNodeChange(node.id, {y: newY});
+                changed = true;
+              }
               currentY += node.height! + gap;
           }
       }
-      setNodes(newNodes);
-      handleNodeChangeComplete();
+      if(changed) {
+        setNodes(newNodes);
+        handleNodeChangeComplete();
+      }
   }
 
   const onConnectionCreate = useCallback((from: string, to: string) => {
@@ -789,7 +816,7 @@ export default function DigitalWhiteboard() {
             {(selectedNodeIds.length > 0) && (
                  <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-card/60 backdrop-blur-md p-1 rounded-lg shadow-lg flex gap-1 border items-center">
                     <Popover>
-                        <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: selectedNode?.color}}><Palette/></Button></PopoverTrigger>
+                        <PopoverTrigger asChild><Button variant="ghost" size="icon" style={{color: selectedNode?.color || currentColor}}><Palette/></Button></PopoverTrigger>
                         <PopoverContent className="w-auto p-2">
                            <div className="flex gap-1">
                             {colorPalette.map(c => (
@@ -858,14 +885,12 @@ export default function DigitalWhiteboard() {
                     <Button variant="ghost" size="icon" onClick={() => setShowMinimap(!showMinimap)}><Map/></Button>
                     <Separator />
                     <Button variant="ghost" size="icon" onClick={() => {
-                        const newScale = Math.min((boardData.scale || 1) * 1.2, 5);
-                        handleSettingChange({scale: newScale});
+                        handleSettingChange({scale: (boardData.scale || 1) * 1.2});
                     }}><Plus/></Button>
                     <Button variant="ghost" size="icon" onClick={() => {
-                        const newScale = Math.max((boardData.scale || 1) * 0.8, 0.1);
-                        handleSettingChange({scale: newScale});
+                        handleSettingChange({scale: (boardData.scale || 1) * 0.8});
                     }}><Minus/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => {}}><Expand/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleSettingChange({scale: 1, x: 0, y: 0})}><Expand/></Button>
                 </div>
             </div>
 

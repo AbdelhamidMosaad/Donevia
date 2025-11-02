@@ -72,9 +72,14 @@ export function WhiteboardCanvas({
     const rect = canvasRef.current.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    const scale = boardData.scale || 1;
+    const panX = boardData.x || 0;
+    const panY = boardData.y || 0;
+
     return {
-        x: clientX - rect.left,
-        y: clientY - rect.top,
+        x: (clientX - rect.left - panX) / scale,
+        y: (clientY - rect.top - panY) / scale,
     };
   }
 
@@ -82,6 +87,9 @@ export function WhiteboardCanvas({
     if (isMinimap) return;
     const pos = getPointerPosition(e);
     if (!pos) return;
+    
+    // Prevent starting a new action if clicking on an existing node
+    if (e.target !== canvasRef.current) return;
     
     if (tool === 'pen' || tool === 'arrow') {
         setIsDrawing(true);
@@ -93,6 +101,16 @@ export function WhiteboardCanvas({
             isArrow: tool === 'arrow',
         });
         currentPathNodeId.current = newNode.id;
+    } else if (tool === 'text') {
+        const newNode = await onNodeCreate({type: 'text', x: pos.x, y: pos.y, width: 150, height: 40, text: 'Text', fontSize, color: currentColor });
+        onSelectNode(newNode.id);
+        onEditNode(newNode.id);
+    } else if (tool === 'sticky') {
+        const newNode = await onNodeCreate({type: 'sticky', x: pos.x, y: pos.y, width: 180, height: 180, text: 'Note', color: currentColor, fontSize });
+        onSelectNode(newNode.id);
+        onEditNode(newNode.id);
+    } else if (tool === 'shape') {
+        await onNodeCreate({type: 'shape', x: pos.x, y: pos.y, width: 150, height: 100, shape: shapeType as any, color: currentColor });
     } else if (tool === 'select') {
         setSelectionRect({ x: pos.x, y: pos.y, width: 0, height: 0, visible: true });
         if(!e.shiftKey) {
@@ -125,10 +143,16 @@ export function WhiteboardCanvas({
     if (isMinimap) return;
     if (isDrawing) {
         setIsDrawing(false);
+        const node = nodes.find(n => n.id === currentPathNodeId.current);
+        if (node && node.points && node.points.length <= 2) {
+            onNodeDelete(node.id); // Delete if it's just a dot
+        } else {
+            onNodeChangeComplete();
+        }
         currentPathNodeId.current = null;
-        onNodeChangeComplete();
     }
     if (selectionRect.visible) {
+        const scale = boardData.scale || 1;
         const selBox = {
             x1: Math.min(selectionRect.x, selectionRect.x + selectionRect.width),
             y1: Math.min(selectionRect.y, selectionRect.y + selectionRect.height),
@@ -158,59 +182,74 @@ export function WhiteboardCanvas({
   return (
     <div
       ref={canvasRef}
-      className="relative w-full h-full"
+      className="relative w-full h-full overflow-hidden"
       style={{ 
           backgroundColor: boardData.backgroundColor || '#FFFFFF',
-          cursor: tool === 'pen' ? 'crosshair' : tool === 'connect' ? 'crosshair' : 'default' 
+          cursor: tool === 'pen' ? 'crosshair' : tool === 'connect' ? 'crosshair' : 'default' ,
+          backgroundImage: boardData.backgroundGrid === 'dotted' 
+            ? 'radial-gradient(hsl(var(--border)) 1px, transparent 1px)' 
+            : boardData.backgroundGrid === 'lined'
+            ? 'linear-gradient(hsl(var(--border)) 1px, transparent 1px)'
+            : 'none',
+          backgroundSize: boardData.backgroundGrid === 'dotted' ? '16px 16px' : '100% 24px'
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      <svg className="absolute top-0 left-0 w-full h-full" pointerEvents="none">
-        {/* Render Connections */}
-        {connections.map(conn => {
-            const fromNode = nodes.find(n => n.id === conn.from);
-            const toNode = nodes.find(n => n.id === conn.to);
-            if(!fromNode || !toNode) return null;
-            return (
-                 <line 
-                    key={`${conn.from}-${conn.to}`} 
-                    x1={fromNode.x} y1={fromNode.y} 
-                    x2={toNode.x} y2={toNode.y} 
-                    stroke={conn.color || '#333'} 
-                    strokeWidth={conn.strokeWidth || 2} 
+        <div style={{ transform: `scale(${boardData.scale || 1}) translate(${boardData.x || 0}px, ${boardData.y || 0}px)`, transformOrigin: '0 0' }}>
+            <svg className="absolute top-0 left-0 w-full h-full" pointerEvents="none" style={{width: '200vw', height: '200vh'}}>
+                {/* Render Connections */}
+                {connections.map(conn => {
+                    const fromNode = nodes.find(n => n.id === conn.from);
+                    const toNode = nodes.find(n => n.id === conn.to);
+                    if(!fromNode || !toNode) return null;
+                    return (
+                        <line 
+                            key={`${conn.from}-${conn.to}`} 
+                            x1={fromNode.x} y1={fromNode.y} 
+                            x2={toNode.x} y2={toNode.y} 
+                            stroke={conn.color || '#333'} 
+                            strokeWidth={conn.strokeWidth || 2} 
+                        />
+                    )
+                })}
+            </svg>
+            {/* Render Nodes */}
+            {sortedNodes.map(node => (
+                <WhiteboardNodeComponent
+                key={node.id}
+                node={node}
+                isSelected={selectedNodeIds.includes(node.id)}
+                isEditing={node.id === editingNodeId}
+                tool={tool}
+                onSelect={() => onSelectNode(node.id)}
+                onDoubleClick={() => onEditNode(node.id)}
+                onChange={(newAttrs) => onNodeChange(node.id, newAttrs)}
+                onDragEnd={onNodeChangeComplete}
                 />
-            )
-        })}
-      </svg>
-      {/* Render Nodes */}
-      {sortedNodes.map(node => (
-        <WhiteboardNodeComponent
-          key={node.id}
-          node={node}
-          isSelected={selectedNodeIds.includes(node.id)}
-          isEditing={node.id === editingNodeId}
-          tool={tool}
-          onSelect={() => onSelectNode(node.id)}
-          onDoubleClick={() => onEditNode(node.id)}
-          onChange={(newAttrs) => onNodeChange(node.id, newAttrs)}
-          onDragEnd={onNodeChangeComplete}
-        />
-      ))}
-      {/* Render Selection Rectangle */}
-      {selectionRect.visible && (
-        <div
-          className="absolute border-2 border-blue-500 bg-blue-500/10 pointer-events-none"
-          style={{
-            left: Math.min(selectionRect.x, selectionRect.x + selectionRect.width),
-            top: Math.min(selectionRect.y, selectionRect.y + selectionRect.height),
-            width: Math.abs(selectionRect.width),
-            height: Math.abs(selectionRect.height),
-          }}
-        />
-      )}
+            ))}
+            {/* Render Selection Rectangle */}
+            {selectionRect.visible && (
+                <div
+                className="absolute border-2 border-blue-500 bg-blue-500/10 pointer-events-none"
+                style={{
+                    left: Math.min(selectionRect.x, selectionRect.x + selectionRect.width),
+                    top: Math.min(selectionRect.y, selectionRect.y + selectionRect.height),
+                    width: Math.abs(selectionRect.width),
+                    height: Math.abs(selectionRect.height),
+                }}
+                />
+            )}
+        </div>
+         {/* Render Presence Cursors */}
+         {Object.values(presence).map(p => (
+            <div key={p.userId} className="absolute transition-all duration-200" style={{ left: p.x, top: p.y }}>
+                <MousePointer className="h-5 w-5" style={{ color: p.color }} />
+                <span className="text-xs px-1 rounded" style={{ backgroundColor: p.color, color: 'white' }}>{p.name}</span>
+            </div>
+        ))}
     </div>
   );
 }
