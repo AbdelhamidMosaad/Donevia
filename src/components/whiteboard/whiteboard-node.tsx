@@ -3,6 +3,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import type { WhiteboardNode } from '@/lib/types';
+import Rnd from 'react-rnd';
 
 interface WhiteboardNodeComponentProps {
   node: WhiteboardNode;
@@ -31,8 +32,7 @@ export function WhiteboardNodeComponent({
     const el = nodeRef.current;
     if (!el) return;
 
-    // Drag and resize logic would go here if we were not using a library
-    // For simplicity, we'll omit the complex drag/resize logic for this replacement
+    // We use react-rnd for drag and resize, so manual logic is removed.
 
   }, [node, isSelected, tool]);
 
@@ -67,25 +67,46 @@ export function WhiteboardNodeComponent({
   }
 
   return (
-    <div
-      ref={nodeRef}
-      id={node.id}
-      className={`absolute flex items-center justify-center p-2 rounded-md shadow-lg ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
-      style={{
-        left: node.x,
-        top: node.y,
-        width: node.width,
-        height: node.height,
-        transform: `rotate(${node.rotation || 0}deg)`,
-        backgroundColor: node.type === 'sticky' ? node.color : 'transparent',
-        cursor: tool === 'select' ? 'move' : 'default',
-      }}
-      onClick={onSelect}
-      onDoubleClick={onDoubleClick}
+    <Rnd
+        bounds="parent"
+        size={{ width: node.width || 200, height: node.height || 'auto' }}
+        position={{ x: node.x, y: node.y }}
+        onDragStart={onSelect}
+        onDragStop={(e, d) => {
+            onChange({ x: d.x, y: d.y });
+            onDragEnd();
+        }}
+        onResizeStart={onSelect}
+        onResizeStop={(e, direction, ref, delta, position) => {
+          onChange({
+            width: parseInt(ref.style.width),
+            height: parseInt(ref.style.height),
+            ...position,
+          });
+          onDragEnd();
+        }}
+        disableDragging={tool !== 'select'}
+        enableResizing={isSelected && tool === 'select' ? undefined : {
+          bottom: false,
+          bottomLeft: false,
+          bottomRight: false,
+          left: false,
+          right: false,
+          top: false,
+          topLeft: false,
+          topRight: false,
+        }}
+        className={`absolute flex items-center justify-center p-2 rounded-md shadow-lg ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+        style={{
+            backgroundColor: node.type === 'sticky' ? node.color : 'transparent',
+            cursor: tool === 'select' ? 'move' : 'default',
+        }}
+        onClick={onSelect}
+        onDoubleClick={onDoubleClick}
     >
-      {renderContent()}
-    </div>
+        <div ref={nodeRef} className="w-full h-full">
+            {renderContent()}
+        </div>
+    </Rnd>
   );
 }
-
-    
