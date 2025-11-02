@@ -159,7 +159,7 @@ export function WhiteboardCanvas({
       className="relative w-full h-full"
       style={{ 
           backgroundColor: boardData.backgroundColor || '#FFFFFF',
-          cursor: tool === 'pen' ? 'crosshair' : 'default' 
+          cursor: tool === 'pen' ? 'crosshair' : tool === 'connect' ? 'crosshair' : 'default' 
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

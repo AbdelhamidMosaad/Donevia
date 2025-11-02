@@ -915,9 +915,7 @@ export default function DigitalWhiteboard() {
                         if(!connectingNodeId) {
                             setConnectingNodeId(idOrFn);
                         } else if(idOrFn) {
-                            const newConnections = [...connections, { from: connectingNodeId, to: idOrFn, color: currentColor, strokeWidth: strokeWidth }];
-                            setConnections(newConnections);
-                            updateDoc(getBoardDocRef()!, { connections: newConnections });
+                            onConnectionCreate(connectingNodeId, idOrFn);
                             setConnectingNodeId(null);
                         }
                     } else if (tool === 'mindmap' && idOrFn) {
@@ -948,9 +946,7 @@ export default function DigitalWhiteboard() {
                                 width: 150, height: 40,
                                 text: 'New Idea', color: '#333333', fontSize: 16
                             }).then(newNode => {
-                                const newConnections = [...connections, { from: parentNode.id, to: newNode.id, color: '#9ca3af', strokeWidth: 2 }];
-                                setConnections(newConnections);
-                                updateDoc(getBoardDocRef()!, { connections: newConnections });
+                                onConnectionCreate(parentNode.id, newNode.id);
                                 onSelectNode(newNode.id);
                                 onEditNode(newNode.id);
                             });
@@ -972,16 +968,8 @@ export default function DigitalWhiteboard() {
                 onEditNode={setEditingNodeId}
                 onUpdatePresence={updatePresence}
                 connections={connections}
-                onConnectionCreate={(from, to) => {
-                    const newConnections = [...connections, { from, to, color: currentColor, strokeWidth: strokeWidth }];
-                    setConnections(newConnections);
-                    updateDoc(getBoardDocRef()!, { connections: newConnections });
-                }}
-                 onConnectionDelete={(from, to) => {
-                    const newConnections = connections.filter(c => !(c.from === from && c.to === to));
-                    setConnections(newConnections);
-                    updateDoc(getBoardDocRef()!, { connections: newConnections });
-                }}
+                onConnectionCreate={onConnectionCreate}
+                 onConnectionDelete={onConnectionDelete}
             />
         </div>
     </div>
