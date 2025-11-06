@@ -26,15 +26,15 @@ export function useTaskReminders() {
     return context;
 }
 
-const getRemindedTasksFromStorage = (): Set<string> => {
+const getDismissedTasksFromStorage = (): Set<string> => {
     if (typeof window === 'undefined') return new Set();
-    const stored = localStorage.getItem('remindedTasks');
+    const stored = localStorage.getItem('dismissedTaskIds');
     return stored ? new Set(JSON.parse(stored)) : new Set();
 };
 
-const saveRemindedTasksToStorage = (remindedSet: Set<string>) => {
+const saveDismissedTasksToStorage = (dismissedSet: Set<string>) => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('remindedTasks', JSON.stringify(Array.from(remindedSet)));
+    localStorage.setItem('dismissedTaskIds', JSON.stringify(Array.from(dismissedSet)));
 };
 
 
@@ -43,9 +43,9 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     const { toast } = useToast();
     const { tasks, stages } = useTasks();
     const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
-    const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(new Set());
+    const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(getDismissedTasksFromStorage);
     
-    const remindedTasks = useRef<Set<string>>(getRemindedTasksFromStorage());
+    const remindedTasks = useRef<Set<string>>(new Set());
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
@@ -92,8 +92,9 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     }
 
     const dismissOverdueTask = (taskId: string) => {
-        setDismissedTaskIds(prev => new Set(prev).add(taskId));
-        setOverdueTasks(prev => prev.filter(task => task.id !== taskId));
+        const newDismissed = new Set(dismissedTaskIds).add(taskId);
+        setDismissedTaskIds(newDismissed);
+        saveDismissedTasksToStorage(newDismissed);
     };
 
     // Check for overdue tasks and reminders
@@ -144,15 +145,13 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
                             )
                         });
                         remindedTasks.current.add(reminderId);
-                        saveRemindedTasksToStorage(remindedTasks.current);
                     }
                 }
             });
         };
         
-        checkTasks();
-
         const intervalId = setInterval(checkTasks, 60000); 
+        checkTasks(); // Initial check
 
         return () => clearInterval(intervalId);
 
