@@ -19,13 +19,13 @@ import { ReminderDialogProvider } from '@/hooks/use-reminder-dialog';
 import { ReminderDialog } from '@/components/reminder-dialog';
 import { StudyTimerProvider } from '@/hooks/use-study-timer';
 import { TaskTimerProvider } from '@/hooks/use-task-timer';
+import { useTasks } from '@/hooks/use-tasks';
 
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading, settings } = useAuth();
   const router = useRouter();
   
-  // Set the initial state to true (expanded) if no setting is found.
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -35,7 +35,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
   
   useEffect(() => {
-    // Sync sidebar open state with settings from AuthProvider once they are loaded
     if (settings?.sidebarOpen !== undefined) {
       setSidebarOpen(settings.sidebarOpen);
     }
@@ -83,4 +82,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </StudyReminderProvider>
     </TaskReminderProvider>
   );
+}
+
+// We need a wrapper component to use the useTasks hook, as it needs to be inside the AuthProvider.
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+    // This component is a placeholder to ensure the layout structure remains the same
+    // but the logic is moved to AppLayoutContent which can use hooks.
+    // In a real app, you might see this pattern to compose providers.
+    const TasksProvider = ({ children }: { children: React.ReactNode }) => {
+        useTasks();
+        return <>{children}</>;
+    };
+
+    return (
+        <TasksProvider>
+            <AppLayoutContent>{children}</AppLayoutContent>
+        </TasksProvider>
+    )
 }

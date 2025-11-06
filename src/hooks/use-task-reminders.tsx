@@ -9,6 +9,7 @@ import type { Task, Stage, UserSettings } from '@/lib/types';
 import { useToast } from './use-toast';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
+import { useTasks } from './use-tasks';
 
 interface TaskReminderContextType {
     overdueTasks: Task[];
@@ -38,12 +39,11 @@ const saveRemindedTasksToStorage = (remindedSet: Set<string>) => {
 
 
 export function TaskReminderProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
+    const { user, settings } = useAuth();
     const { toast } = useToast();
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [stages, setStages] = useState<Stage[]>([]);
+    const { tasks, stages } = useTasks();
     const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
-    const [settings, setSettings] = useState<Partial<UserSettings>>({ notificationSound: true });
+    
     const remindedTasks = useRef<Set<string>>(getRemindedTasksFromStorage());
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -62,62 +62,6 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
 
     }, []);
     
-    // Fetch settings
-    useEffect(() => {
-        if (user) {
-            const settingsRef = doc(db, 'users', user.uid, 'profile', 'settings');
-            const unsubscribe = onSnapshot(settingsRef, (docSnap) => {
-                if(docSnap.exists()) {
-                    setSettings(docSnap.data());
-                }
-            });
-            return () => unsubscribe();
-        }
-    }, [user]);
-
-    // Fetch all stages from all lists to determine 'Done' status
-    useEffect(() => {
-        if(user) {
-            const listsRef = collection(db, 'users', user.uid, 'taskLists');
-            const unsubscribe = onSnapshot(listsRef, (snapshot) => {
-                const allStages: Stage[] = [];
-                snapshot.forEach(doc => {
-                    const listData = doc.data();
-                    if(listData.stages) {
-                        allStages.push(...listData.stages);
-                    }
-                });
-                setStages(allStages);
-            });
-            return () => unsubscribe();
-        }
-    }, [user]);
-
-    // Fetch all tasks
-    useEffect(() => {
-        if (user) {
-            const tasksRef = collection(db, 'users', user.uid, 'tasks');
-            const q = query(tasksRef, where('deleted', '!=', true));
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-                setTasks(tasksData);
-
-                // Clean up remindedTasks for tasks that no longer exist
-                const currentTaskIds = new Set(tasksData.map(t => t.id));
-                const newRemindedTasks = new Set<string>();
-                remindedTasks.current.forEach(reminderId => {
-                    const taskId = reminderId.split('-')[0];
-                    if (currentTaskIds.has(taskId)) {
-                        newRemindedTasks.add(reminderId);
-                    }
-                });
-                remindedTasks.current = newRemindedTasks;
-                saveRemindedTasksToStorage(remindedTasks.current);
-            });
-            return () => unsubscribe();
-        }
-    }, [user]);
-
     const getDoneStageIds = useCallback(() => {
         return stages.filter(s => s.name.toLowerCase() === 'done').map(s => s.id);
     }, [stages]);
@@ -154,20 +98,18 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     // Check for overdue tasks and reminders
     useEffect(() => {
         const doneStageIds = getDoneStageIds();
-        const taskMap = new Map(tasks.map(t => [t.id, t]));
 
         const checkTasks = () => {
             const now = moment();
             const newOverdueTasks: Task[] = [];
             
             tasks.forEach(task => {
-                // Ensure task still exists in the latest state before processing
-                if (!taskMap.has(task.id)) {
-                    return; 
-                }
-
-                const dueDate = moment(task.dueDate.toDate());
                 const isDone = doneStageIds.includes(task.status);
+                if (isDone) {
+                    return; // Skip done tasks entirely
+                }
+                
+                const dueDate = moment(task.dueDate.toDate());
                 
                 // Check for overdue
                 if (now.isAfter(dueDate) && !isDone) {
@@ -178,7 +120,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
                 const reminderId = `${task.id}-${dueDate.format('YYYYMMDD')}`;
 
                 // Check for reminders
-                if (task.reminder && task.reminder !== 'none' && !isDone && !remindedTasks.current.has(reminderId)) {
+                if (task.reminder && task.reminder !== 'none' && !remindedTasks.current.has(reminderId)) {
                     const [amount, unit] = task.reminder.endsWith('m') 
                         ? [parseInt(task.reminder), 'minutes'] 
                         : [parseInt(task.reminder), 'hours'];
@@ -192,7 +134,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
                         showBrowserNotification(task);
                         toast({
                             title: `Reminder: ${task.title}`,
-                            description: `Due in ${dueDate.fromNow(true)}.`,
+                            description: `Due ${dueDate.fromNow(true)}.`,
                             action: (
                                 <Button size="sm" onClick={async () => {
                                     if(user && doneStageIds.length > 0) {
@@ -213,8 +155,10 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
             setOverdueTasks(newOverdueTasks);
         };
         
-        const intervalId = setInterval(checkTasks, 60000); // Check every minute
-        checkTasks(); // Initial check
+        // Run check immediately when tasks or stages change
+        checkTasks();
+
+        const intervalId = setInterval(checkTasks, 60000); // Also check every minute for time-based changes
 
         return () => clearInterval(intervalId);
 
