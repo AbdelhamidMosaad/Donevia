@@ -43,6 +43,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     const { toast } = useToast();
     const { tasks, stages } = useTasks();
     const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
+    const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(new Set());
     
     const remindedTasks = useRef<Set<string>>(getRemindedTasksFromStorage());
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -52,14 +53,13 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
             audioRef.current = new Audio('/notification.mp3');
         }
 
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller === null) {
             navigator.serviceWorker.register('/sw.js').then(function(registration) {
                 console.log('Service Worker registered with scope:', registration.scope);
             }).catch(function(error) {
                 console.log('Service Worker registration failed:', error);
             });
         }
-
     }, []);
     
     const getDoneStageIds = useCallback(() => {
@@ -79,7 +79,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
             vibrate: [200, 100, 200],
             data: { 
                 taskId: task.id,
-                listId: task.listId
+                listId: task.listId // listId is deprecated but kept for compatibility
             },
             actions: [
                 { action: 'mark-as-done', title: 'Mark as Done' },
@@ -92,6 +92,7 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
     }
 
     const dismissOverdueTask = (taskId: string) => {
+        setDismissedTaskIds(prev => new Set(prev).add(taskId));
         setOverdueTasks(prev => prev.filter(task => task.id !== taskId));
     };
 
@@ -101,25 +102,21 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
 
         const checkTasks = () => {
             const now = moment();
-            const newOverdueTasks: Task[] = [];
+            
+            const newOverdueTasks = tasks.filter(task => {
+                const isDone = doneStageIds.includes(task.status);
+                const isOverdue = moment(task.dueDate.toDate()).isBefore(now, 'day');
+                return isOverdue && !isDone && !dismissedTaskIds.has(task.id);
+            });
+            setOverdueTasks(newOverdueTasks);
             
             tasks.forEach(task => {
                 const isDone = doneStageIds.includes(task.status);
-                if (isDone) {
-                    return; // Skip done tasks entirely
-                }
-                
-                const dueDate = moment(task.dueDate.toDate());
-                
-                // Check for overdue
-                if (now.isAfter(dueDate) && !isDone) {
-                    newOverdueTasks.push(task);
-                }
+                if (isDone) return;
 
-                // Reminder key combines task ID and due date to handle recurring tasks in the future
+                const dueDate = moment(task.dueDate.toDate());
                 const reminderId = `${task.id}-${dueDate.format('YYYYMMDD')}`;
 
-                // Check for reminders
                 if (task.reminder && task.reminder !== 'none' && !remindedTasks.current.has(reminderId)) {
                     const [amount, unit] = task.reminder.endsWith('m') 
                         ? [parseInt(task.reminder), 'minutes'] 
@@ -151,18 +148,15 @@ export function TaskReminderProvider({ children }: { children: ReactNode }) {
                     }
                 }
             });
-            
-            setOverdueTasks(newOverdueTasks);
         };
         
-        // Run check immediately when tasks or stages change
         checkTasks();
 
-        const intervalId = setInterval(checkTasks, 60000); // Also check every minute for time-based changes
+        const intervalId = setInterval(checkTasks, 60000); 
 
         return () => clearInterval(intervalId);
 
-    }, [tasks, stages, user, toast, getDoneStageIds, settings.notificationSound]);
+    }, [tasks, stages, user, toast, getDoneStageIds, settings.notificationSound, dismissedTaskIds]);
 
     const value = {
         overdueTasks,
