@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -13,17 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/use-auth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import * as pdfjs from 'pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 // Setup worker path for pdf.js
-if (typeof window !== 'undefined') {
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-}
+let pdfjs: any;
 
 const notesSchema = z.object({
   noteStyle: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
@@ -65,7 +61,23 @@ const questionTypeItems = [
 export function InputForm({ onGenerate, isLoading, generationType }: InputFormProps) {
   const { settings } = useAuth();
   const [isParsingPdf, setIsParsingPdf] = useState(false);
+  const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js`;
+    script.onload = () => {
+        pdfjs = (window as any).pdfjsLib;
+        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js`;
+        setPdfjsLoaded(true);
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const form = useForm<InputFormValues>({
     resolver: zodResolver(formSchema),
@@ -87,6 +99,11 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
   const onDrop = async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
+
+      if (!pdfjsLoaded) {
+          toast({ variant: 'destructive', title: "PDF library not loaded yet.", description: "Please wait a moment and try again."});
+          return;
+      }
 
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
           toast({ variant: 'destructive', title: "File too large", description: "Please upload a PDF under 5MB."});
