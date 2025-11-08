@@ -68,7 +68,15 @@ const generatePresentationFlow = ai.defineFlow(
     outputSchema: PresentationResponseSchema,
   },
   async (input) => {
-    const { output } = await presentationPrompt(input);
+    const { output } = await ai.generate({
+      prompt: presentationPrompt.prompt,
+      model: ai.getModel(),
+      input,
+      config: {
+        temperature: 0.8, // Increase creativity for better visual suggestions
+      }
+    });
+
     if (!output) {
       throw new Error('The AI failed to generate a presentation.');
     }

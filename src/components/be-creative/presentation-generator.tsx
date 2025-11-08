@@ -83,11 +83,28 @@ const Timeline = () => (
     </div>
 );
 
+const Infographic = ({ content }: { content: string[] }) => (
+    <div className="grid grid-cols-2 gap-4 h-full w-full">
+        {content.map((text, i) => (
+            <div key={i} className="bg-muted/50 p-4 rounded-lg flex flex-col items-center text-center">
+                <div className="p-2 bg-primary/20 rounded-full mb-2">
+                    <Lightbulb className="h-6 w-6 text-primary" />
+                </div>
+                <p className="text-xs font-semibold">{text}</p>
+            </div>
+        ))}
+    </div>
+)
 
-const VisualSuggestion = ({ suggestion, index }: { suggestion?: string; index: number }) => {
+
+const VisualSuggestion = ({ suggestion, index, content }: { suggestion?: string; index: number, content: string[] }) => {
     if (!suggestion) return <ImageIcon className="text-muted-foreground" />;
     
     const lowerSuggestion = suggestion.toLowerCase();
+
+    if (lowerSuggestion.includes('infographic')) {
+        return <Infographic content={content} />;
+    }
 
     if (lowerSuggestion.includes('bar chart')) {
         return (
@@ -592,7 +609,7 @@ export function PresentationGenerator() {
                                 )}
                                 {(slide.layout === 'text-and-visual' || slide.layout === 'visual-only') && (
                                     <div className="h-full w-full min-h-[200px]">
-                                        <VisualSuggestion suggestion={slide.visualSuggestion} index={index} />
+                                        <VisualSuggestion suggestion={slide.visualSuggestion} index={index} content={slide.content} />
                                     </div>
                                 )}
                                 </>
