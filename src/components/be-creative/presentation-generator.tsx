@@ -135,10 +135,10 @@ const VisualSuggestion = ({ suggestion, index, content }: { suggestion?: string;
         return <Timeline />;
     }
 
-    const IconComponent = Object.keys(iconMap).find(key => lowerSuggestion.includes(key));
+    const iconKey = Object.keys(iconMap).find(key => lowerSuggestion.includes(key));
     
-    if (IconComponent) {
-        const Icon = iconMap[IconComponent];
+    if (iconKey) {
+        const Icon = iconMap[iconKey];
         return (
             <div className="flex flex-col items-center justify-center h-full bg-muted/50 rounded-lg p-4 text-center">
                 <Icon className="h-12 w-12 text-muted-foreground mb-2" />
