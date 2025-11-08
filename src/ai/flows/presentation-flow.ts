@@ -70,7 +70,6 @@ const generatePresentationFlow = ai.defineFlow(
   async (input) => {
     const { output } = await ai.generate({
       prompt: presentationPrompt.prompt,
-      model: ai.getModel(),
       input,
       config: {
         temperature: 0.8, // Increase creativity for better visual suggestions
