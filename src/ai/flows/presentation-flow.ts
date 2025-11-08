@@ -59,6 +59,9 @@ const presentationPrompt = ai.definePrompt({
 
     Ensure your entire output is a single, valid JSON object.
   `,
+  config: {
+    temperature: 0.8,
+  }
 });
 
 const generatePresentationFlow = ai.defineFlow(
@@ -68,13 +71,7 @@ const generatePresentationFlow = ai.defineFlow(
     outputSchema: PresentationResponseSchema,
   },
   async (input) => {
-    const { output } = await ai.generate({
-      prompt: presentationPrompt.prompt,
-      input,
-      config: {
-        temperature: 0.8, // Increase creativity for better visual suggestions
-      }
-    });
+    const { output } = await presentationPrompt(input);
 
     if (!output) {
       throw new Error('The AI failed to generate a presentation.');
