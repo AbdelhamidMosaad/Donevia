@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, createRef } from 'react';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
@@ -57,6 +56,9 @@ const iconMap: { [key: string]: React.ElementType } = {
     code: Code,
     flask: FlaskConical,
     palette: Palette,
+    timeline: TimelineIcon,
+    handshake: Handshake,
+    thumbsup: ThumbsUp,
 };
 
 const chartData = [
@@ -66,6 +68,21 @@ const chartData = [
   { name: 'D', value: 278 },
 ];
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+const Timeline = () => (
+    <div className="relative h-full w-full p-4">
+        <div className="absolute left-4 top-1/2 w-[calc(100%-2rem)] h-0.5 bg-muted-foreground" />
+        <div className="relative flex justify-between h-full">
+            {[25, 50, 75].map(pos => (
+                 <div key={pos} className="flex flex-col items-center" style={{ flexBasis: `${pos}%` }}>
+                    <div className="w-3 h-3 bg-primary rounded-full z-10" />
+                    <div className="text-xs mt-2 text-muted-foreground">Milestone</div>
+                 </div>
+            ))}
+        </div>
+    </div>
+);
+
 
 const VisualSuggestion = ({ suggestion, index }: { suggestion?: string; index: number }) => {
     if (!suggestion) return <ImageIcon className="text-muted-foreground" />;
@@ -95,6 +112,10 @@ const VisualSuggestion = ({ suggestion, index }: { suggestion?: string; index: n
                 </PieChart>
             </ResponsiveContainer>
         )
+    }
+    
+    if (lowerSuggestion.includes('timeline')) {
+        return <Timeline />;
     }
 
     const IconComponent = Object.keys(iconMap).find(key => lowerSuggestion.includes(key));

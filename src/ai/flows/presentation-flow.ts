@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow for generating presentation slides.
@@ -44,9 +45,16 @@ const presentationPrompt = ai.definePrompt({
 
     4.  **Slide Content**: For each slide:
         -   **Title**: Give each slide a clear and concise title.
-        -   **Content**: Provide 3-5 bullet points of content. **Do not use markdown formatting like dashes (-).** Each bullet point should be a clean string.
+        -   **Content**: Provide 3-5 concise bullet points. **Do not use markdown formatting like dashes (-).** Each bullet point should be a clean string, not a long paragraph.
         -   **Speaker Notes**: Write brief speaker notes for each slide to guide the presenter.
-        -   **Visual Suggestion**: Provide a very brief (1-3 words) suggestion for a visual aid, like "bar chart showing growth", "team photo", "lightbulb icon", "process flowchart". This should be placed in the \`visualSuggestion\` field. If a slide layout is 'text-only', you can omit this or provide a simple icon suggestion.
+        -   **Visual Suggestion (CRITICAL)**: For slides with visuals, provide a descriptive suggestion for a relevant visual aid. Be specific. Instead of "image", suggest: 
+            - "bar chart showing growth"
+            - "pie chart of market share"
+            - "timeline of project milestones"
+            - "infographic of 4 key steps"
+            - "lightbulb icon" for an idea
+            - "process flowchart" for a workflow
+            - "team photo" for an 'About Us' slide
         -   **Layout**: Assign a layout for each slide from: 'title', 'text-and-visual', 'text-only', 'visual-only'.
 
     Ensure your entire output is a single, valid JSON object.
