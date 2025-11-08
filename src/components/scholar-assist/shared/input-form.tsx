@@ -8,11 +8,22 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, Wand2 } from 'lucide-react';
+import { Loader2, Wand2, Upload, FileText } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/use-auth';
+import { useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import * as pdfjs from 'pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js';
+import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+
+
+// Setup worker path for pdf.js
+if (typeof window !== 'undefined') {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+}
 
 const notesSchema = z.object({
   noteStyle: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
@@ -53,6 +64,8 @@ const questionTypeItems = [
 
 export function InputForm({ onGenerate, isLoading, generationType }: InputFormProps) {
   const { settings } = useAuth();
+  const [isParsingPdf, setIsParsingPdf] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<InputFormValues>({
     resolver: zodResolver(formSchema),
@@ -71,6 +84,47 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     },
   });
   
+  const onDrop = async (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          toast({ variant: 'destructive', title: "File too large", description: "Please upload a PDF under 5MB."});
+          return;
+      }
+
+      setIsParsingPdf(true);
+      toast({ title: "Parsing PDF...", description: "Please wait while we extract the text." });
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+        let fullText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map((item: any) => item.str).join(' ');
+            fullText += pageText + '\n\n';
+        }
+
+        form.setValue('sourceText', fullText);
+        toast({ title: "✓ PDF Processed", description: "Text has been extracted and is ready for generation." });
+
+      } catch (error) {
+        console.error("Error parsing PDF:", error);
+        toast({ variant: 'destructive', title: 'PDF Parsing Failed', description: "Could not extract text from the PDF."});
+      } finally {
+        setIsParsingPdf(false);
+      }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'application/pdf': ['.pdf'] },
+    multiple: false,
+  });
+
   const getButtonText = () => {
     switch (generationType) {
         case 'notes': return 'Generate Notes';
@@ -87,22 +141,47 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
         <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Source Material</CardTitle>
-            <CardDescription>Paste the text you want to convert into study material.</CardDescription>
+            <CardDescription>Paste text or upload a PDF to generate study materials.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col gap-6">
-            <FormField
-              control={form.control}
-              name="sourceText"
-              render={({ field }) => (
-                <FormItem className="flex-1 flex flex-col">
-                  <FormLabel>Text Content</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Paste your document, article, or notes here..." className="flex-1 resize-y text-foreground" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <Tabs defaultValue="text" className="flex-1 flex flex-col">
+                <TabsList>
+                    <TabsTrigger value="text"><FileText/> Paste Text</TabsTrigger>
+                    <TabsTrigger value="pdf"><Upload/> Upload PDF</TabsTrigger>
+                </TabsList>
+                <TabsContent value="text" className="flex-1 mt-2">
+                    <FormField
+                      control={form.control}
+                      name="sourceText"
+                      render={({ field }) => (
+                        <FormItem className="h-full flex flex-col">
+                          <FormLabel className="sr-only">Text Content</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Paste your document, article, or notes here..." className="flex-1 resize-y text-foreground" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </TabsContent>
+                 <TabsContent value="pdf" className="flex-1 mt-2">
+                     <div {...getRootProps()} className={`h-full border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
+                        <input {...getInputProps()} />
+                        {isParsingPdf ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="animate-spin h-8 w-8 text-primary" />
+                                <p>Processing PDF...</p>
+                            </div>
+                        ) : (
+                             <div className="flex flex-col items-center gap-2">
+                                <Upload className="h-8 w-8 text-muted-foreground" />
+                                <p>Drag & drop a PDF here, or click to select a file.</p>
+                                <p className="text-xs text-muted-foreground">(Max file size: 5MB)</p>
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+            </Tabs>
              <div className="grid md:grid-cols-2 gap-6">
                 {generationType === 'notes' && (
                     <>
@@ -260,9 +339,9 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
              </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? <Loader2/> : <Wand2/>}
-              {isLoading ? 'Generating...' : getButtonText()}
+            <Button type="submit" disabled={isLoading || isParsingPdf} className="w-full">
+              {isLoading || isParsingPdf ? <Loader2/> : <Wand2/>}
+              {isLoading ? 'Generating...' : isParsingPdf ? 'Processing PDF...' : getButtonText()}
             </Button>
           </CardFooter>
         </Card>
