@@ -1,450 +1,503 @@
 
 'use client';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import ReactFlow, {
-  addEdge,
-  MiniMap,
-  Controls,
-  Background,
-  applyNodeChanges,
-  applyEdgeChanges,
-  MarkerType,
-  useReactFlow,
-  Node,
-  Edge,
-  NodeChange,
-  EdgeChange,
-  Connection,
-  ReactFlowProvider,
-  useNodesState,
-  useEdgesState,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import { motion } from 'framer-motion';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { Plus, Trash2, ZoomIn, ZoomOut, Download, Upload, Palette, Type, Save, GitBranch, Maximize, Minimize, Undo, Redo, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '../ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '../ui/input';
 import { useDebouncedCallback } from 'use-debounce';
-import { MindMapNode, MindMapType as MindMapData } from '@/lib/types';
+import type { WhiteboardNode as MindMapNode, WhiteboardConnection as MindMapConnection, MindMapType as MindMapData } from '@/lib/types';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 
-// -------------------------- Helper Utilities --------------------------
-const uid = () => Math.random().toString(36).slice(2, 9);
+type Node = {
+    id: string;
+    text: string;
+    x: number;
+    y: number;
+    color: string;
+    parent: string | null;
+    collapsed: boolean;
+    fontSize: number;
+    shape: 'rounded' | 'rectangle' | 'ellipse';
+};
 
-function findDescendants(nodeId: string, edges: Edge[]): string[] {
-  const children = edges.filter((e) => e.source === nodeId).map((e) => e.target);
-  const all = new Set<string>(children);
-  children.forEach((c) => {
-    findDescendants(c, edges).forEach((d) => all.add(d));
-  });
-  return Array.from(all);
-}
+type Connection = {
+    from: string;
+    to: string;
+};
 
-// -------------------------- Custom Node Component --------------------------
-function CustomNode({ data, id }: { data: any; id: string }) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(data.label);
-  const ref = useRef<HTMLTextAreaElement>(null);
+const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+const shapes = ['rounded', 'rectangle', 'ellipse'];
 
-  useEffect(() => setValue(data.label), [data.label]);
+function AdvancedMindMap() {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const params = useParams();
+    const router = useRouter();
+    const mindMapId = params.mindMapId as string;
 
-  useEffect(() => {
-    if (editing && ref.current) ref.current.focus();
-  }, [editing]);
+    const [nodes, setNodes] = useState<Node[]>([
+        { id: '1', text: 'Central Idea', x: 400, y: 300, color: '#3b82f6', parent: null, collapsed: false, fontSize: 18, shape: 'rounded' }
+    ]);
+    const [connections, setConnections] = useState<Connection[]>([]);
+    const [boardName, setBoardName] = useState('Loading...');
 
-  return (
-    <motion.div
-      initial={{ scale: 0.95 }}
-      animate={{ scale: 1 }}
-      layout
-      className={`min-w-[140px] max-w-[280px] p-3 rounded-2xl shadow-md border 
-        ${data.theme === 'dark' ? 'bg-slate-800 text-white border-slate-700' : 'bg-white text-slate-900 border-slate-200'}`}
-      onDoubleClick={() => setEditing(true)}
-    >
-      <div className="flex items-start gap-2">
-        {data.icon ? (
-          <div className="text-xl select-none">{data.icon}</div>
-        ) : (
-          <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 grid place-items-center">•</div>
-        )}
-        <div className="flex-1">
-          {editing ? (
-            <textarea
-              ref={ref}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onBlur={() => {
-                data.onChange(id, value.trim() || 'Untitled');
-                setEditing(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                  data.onChange(id, value.trim() || 'Untitled');
-                  setEditing(false);
-                }
-              }}
-              className="w-full resize-none bg-transparent outline-none text-sm"
-              rows={3}
-            />
-          ) : (
-            <div className="text-sm leading-snug break-words whitespace-pre-wrap">{data.label}</div>
-          )}
-          <div className="mt-2 flex items-center gap-2 text-[11px] opacity-80">
-            <button
-              onClick={() => data.toggleCollapse(id)}
-              className="px-2 py-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              {data.collapsed ? 'Expand' : 'Collapse'}
-            </button>
-            <button
-              onClick={() => data.addChild(id)}
-              className="px-2 py-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              + Child
-            </button>
-            <button
-              onClick={() => data.deleteNode(id)}
-              className="px-2 py-1 rounded-full text-rose-600 hover:bg-rose-50"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
+    const [selectedNode, setSelectedNode] = useState<string | null>(null);
+    const [draggingNode, setDraggingNode] = useState<string | null>(null);
+    const [panning, setPanning] = useState(false);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [editingNode, setEditingNode] = useState<string | null>(null);
+    const [editText, setEditText] = useState('');
+    const [colorPickerNode, setColorPickerNode] = useState<string | null>(null);
 
-// -------------------------- Main App --------------------------
-function MindMapApp() {
-  const { user } = useAuth();
-  const params = useParams();
-  const { toast } = useToast();
-  const mindMapId = params.mindMapId as string;
+    const canvasRef = useRef<SVGSVGElement>(null);
+    const editInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [boardName, setBoardName] = useState('Loading Mind Map...');
-  
-  const [history, setHistory] = useState<{ nodes: Node[]; edges: Edge[] }[]>([]);
-  const [future, setFuture] = useState<{ nodes: Node[]; edges: Edge[] }[]>([]);
-
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { fitView, zoomIn, zoomOut, getNodes, getEdges, project } = useReactFlow();
-
-  const getBoardDocRef = useCallback(() => {
-    if (!user || !mindMapId) return null;
-    return doc(db, 'users', user.uid, 'mindMaps', mindMapId);
-  }, [user, mindMapId]);
-  
-  const handleSave = useCallback(() => {
-    const boardRef = getBoardDocRef();
-    if (!boardRef) return;
+    const [history, setHistory] = useState<{ nodes: Node[], connections: Connection[] }[]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
     
-    const reactFlowInstance = { nodes: getNodes(), edges: getEdges() };
-    const dataToSave = {
-        name: boardName,
-        reactFlow: reactFlowInstance,
-        updatedAt: serverTimestamp(),
-    };
-    updateDoc(boardRef, dataToSave);
-  }, [getBoardDocRef, getNodes, getEdges, boardName]);
-  
-  const debouncedSave = useDebouncedCallback(handleSave, 2000);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const boardRef = getBoardDocRef();
-    if (boardRef) {
-        const unsub = onSnapshot(boardRef, (doc) => {
-            if (doc.exists()) {
-                const data = doc.data() as MindMapData;
-                setBoardName(data.name);
-                
-                if (data.reactFlow) {
-                    const reactFlowData = data.reactFlow;
-                    const loadedNodes = reactFlowData.nodes.map(n => ({
-                        ...n,
-                        data: {
-                            ...n.data,
-                            onChange: updateNodeLabel,
-                            addChild,
-                            deleteNode,
-                            toggleCollapse,
-                        },
-                    }));
-                    setNodes(loadedNodes, {
-                        // This prevents an infinite loop by telling React Flow not to
-                        // trigger onNodesChange when we programmatically set the nodes.
-                        // We are already handling state and history.
-                    });
-                    setEdges(reactFlowData.edges || []);
-                     if (history.length === 0) {
-                        setHistory([{ nodes: loadedNodes, edges: reactFlowData.edges || [] }]);
-                    }
-                }
-            }
-        });
-        return () => unsub();
-    }
-  }, [user, mindMapId]);
-
-  useEffect(() => {
-    if (history.length > 1) { // Don't save on initial load
-        debouncedSave();
-    }
-  }, [nodes, edges]);
-
-  // register custom node type mapping
-  const nodeTypes = useMemo(() => ({
-    custom: (props: any) => <CustomNode {...props} />,
-  }), []);
-
-  // ----------------- CRUD helpers -----------------
-  const pushHistory = useCallback(() => {
-    setHistory((h) => [...h, { nodes: getNodes(), edges: getEdges() }]);
-    setFuture([]);
-  }, [getNodes, getEdges]);
-
-  const undo = () => {
-    setHistory((h) => {
-      if (h.length <= 1) return h;
-      const copy = [...h];
-      const last = copy.pop()!;
-      setFuture((f) => [last, ...f]);
-      const prev = copy[copy.length - 1];
-      setNodes(prev.nodes);
-      setEdges(prev.edges);
-      return copy;
-    });
-  };
-
-  const redo = () => {
-    setFuture((f) => {
-      if (f.length === 0) return f;
-      const [first, ...rest] = f;
-      setNodes(first.nodes);
-      setEdges(first.edges);
-      setHistory((h) => [...h, first]);
-      return rest;
-    });
-  };
-
-  const createNode = (position: {x:number, y:number}, label = 'New Idea'): string => {
-    const id = uid();
-    const newNode: Node = {
-      id,
-      position,
-      data: { 
-          label, 
-          icon: '🟢', 
-          theme: 'light',
-          onChange: updateNodeLabel,
-          addChild,
-          deleteNode,
-          toggleCollapse,
-        },
-      type: 'custom',
-    };
-    pushHistory();
-    setNodes((nds) => [...nds, newNode]);
-    return id;
-  };
-
-  const addChild = (parentId: string) => {
-    const parent = nodes.find((n) => n.id === parentId);
-    if (!parent) return;
-    const pos = { x: parent.position.x + 220, y: parent.position.y + 80 };
-    const childId = createNode(pos, 'Child');
-    const newEdge = { id: uid(), source: parentId, target: childId, markerEnd: { type: MarkerType.Arrow } };
-    pushHistory();
-    setEdges((eds) => [...eds, newEdge]);
-  };
-
-  const updateNodeLabel = (id: string, label: string) => {
-    setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, label } } : n)));
-    pushHistory();
-  };
-
-  const toggleCollapse = (id: string) => {
-    const descendants = findDescendants(id, edges);
+    // --- Data Persistence ---
+    const getBoardDocRef = useCallback(() => {
+        if (!user || !mindMapId) return null;
+        return doc(db, 'users', user.uid, 'mindMaps', mindMapId);
+    }, [user, mindMapId]);
     
-    setNodes((nds) => nds.map((n) => {
-        if(n.id === id) return { ...n, data: { ...n.data, collapsed: !n.data.collapsed } };
-        if(descendants.includes(n.id)) return { ...n, hidden: !n.hidden };
-        return n;
-    }));
-    setEdges((eds) => eds.map(e => {
-        if (descendants.includes(e.source) || descendants.includes(e.target)) return { ...e, hidden: !e.hidden };
-        return e;
-    }));
+    const debouncedSave = useDebouncedCallback(() => {
+        const boardRef = getBoardDocRef();
+        if (!boardRef) return;
 
-    pushHistory();
-  };
+        const dataToSave = {
+            name: boardName,
+            nodes: nodes,
+            connections: connections,
+            pan: offset,
+            zoom: zoom,
+            updatedAt: serverTimestamp(),
+        };
+        updateDoc(boardRef, dataToSave);
+    }, 2000);
 
-  const deleteNode = (id: string) => {
-    if(id === 'root') {
-        toast({ variant: 'destructive', title: "Cannot delete the root node."});
-        return;
-    };
-    pushHistory();
-    setNodes((nds) => nds.filter((n) => n.id !== id));
-    setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
-  };
-
-  // ----------------- React Flow event handlers -----------------
-  const onConnect = useCallback((params: Edge | Connection) => {
-    pushHistory();
-    setEdges((eds) => addEdge({ ...params, animated: true, markerEnd: { type: MarkerType.Arrow } }, eds));
-  }, [pushHistory, setEdges]);
-
-  const onPaneDoubleClick = (event: React.MouseEvent) => {
-    const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-    if (!reactFlowBounds) return;
-
-    const position = project({
-      x: event.clientX - reactFlowBounds.left,
-      y: event.clientY - reactFlowBounds.top,
-    });
-    createNode(position);
-  };
-
-  // keyboard shortcuts
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') undo();
-      if ((e.ctrlKey || e.metaKey) && e.key === 'y') redo();
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        downloadJSON();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [history, future, nodes, edges, undo, redo]);
-
-  // ----------------- Export / Import -----------------
-  const downloadJSON = () => {
-    const payload = { nodes: getNodes(), edges: getEdges() };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'mindmap.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importJSON = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const parsed = JSON.parse(e.target?.result as string);
-        if (parsed.nodes && parsed.edges) {
-          pushHistory();
-          const importedNodes = parsed.nodes.map((n: Node) => ({
-              ...n,
-              data: {
-                ...n.data,
-                onChange: updateNodeLabel,
-                addChild,
-                deleteNode,
-                toggleCollapse,
-              },
-          }));
-          setNodes(importedNodes);
-          setEdges(parsed.edges);
-        } else {
-          alert('Invalid mindmap file');
+    useEffect(() => {
+        if (historyIndex > -1) { // Don't save on initial load
+            debouncedSave();
         }
-      } catch (err) {
-        alert('Error parsing file');
-      }
+    }, [nodes, connections, offset, zoom, boardName]);
+    
+    useEffect(() => {
+        const boardRef = getBoardDocRef();
+        if (boardRef) {
+            const unsub = onSnapshot(boardRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data() as MindMapData;
+                    setBoardName(data.name);
+                    
+                    const loadedNodes = (data as any).nodes || [{ id: '1', text: 'Central Idea', x: 400, y: 300, color: '#3b82f6', parent: null, collapsed: false, fontSize: 18, shape: 'rounded' }];
+                    const loadedConnections = (data as any).connections || [];
+                    
+                    setNodes(loadedNodes);
+                    setConnections(loadedConnections);
+                    setOffset(data.pan || { x: 0, y: 0 });
+                    setZoom(data.zoom || 1);
+
+                    if (history.length === 0) {
+                        setHistory([{ nodes: loadedNodes, connections: loadedConnections }]);
+                        setHistoryIndex(0);
+                    }
+                } else {
+                     toast({ variant: 'destructive', title: 'Mind map not found.' });
+                     router.push('/mind-map');
+                }
+            });
+            return () => unsub();
+        }
+    }, [user, mindMapId]);
+
+
+    // --- History Management ---
+    const pushHistory = (currentNodes: Node[], currentConnections: Connection[]) => {
+        const newHistory = history.slice(0, historyIndex + 1);
+        setHistory([...newHistory, { nodes: currentNodes, connections: currentConnections }]);
+        setHistoryIndex(newHistory.length);
     };
-    reader.readAsText(file);
-  };
-  
-    // ----------------- UI Controls -----------------
-  return (
-    <div className="flex h-full w-full bg-slate-50 dark:bg-slate-900">
-      {/* Sidebar */}
-      <div className="w-72 p-4 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800">
-        <Input
-            value={boardName}
-            onChange={(e) => setBoardName(e.target.value)}
-            className="text-lg font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0 mb-2"
-        />
-        <p className="text-sm mb-4 text-slate-600 dark:text-slate-300">Double-click the canvas to add a node. Double-click a node to edit.</p>
 
-        <div className="space-y-2">
-          <Button onClick={() => addChild('root')} className="w-full">
-            + Add child to root
-          </Button>
-          <div className="flex gap-2">
-            <Button onClick={undo} className="flex-1" variant="outline">Undo</Button>
-            <Button onClick={redo} className="flex-1" variant="outline">Redo</Button>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => fitView()} className="flex-1" variant="outline">Fit</Button>
-            <Button onClick={() => zoomIn()} className="p-2" variant="outline">+</Button>
-            <Button onClick={() => zoomOut()} className="p-2" variant="outline">-</Button>
-          </div>
-          <div className="mt-2">
-            <label className="block text-xs text-slate-500">Import JSON</label>
-            <Input
-              type="file"
-              accept="application/json"
-              onChange={(e) => e.target.files && importJSON(e.target.files[0])}
-              className="mt-1"
+    const undo = () => {
+        if (historyIndex > 0) {
+            const newIndex = historyIndex - 1;
+            setHistoryIndex(newIndex);
+            setNodes(history[newIndex].nodes);
+            setConnections(history[newIndex].connections);
+        }
+    };
+
+    const redo = () => {
+        if (historyIndex < history.length - 1) {
+            const newIndex = historyIndex + 1;
+            setHistoryIndex(newIndex);
+            setNodes(history[newIndex].nodes);
+            setConnections(history[newIndex].connections);
+        }
+    };
+
+    // --- Node & Connection Logic ---
+    const addNode = () => {
+        if (!selectedNode) {
+            toast({ variant: 'destructive', title: 'Please select a parent node first.'});
+            return;
+        }
+
+        const parent = nodes.find(n => n.id === selectedNode);
+        if (!parent) return;
+
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 150;
+
+        const newNode: Node = {
+            id: Date.now().toString(),
+            text: 'New Node',
+            x: parent.x + Math.cos(angle) * distance,
+            y: parent.y + Math.sin(angle) * distance,
+            color: parent.color,
+            parent: selectedNode,
+            collapsed: false,
+            fontSize: 14,
+            shape: 'rounded'
+        };
+        
+        const newNodes = [...nodes, newNode];
+        const newConnections = [...connections, { from: selectedNode, to: newNode.id }];
+        pushHistory(newNodes, newConnections);
+        setNodes(newNodes);
+        setConnections(newConnections);
+    };
+
+    const deleteNode = (id: string) => {
+        if (id === '1') return;
+
+        let toDelete: string[] = [id];
+        const findChildren = (parentId: string) => {
+            nodes.forEach(node => {
+                if (node.parent === parentId) {
+                    toDelete.push(node.id);
+                    findChildren(node.id);
+                }
+            });
+        };
+        findChildren(id);
+
+        const newNodes = nodes.filter(n => !toDelete.includes(n.id));
+        const newConnections = connections.filter(c => !toDelete.includes(c.from) && !toDelete.includes(c.to));
+        pushHistory(newNodes, newConnections);
+        setNodes(newNodes);
+        setConnections(newConnections);
+        if (selectedNode === id) setSelectedNode(null);
+    };
+
+    const toggleCollapse = (nodeId: string) => {
+        const newNodes = nodes.map(n => n.id === nodeId ? { ...n, collapsed: !n.collapsed } : n);
+        pushHistory(newNodes, connections);
+        setNodes(newNodes);
+    };
+    
+    // --- Interaction Handlers ---
+    const handleNodeMouseDown = (e: React.MouseEvent, nodeId: string) => {
+        e.stopPropagation();
+        setDraggingNode(nodeId);
+        setSelectedNode(nodeId);
+    };
+
+    const handleCanvasMouseDown = (e: React.MouseEvent) => {
+        if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'svg') {
+            setPanning(true);
+            setSelectedNode(null);
+            setColorPickerNode(null);
+        }
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (draggingNode) {
+            setNodes(nodes.map(node =>
+                node.id === draggingNode
+                    ? { ...node, x: node.x + e.movementX / zoom, y: node.y + e.movementY / zoom }
+                    : node
+            ));
+        } else if (panning) {
+            setOffset({ x: offset.x + e.movementX, y: offset.y + e.movementY });
+        }
+    };
+
+    const handleMouseUp = () => {
+        if (draggingNode) {
+            pushHistory(nodes, connections); // Push history after dragging is complete
+        }
+        setDraggingNode(null);
+        setPanning(false);
+    };
+
+    const handleDoubleClick = (e: React.MouseEvent, nodeId?: string) => {
+        if (nodeId) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (node) {
+                setEditingNode(node.id);
+                setEditText(node.text);
+            }
+        } else {
+             // Logic to add a node on canvas double click if needed
+        }
+    }
+
+    const finishEdit = () => {
+        if (editingNode && editText.trim()) {
+            const newNodes = nodes.map(n => n.id === editingNode ? { ...n, text: editText } : n);
+            pushHistory(newNodes, connections);
+            setNodes(newNodes);
+        }
+        setEditingNode(null);
+        setEditText('');
+    };
+
+    // --- Style Changers ---
+    const changeColor = (nodeId: string, color: string) => {
+        const newNodes = nodes.map(n => n.id === nodeId ? { ...n, color } : n);
+        pushHistory(newNodes, connections);
+        setNodes(newNodes);
+        setColorPickerNode(null);
+    };
+    
+    const changeShape = (nodeId: string, shape: Node['shape']) => {
+        const newNodes = nodes.map(n => n.id === nodeId ? { ...n, shape } : n);
+        pushHistory(newNodes, connections);
+        setNodes(newNodes);
+    };
+
+    const changeFontSize = (nodeId: string, delta: number) => {
+        const newNodes = nodes.map(n => n.id === nodeId ? { ...n, fontSize: Math.max(10, Math.min(32, n.fontSize + delta)) } : n);
+        pushHistory(newNodes, connections);
+        setNodes(newNodes);
+    };
+    
+     // --- Export/Import ---
+    const exportMap = () => {
+        const data = { nodes, connections, name: boardName, pan: offset, zoom };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${boardName.replace(/ /g, '_')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const importMap = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result as string);
+                    pushHistory(data.nodes || [], data.connections || []);
+                    setNodes(data.nodes || []);
+                    setConnections(data.connections || []);
+                    setBoardName(data.name || 'Imported Map');
+                    setOffset(data.pan || {x:0, y:0});
+                    setZoom(data.zoom || 1);
+                } catch (err) {
+                    toast({ variant: 'destructive', title: 'Invalid file format'});
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    
+    const getVisibleNodes = useCallback(() => {
+        const visible = new Set<string>();
+        const traverse = (nodeId: string) => {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return;
+            visible.add(nodeId);
+            if (!node.collapsed) {
+                connections.filter(c => c.from === nodeId).forEach(c => traverse(c.to));
+            }
+        };
+        const root = nodes.find(n => !n.parent);
+        if (root) traverse(root.id);
+        return visible;
+    }, [nodes, connections]);
+
+    const visibleNodeIds = useMemo(() => getVisibleNodes(), [getVisibleNodes]);
+
+    // --- Render Logic ---
+    const renderNode = (node: Node) => {
+        if (!visibleNodeIds.has(node.id)) return null;
+
+        const isSelected = selectedNode === node.id;
+        const hasChildren = connections.some(c => c.from === node.id);
+
+        const width = Math.max(120, node.text.length * (node.fontSize / 1.5)) + 20;
+        const height = node.fontSize * 3;
+
+        let pathD;
+        switch (node.shape) {
+            case 'ellipse':
+                pathD = `M ${node.x - width/2} ${node.y} a ${width/2} ${height/2} 0 1 1 ${width} 0 a ${width/2} ${height/2} 0 1 1 -${width} 0`;
+                break;
+            case 'rectangle':
+                 pathD = `M ${node.x - width/2} ${node.y - height/2} h ${width} v ${height} h -${width} Z`;
+                break;
+            default: // rounded
+                const r = 10;
+                pathD = `M ${node.x - width/2 + r} ${node.y - height/2} h ${width-2*r} a ${r} ${r} 0 0 1 ${r} ${r} v ${height-2*r} a ${r} ${r} 0 0 1 -${r} ${r} h -${width-2*r} a ${r} ${r} 0 0 1 -${r} -${r} v -${height-2*r} a ${r} ${r} 0 0 1 ${r} -${r} Z`;
+        }
+
+        return (
+            <g key={node.id} onMouseDown={(e) => handleNodeMouseDown(e, node.id)} onDoubleClick={(e) => handleDoubleClick(e, node.id)}>
+                <path
+                    d={pathD}
+                    fill={node.color}
+                    stroke={isSelected ? '#1e40af' : '#1f2937'}
+                    strokeWidth={isSelected ? 3 : 1.5}
+                    style={{ cursor: 'pointer', filter: isSelected ? 'brightness(1.1)' : 'none' }}
+                />
+                <text
+                    x={node.x}
+                    y={node.y}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="white"
+                    fontSize={node.fontSize}
+                    fontWeight="600"
+                    pointerEvents="none"
+                    style={{ userSelect: 'none' }}
+                >
+                    {node.text}
+                </text>
+                {hasChildren && (
+                    <circle
+                        cx={node.x}
+                        cy={node.y + height/2}
+                        r={8}
+                        fill={node.collapsed ? '#ef4444' : '#10b981'}
+                        stroke="white"
+                        strokeWidth={2}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCollapse(node.id);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                    />
+                )}
+            </g>
+        );
+    };
+
+    const renderConnection = (conn: Connection) => {
+        const from = nodes.find(n => n.id === conn.from);
+        const to = nodes.find(n => n.id === conn.to);
+
+        if (!from || !to || !visibleNodeIds.has(to.id)) return null;
+
+        const fromHeight = from.fontSize * 3;
+        const toHeight = to.fontSize * 3;
+        
+        const startY = from.y + fromHeight / 2;
+        const endY = to.y - toHeight / 2;
+        
+        const path = `M ${from.x} ${startY} C ${from.x} ${startY + 50}, ${to.x} ${endY - 50}, ${to.x} ${endY}`;
+        
+        return (
+            <path
+                key={`${conn.from}-${conn.to}`}
+                d={path}
+                stroke={from.color}
+                strokeWidth={2}
+                fill="none"
+                opacity={0.6}
             />
-          </div>
-          <div className="mt-2 flex gap-2">
-            <Button onClick={downloadJSON} className="flex-1" variant="outline">Export</Button>
-            <Button onClick={() => { setNodes([{ id: 'root', position: { x: 300, y: 120 }, data: { label: 'Central Idea', icon: '💡', onChange: updateNodeLabel, addChild, deleteNode, toggleCollapse }, type: 'custom' }]); setEdges([]); setHistory([]); setFuture([]); }} className="flex-1" variant="outline">Reset</Button>
-          </div>
-        </div>
+        );
+    };
+    
+    useEffect(() => {
+        if (editingNode && editInputRef.current) {
+            editInputRef.current.focus();
+            editInputRef.current.select();
+        }
+    }, [editingNode]);
 
-        <div className="mt-6 text-xs text-slate-500">
-          <div className="font-semibold">Tips</div>
-          <ul className="list-disc ml-4 mt-2">
-            <li>Drag nodes to arrange ideas.</li>
-            <li>Connect nodes by dragging from the connector points.</li>
-            <li>Use Ctrl/Cmd+S to export, Ctrl/Cmd+Z to undo.</li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Canvas */}
-      <div className="flex-1 relative" ref={reactFlowWrapper}>
-        <ReactFlow
-          nodes={nodes.filter((n) => !n.hidden)}
-          edges={edges.filter((e) => !e.hidden)}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onPaneDoubleClick={onPaneDoubleClick}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          snapToGrid
-          snapGrid={[20, 20]}
-          className="bg-transparent"
-        >
-          <MiniMap />
-          <Controls />
-          <Background gap={16} />
-        </ReactFlow>
-      </div>
-    </div>
-  );
-}
-
-export default function MindMapTool() {
     return (
-        <ReactFlowProvider>
-            <MindMapApp />
-        </ReactFlowProvider>
-    )
-}
+        <div className="w-full h-full bg-gray-900 flex flex-col overflow-hidden" ref={containerRef}>
+            {/* Top Toolbar */}
+            <div className="bg-gray-800 p-2 flex items-center gap-2 border-b border-gray-700 flex-wrap">
+                 <Button variant="ghost" size="icon" onClick={() => router.push('/mind-map')}><ArrowLeft/></Button>
+                 <Input className="text-xl bg-transparent border-0" value={boardName} onChange={(e) => setBoardName(e.target.value)} />
+                <Button onClick={addNode} disabled={!selectedNode}><Plus size={18} /> Add Node</Button>
+                <Button onClick={() => selectedNode && deleteNode(selectedNode)} disabled={!selectedNode || selectedNode === '1'} variant="destructive"><Trash2 size={18} /> Delete</Button>
+                <Button onClick={undo} disabled={historyIndex <= 0}><Undo size={18} /> Undo</Button>
+                <Button onClick={redo} disabled={historyIndex >= history.length - 1}><Redo size={18} /> Redo</Button>
+                <Button onClick={() => setZoom(Math.min(2, zoom + 0.1))}><ZoomIn size={18} /></Button>
+                <Button onClick={() => setZoom(Math.max(0.3, zoom - 0.1))}><ZoomOut size={18} /></Button>
+                <Button onClick={() => {setZoom(1); setOffset({x:0, y:0})}}><Maximize size={18} /></Button>
+                <Button onClick={exportMap}><Download size={18} /> Export</Button>
+                <Button asChild><label htmlFor="import-file" className="cursor-pointer"><Upload size={18} /> Import</label></Button>
+                <input type="file" id="import-file" accept=".json" onChange={importMap} className="hidden" />
+                 <Button onClick={debouncedSave.flush}><Save size={18}/> Save Now</Button>
+            </div>
+
+            {/* Editing Tools */}
+            {selectedNode && (
+                <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10 bg-gray-800 p-1 flex items-center gap-1 border border-gray-700 rounded-lg">
+                    <Popover open={colorPickerNode === selectedNode} onOpenChange={(open) => setColorPickerNode(open ? selectedNode : null)}>
+                        <PopoverTrigger asChild><Button variant="ghost" size="icon"><Palette size={18} /></Button></PopoverTrigger>
+                        <PopoverContent className="w-auto p-2 bg-gray-800 border-gray-700">
+                             <div className="flex gap-1">
+                                {colors.map(color => <button key={color} onClick={() => changeColor(selectedNode, color)} className="w-6 h-6 rounded-full border-2 border-white" style={{ backgroundColor: color }}/>)}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <Button variant="ghost" size="icon" onClick={() => changeFontSize(selectedNode, 2)}><Type size={18} />+</Button>
+                    <Button variant="ghost" size="icon" onClick={() => changeFontSize(selectedNode, -2)}><Type size={18} />-</Button>
+                    <Button variant="ghost" size="icon" onClick={() => { const node = nodes.find(n => n.id === selectedNode)!; const idx = shapes.indexOf(node.shape); changeShape(selectedNode, shapes[(idx + 1) % shapes.length]); }}><Circle size={18} /></Button>
+                </div>
+            )}
+            
+            {editingNode && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                     <Input
+                        ref={editInputRef}
+                        type="text"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') finishEdit(); if (e.key === 'Escape') setEditingNode(null); }}
+                        onBlur={finishEdit}
+                        className="px-4 py-2 bg-gray-700 text-white rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter text..."
+                    />
+                </div>
+            )}
+
+            {/* Canvas */}
+            <div className="flex-1 overflow-hidden cursor-grab active:cursor-grabbing" onMouseDown={handleCanvasMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+                <svg ref={canvasRef} width="100%" height="100%">
+                    <g style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`, transformOrigin: 'center center' }}>
+                        {connections.map(renderConnection)}
+                        {nodes.map(renderNode)}
+                    </g>
+                </svg>
+            </div>
+            
+             <div className="bg-gray-800 px-4 py-1 text-gray-400 text-xs border-t border-gray-700 flex justify-between">
+                <span>Zoom: {(zoom * 100).toFixed(0)}% | Nodes: {nodes.length}</span>
+                <span>{selectedNode ? `Selected: ${nodes.find(n => n.id === selectedNode)?.text}` : 'No selection'}</span>
+            </div>
+        </div>
+    );
+};
+
+export default AdvancedMindMap;
