@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactFlow, {
   addEdge,
   MiniMap,
@@ -13,18 +12,19 @@ import ReactFlow, {
   Edge,
   Connection,
   applyNodeChanges,
-  applyEdgeChanges,
+  NodeChange,
+  EdgeChange,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import type { MindMapType as MindMapData } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Undo, Redo, Save } from 'lucide-react';
+import { PlusCircle, Undo, Redo, Save, ArrowLeft } from 'lucide-react';
 import { Input } from '../ui/input';
 
 const initialNodes: Node[] = [
@@ -47,40 +47,65 @@ const MindMapTool = () => {
   const { user } = useAuth();
   const params = useParams();
   const { toast } = useToast();
+  const router = useRouter();
   const mindMapId = params.mindMapId as string;
   const [boardName, setBoardName] = useState('');
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes] = useNodesState([]);
+  const [edges, setEdges] = useEdgesState([]);
   const [nextId, setNextId] = useState(2);
   
   const [history, setHistory] = useState<{ nodes: Node[], edges: Edge[] }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  const pushToHistory = useCallback((newNodes: Node[], newEdges: Edge[]) => {
+  const pushToHistory = useCallback((currentNodes: Node[], currentEdges: Edge[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
-    // Don't push if the state is the same as the last one
-    if (newHistory.length > 0) {
-      const lastState = newHistory[newHistory.length - 1];
-      if (JSON.stringify(lastState.nodes) === JSON.stringify(newNodes) && JSON.stringify(lastState.edges) === JSON.stringify(newEdges)) {
-        return;
-      }
+    const lastState = newHistory[newHistory.length - 1];
+
+    if (
+      lastState &&
+      JSON.stringify(lastState.nodes) === JSON.stringify(currentNodes) &&
+      JSON.stringify(lastState.edges) === JSON.stringify(currentEdges)
+    ) {
+      return; // Do not push identical states
     }
-    newHistory.push({ nodes: newNodes, edges: newEdges });
+
+    newHistory.push({ nodes: currentNodes, edges: currentEdges });
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   }, [history, historyIndex]);
 
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+      const newNodes = applyNodeChanges(changes, nodes);
+      setNodes(newNodes);
+  }, [nodes, setNodes]);
+
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+      const newEdges = applyEdgeChanges(changes, edges);
+      setEdges(newEdges);
+  }, [edges, setEdges]);
+  
+  const handleSave = useCallback(() => {
+    if (!user) return;
+    const reactFlow = { nodes, edges, nextId };
+    const mapRef = doc(db, 'users', user.uid, 'mindMaps', mindMapId);
+    updateDoc(mapRef, { name: boardName, reactFlow, updatedAt: serverTimestamp() });
+  }, [user, mindMapId, boardName, nodes, edges, nextId]);
+
+  const debouncedSave = useDebouncedCallback(handleSave, 2000);
+
   useEffect(() => {
     if (nodes.length > 0 || edges.length > 0) {
         pushToHistory(nodes, edges);
+        debouncedSave();
     }
-  }, [nodes, edges]);
+  }, [nodes, edges, debouncedSave, pushToHistory]);
 
   const undo = useCallback(() => {
     if (historyIndex > 0) {
-      setHistoryIndex(prev => prev - 1);
-      const { nodes: nodesToRestore, edges: edgesToRestore } = history[historyIndex - 1];
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      const { nodes: nodesToRestore, edges: edgesToRestore } = history[newIndex];
       setNodes(nodesToRestore);
       setEdges(edgesToRestore);
     }
@@ -88,23 +113,13 @@ const MindMapTool = () => {
   
   const redo = useCallback(() => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex(prev => prev + 1);
-      const { nodes: nodesToRedo, edges: edgesToRedo } = history[historyIndex + 1];
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      const { nodes: nodesToRedo, edges: edgesToRedo } = history[newIndex];
       setNodes(nodesToRedo);
       setEdges(edgesToRedo);
     }
   }, [historyIndex, history, setNodes, setEdges]);
-
-
-  const debouncedSave = useDebouncedCallback(async (dataToSave: Partial<MindMapData>) => {
-    if (!user || !mindMapId) return;
-    const mapRef = doc(db, 'users', user.uid, 'mindMaps', mindMapId);
-    try {
-      await updateDoc(mapRef, { ...dataToSave, updatedAt: serverTimestamp() });
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Failed to save mind map.' });
-    }
-  }, 2000);
 
   useEffect(() => {
     if (user && mindMapId) {
@@ -115,24 +130,18 @@ const MindMapTool = () => {
             setNodes(data.reactFlow?.nodes || initialNodes);
             setEdges(data.reactFlow?.edges || []);
             setNextId(data.reactFlow?.nextId || (data.reactFlow?.nodes?.length || 1) + 1);
+            
+            // Initialize history
+            if (data.reactFlow && history.length === 0) {
+              setHistory([{ nodes: data.reactFlow.nodes, edges: data.reactFlow.edges }]);
+              setHistoryIndex(0);
+            }
         }
       });
       return () => unsub();
     }
   }, [user, mindMapId, setNodes, setEdges]);
   
-  const handleSave = () => {
-    if(!user) return;
-    debouncedSave.flush();
-    toast({ title: 'Mind map saved!'});
-  }
-
-  useEffect(() => {
-    if (nodes.length > 0) {
-        debouncedSave({ name: boardName, reactFlow: { nodes, edges, nextId } });
-    }
-  }, [nodes, edges, nextId, boardName, debouncedSave]);
-
   const onConnect = useCallback(
     (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, animated: true, type: 'smoothstep' }, eds)),
     [setEdges]
@@ -142,8 +151,8 @@ const MindMapTool = () => {
     const newId = nextId.toString();
     const lastNode = nodes[nodes.length - 1];
     const newNodePosition = lastNode 
-        ? { x: lastNode.position.x + 100, y: lastNode.position.y + 100 }
-        : { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 };
+        ? { x: lastNode.position.x + 50, y: lastNode.position.y + 50 }
+        : { x: Math.random() * 200, y: Math.random() * 200 };
         
     const newNode: Node = {
       id: newId,
@@ -161,67 +170,44 @@ const MindMapTool = () => {
   };
   
   const onNodeDoubleClick = (event: React.MouseEvent, node: Node) => {
-    setNodes(nodes.map(n => n.id === node.id ? { ...n, data: { ...n.data, isEditing: true } } : n));
-  };
-
-  const handleNodeLabelChange = (nodeId: string, newLabel: string) => {
-    setNodes(
-      nodes.map(n =>
-        n.id === nodeId ? { ...n, data: { ...n.data, label: newLabel } } : n
-      )
-    );
-  };
-
-  const handleNodeLabelBlur = (nodeId: string) => {
-     setNodes(
-      nodes.map(n =>
-        n.id === nodeId ? { ...n, data: { ...n.data, isEditing: false } } : n
-      )
-    );
-  }
-
-  const CustomNode = ({ data, id }: {data: any, id: string}) => {
-    if (data.isEditing) {
-      return (
-        <Input 
-          value={data.label}
-          onChange={(e) => handleNodeLabelChange(id, e.target.value)}
-          onBlur={() => handleNodeLabelBlur(id)}
-          autoFocus
-        />
+    const newLabel = prompt('Enter new label:', node.data.label);
+    if (newLabel !== null) {
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id === node.id) {
+            n.data = { ...n.data, label: newLabel };
+          }
+          return n;
+        })
       );
     }
-    return <div>{data.label}</div>
-  }
-
-  const nodeTypes = {
-    custom: CustomNode,
   };
-
 
   return (
     <div style={{ width: "100%", height: "100%" }} className="flex flex-col">
        <div className="flex justify-between items-center p-2 border-b">
-         <Input
-            value={boardName}
-            onChange={(e) => setBoardName(e.target.value)}
-            className="text-xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-         />
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => router.push('/mind-map')}><ArrowLeft /></Button>
+            <Input
+                value={boardName}
+                onChange={(e) => setBoardName(e.target.value)}
+                className="text-xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+        </div>
         <div className="flex gap-2">
             <Button onClick={undo} variant="outline" size="sm" disabled={historyIndex <= 0}><Undo/> Undo</Button>
             <Button onClick={redo} variant="outline" size="sm" disabled={historyIndex >= history.length - 1}><Redo/> Redo</Button>
             <Button onClick={addNode} variant="outline" size="sm"><PlusCircle/> Add Node</Button>
-            <Button onClick={handleSave} size="sm"><Save /> Save</Button>
+            <Button onClick={debouncedSave.flush} size="sm"><Save /> Save Now</Button>
         </div>
       </div>
       <div className="flex-1">
           <ReactFlow
-            nodes={nodes.map(n => ({...n, type: 'custom'}))}
+            nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
-            nodeTypes={nodeTypes}
             onNodeDoubleClick={onNodeDoubleClick}
             fitView
             style={{ background: "#f3f4f6" }}
