@@ -1,4 +1,3 @@
-
 // MindMap.tsx
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -134,7 +133,7 @@ function MindMapApp() {
   const [future, setFuture] = useState<{ nodes: Node[]; edges: Edge[] }[]>([]);
 
   const reactFlowWrapper = useRef(null);
-  const { fitView, zoomIn, zoomOut, getNodes, getEdges } = useReactFlow();
+  const { fitView, zoomIn, zoomOut, getNodes, getEdges, project } = useReactFlow();
 
   const getBoardDocRef = useCallback(() => {
     if (!user || !mindMapId) return null;
@@ -298,15 +297,14 @@ function MindMapApp() {
   }, [pushHistory, setEdges]);
 
   const onPaneDoubleClick = (event: React.MouseEvent) => {
-    const reactFlowInstance = (reactFlowWrapper.current as any);
-    if (!reactFlowInstance) return;
-    
-    const bounds = reactFlowInstance.getBoundingClientRect();
-    const position = {
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top
-    };
-    createNode(position, 'Idea');
+    const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
+    if (!reactFlowBounds) return;
+
+    const position = project({
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    });
+    createNode(position);
   };
 
   // keyboard shortcuts
