@@ -1,4 +1,4 @@
-// MindMap.tsx
+
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, {
@@ -132,7 +132,7 @@ function MindMapApp() {
   const [history, setHistory] = useState<{ nodes: Node[]; edges: Edge[] }[]>([]);
   const [future, setFuture] = useState<{ nodes: Node[]; edges: Edge[] }[]>([]);
 
-  const reactFlowWrapper = useRef(null);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut, getNodes, getEdges, project } = useReactFlow();
 
   const getBoardDocRef = useCallback(() => {
@@ -175,7 +175,11 @@ function MindMapApp() {
                             toggleCollapse,
                         },
                     }));
-                    setNodes(loadedNodes);
+                    setNodes(loadedNodes, {
+                        // This prevents an infinite loop by telling React Flow not to
+                        // trigger onNodesChange when we programmatically set the nodes.
+                        // We are already handling state and history.
+                    });
                     setEdges(reactFlowData.edges || []);
                      if (history.length === 0) {
                         setHistory([{ nodes: loadedNodes, edges: reactFlowData.edges || [] }]);
@@ -314,12 +318,12 @@ function MindMapApp() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'y') redo();
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        handleSave();
+        downloadJSON();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [history, future, nodes, edges, undo, redo, handleSave]);
+  }, [history, future, nodes, edges, undo, redo]);
 
   // ----------------- Export / Import -----------------
   const downloadJSON = () => {
