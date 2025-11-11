@@ -96,6 +96,7 @@
     "react-konva-utils": "^1.0.6",
     "react-resizable-panels": "^2.0.19",
     "react-rnd": "^10.4.11",
+    "reactflow": "^11.11.3",
     "recharts": "^2.12.7",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
@@ -131,3 +132,4 @@
     "typescript": "^5"
   }
 }
+    
