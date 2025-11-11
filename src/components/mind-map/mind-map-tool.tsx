@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -13,6 +14,7 @@ import ReactFlow, {
   Connection,
   applyNodeChanges,
   NodeChange,
+  applyEdgeChanges,
   EdgeChange,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -26,22 +28,20 @@ import type { MindMapType as MindMapData } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Undo, Redo, Save, ArrowLeft } from 'lucide-react';
 import { Input } from '../ui/input';
+import { MindMapCustomNode } from './mind-map-custom-node';
 
 const initialNodes: Node[] = [
   {
     id: '1',
-    type: 'input',
+    type: 'custom',
     data: { label: 'Central Idea' },
     position: { x: 250, y: 100 },
-    style: {
-      background: '#f9fafb',
-      border: '2px solid #6366f1',
-      borderRadius: '12px',
-      padding: '10px 20px',
-      fontWeight: '600',
-    },
   },
 ];
+
+const nodeTypes = {
+  custom: MindMapCustomNode,
+};
 
 const MindMapTool = () => {
   const { user } = useAuth();
@@ -51,8 +51,8 @@ const MindMapTool = () => {
   const mindMapId = params.mindMapId as string;
   const [boardName, setBoardName] = useState('');
 
-  const [nodes, setNodes] = useNodesState([]);
-  const [edges, setEdges] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nextId, setNextId] = useState(2);
   
   const [history, setHistory] = useState<{ nodes: Node[], edges: Edge[] }[]>([]);
@@ -75,16 +75,6 @@ const MindMapTool = () => {
     setHistoryIndex(newHistory.length - 1);
   }, [history, historyIndex]);
 
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-      const newNodes = applyNodeChanges(changes, nodes);
-      setNodes(newNodes);
-  }, [nodes, setNodes]);
-
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-      const newEdges = applyEdgeChanges(changes, edges);
-      setEdges(newEdges);
-  }, [edges, setEdges]);
-  
   const handleSave = useCallback(() => {
     if (!user) return;
     const reactFlow = { nodes, edges, nextId };
@@ -96,10 +86,28 @@ const MindMapTool = () => {
 
   useEffect(() => {
     if (nodes.length > 0 || edges.length > 0) {
-        pushToHistory(nodes, edges);
-        debouncedSave();
+        if(historyIndex > -1) { // Do not save on initial load
+          debouncedSave();
+        }
     }
-  }, [nodes, edges, debouncedSave, pushToHistory]);
+  }, [nodes, edges, debouncedSave]);
+
+  const onNodesChangeWithHistory = (changes: NodeChange[]) => {
+      const newNodes = applyNodeChanges(changes, nodes);
+      onNodesChange(changes);
+      // Only push to history on drag stop or remove
+      if(changes.some(c => c.type === 'remove' || (c.type === 'position' && c.dragging === false))) {
+          pushToHistory(newNodes, edges);
+      }
+  };
+
+  const onEdgesChangeWithHistory = (changes: EdgeChange[]) => {
+      const newEdges = applyEdgeChanges(changes, edges);
+      onEdgesChange(changes);
+      if(changes.some(c => c.type === 'remove')) {
+          pushToHistory(nodes, newEdges);
+      }
+  };
 
   const undo = useCallback(() => {
     if (historyIndex > 0) {
@@ -127,24 +135,32 @@ const MindMapTool = () => {
         if (doc.exists()) {
             const data = doc.data() as MindMapData;
             setBoardName(data.name);
-            setNodes(data.reactFlow?.nodes || initialNodes);
-            setEdges(data.reactFlow?.edges || []);
-            setNextId(data.reactFlow?.nextId || (data.reactFlow?.nodes?.length || 1) + 1);
+            const reactFlowData = data.reactFlow || { nodes: initialNodes, edges: [] };
+            
+            const nodesWithCustomType = reactFlowData.nodes.map(n => ({...n, type: 'custom'}));
+
+            setNodes(nodesWithCustomType);
+            setEdges(reactFlowData.edges || []);
+            setNextId(data.reactFlow?.nextId || (reactFlowData.nodes?.length || 1) + 1);
             
             // Initialize history
-            if (data.reactFlow && history.length === 0) {
-              setHistory([{ nodes: data.reactFlow.nodes, edges: data.reactFlow.edges }]);
+            if (reactFlowData.nodes && history.length === 0) {
+              setHistory([{ nodes: nodesWithCustomType, edges: reactFlowData.edges || [] }]);
               setHistoryIndex(0);
             }
         }
       });
       return () => unsub();
     }
-  }, [user, mindMapId, setNodes, setEdges]);
+  }, [user, mindMapId]);
   
   const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, animated: true, type: 'smoothstep' }, eds)),
-    [setEdges]
+    (params: Connection | Edge) => {
+      const newEdges = addEdge({ ...params, animated: true, type: 'smoothstep' }, edges);
+      setEdges(newEdges);
+      pushToHistory(nodes, newEdges);
+    },
+    [edges, nodes, pushToHistory, setEdges]
   );
 
   const addNode = () => {
@@ -156,33 +172,16 @@ const MindMapTool = () => {
         
     const newNode: Node = {
       id: newId,
+      type: 'custom',
       data: { label: `Idea ${newId}` },
       position: newNodePosition,
-      style: {
-        background: '#fff',
-        border: '1px solid #9ca3af',
-        borderRadius: '10px',
-        padding: '10px 20px',
-      },
     };
-    setNodes((nds) => [...nds, newNode]);
+    const newNodes = [...nodes, newNode];
+    setNodes(newNodes);
     setNextId(nextId + 1);
+    pushToHistory(newNodes, edges);
   };
   
-  const onNodeDoubleClick = (event: React.MouseEvent, node: Node) => {
-    const newLabel = prompt('Enter new label:', node.data.label);
-    if (newLabel !== null) {
-      setNodes((nds) =>
-        nds.map((n) => {
-          if (n.id === node.id) {
-            n.data = { ...n.data, label: newLabel };
-          }
-          return n;
-        })
-      );
-    }
-  };
-
   return (
     <div style={{ width: "100%", height: "100%" }} className="flex flex-col">
        <div className="flex justify-between items-center p-2 border-b">
@@ -205,12 +204,12 @@ const MindMapTool = () => {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
+            onNodesChange={onNodesChangeWithHistory}
+            onEdgesChange={onEdgesChangeWithHistory}
             onConnect={onConnect}
-            onNodeDoubleClick={onNodeDoubleClick}
             fitView
             style={{ background: "#f3f4f6" }}
+            nodeTypes={nodeTypes}
           >
             <MiniMap />
             <Controls />
