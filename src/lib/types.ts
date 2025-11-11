@@ -352,9 +352,9 @@ export type WhiteboardNode = {
     isArrow?: boolean;
     zIndex?: number;
     src?: string; // For images
-    isBold?: boolean;
-    isItalic?: boolean;
-    isUnderline?: boolean;
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
 };
@@ -372,7 +372,7 @@ export type Whiteboard = {
   ownerId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  connections: WhiteboardConnection[];
+  connections?: WhiteboardConnection[];
   backgroundColor?: string;
   backgroundGrid?: 'dotted' | 'lined' | 'plain';
   scale?: number;
@@ -385,7 +385,7 @@ export type WhiteboardTemplate = {
     name: string;
     ownerId: string;
     createdAt: Timestamp;
-    nodes: Omit<WhiteboardNode, 'id'>[];
+    nodes: WhiteboardNode[];
     connections: WhiteboardConnection[];
 };
 
@@ -782,19 +782,11 @@ export type InterviewFeedback = {
 };
 
 /** Mind Map */
-export type MindMapNode = {
-    id: string;
-    text: string;
-    x: number;
-    y: number;
+export type MindMapNode = WhiteboardNode & { // Inherits from WhiteboardNode but with specific constraints for mindmap
     parentId: string | null;
     children: string[];
     collapsed: boolean;
-    color: string;
-    shape: 'rounded' | 'circle' | 'diamond' | 'cloud';
-    fontSize: number;
     bold: boolean;
-    width: number;
 };
 
 export type MindMapType = {

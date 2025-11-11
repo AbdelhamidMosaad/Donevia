@@ -4,7 +4,7 @@
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const MindMapTool = dynamic(
+const AdvancedMindMap = dynamic(
   () => import('@/components/mind-map/mind-map-tool'),
   { 
     ssr: false,
@@ -17,5 +17,5 @@ const MindMapTool = dynamic(
 );
 
 export default function MindMapCanvasPage() {
-  return <MindMapTool />;
+  return <AdvancedMindMap />;
 }
