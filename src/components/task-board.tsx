@@ -85,6 +85,8 @@ export function TaskBoard({}: TaskBoardProps) {
         const newStatus = destination.droppableId;
         
         try {
+            // Optimistic UI update is handled by the useTasks hook's listener.
+            // Just call the update function.
             await updateTaskInDb(draggableId, { status: newStatus });
             const stageName = stages.find(s => s.id === newStatus)?.name || newStatus;
             toast({
@@ -227,7 +229,7 @@ export function TaskBoard({}: TaskBoardProps) {
             }}
             onTaskAdded={addTask}
             onTaskUpdated={updateTaskInDb}
-            categories={allStages.flatMap(s => s.name)} // This seems incorrect, should be from settings
+            categories={useTasks().categories}
         />
     )}
     </>

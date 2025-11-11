@@ -31,7 +31,7 @@ import { useTasks } from '@/hooks/use-tasks';
 interface AddTaskDialogProps {
   children?: ReactNode;
   task?: Task | null;
-  onTaskAdded: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => void;
+  onTaskAdded: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => Promise<Task | null>;
   onTaskUpdated: (id: string, updates: Partial<Task>) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -72,7 +72,7 @@ export function AddTaskDialog({
   const [isSaving, setIsSaving] = useState(false);
   const { stages } = useTasks();
 
-  const isEditMode = !!task;
+  const isEditMode = !!task?.id;
   const open = controlledOpen ?? internalOpen;
   const setOpen = setControlledOpen ?? setInternalOpen;
   
@@ -117,7 +117,7 @@ export function AddTaskDialog({
         setTitle(task.title);
         setDescription(task.description || '');
         setReflection(task.reflection || '');
-        setDueDate(task.dueDate.toDate());
+        setDueDate(task.dueDate ? task.dueDate.toDate() : new Date());
         setPriority(task.priority);
         setStatus(task.status);
         setReminder(task.reminder || 'none');
@@ -126,6 +126,9 @@ export function AddTaskDialog({
         setCategory(task.category || 'general');
       } else {
         resetForm();
+         if (task?.status) { // For newly created tasks from board
+            setStatus(task.status);
+        }
       }
     } else {
       resetForm();
@@ -193,7 +196,7 @@ export function AddTaskDialog({
             description: `"${title}" has been updated.`,
           });
       } else if (onTaskAdded) {
-          onTaskAdded(taskData as Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>);
+          await onTaskAdded(taskData as Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>);
           toast({
             title: 'Task Added',
             description: `"${title}" has been added successfully.`,
