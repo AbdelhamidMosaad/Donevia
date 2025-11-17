@@ -21,7 +21,7 @@ interface TaskBoardProps {
 export function TaskBoard({}: TaskBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { tasks, stages: allStages, isLoading, updateTask: updateTaskInDb, updateStages: updateStagesInDb, addTask } = useTasks();
+  const { tasks, stages: allStages, isLoading, updateTask: updateTaskInDb, updateStages: updateStagesInDb, addTask, categories } = useTasks();
   const [stages, setStages] = useState<Stage[]>(allStages);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -229,7 +229,7 @@ export function TaskBoard({}: TaskBoardProps) {
             }}
             onTaskAdded={addTask}
             onTaskUpdated={updateTaskInDb}
-            categories={useTasks().categories}
+            categories={categories}
         />
     )}
     </>
