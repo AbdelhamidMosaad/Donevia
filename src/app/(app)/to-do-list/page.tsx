@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, where, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import moment from 'moment';
-import { Loader2, ListTodo, Plus, Trash2, ArrowRight, Tag, Link as LinkIcon, Edit } from 'lucide-react';
+import { Loader2, ListTodo, Plus, Trash2, ArrowRight, Tag, Link as LinkIcon, Edit, Briefcase } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,6 +16,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { useTasks } from '@/hooks/use-tasks';
+import { Timestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface ToDoItem {
   id: string;
@@ -30,7 +33,7 @@ interface ToDoItem {
   url?: string;
 }
 
-const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, listType }: { items: ToDoItem[], onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void, onMove?: (id: string) => void, onUpdate: (id: string, updates: Partial<ToDoItem>) => void, listType: 'daily' | 'weekly' }) => {
+const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, onAddToTasks, listType }: { items: ToDoItem[], onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void, onMove?: (id: string) => void, onUpdate: (id: string, updates: Partial<ToDoItem>) => void, onAddToTasks: (item: ToDoItem) => void, listType: 'daily' | 'weekly' }) => {
     const [editingField, setEditingField] = useState<{ id: string; field: 'tags' | 'url' } | null>(null);
     const [editValue, setEditValue] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +61,7 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, listType 
             updates.tags = editValue.split(',').map(tag => tag.trim()).filter(Boolean);
         } else {
             const trimmedUrl = editValue.trim();
-            updates.url = trimmedUrl ? (trimmedUrl.startsWith('http') ? trimmedUrl : `https://${trimmedUrl}`) : '';
+            updates.url = trimmedUrl ? (trimmedUrl.startsWith('http') ? trimmedUrl : `https://${trimmedUrl}`) : undefined;
         }
         
         onUpdate(editingField.id, updates);
@@ -75,6 +78,8 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, listType 
         }
     };
 
+    const incompleteItems = items.filter(item => !item.isCompleted);
+    const completedItems = items.filter(item => item.isCompleted);
 
     const renderItem = (item: ToDoItem) => {
         const isEditingThisItem = editingField?.id === item.id;
@@ -103,6 +108,7 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, listType 
                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEdit(item, 'tags')} title="Edit Tags"><Tag className="h-4 w-4 text-muted-foreground"/></Button>
                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEdit(item, 'url')} title="Edit Link"><LinkIcon className="h-4 w-4 text-muted-foreground"/></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddToTasks(item)} title="Add to Task Manager"><Briefcase className="h-4 w-4 text-primary"/></Button>
                    {listType === 'weekly' && onMove && !item.isCompleted && (
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onMove(item.id)} title="Move to Today">
                           <ArrowRight className="h-4 w-4 text-primary" />
@@ -130,9 +136,6 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, listType 
         );
     }
 
-    const incompleteItems = items.filter(item => !item.isCompleted);
-    const completedItems = items.filter(item => item.isCompleted);
-
     return (
         <div className="space-y-1">
             {incompleteItems.map(renderItem)}
@@ -145,6 +148,8 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, listType 
 export default function ToDoListPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+  const { addTask, stages } = useTasks();
   const [items, setItems] = useState<ToDoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newItemText, setNewItemText] = useState('');
@@ -193,6 +198,7 @@ export default function ToDoListPage() {
         date,
         ownerId: user.uid,
         order: currentItems.length,
+        tags: [],
     };
     
     await addDoc(collection(db, 'users', user.uid, 'todoItems'), {
@@ -218,7 +224,7 @@ export default function ToDoListPage() {
   const handleUpdateItem = async (id: string, updates: Partial<ToDoItem>) => {
     if (!user) return;
     const itemRef = doc(db, 'users', user.uid, 'todoItems', id);
-    await updateDoc(itemRef, updates);
+    await updateDoc(itemRef, { ...updates });
   };
 
   const handleMoveToToday = async (id: string) => {
@@ -232,16 +238,35 @@ export default function ToDoListPage() {
         });
     }
   };
+  
+  const handleAddToTasks = async (item: ToDoItem) => {
+    if (stages.length === 0) {
+      toast({ variant: 'destructive', title: 'No task stages found!', description: 'Please set up your task board first.' });
+      return;
+    }
+    
+    let description = '';
+    if (item.url) {
+      description += `Original Link: ${item.url}\n\n`;
+    }
+    description += `Added from To-do List.`;
+    
+    await addTask({
+      title: item.text,
+      description,
+      tags: item.tags,
+      status: stages[0].id, // Default to the first stage
+      priority: 'Medium',
+      dueDate: Timestamp.fromDate(new Date()),
+      category: 'general',
+    });
+    
+    toast({ title: 'Task Created', description: `"${item.text}" has been added to your main task board.` });
+  };
 
   const dailyItems = useMemo(() => items.filter(item => item.type === 'daily' && item.date === todayDate), [items, todayDate]);
   const weeklyItems = useMemo(() => items.filter(item => item.type === 'weekly' && item.date === thisWeek), [items, thisWeek]);
   
-    // Separate completed and incomplete for rendering order
-  const completedDaily = dailyItems.filter(item => item.isCompleted);
-  const incompleteDaily = dailyItems.filter(item => !item.isCompleted);
-  const completedWeekly = weeklyItems.filter(item => item.isCompleted);
-  const incompleteWeekly = weeklyItems.filter(item => !item.isCompleted);
-
   if (authLoading || !user) {
     return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
   }
@@ -260,6 +285,7 @@ export default function ToDoListPage() {
                     onDelete={handleDeleteItem} 
                     onMove={listType === 'weekly' ? handleMoveToToday : undefined}
                     onUpdate={handleUpdateItem}
+                    onAddToTasks={handleAddToTasks}
                     listType={listType}
                    />
               )}
@@ -304,3 +330,5 @@ export default function ToDoListPage() {
     </div>
   );
 }
+
+    
