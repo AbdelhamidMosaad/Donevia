@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -34,38 +35,43 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, listType }: { items
     const completedItems = items.filter(item => item.isCompleted);
     const incompleteItems = items.filter(item => !item.isCompleted);
 
-    const renderItem = (item: ToDoItem) => (
-      <div key={item.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted group">
-          <Checkbox id={`item-${item.id}`} checked={item.isCompleted} onCheckedChange={(checked) => onToggle(item.id, !!checked)} className="mt-1" />
-          <div className="flex-1">
-              <label htmlFor={`item-${item.id}`} className={cn("text-sm", item.isCompleted && "line-through text-muted-foreground")}>
-                {item.url ? (
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
-                    {item.text}
-                  </a>
-                ) : (
-                  item.text
-                )}
-              </label>
-              {item.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                      {item.tags.map(tag => (
-                          <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                      ))}
-                  </div>
-              )}
-          </div>
-          {listType === 'weekly' && onMove && !item.isCompleted && (
-             <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onMove(item.id)} title="Move to Today">
-                  <ArrowRight className="h-4 w-4 text-primary" />
-              </Button>
-          )}
-          <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onDelete(item.id)}>
-              <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-      </div>
-    );
+    const renderItem = (item: ToDoItem) => {
+        const itemLabel = (
+          <label htmlFor={`item-${item.id}`} className={cn("text-sm", item.isCompleted && "line-through text-muted-foreground", item.url && "cursor-pointer")}>
+            {item.text}
+          </label>
+        );
 
+        return (
+          <div key={item.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted group">
+              <Checkbox id={`item-${item.id}`} checked={item.isCompleted} onCheckedChange={(checked) => onToggle(item.id, !!checked)} className="mt-1" />
+              <div className="flex-1">
+                  {item.url ? (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
+                          {itemLabel}
+                      </a>
+                  ) : (
+                      itemLabel
+                  )}
+                  {item.tags && item.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                          {item.tags.map(tag => (
+                              <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                          ))}
+                      </div>
+                  )}
+              </div>
+              {listType === 'weekly' && onMove && !item.isCompleted && (
+                 <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onMove(item.id)} title="Move to Today">
+                      <ArrowRight className="h-4 w-4 text-primary" />
+                  </Button>
+              )}
+              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onDelete(item.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+          </div>
+        );
+    }
     return (
         <div className="space-y-1">
             {incompleteItems.map(renderItem)}
