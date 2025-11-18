@@ -129,6 +129,10 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, listType 
           </div>
         );
     }
+
+    const incompleteItems = items.filter(item => !item.isCompleted);
+    const completedItems = items.filter(item => item.isCompleted);
+
     return (
         <div className="space-y-1">
             {incompleteItems.map(renderItem)}
@@ -182,7 +186,7 @@ export default function ToDoListPage() {
 
     const currentItems = items.filter(i => i.type === type && i.date === date);
 
-    const newItem: Omit<ToDoItem, 'id' | 'createdAt'> = {
+    const newItem: Partial<ToDoItem> = {
         text: newItemText.trim(),
         isCompleted: false,
         type,
@@ -190,7 +194,7 @@ export default function ToDoListPage() {
         ownerId: user.uid,
         order: currentItems.length,
     };
-
+    
     await addDoc(collection(db, 'users', user.uid, 'todoItems'), {
         ...newItem,
         createdAt: serverTimestamp(),
@@ -242,16 +246,16 @@ export default function ToDoListPage() {
     return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
   }
 
-  const renderList = (incomplete: ToDoItem[], completed: ToDoItem[], listType: 'daily' | 'weekly') => (
+  const renderList = (listItems: ToDoItem[], listType: 'daily' | 'weekly') => (
        <Card>
           <CardContent className="p-4">
               {isLoading ? (
                   <div className="text-center p-8"><Loader2 className="animate-spin" /></div>
-              ) : incomplete.length === 0 && completed.length === 0 && newItemText === '' ? (
+              ) : listItems.length === 0 && newItemText === '' ? (
                    <p className="text-center text-muted-foreground p-8">Your list for {listType === 'daily' ? 'today' : 'this week'} is empty. Add a task below!</p>
               ) : (
                   <SimpleToDoList 
-                    items={[...incomplete, ...completed]} 
+                    items={listItems} 
                     onToggle={handleToggleItem} 
                     onDelete={handleDeleteItem} 
                     onMove={listType === 'weekly' ? handleMoveToToday : undefined}
@@ -290,10 +294,10 @@ export default function ToDoListPage() {
             <TabsTrigger value="week">This Week</TabsTrigger>
           </TabsList>
           <TabsContent value="today">
-            {renderList(incompleteDaily, completedDaily, 'daily')}
+            {renderList(dailyItems, 'daily')}
           </TabsContent>
           <TabsContent value="week">
-            {renderList(incompleteWeekly, completedWeekly, 'weekly')}
+            {renderList(weeklyItems, 'weekly')}
           </TabsContent>
         </Tabs>
       </div>
