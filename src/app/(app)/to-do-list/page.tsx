@@ -83,7 +83,7 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, onAddToTa
             updates.tags = editValue.split(',').map(tag => tag.trim()).filter(Boolean);
         } else {
             const trimmedUrl = editValue.trim();
-            updates.url = trimmedUrl ? (trimmedUrl.startsWith('http') ? trimmedUrl : `https://${trimmedUrl}`) : undefined;
+            updates.url = trimmedUrl ? (trimmedUrl.startsWith('http') ? trimmedUrl : `https://${trimmedUrl}`) : '';
         }
         
         onUpdate(editingField.id, updates);
@@ -172,8 +172,6 @@ export default function ToDoListPage() {
   const [items, setItems] = useState<ToDoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newItemText, setNewItemText] = useState('');
-  const [newTags, setNewTags] = useState('');
-  const [newUrl, setNewUrl] = useState('');
   const [activeTab, setActiveTab] = useState<'today' | 'week'>('today');
   
   const [currentDay, setCurrentDay] = useState(moment());
@@ -187,10 +185,12 @@ export default function ToDoListPage() {
     }
 
     setIsLoading(true);
-    const dateQuery = activeTab === 'today' ? currentDay.format('YYYY-MM-DD') : currentWeek.format('YYYY-WW');
+
+    const oneMonthAgo = moment().subtract(30, 'days').toDate();
+
     const q = query(
       collection(db, 'users', user.uid, 'todoItems'),
-      where('date', '==', dateQuery)
+      where('createdAt', '>=', oneMonthAgo)
     );
     
     const unsubscribeItems = onSnapshot(q, (snapshot) => {
@@ -205,7 +205,7 @@ export default function ToDoListPage() {
     return () => {
         unsubscribeItems();
     };
-  }, [user, authLoading, router, currentDay, currentWeek, activeTab]);
+  }, [user, authLoading, router]);
 
   const handleAddItem = async () => {
     if (!newItemText.trim() || !user) return;
@@ -222,8 +222,6 @@ export default function ToDoListPage() {
         date,
         ownerId: user.uid,
         order: currentItems.length,
-        tags: newTags.split(',').map(t => t.trim()).filter(Boolean),
-        url: newUrl.trim() ? (newUrl.startsWith('http') ? newUrl : `https://${newUrl}`) : undefined,
     };
     
     await addDoc(collection(db, 'users', user.uid, 'todoItems'), {
@@ -232,8 +230,6 @@ export default function ToDoListPage() {
     });
 
     setNewItemText('');
-    setNewTags('');
-    setNewUrl('');
 };
 
   const handleToggleItem = async (id: string, isCompleted: boolean) => {
@@ -251,9 +247,6 @@ export default function ToDoListPage() {
   const handleUpdateItem = async (id: string, updates: Partial<ToDoItem>) => {
     if (!user) return;
     const itemRef = doc(db, 'users', user.uid, 'todoItems', id);
-    if (updates.url === undefined) {
-        updates.url = '';
-    }
     await updateDoc(itemRef, { ...updates });
   };
 
@@ -358,26 +351,6 @@ export default function ToDoListPage() {
                           className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                       />
                   </div>
-                   <div className="flex items-center gap-2 pl-8">
-                     <Tag className="text-muted-foreground h-4 w-4" />
-                     <Input 
-                          placeholder="Tags (comma-separated)..."
-                          value={newTags}
-                          onChange={(e) => setNewTags(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-                          className="border-none focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-sm"
-                      />
-                  </div>
-                   <div className="flex items-center gap-2 pl-8">
-                     <LinkIcon className="text-muted-foreground h-4 w-4" />
-                     <Input 
-                          placeholder="Add a link..."
-                          value={newUrl}
-                          onChange={(e) => setNewUrl(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-                          className="border-none focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-sm"
-                      />
-                  </div>
               </div>
           </CardContent>
       </Card>
@@ -394,7 +367,7 @@ export default function ToDoListPage() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'today' | 'week'); setNewItemText(''); setNewTags(''); }}>
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'today' | 'week'); setNewItemText(''); }}>
             <div className="flex justify-center items-center mb-2">
                 <TabsList>
                     <TabsTrigger value="today">Today</TabsTrigger>
@@ -413,3 +386,5 @@ export default function ToDoListPage() {
     </div>
   );
 }
+
+    
