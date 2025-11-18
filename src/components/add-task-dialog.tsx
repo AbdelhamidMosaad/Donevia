@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import moment from 'moment';
 import type { Task, Stage, Subtask } from '@/lib/types';
 import { DialogTrigger } from './ui/dialog';
-import { PlusCircle, Trash2, Save, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Tag } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from './ui/checkbox';
 import { useTasks } from '@/hooks/use-tasks';
@@ -87,6 +87,8 @@ export function AddTaskDialog({
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [category, setCategory] = useState<string>('');
+  const [tags, setTags] = useState<string>('');
+
 
   const resetForm = () => {
     setTitle('');
@@ -98,6 +100,7 @@ export function AddTaskDialog({
     setColor(getRandomColor());
     setSubtasks([]);
     setCategory(categories?.[0] || 'general');
+    setTags('');
     if (stages.length > 0) {
       setStatus(stages[0].id);
     } else {
@@ -124,6 +127,7 @@ export function AddTaskDialog({
         setColor(task.color);
         setSubtasks(task.subtasks || []);
         setCategory(task.category || 'general');
+        setTags(task.tags?.join(', ') || '');
       } else {
         resetForm();
          if (task?.status) { // For newly created tasks from board
@@ -177,7 +181,7 @@ export function AddTaskDialog({
         reminder,
         subtasks,
         category: category || 'general',
-        tags: task?.tags || [],
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         deleted: false,
     };
 
@@ -272,6 +276,10 @@ export function AddTaskDialog({
            <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="reflection" className="text-right pt-2">Reflection</Label>
             <Textarea id="reflection" value={reflection} onChange={(e) => setReflection(e.target.value)} className="col-span-3" placeholder="Jot down your thoughts, lessons learned, or progress notes..."/>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="tags" className="text-right">Tags</Label>
+            <Input id="tags" value={tags} onChange={(e) => setTags(e.target.value)} className="col-span-3" placeholder="e.g. urgent, frontend, bug" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dueDate" className="text-right">Due Date</Label>

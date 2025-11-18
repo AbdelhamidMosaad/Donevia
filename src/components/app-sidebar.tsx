@@ -18,6 +18,7 @@ import {
   HelpCircle,
   Home,
   GripVertical,
+  ListTodo,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -55,6 +56,7 @@ const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
     { href: '/planner', icon: <PlannerIcon />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
     { href: '/dashboard/lists', icon: <TasksIcon />, label: 'Tasks', tooltip: 'Task Management', id: 'tasks' },
+    { href: '/to-do-list', icon: <ListTodo />, label: 'To-do List', tooltip: 'To-do List', id: 'to-do-list' },
     { href: '/crm', icon: <CrmIcon />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
     { href: '/journal', icon: <JournalIcon />, label: 'Journal', tooltip: 'Journal', id: 'journal' },
     { href: '/habits', icon: <HabitsIcon />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
