@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -6,19 +5,23 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { TaskList } from '@/components/task-list';
 import { Loader2, ListTodo } from 'lucide-react';
 import moment from 'moment';
-import type { Task } from '@/lib/types';
+import type { Task, Stage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { AddTaskDialog } from '@/components/add-task-dialog';
 import { PlusCircle } from 'lucide-react';
+import { BasicToDoList } from '@/components/to-do-list/basic-to-do-list';
+
 
 export default function ToDoListPage() {
   const { user, loading: authLoading } = useAuth();
   const { tasks, stages, isLoading: tasksLoading, deleteTask, updateTask, addTask, categories } = useTasks();
   const router = useRouter();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  const doneStage = useMemo(() => stages.find(s => s.name === 'Done'), [stages]);
+  const todoStage = useMemo(() => stages.find(s => s.name === 'To Do'), [stages]);
 
   if (authLoading || !user) {
     return (
@@ -47,7 +50,12 @@ export default function ToDoListPage() {
         </div>
       );
     }
-    return <TaskList tasks={filteredTasks} stages={stages} onDeleteTask={deleteTask} onUpdateTask={updateTask} />;
+    return <BasicToDoList 
+      tasks={filteredTasks} 
+      doneStageId={doneStage?.id} 
+      todoStageId={todoStage?.id} 
+      onUpdateTask={updateTask} 
+    />;
   }
 
   return (
