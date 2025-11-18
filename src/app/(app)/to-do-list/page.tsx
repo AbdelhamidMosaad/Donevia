@@ -37,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Label } from '../ui/label';
+import { Label } from '@/components/ui/label';
 
 interface ToDoItem {
   id: string;
