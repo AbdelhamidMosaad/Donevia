@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, where, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import moment from 'moment';
-import { Loader2, ListTodo, Plus, Trash2 } from 'lucide-react';
+import { Loader2, ListTodo, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,7 +26,7 @@ interface ToDoItem {
   order: number;
 }
 
-const SimpleToDoList = ({ items, onToggle, onDelete }: { items: ToDoItem[], onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void }) => {
+const SimpleToDoList = ({ items, onToggle, onDelete, onMove, listType }: { items: ToDoItem[], onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void, onMove?: (id: string) => void, listType: 'daily' | 'weekly' }) => {
     const completedItems = items.filter(item => item.isCompleted);
     const incompleteItems = items.filter(item => !item.isCompleted);
 
@@ -36,6 +36,11 @@ const SimpleToDoList = ({ items, onToggle, onDelete }: { items: ToDoItem[], onTo
                 <div key={item.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted group">
                     <Checkbox id={`item-${item.id}`} checked={item.isCompleted} onCheckedChange={(checked) => onToggle(item.id, !!checked)} />
                     <label htmlFor={`item-${item.id}`} className="flex-1 text-sm">{item.text}</label>
+                    {listType === 'weekly' && onMove && (
+                       <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onMove(item.id)} title="Move to Today">
+                            <ArrowRight className="h-4 w-4 text-primary" />
+                        </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onDelete(item.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -46,6 +51,11 @@ const SimpleToDoList = ({ items, onToggle, onDelete }: { items: ToDoItem[], onTo
                  <div key={item.id} className="flex items-center gap-3 p-2 rounded-md group">
                     <Checkbox id={`item-${item.id}`} checked={item.isCompleted} onCheckedChange={(checked) => onToggle(item.id, !!checked)} />
                     <label htmlFor={`item-${item.id}`} className="flex-1 text-sm text-muted-foreground line-through">{item.text}</label>
+                     {listType === 'weekly' && onMove && (
+                       <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onMove(item.id)} title="Move to Today">
+                            <ArrowRight className="h-4 w-4 text-primary" />
+                        </Button>
+                    )}
                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onDelete(item.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -128,6 +138,18 @@ export default function ToDoListPage() {
     await deleteDoc(itemRef);
   };
 
+  const handleMoveToToday = async (id: string) => {
+    if (!user) return;
+    const itemToMove = items.find(item => item.id === id);
+    if (itemToMove && itemToMove.type === 'weekly') {
+        const itemRef = doc(db, 'users', user.uid, 'todoItems', id);
+        await updateDoc(itemRef, {
+            type: 'daily',
+            date: todayDate,
+        });
+    }
+  };
+
   const dailyItems = useMemo(() => items.filter(item => item.type === 'daily' && item.date === todayDate), [items, todayDate]);
   const weeklyItems = useMemo(() => items.filter(item => item.type === 'weekly' && item.date === thisWeek), [items, thisWeek]);
   
@@ -159,7 +181,7 @@ export default function ToDoListPage() {
                     ) : dailyItems.length === 0 ? (
                          <p className="text-center text-muted-foreground p-8">Your list for today is empty. Add a task below!</p>
                     ) : (
-                        <SimpleToDoList items={dailyItems} onToggle={handleToggleItem} onDelete={handleDeleteItem}/>
+                        <SimpleToDoList items={dailyItems} onToggle={handleToggleItem} onDelete={handleDeleteItem} listType="daily" />
                     )}
                      <div className="flex items-center gap-2 mt-4 pt-4 border-t">
                         <Plus className="text-muted-foreground" />
@@ -182,7 +204,7 @@ export default function ToDoListPage() {
                     ) : weeklyItems.length === 0 ? (
                          <p className="text-center text-muted-foreground p-8">Your list for this week is empty. Add a task below!</p>
                     ) : (
-                        <SimpleToDoList items={weeklyItems} onToggle={handleToggleItem} onDelete={handleDeleteItem}/>
+                        <SimpleToDoList items={weeklyItems} onToggle={handleToggleItem} onDelete={handleDeleteItem} onMove={handleMoveToToday} listType="weekly"/>
                     )}
                      <div className="flex items-center gap-2 mt-4 pt-4 border-t">
                         <Plus className="text-muted-foreground" />
