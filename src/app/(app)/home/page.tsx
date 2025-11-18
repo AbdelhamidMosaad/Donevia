@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Task, Stage } from '@/lib/types';
-import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal } from 'lucide-react';
+import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal, ListTodo } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics-dashboard';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -39,6 +39,7 @@ import { CreateWithAiIcon } from '@/components/icons/tools/create-with-ai-icon';
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
     tasks: TasksIcon,
+    'to-do-list': ListTodo,
     crm: CrmIcon,
     habits: HabitsIcon,
     goals: GoalsIcon,
@@ -62,6 +63,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
 const allTools = [
     { id: 'planner', href: '/planner', title: 'Planner', description: 'Organize your time, events, and tasks.' },
     { id: 'tasks', href: '/dashboard/lists', title: 'Task Management', description: 'Manage projects with boards, lists, and calendars.' },
+    { id: 'to-do-list', href: '/to-do-list', title: 'To-do List', description: 'A simple list for daily and weekly tasks.' },
     { id: 'crm', href: '/crm', title: 'CRM', description: 'Manage clients, sales pipeline, and invoices.' },
     { id: 'habits', href: '/habits', title: 'Habit Tracker', description: 'Build consistency and track your daily habits.' },
     { id: 'goals', href: '/goals', title: 'Goal Tracker', description: 'Define, track, and achieve your ambitions.' },
