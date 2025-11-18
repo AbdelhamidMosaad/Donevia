@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, where, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import moment from 'moment';
-import { Loader2, ListTodo, Plus, Trash2, ArrowRight, Tag, Link as LinkIcon, Edit, Briefcase, Save, FolderDown } from 'lucide-react';
+import { Loader2, ListTodo, Plus, Trash2, ArrowRight, Tag, Link as LinkIcon, Edit, Briefcase, Save, FolderDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -52,12 +52,6 @@ interface ToDoItem {
   url?: string;
 }
 
-interface ToDoTemplate {
-    id: string;
-    name: string;
-    items: { text: string; tags?: string[] }[];
-}
-
 const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, onAddToTasks, listType }: { items: ToDoItem[], onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void, onMove?: (id: string) => void, onUpdate: (id: string, updates: Partial<ToDoItem>) => void, onAddToTasks: (item: ToDoItem) => void, listType: 'daily' | 'weekly' }) => {
     const [editingField, setEditingField] = useState<{ id: string; field: 'tags' | 'url' } | null>(null);
     const [editValue, setEditValue] = useState('');
@@ -68,6 +62,9 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, onAddToTa
             inputRef.current.focus();
         }
     }, [editingField]);
+    
+    const incompleteItems = items.filter(item => !item.isCompleted);
+    const completedItems = items.filter(item => item.isCompleted);
 
     const handleStartEdit = (item: ToDoItem, field: 'tags' | 'url') => {
         setEditingField({ id: item.id, field });
@@ -102,9 +99,6 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, onAddToTa
             setEditValue('');
         }
     };
-
-    const incompleteItems = items.filter(item => !item.isCompleted);
-    const completedItems = items.filter(item => item.isCompleted);
 
     const renderItem = (item: ToDoItem) => {
         const isEditingThisItem = editingField?.id === item.id;
@@ -176,16 +170,14 @@ export default function ToDoListPage() {
   const { toast } = useToast();
   const { addTask, stages } = useTasks();
   const [items, setItems] = useState<ToDoItem[]>([]);
-  const [templates, setTemplates] = useState<ToDoTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newItemText, setNewItemText] = useState('');
   const [newTags, setNewTags] = useState('');
+  const [newUrl, setNewUrl] = useState('');
   const [activeTab, setActiveTab] = useState<'today' | 'week'>('today');
-  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
-  const [templateName, setTemplateName] = useState('');
-
-  const todayDate = moment().format('YYYY-MM-DD');
-  const thisWeek = moment().format('YYYY-WW');
+  
+  const [currentDay, setCurrentDay] = useState(moment());
+  const [currentWeek, setCurrentWeek] = useState(moment().startOf('week'));
 
   useEffect(() => {
     if (authLoading) return;
@@ -195,9 +187,10 @@ export default function ToDoListPage() {
     }
 
     setIsLoading(true);
+    const dateQuery = activeTab === 'today' ? currentDay.format('YYYY-MM-DD') : currentWeek.format('YYYY-WW');
     const q = query(
       collection(db, 'users', user.uid, 'todoItems'),
-      where('date', 'in', [todayDate, thisWeek])
+      where('date', '==', dateQuery)
     );
     
     const unsubscribeItems = onSnapshot(q, (snapshot) => {
@@ -209,22 +202,16 @@ export default function ToDoListPage() {
         setIsLoading(false);
     });
 
-    const templatesQuery = query(collection(db, 'users', user.uid, 'todoTemplates'));
-    const unsubscribeTemplates = onSnapshot(templatesQuery, (snapshot) => {
-        setTemplates(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as ToDoTemplate)));
-    });
-
     return () => {
         unsubscribeItems();
-        unsubscribeTemplates();
     };
-  }, [user, authLoading, router, todayDate, thisWeek]);
+  }, [user, authLoading, router, currentDay, currentWeek, activeTab]);
 
   const handleAddItem = async () => {
     if (!newItemText.trim() || !user) return;
 
     const type = activeTab === 'today' ? 'daily' : 'weekly';
-    const date = activeTab === 'today' ? todayDate : thisWeek;
+    const date = activeTab === 'today' ? currentDay.format('YYYY-MM-DD') : currentWeek.format('YYYY-WW');
 
     const currentItems = items.filter(i => i.type === type && i.date === date);
 
@@ -236,6 +223,7 @@ export default function ToDoListPage() {
         ownerId: user.uid,
         order: currentItems.length,
         tags: newTags.split(',').map(t => t.trim()).filter(Boolean),
+        url: newUrl.trim() ? (newUrl.startsWith('http') ? newUrl : `https://${newUrl}`) : undefined,
     };
     
     await addDoc(collection(db, 'users', user.uid, 'todoItems'), {
@@ -245,6 +233,7 @@ export default function ToDoListPage() {
 
     setNewItemText('');
     setNewTags('');
+    setNewUrl('');
 };
 
   const handleToggleItem = async (id: string, isCompleted: boolean) => {
@@ -262,6 +251,9 @@ export default function ToDoListPage() {
   const handleUpdateItem = async (id: string, updates: Partial<ToDoItem>) => {
     if (!user) return;
     const itemRef = doc(db, 'users', user.uid, 'todoItems', id);
+    if (updates.url === undefined) {
+        updates.url = '';
+    }
     await updateDoc(itemRef, { ...updates });
   };
 
@@ -272,7 +264,7 @@ export default function ToDoListPage() {
         const itemRef = doc(db, 'users', user.uid, 'todoItems', id);
         await updateDoc(itemRef, {
             type: 'daily',
-            date: todayDate,
+            date: moment().format('YYYY-MM-DD'),
         });
     }
   };
@@ -302,74 +294,40 @@ export default function ToDoListPage() {
     toast({ title: 'Task Created', description: `"${item.text}" has been added to your main task board.` });
   };
 
-  const handleSaveTemplate = async () => {
-    if(!user || !templateName.trim()) {
-        toast({variant: 'destructive', title: 'Template name is required.'});
-        return;
-    };
-    const currentItems = activeTab === 'today' ? dailyItems : weeklyItems;
-    if(currentItems.length === 0) {
-        toast({variant: 'destructive', title: 'Cannot save an empty list as a template.'});
-        return;
+  const handleDateNav = (direction: 'prev' | 'next' | 'today') => {
+    if (activeTab === 'today') {
+      if (direction === 'today') setCurrentDay(moment());
+      else setCurrentDay(currentDay.clone().add(direction === 'next' ? 1 : -1, 'day'));
+    } else {
+      if (direction === 'today') setCurrentWeek(moment().startOf('week'));
+      else setCurrentWeek(currentWeek.clone().add(direction === 'next' ? 1 : -1, 'week'));
     }
-
-    const templateItems = currentItems.map(({ text, tags }) => ({ text, tags: tags || [] }));
-
-    await addDoc(collection(db, 'users', user.uid, 'todoTemplates'), {
-        name: templateName,
-        items: templateItems,
-        ownerId: user.uid,
-        createdAt: serverTimestamp(),
-    });
-
-    toast({title: 'Template saved!', description: `"${templateName}" is now available.`});
-    setIsTemplateDialogOpen(false);
-    setTemplateName('');
   };
 
-  const handleLoadTemplate = async (templateId: string) => {
-    if(!user) return;
-    const template = templates.find(t => t.id === templateId);
-    if(!template) return;
 
-    const type = activeTab === 'today' ? 'daily' : 'weekly';
-    const date = activeTab === 'today' ? todayDate : thisWeek;
-
-    const currentItems = items.filter(i => i.type === type && i.date === date);
-    let order = currentItems.length;
-
-    const batch = writeBatch(db);
-    template.items.forEach(item => {
-        const newItemRef = doc(collection(db, 'users', user.uid, 'todoItems'));
-        const newItemData: Partial<ToDoItem> = {
-            text: item.text,
-            tags: item.tags,
-            isCompleted: false,
-            type,
-            date,
-            ownerId: user.uid,
-            order: order++,
-            createdAt: serverTimestamp(),
-        };
-        batch.set(newItemRef, newItemData);
-    });
-
-    await batch.commit();
-    toast({title: 'Template loaded!', description: `${template.items.length} items added to your list.`});
-  };
-
-  const handleDeleteTemplate = async (templateId: string) => {
-    if(!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'todoTemplates', templateId));
-    toast({title: 'Template deleted.'});
-  }
-
-  const dailyItems = useMemo(() => items.filter(item => item.type === 'daily' && item.date === todayDate), [items, todayDate]);
-  const weeklyItems = useMemo(() => items.filter(item => item.type === 'weekly' && item.date === thisWeek), [items, thisWeek]);
+  const currentItems = useMemo(() => {
+    const dateQuery = activeTab === 'today' ? currentDay.format('YYYY-MM-DD') : currentWeek.format('YYYY-WW');
+    return items.filter(item => item.date === dateQuery);
+  }, [items, currentDay, currentWeek, activeTab]);
   
   if (authLoading || !user) {
     return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
   }
+  
+  const DateNavigator = () => (
+    <div className="flex items-center justify-center gap-2 mb-4">
+      <Button variant="outline" size="icon" onClick={() => handleDateNav('prev')}><ChevronLeft className="h-4 w-4" /></Button>
+      <Button variant="outline" onClick={() => handleDateNav('today')}>
+        {activeTab === 'today'
+          ? (currentDay.isSame(moment(), 'day') ? 'Today' : 'Go to Today')
+          : (currentWeek.isSame(moment(), 'week') ? 'This Week' : 'Go to This Week')}
+      </Button>
+      <span className="font-semibold text-lg">
+        {activeTab === 'today' ? currentDay.format('MMMM D, YYYY') : `Week of ${currentWeek.format('MMMM D, YYYY')}`}
+      </span>
+      <Button variant="outline" size="icon" onClick={() => handleDateNav('next')}><ChevronRight className="h-4 w-4" /></Button>
+    </div>
+  );
 
   const renderList = (listItems: ToDoItem[], listType: 'daily' | 'weekly') => (
        <Card>
@@ -377,7 +335,7 @@ export default function ToDoListPage() {
               {isLoading ? (
                   <div className="text-center p-8"><Loader2 className="animate-spin" /></div>
               ) : listItems.length === 0 && newItemText === '' ? (
-                   <p className="text-center text-muted-foreground p-8">Your list for {listType === 'daily' ? 'today' : 'this week'} is empty. Add a task below!</p>
+                   <p className="text-center text-muted-foreground p-8">Your list is empty. Add a task below!</p>
               ) : (
                   <SimpleToDoList 
                     items={listItems} 
@@ -393,7 +351,7 @@ export default function ToDoListPage() {
                   <div className="flex items-center gap-2">
                      <Plus className="text-muted-foreground" />
                      <Input 
-                          placeholder={`Add a to-do for ${listType === 'daily' ? 'today' : 'this week'}...`}
+                          placeholder="Add a to-do..."
                           value={newItemText}
                           onChange={(e) => setNewItemText(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
@@ -406,6 +364,16 @@ export default function ToDoListPage() {
                           placeholder="Tags (comma-separated)..."
                           value={newTags}
                           onChange={(e) => setNewTags(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+                          className="border-none focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-sm"
+                      />
+                  </div>
+                   <div className="flex items-center gap-2 pl-8">
+                     <LinkIcon className="text-muted-foreground h-4 w-4" />
+                     <Input 
+                          placeholder="Add a link..."
+                          value={newUrl}
+                          onChange={(e) => setNewUrl(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
                           className="border-none focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-sm"
                       />
@@ -427,64 +395,21 @@ export default function ToDoListPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'today' | 'week'); setNewItemText(''); setNewTags(''); }}>
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-center items-center mb-2">
                 <TabsList>
                     <TabsTrigger value="today">Today</TabsTrigger>
                     <TabsTrigger value="week">This Week</TabsTrigger>
                 </TabsList>
-                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => setIsTemplateDialogOpen(true)}><Save className="mr-2 h-4 w-4"/>Save as Template</Button>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline"><FolderDown className="mr-2 h-4 w-4"/>Load Template</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuLabel>Select a Template</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {templates.map(template => (
-                                <DropdownMenuItem key={template.id} onSelect={() => handleLoadTemplate(template.id)} className="flex justify-between items-center">
-                                    <span>{template.name}</span>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                </DropdownMenuItem>
-                            ))}
-                             {templates.length === 0 && <DropdownMenuItem disabled>No templates saved.</DropdownMenuItem>}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
             </div>
+            <DateNavigator />
           <TabsContent value="today">
-            {renderList(dailyItems, 'daily')}
+            {renderList(currentItems, 'daily')}
           </TabsContent>
           <TabsContent value="week">
-            {renderList(weeklyItems, 'weekly')}
+            {renderList(currentItems, 'weekly')}
           </TabsContent>
         </Tabs>
       </div>
-
-       <AlertDialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Save List as Template</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Enter a name for your new template. This will save the current list of tasks (without their completion status).
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="template-name">Template Name</Label>
-                    <Input 
-                        id="template-name"
-                        value={templateName}
-                        onChange={(e) => setTemplateName(e.target.value)}
-                        placeholder="e.g., Morning Routine"
-                        onKeyDown={(e) => { if(e.key === 'Enter') handleSaveTemplate() }}
-                    />
-                </div>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSaveTemplate} disabled={!templateName.trim()}>Save Template</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
     </div>
   );
 }
