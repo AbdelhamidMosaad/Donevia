@@ -121,22 +121,26 @@ export default function ToDoListPage() {
 
   const handleAddItem = async () => {
     if (!newItemText.trim() || !user) return;
-    
+
     const type = activeTab === 'today' ? 'daily' : 'weekly';
     const date = activeTab === 'today' ? todayDate : thisWeek;
 
     const currentItems = items.filter(i => i.type === type && i.date === date);
-    
+
     const newItem: Omit<ToDoItem, 'id' | 'createdAt'> = {
-      text: newItemText.trim(),
-      isCompleted: false,
-      type,
-      date,
-      ownerId: user.uid,
-      order: currentItems.length,
-      tags: newItemTags.split(',').map(tag => tag.trim()).filter(Boolean),
-      url: newItemUrl.trim() || undefined,
+        text: newItemText.trim(),
+        isCompleted: false,
+        type,
+        date,
+        ownerId: user.uid,
+        order: currentItems.length,
+        tags: newItemTags.split(',').map(tag => tag.trim()).filter(Boolean),
     };
+
+    const trimmedUrl = newItemUrl.trim();
+    if (trimmedUrl) {
+        newItem.url = trimmedUrl;
+    }
 
     await addDoc(collection(db, 'users', user.uid, 'todoItems'), {
         ...newItem,
@@ -146,7 +150,7 @@ export default function ToDoListPage() {
     setNewItemText('');
     setNewItemTags('');
     setNewItemUrl('');
-  };
+};
 
   const handleToggleItem = async (id: string, isCompleted: boolean) => {
     if (!user) return;
