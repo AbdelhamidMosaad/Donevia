@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, where, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import moment from 'moment';
-import { Loader2, ListTodo, Plus, Trash2, ArrowRight, Tag, Link as LinkIcon } from 'lucide-react';
+import { Loader2, ListTodo, Plus, Trash2, ArrowRight, Tag, Link as LinkIcon, Edit } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
 
 interface ToDoItem {
   id: string;
@@ -31,28 +30,68 @@ interface ToDoItem {
   url?: string;
 }
 
-const SimpleToDoList = ({ items, onToggle, onDelete, onMove, listType }: { items: ToDoItem[], onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void, onMove?: (id: string) => void, listType: 'daily' | 'weekly' }) => {
-    const completedItems = items.filter(item => item.isCompleted);
-    const incompleteItems = items.filter(item => !item.isCompleted);
+const SimpleToDoList = ({ items, onToggle, onDelete, onMove, onUpdate, listType }: { items: ToDoItem[], onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void, onMove?: (id: string) => void, onUpdate: (id: string, updates: Partial<ToDoItem>) => void, listType: 'daily' | 'weekly' }) => {
+    const [editingField, setEditingField] = useState<{ id: string; field: 'tags' | 'url' } | null>(null);
+    const [editValue, setEditValue] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (editingField && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [editingField]);
+
+    const handleStartEdit = (item: ToDoItem, field: 'tags' | 'url') => {
+        setEditingField({ id: item.id, field });
+        if (field === 'tags') {
+            setEditValue(item.tags?.join(', ') || '');
+        } else {
+            setEditValue(item.url || '');
+        }
+    };
+    
+    const handleSaveEdit = () => {
+        if (!editingField) return;
+
+        const updates: Partial<ToDoItem> = {};
+        if (editingField.field === 'tags') {
+            updates.tags = editValue.split(',').map(tag => tag.trim()).filter(Boolean);
+        } else {
+            const trimmedUrl = editValue.trim();
+            updates.url = trimmedUrl ? (trimmedUrl.startsWith('http') ? trimmedUrl : `https://${trimmedUrl}`) : '';
+        }
+        
+        onUpdate(editingField.id, updates);
+        setEditingField(null);
+        setEditValue('');
+    };
+    
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleSaveEdit();
+        } else if (e.key === 'Escape') {
+            setEditingField(null);
+            setEditValue('');
+        }
+    };
+
 
     const renderItem = (item: ToDoItem) => {
+        const isEditingThisItem = editingField?.id === item.id;
+        
         const itemLabel = (
-          <label htmlFor={`item-${item.id}`} className={cn("text-sm", item.isCompleted && "line-through text-muted-foreground", item.url && "cursor-pointer")}>
+          <a href={item.url} target="_blank" rel="noopener noreferrer" className={cn("text-sm hover:underline", item.isCompleted && "line-through text-muted-foreground", !item.url && "pointer-events-none no-underline")}>
             {item.text}
-          </label>
+            {item.url && <LinkIcon className="inline-block h-3 w-3 ml-1 text-muted-foreground" />}
+          </a>
         );
 
         return (
-          <div key={item.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted group">
+          <div key={item.id} className="p-2 rounded-md hover:bg-muted group flex flex-col">
+            <div className="flex items-start gap-3">
               <Checkbox id={`item-${item.id}`} checked={item.isCompleted} onCheckedChange={(checked) => onToggle(item.id, !!checked)} className="mt-1" />
               <div className="flex-1">
-                  {item.url ? (
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
-                          {itemLabel}
-                      </a>
-                  ) : (
-                      itemLabel
-                  )}
+                  {itemLabel}
                   {item.tags && item.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                           {item.tags.map(tag => (
@@ -61,14 +100,32 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, listType }: { items
                       </div>
                   )}
               </div>
-              {listType === 'weekly' && onMove && !item.isCompleted && (
-                 <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onMove(item.id)} title="Move to Today">
-                      <ArrowRight className="h-4 w-4 text-primary" />
+               <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEdit(item, 'tags')} title="Edit Tags"><Tag className="h-4 w-4 text-muted-foreground"/></Button>
+                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEdit(item, 'url')} title="Edit Link"><LinkIcon className="h-4 w-4 text-muted-foreground"/></Button>
+                   {listType === 'weekly' && onMove && !item.isCompleted && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onMove(item.id)} title="Move to Today">
+                          <ArrowRight className="h-4 w-4 text-primary" />
+                      </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(item.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
-              )}
-              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onDelete(item.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+               </div>
+            </div>
+            {isEditingThisItem && (
+                 <div className="pl-8 pt-2">
+                    <Input 
+                        ref={inputRef}
+                        placeholder={editingField.field === 'tags' ? 'Tags (comma-separated)...' : 'Add a link...'}
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onBlur={handleSaveEdit}
+                        className="h-8"
+                    />
+                </div>
+            )}
           </div>
         );
     }
@@ -87,8 +144,6 @@ export default function ToDoListPage() {
   const [items, setItems] = useState<ToDoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newItemText, setNewItemText] = useState('');
-  const [newItemTags, setNewItemTags] = useState('');
-  const [newItemUrl, setNewItemUrl] = useState('');
   const [activeTab, setActiveTab] = useState<'today' | 'week'>('today');
 
   const todayDate = moment().format('YYYY-MM-DD');
@@ -109,7 +164,7 @@ export default function ToDoListPage() {
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ToDoItem));
-      setItems(allItems.sort((a, b) => a.order - b.order));
+      setItems(allItems.sort((a, b) => (a.order || 0) - (b.order || 0)));
       setIsLoading(false);
     }, (error) => {
         console.error("Error fetching to-do items:", error);
@@ -134,13 +189,7 @@ export default function ToDoListPage() {
         date,
         ownerId: user.uid,
         order: currentItems.length,
-        tags: newItemTags.split(',').map(tag => tag.trim()).filter(Boolean),
     };
-
-    const trimmedUrl = newItemUrl.trim();
-    if (trimmedUrl) {
-        newItem.url = trimmedUrl;
-    }
 
     await addDoc(collection(db, 'users', user.uid, 'todoItems'), {
         ...newItem,
@@ -148,8 +197,6 @@ export default function ToDoListPage() {
     });
 
     setNewItemText('');
-    setNewItemTags('');
-    setNewItemUrl('');
 };
 
   const handleToggleItem = async (id: string, isCompleted: boolean) => {
@@ -162,6 +209,12 @@ export default function ToDoListPage() {
     if (!user) return;
     const itemRef = doc(db, 'users', user.uid, 'todoItems', id);
     await deleteDoc(itemRef);
+  };
+  
+  const handleUpdateItem = async (id: string, updates: Partial<ToDoItem>) => {
+    if (!user) return;
+    const itemRef = doc(db, 'users', user.uid, 'todoItems', id);
+    await updateDoc(itemRef, updates);
   };
 
   const handleMoveToToday = async (id: string) => {
@@ -179,51 +232,42 @@ export default function ToDoListPage() {
   const dailyItems = useMemo(() => items.filter(item => item.type === 'daily' && item.date === todayDate), [items, todayDate]);
   const weeklyItems = useMemo(() => items.filter(item => item.type === 'weekly' && item.date === thisWeek), [items, thisWeek]);
   
+    // Separate completed and incomplete for rendering order
+  const completedDaily = dailyItems.filter(item => item.isCompleted);
+  const incompleteDaily = dailyItems.filter(item => !item.isCompleted);
+  const completedWeekly = weeklyItems.filter(item => item.isCompleted);
+  const incompleteWeekly = weeklyItems.filter(item => !item.isCompleted);
+
   if (authLoading || !user) {
     return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
   }
 
-  const renderList = (listItems: ToDoItem[], listType: 'daily' | 'weekly') => (
+  const renderList = (incomplete: ToDoItem[], completed: ToDoItem[], listType: 'daily' | 'weekly') => (
        <Card>
           <CardContent className="p-4">
               {isLoading ? (
                   <div className="text-center p-8"><Loader2 className="animate-spin" /></div>
-              ) : listItems.length === 0 && newItemText === '' ? (
+              ) : incomplete.length === 0 && completed.length === 0 && newItemText === '' ? (
                    <p className="text-center text-muted-foreground p-8">Your list for {listType === 'daily' ? 'today' : 'this week'} is empty. Add a task below!</p>
               ) : (
-                  <SimpleToDoList items={listItems} onToggle={handleToggleItem} onDelete={handleDeleteItem} onMove={listType === 'weekly' ? handleMoveToToday : undefined} listType={listType} />
+                  <SimpleToDoList 
+                    items={[...incomplete, ...completed]} 
+                    onToggle={handleToggleItem} 
+                    onDelete={handleDeleteItem} 
+                    onMove={listType === 'weekly' ? handleMoveToToday : undefined}
+                    onUpdate={handleUpdateItem}
+                    listType={listType}
+                   />
               )}
-               <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
-                  <div className="flex items-center gap-2">
-                    <Plus className="text-muted-foreground" />
-                    <Input 
-                        placeholder={`Add a to-do for ${listType === 'daily' ? 'today' : 'this week'}...`}
-                        value={newItemText}
-                        onChange={(e) => setNewItemText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-                        className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                  </div>
-                   <div className="flex items-center gap-2 pl-8">
-                      <Tag className="text-muted-foreground h-4 w-4" />
-                      <Input 
-                          placeholder="Tags (comma-separated)..."
-                          value={newItemTags}
-                          onChange={(e) => setNewItemTags(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-                          className="h-8 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
-                      />
-                  </div>
-                   <div className="flex items-center gap-2 pl-8">
-                      <LinkIcon className="text-muted-foreground h-4 w-4" />
-                      <Input 
-                          placeholder="Add a link..."
-                          value={newItemUrl}
-                          onChange={(e) => setNewItemUrl(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-                          className="h-8 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
-                      />
-                  </div>
+               <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                  <Plus className="text-muted-foreground" />
+                  <Input 
+                      placeholder={`Add a to-do for ${listType === 'daily' ? 'today' : 'this week'}...`}
+                      value={newItemText}
+                      onChange={(e) => setNewItemText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+                      className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
               </div>
           </CardContent>
       </Card>
@@ -240,16 +284,16 @@ export default function ToDoListPage() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'today' | 'week'); setNewItemText(''); setNewItemTags(''); setNewItemUrl(''); }}>
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'today' | 'week'); setNewItemText(''); }}>
           <TabsList>
             <TabsTrigger value="today">Today</TabsTrigger>
             <TabsTrigger value="week">This Week</TabsTrigger>
           </TabsList>
           <TabsContent value="today">
-            {renderList(dailyItems, 'daily')}
+            {renderList(incompleteDaily, completedDaily, 'daily')}
           </TabsContent>
           <TabsContent value="week">
-            {renderList(weeklyItems, 'weekly')}
+            {renderList(incompleteWeekly, completedWeekly, 'weekly')}
           </TabsContent>
         </Tabs>
       </div>
