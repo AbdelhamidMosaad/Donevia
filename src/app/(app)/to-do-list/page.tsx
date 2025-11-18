@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, query, where, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import moment from 'moment';
-import { Loader2, ListTodo, Plus, Trash2, ArrowRight, Tag } from 'lucide-react';
+import { Loader2, ListTodo, Plus, Trash2, ArrowRight, Tag, Link as LinkIcon } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 interface ToDoItem {
   id: string;
@@ -26,6 +27,7 @@ interface ToDoItem {
   ownerId: string;
   order: number;
   tags?: string[];
+  url?: string;
 }
 
 const SimpleToDoList = ({ items, onToggle, onDelete, onMove, listType }: { items: ToDoItem[], onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void, onMove?: (id: string) => void, listType: 'daily' | 'weekly' }) => {
@@ -36,7 +38,15 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, listType }: { items
       <div key={item.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted group">
           <Checkbox id={`item-${item.id}`} checked={item.isCompleted} onCheckedChange={(checked) => onToggle(item.id, !!checked)} className="mt-1" />
           <div className="flex-1">
-              <label htmlFor={`item-${item.id}`} className={cn("text-sm", item.isCompleted && "line-through text-muted-foreground")}>{item.text}</label>
+              <label htmlFor={`item-${item.id}`} className={cn("text-sm", item.isCompleted && "line-through text-muted-foreground")}>
+                {item.url ? (
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
+                    {item.text}
+                  </a>
+                ) : (
+                  item.text
+                )}
+              </label>
               {item.tags && item.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                       {item.tags.map(tag => (
@@ -45,7 +55,7 @@ const SimpleToDoList = ({ items, onToggle, onDelete, onMove, listType }: { items
                   </div>
               )}
           </div>
-          {listType === 'weekly' && onMove && (
+          {listType === 'weekly' && onMove && !item.isCompleted && (
              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onMove(item.id)} title="Move to Today">
                   <ArrowRight className="h-4 w-4 text-primary" />
               </Button>
@@ -72,6 +82,7 @@ export default function ToDoListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [newItemText, setNewItemText] = useState('');
   const [newItemTags, setNewItemTags] = useState('');
+  const [newItemUrl, setNewItemUrl] = useState('');
   const [activeTab, setActiveTab] = useState<'today' | 'week'>('today');
 
   const todayDate = moment().format('YYYY-MM-DD');
@@ -118,6 +129,7 @@ export default function ToDoListPage() {
       ownerId: user.uid,
       order: currentItems.length,
       tags: newItemTags.split(',').map(tag => tag.trim()).filter(Boolean),
+      url: newItemUrl.trim() || undefined,
     };
 
     await addDoc(collection(db, 'users', user.uid, 'todoItems'), {
@@ -127,6 +139,7 @@ export default function ToDoListPage() {
 
     setNewItemText('');
     setNewItemTags('');
+    setNewItemUrl('');
   };
 
   const handleToggleItem = async (id: string, isCompleted: boolean) => {
@@ -191,6 +204,16 @@ export default function ToDoListPage() {
                           className="h-8 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
                       />
                   </div>
+                   <div className="flex items-center gap-2 pl-8">
+                      <LinkIcon className="text-muted-foreground h-4 w-4" />
+                      <Input 
+                          placeholder="Add a link..."
+                          value={newItemUrl}
+                          onChange={(e) => setNewItemUrl(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+                          className="h-8 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
+                      />
+                  </div>
               </div>
           </CardContent>
       </Card>
@@ -207,7 +230,7 @@ export default function ToDoListPage() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'today' | 'week'); setNewItemText(''); setNewItemTags(''); }}>
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'today' | 'week'); setNewItemText(''); setNewItemTags(''); setNewItemUrl(''); }}>
           <TabsList>
             <TabsTrigger value="today">Today</TabsTrigger>
             <TabsTrigger value="week">This Week</TabsTrigger>
