@@ -46,24 +46,6 @@ interface StickyNoteDialogProps {
 const backgroundColors = ['#fff176', '#ff8a65', '#81d4fa', '#aed581', '#ce93d8', '#fdcbf1', '#fdfd96'];
 const textColors = ['#000000', '#FFFFFF', '#ef4444', '#3b82f6', '#16a34a', '#7c3aed'];
 
-const StickyNoteToolbar = ({ editor }: { editor: any }) => {
-  if (!editor) return null;
-
-  return (
-    <div className="p-1 border-b flex items-center gap-1 flex-wrap" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-        <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}><Bold size={16}/></Toggle>
-        <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}><Italic size={16}/></Toggle>
-        <Separator orientation="vertical" className="h-6 mx-1"/>
-        <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 size={16}/></Toggle>
-        <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 size={16}/></Toggle>
-        <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 size={16}/></Toggle>
-        <Separator orientation="vertical" className="h-6 mx-1"/>
-        <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}><List size={16}/></Toggle>
-        <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={16}/></Toggle>
-    </div>
-  )
-}
-
 function RephraseDialog({ text, onApply, onOpenChange, open }: { text: string, onApply: (newText: string) => void, onOpenChange: (open: boolean) => void, open: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<RephraseResponse | null>(null);
@@ -158,6 +140,33 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
      } catch (e) { console.error('Error updating note:', e); }
   }, 500);
 
+  const uploadFile = useCallback(async (file: File) => {
+    if (!user || !noteRef || !editor) return;
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
+      return;
+    }
+    setIsUploading(true);
+
+    const storage = getStorage();
+    const filePath = `users/${user.uid}/notes/images/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, filePath);
+
+    try {
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      
+      editor.chain().focus().setImage({ src: downloadURL }).run();
+      
+      toast({ title: 'Image uploaded and inserted successfully!' });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
+    } finally {
+        setIsUploading(false);
+    }
+  }, [user, noteRef, toast]);
+  
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -201,32 +210,6 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     }
   });
 
- const uploadFile = useCallback(async (file: File) => {
-    if (!user || !noteRef || !editor) return;
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
-      return;
-    }
-    setIsUploading(true);
-
-    const storage = getStorage();
-    const filePath = `users/${user.uid}/notes/images/${Date.now()}_${file.name}`;
-    const fileRef = storageRef(storage, filePath);
-
-    try {
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      
-      editor.chain().focus().setImage({ src: downloadURL }).run();
-      
-      toast({ title: 'Image uploaded and inserted successfully!' });
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
-    } finally {
-        setIsUploading(false);
-    }
-  }, [user, noteRef, editor, toast]);
-  
   useEffect(() => {
     setTitle(note.title);
     setBgColor(note.color);
@@ -396,3 +379,5 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     </>
   );
 }
+
+    
