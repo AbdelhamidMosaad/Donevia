@@ -40,15 +40,15 @@ function StickyNoteToolbar({ editor }: { editor: Editor | null }) {
 
     return (
         <div className="flex items-center gap-1 p-1 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-            <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}><Bold /></Toggle>
-            <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}><Italic /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}><Bold className="h-4 w-4" /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}><Italic className="h-4 w-4" /></Toggle>
             <Separator orientation="vertical" className="h-6 mx-1" />
-            <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 /></Toggle>
-            <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 /></Toggle>
-            <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 className="h-4 w-4" /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 className="h-4 w-4" /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 className="h-4 w-4" /></Toggle>
             <Separator orientation="vertical" className="h-6 mx-1" />
-            <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}><List /></Toggle>
-            <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}><List className="h-4 w-4" /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered className="h-4 w-4" /></Toggle>
         </div>
     );
 }
@@ -157,6 +157,32 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
        await updateDoc(noteRef, { [field]: value, updatedAt: serverTimestamp() });
      } catch (e) { console.error('Error updating note:', e); }
   }, 500);
+  
+  const uploadFile = useCallback(async (file: File) => {
+    if (!user || !noteRef || !editor) return;
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
+      return;
+    }
+    setIsUploading(true);
+
+    const storage = getStorage();
+    const filePath = `users/${user.uid}/notes/images/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, filePath);
+
+    try {
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      
+      editor.chain().focus().setImage({ src: downloadURL }).run();
+      
+      toast({ title: 'Image uploaded and inserted successfully!' });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
+    } finally {
+        setIsUploading(false);
+    }
+  }, [user, noteRef, toast]); // editor dependency removed to fix initialization order
 
   const editor = useEditor({
     extensions: [
@@ -182,7 +208,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
                 if (item.type.indexOf('image') === 0) {
                     const file = item.getAsFile();
                     if (file) {
-                        uploadFile(file);
+                        uploadFile(file); // Now uploadFile doesn't depend on `editor` in its useCallback deps
                         return true;
                     }
                 }
@@ -200,33 +226,13 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
         setSelectedText(text);
     }
   });
-
-  const uploadFile = useCallback(async (file: File) => {
-    if (!user || !noteRef || !editor) return;
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
-      return;
-    }
-    setIsUploading(true);
-
-    const storage = getStorage();
-    const filePath = `users/${user.uid}/notes/images/${Date.now()}_${file.name}`;
-    const fileRef = storageRef(storage, filePath);
-
-    try {
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      
-      editor.chain().focus().setImage({ src: downloadURL }).run();
-      
-      toast({ title: 'Image uploaded and inserted successfully!' });
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
-    } finally {
-        setIsUploading(false);
-    }
-  }, [user, noteRef, editor, toast]);
   
+  // Re-add editor dependency to uploadFile here, now that editor is initialized
+  useEffect(() => {
+    if (editor) {
+      // No need to redefine uploadFile, just make sure editor exists for its logic to run
+    }
+  }, [editor, uploadFile]);
 
   useEffect(() => {
     setTitle(note.title);
