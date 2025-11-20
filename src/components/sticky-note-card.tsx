@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { StickyNote } from '@/lib/types';
@@ -7,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Button } from './ui/button';
+import Image from 'next/image';
 
 interface StickyNoteCardProps {
   note: StickyNote;
@@ -51,6 +53,11 @@ export function StickyNoteCard({ note, onClick, onDelete, style, className }: St
        }}
       onClick={onClick}
     >
+      {note.imageUrl && (
+        <div className="relative w-full aspect-video mb-2 rounded-md overflow-hidden">
+            <Image src={note.imageUrl} alt={note.title || 'Note image'} layout="fill" objectFit="cover" />
+        </div>
+      )}
       {priorityInfo && (
         <TooltipProvider>
           <Tooltip>

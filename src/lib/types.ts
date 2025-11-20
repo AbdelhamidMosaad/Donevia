@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -90,6 +91,7 @@ export type StickyNote = {
     position?: { x: number; y: number };
     gridPosition?: { col: number; row: number };
     order?: number;
+    imageUrl?: string;
 };
 
 /** Bookmarks */
