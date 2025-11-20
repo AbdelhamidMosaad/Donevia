@@ -158,6 +158,49 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
      } catch (e) { console.error('Error updating note:', e); }
   }, 500);
 
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: 'Type your note here...',
+      }),
+      TipTapImage.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+    ],
+    content: note.content || note.text,
+    editorProps: {
+        attributes: {
+            class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none p-2',
+            style: `color: ${textColor}`
+        },
+        handlePaste: (view, event) => {
+            const items = (event.clipboardData || (window as any).clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.type.indexOf('image') === 0) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        uploadFile(file);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        },
+    },
+    onUpdate: ({ editor }) => {
+      const json = editor.getJSON();
+      debouncedUpdate('content', json);
+    },
+    onSelectionUpdate: ({ editor }) => {
+        const { from, to } = editor.state.selection;
+        const text = editor.state.doc.textBetween(from, to, ' ');
+        setSelectedText(text);
+    }
+  });
+
  const uploadFile = useCallback(async (file: File) => {
     if (!user || !noteRef || !editor) return;
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -174,7 +217,6 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
       const snapshot = await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
       
-      // Update editor content with new image
       editor.chain().focus().setImage({ src: downloadURL }).run();
       
       toast({ title: 'Image uploaded and inserted successfully!' });
@@ -184,50 +226,6 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
         setIsUploading(false);
     }
   }, [user, noteRef, editor, toast]);
-
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder: 'Type your note here...',
-      }),
-      TipTapImage.configure({
-        inline: true,
-        allowBase64: true,
-      }),
-    ],
-    content: note.content || note.text, // Handle legacy plain text
-    editorProps: {
-        attributes: {
-            class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none p-2',
-            style: `color: ${textColor}`
-        },
-        handlePaste: (view, event) => {
-            const items = (event.clipboardData || (window as any).clipboardData).items;
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (item.type.indexOf('image') === 0) {
-                    const file = item.getAsFile();
-                    if (file) {
-                        uploadFile(file);
-                        return true; // Prevent default paste behavior
-                    }
-                }
-            }
-            return false; // Let tiptap handle other pastes
-        },
-    },
-    onUpdate: ({ editor }) => {
-      const json = editor.getJSON();
-      debouncedUpdate('content', json);
-    },
-    onSelectionUpdate: ({ editor }) => {
-        const { from, to } = editor.state.selection;
-        const text = editor.state.doc.textBetween(from, to, ' ');
-        setSelectedText(text);
-    }
-  });
   
   useEffect(() => {
     setTitle(note.title);
