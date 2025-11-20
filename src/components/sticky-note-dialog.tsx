@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { GrammarCoach } from './english-coach/grammar-coach';
 import Image from 'next/image';
 import { getAuth } from 'firebase/auth';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useDebouncedCallback } from 'use-debounce';
@@ -35,16 +35,24 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Image as TipTapImage } from '@tiptap/extension-image';
 
+function StickyNoteToolbar({ editor }: { editor: Editor | null }) {
+    if (!editor) return null;
 
-interface StickyNoteDialogProps {
-  note: StickyNote;
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onNoteDeleted: () => void;
+    return (
+        <div className="flex items-center gap-1 p-1 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+            <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}><Bold /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}><Italic /></Toggle>
+            <Separator orientation="vertical" className="h-6 mx-1" />
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 /></Toggle>
+            <Separator orientation="vertical" className="h-6 mx-1" />
+            <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}><List /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered /></Toggle>
+        </div>
+    );
 }
 
-const backgroundColors = ['#fff176', '#ff8a65', '#81d4fa', '#aed581', '#ce93d8', '#fdcbf1', '#fdfd96'];
-const textColors = ['#000000', '#FFFFFF', '#ef4444', '#3b82f6', '#16a34a', '#7c3aed'];
 
 function RephraseDialog({ text, onApply, onOpenChange, open }: { text: string, onApply: (newText: string) => void, onOpenChange: (open: boolean) => void, open: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -118,6 +126,16 @@ function RephraseDialog({ text, onApply, onOpenChange, open }: { text: string, o
   );
 }
 
+interface StickyNoteDialogProps {
+  note: StickyNote;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onNoteDeleted: () => void;
+}
+
+const backgroundColors = ['#fff176', '#ff8a65', '#81d4fa', '#aed581', '#ce93d8', '#fdcbf1', '#fdfd96'];
+const textColors = ['#000000', '#FFFFFF', '#ef4444', '#3b82f6', '#16a34a', '#7c3aed'];
+
 export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: StickyNoteDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -139,33 +157,6 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
        await updateDoc(noteRef, { [field]: value, updatedAt: serverTimestamp() });
      } catch (e) { console.error('Error updating note:', e); }
   }, 500);
-
-  const uploadFile = useCallback(async (file: File) => {
-    if (!user || !noteRef || !editor) return;
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
-      return;
-    }
-    setIsUploading(true);
-
-    const storage = getStorage();
-    const filePath = `users/${user.uid}/notes/images/${Date.now()}_${file.name}`;
-    const fileRef = storageRef(storage, filePath);
-
-    try {
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      
-      editor.chain().focus().setImage({ src: downloadURL }).run();
-      
-      toast({ title: 'Image uploaded and inserted successfully!' });
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
-    } finally {
-        setIsUploading(false);
-    }
-  }, [user, noteRef, toast]);
-  
 
   const editor = useEditor({
     extensions: [
@@ -209,6 +200,33 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
         setSelectedText(text);
     }
   });
+
+  const uploadFile = useCallback(async (file: File) => {
+    if (!user || !noteRef || !editor) return;
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
+      return;
+    }
+    setIsUploading(true);
+
+    const storage = getStorage();
+    const filePath = `users/${user.uid}/notes/images/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, filePath);
+
+    try {
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      
+      editor.chain().focus().setImage({ src: downloadURL }).run();
+      
+      toast({ title: 'Image uploaded and inserted successfully!' });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
+    } finally {
+        setIsUploading(false);
+    }
+  }, [user, noteRef, editor, toast]);
+  
 
   useEffect(() => {
     setTitle(note.title);
@@ -379,5 +397,3 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     </>
   );
 }
-
-    
