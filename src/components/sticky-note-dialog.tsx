@@ -9,7 +9,7 @@ import { doc, updateDoc, serverTimestamp, deleteField } from 'firebase/firestore
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
-import { Palette, Check, CaseSensitive, Flag, MessageSquareQuote, ImageIcon, X, Upload, Loader2, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered } from 'lucide-react';
+import { Palette, Check, CaseSensitive, Flag, MessageSquareQuote, ImageIcon, X, Upload, Loader2, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Sparkles, Wand2, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -28,6 +28,9 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { useDebouncedCallback } from 'use-debounce';
 import { Toggle } from './ui/toggle';
 import { Separator } from './ui/separator';
+import { rephraseText } from '@/ai/flows/rephrase-flow';
+import type { RephraseResponse } from '@/lib/types/rephrase';
+import { Card, CardDescription } from './ui/card';
 
 interface StickyNoteDialogProps {
   note: StickyNote;
@@ -57,6 +60,77 @@ const StickyNoteToolbar = ({ editor }: { editor: any }) => {
   )
 }
 
+function RephraseDialog({ text, onApply, onOpenChange, open }: { text: string, onApply: (newText: string) => void, onOpenChange: (open: boolean) => void, open: boolean }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<RephraseResponse | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (open && text) {
+      handleRephrase();
+    }
+  }, [open, text]);
+
+  const handleRephrase = async () => {
+    setIsLoading(true);
+    setResult(null);
+    try {
+      const data = await rephraseText({ text });
+      setResult(data);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Rephrasing Failed' });
+      onOpenChange(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelectVersion = (version: string) => {
+    onApply(version);
+    onOpenChange(false);
+  };
+  
+  const handleCopy = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    toast({ title: '✓ Copied to clipboard!' });
+  };
+
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Sparkles/> Rephrase Suggestions</DialogTitle>
+          <DialogDescription>Select a version to apply it to your note.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4 max-h-[60vh] overflow-y-auto">
+          {isLoading && (
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            </div>
+          )}
+          {result && (
+            <div className="space-y-4">
+              {result.rephrasedVersions.map((item, index) => (
+                <Card key={index} className="cursor-pointer hover:border-primary" onClick={() => handleSelectVersion(item.version)}>
+                  <CardHeader className="flex-row items-center justify-between">
+                    <CardTitle className="text-base">Version {index + 1}</CardTitle>
+                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleCopy(item.version)}} className="h-7 w-7"><Copy className="h-4 w-4"/></Button>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-primary">{item.version}</p>
+                    <p className="text-xs text-muted-foreground mt-2">{item.explanation}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: StickyNoteDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -67,6 +141,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
   const [imageUrl, setImageUrl] = useState(note.imageUrl);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isRephraseOpen, setIsRephraseOpen] = useState(false);
 
   const noteRef = user ? doc(db, 'users', user.uid, 'stickyNotes', note.id) : null;
   
@@ -197,6 +272,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
   const handleGrammarCheckClick = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent 
         className="p-0 border-none shadow-2xl max-w-2xl w-full h-auto max-h-[80vh] flex flex-col" 
@@ -225,8 +301,9 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
             <EditorContent editor={editor} />
         </div>
         <DialogFooter className="p-2 border-t flex justify-between items-center" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-             <div onClick={handleGrammarCheckClick}>
+             <div onClick={handleGrammarCheckClick} className="flex items-center gap-1">
                 <GrammarCoach text={editor?.getText()} onCorrection={(corrected) => editor?.commands.setContent(corrected, true)} />
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10" onClick={() => setIsRephraseOpen(true)}><Sparkles className="h-4 w-4"/></Button>
              </div>
              <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10" onClick={() => fileInputRef.current?.click()}>
@@ -291,5 +368,15 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {editor && (
+      <RephraseDialog 
+        open={isRephraseOpen} 
+        onOpenChange={setIsRephraseOpen}
+        text={editor.getText()}
+        onApply={(newText) => editor.commands.setContent(newText, true)}
+      />
+    )}
+    </>
   );
 }
+
