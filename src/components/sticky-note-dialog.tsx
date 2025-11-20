@@ -158,8 +158,8 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
      } catch (e) { console.error('Error updating note:', e); }
   }, 500);
 
-  const uploadFile = useCallback(async (file: File) => {
-    if (!user || !noteRef) return;
+ const uploadFile = useCallback(async (file: File) => {
+    if (!user || !noteRef || !editor) return;
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
       toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
       return;
@@ -173,16 +173,17 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     try {
       const snapshot = await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
-        
-        await updateDoc(noteRef, { imageUrl: downloadURL, updatedAt: serverTimestamp() });
-        setImageUrl(downloadURL);
-        toast({ title: 'Image uploaded successfully!' });
+      
+      // Update editor content with new image
+      editor.chain().focus().setImage({ src: downloadURL }).run();
+      
+      toast({ title: 'Image uploaded and inserted successfully!' });
     } catch(e) {
         toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
     } finally {
         setIsUploading(false);
     }
-  }, [user, noteRef, toast]);
+  }, [user, noteRef, editor, toast]);
 
 
   const editor = useEditor({
@@ -223,7 +224,8 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     },
     onSelectionUpdate: ({ editor }) => {
         const { from, to } = editor.state.selection;
-        setSelectedText(editor.state.doc.textBetween(from, to, ' '));
+        const text = editor.state.doc.textBetween(from, to, ' ');
+        setSelectedText(text);
     }
   });
   
