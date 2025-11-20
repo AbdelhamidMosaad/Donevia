@@ -46,16 +46,16 @@ const StickyNoteToolbar = ({ editor }: { editor: any }) => {
   if (!editor) return null;
 
   return (
-    <div className="p-1 border-b flex items-center gap-0.5 flex-wrap" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-        <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()} className="h-7 w-7"><Bold size={16}/></Toggle>
-        <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()} className="h-7 w-7"><Italic size={16}/></Toggle>
-        <Separator orientation="vertical" className="h-5 mx-1"/>
-        <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className="h-7 w-7"><Heading1 size={16}/></Toggle>
-        <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className="h-7 w-7"><Heading2 size={16}/></Toggle>
-        <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className="h-7 w-7"><Heading3 size={16}/></Toggle>
-        <Separator orientation="vertical" className="h-5 mx-1"/>
-        <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()} className="h-7 w-7"><List size={16}/></Toggle>
-        <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()} className="h-7 w-7"><ListOrdered size={16}/></Toggle>
+    <div className="p-1 border-b flex items-center gap-1 flex-wrap" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+        <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}><Bold size={16}/></Toggle>
+        <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}><Italic size={16}/></Toggle>
+        <Separator orientation="vertical" className="h-6 mx-1"/>
+        <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 size={16}/></Toggle>
+        <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 size={16}/></Toggle>
+        <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 size={16}/></Toggle>
+        <Separator orientation="vertical" className="h-6 mx-1"/>
+        <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}><List size={16}/></Toggle>
+        <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={16}/></Toggle>
     </div>
   )
 }
@@ -379,4 +379,3 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     </>
   );
 }
-
