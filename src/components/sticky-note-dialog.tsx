@@ -77,6 +77,35 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
      } catch (e) { console.error('Error updating note:', e); }
   }, 500);
 
+  const uploadFile = useCallback(async (file: File) => {
+    if (!user || !noteRef) return;
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload images smaller than 5MB.' });
+      return;
+    }
+    setIsUploading(true);
+
+    const idToken = await getAuth().currentUser?.getIdToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('idToken', idToken!);
+    
+    try {
+        const res = await fetch('/api/notes/upload', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Upload failed');
+        const { url } = await res.json();
+        
+        await updateDoc(noteRef, { imageUrl: url, updatedAt: serverTimestamp() });
+        setImageUrl(url);
+        toast({ title: 'Image uploaded successfully!' });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
+    } finally {
+        setIsUploading(false);
+    }
+  }, [user, noteRef, toast]);
+
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -89,7 +118,21 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
         attributes: {
             class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none p-2',
             style: `color: ${textColor}`
-        }
+        },
+        handlePaste: (view, event) => {
+            const items = (event.clipboardData || (window as any).clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.type.indexOf('image') === 0) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        uploadFile(file);
+                        return true; // Prevent default paste behavior
+                    }
+                }
+            }
+            return false; // Let tiptap handle other pastes
+        },
     },
     onUpdate: ({ editor }) => {
       const json = editor.getJSON();
@@ -139,33 +182,10 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     debouncedUpdate('priority', newPriority);
   };
   
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0 || !user || !noteRef) return;
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
     const file = event.target.files[0];
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload an image under 5MB.' });
-      return;
-    }
-    setIsUploading(true);
-
-    const idToken = await getAuth().currentUser?.getIdToken();
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('idToken', idToken!);
-    
-    try {
-        const res = await fetch('/api/notes/upload', { method: 'POST', body: formData });
-        if (!res.ok) throw new Error('Upload failed');
-        const { url } = await res.json();
-        
-        await updateDoc(noteRef, { imageUrl: url, updatedAt: serverTimestamp() });
-        setImageUrl(url);
-        toast({ title: 'Image uploaded successfully!' });
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
-    } finally {
-        setIsUploading(false);
-    }
+    uploadFile(file);
   };
   
   const handleRemoveImage = async () => {
