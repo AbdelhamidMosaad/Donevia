@@ -32,6 +32,9 @@ import { Separator } from './ui/separator';
 import { rephraseText } from '@/ai/flows/rephrase-flow';
 import type { RephraseResponse } from '@/lib/types/rephrase';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Image as TipTapImage } from '@tiptap/extension-image';
+
 
 interface StickyNoteDialogProps {
   note: StickyNote;
@@ -163,18 +166,16 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
     }
     setIsUploading(true);
 
-    const idToken = await getAuth().currentUser?.getIdToken();
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('idToken', idToken!);
-    
+    const storage = getStorage();
+    const filePath = `users/${user.uid}/notes/images/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, filePath);
+
     try {
-        const res = await fetch('/api/notes/upload', { method: 'POST', body: formData });
-        if (!res.ok) throw new Error('Upload failed');
-        const { url } = await res.json();
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
         
-        await updateDoc(noteRef, { imageUrl: url, updatedAt: serverTimestamp() });
-        setImageUrl(url);
+        await updateDoc(noteRef, { imageUrl: downloadURL, updatedAt: serverTimestamp() });
+        setImageUrl(downloadURL);
         toast({ title: 'Image uploaded successfully!' });
     } catch(e) {
         toast({ variant: 'destructive', title: 'Upload failed', description: (e as Error).message });
@@ -189,6 +190,10 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
       StarterKit,
       Placeholder.configure({
         placeholder: 'Type your note here...',
+      }),
+      TipTapImage.configure({
+        inline: true,
+        allowBase64: true,
       }),
     ],
     content: note.content || note.text, // Handle legacy plain text
