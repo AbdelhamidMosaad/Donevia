@@ -9,6 +9,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Button } from './ui/button';
 import Image from 'next/image';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 
 interface StickyNoteCardProps {
   note: StickyNote;
@@ -36,6 +38,12 @@ const priorityConfig = {
 export function StickyNoteCard({ note, onClick, onDelete, style, className }: StickyNoteCardProps) {
   const priorityInfo = priorityConfig[note.priority];
   
+  const editor = useEditor({
+    editable: false,
+    content: note.content || note.text,
+    extensions: [StarterKit],
+  });
+
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent the card's onClick from firing
   };
@@ -79,9 +87,10 @@ export function StickyNoteCard({ note, onClick, onDelete, style, className }: St
         {note.title || "Untitled Note"}
       </h3>
       <div
-        className="flex-1 text-sm w-full overflow-hidden whitespace-pre-wrap break-words"
+        className="flex-1 text-sm w-full overflow-hidden whitespace-pre-wrap break-words prose prose-sm max-w-none"
+        style={{ color: 'inherit' }}
       >
-        {note.text}
+        {editor && <EditorContent editor={editor} style={{color: 'inherit'}}/>}
       </div>
 
        <AlertDialog>

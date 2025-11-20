@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -81,7 +80,8 @@ export type BoardTemplate = {
 export type StickyNote = {
     id: string;
     title: string;
-    text: string;
+    text?: string; // Keep for backwards compatibility
+    content?: any; // For rich text content
     color: string;
     textColor: string;
     createdAt: Timestamp;

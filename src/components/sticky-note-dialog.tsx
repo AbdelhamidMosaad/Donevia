@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { StickyNote } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
@@ -10,7 +9,7 @@ import { doc, updateDoc, serverTimestamp, deleteField } from 'firebase/firestore
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
-import { Palette, Check, CaseSensitive, Flag, MessageSquareQuote, ImageIcon, X, Upload, Loader2 } from 'lucide-react';
+import { Palette, Check, CaseSensitive, Flag, MessageSquareQuote, ImageIcon, X, Upload, Loader2, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -23,6 +22,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { GrammarCoach } from './english-coach/grammar-coach';
 import Image from 'next/image';
 import { getAuth } from 'firebase/auth';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import { useDebouncedCallback } from 'use-debounce';
+import { Toggle } from './ui/toggle';
+import { Separator } from './ui/separator';
 
 interface StickyNoteDialogProps {
   note: StickyNote;
@@ -34,84 +39,110 @@ interface StickyNoteDialogProps {
 const backgroundColors = ['#fff176', '#ff8a65', '#81d4fa', '#aed581', '#ce93d8', '#fdcbf1', '#fdfd96'];
 const textColors = ['#000000', '#FFFFFF', '#ef4444', '#3b82f6', '#16a34a', '#7c3aed'];
 
+const StickyNoteToolbar = ({ editor }: { editor: any }) => {
+  if (!editor) return null;
+
+  return (
+    <div className="p-1 border-b flex items-center gap-1 flex-wrap" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+        <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}><Bold /></Toggle>
+        <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}><Italic /></Toggle>
+        <Separator orientation="vertical" className="h-6 mx-1"/>
+        <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 /></Toggle>
+        <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 /></Toggle>
+        <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 /></Toggle>
+        <Separator orientation="vertical" className="h-6 mx-1"/>
+        <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}><List /></Toggle>
+        <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered /></Toggle>
+    </div>
+  )
+}
+
 export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: StickyNoteDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(note.title);
-  const [text, setText] = useState(note.text);
   const [bgColor, setBgColor] = useState(note.color);
   const [textColor, setTextColor] = useState(note.textColor);
   const [priority, setPriority] = useState<StickyNote['priority']>(note.priority || 'Medium');
   const [imageUrl, setImageUrl] = useState(note.imageUrl);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const noteRef = user ? doc(db, 'users', user.uid, 'stickyNotes', note.id) : null;
+  
+  const debouncedUpdate = useDebouncedCallback(async (field: keyof StickyNote, value: any) => {
+     if (!noteRef) return;
+     try {
+       await updateDoc(noteRef, { [field]: value, updatedAt: serverTimestamp() });
+     } catch (e) { console.error('Error updating note:', e); }
+  }, 500);
 
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: 'Type your note here...',
+      }),
+    ],
+    content: note.content || note.text, // Handle legacy plain text
+    editorProps: {
+        attributes: {
+            class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none p-2',
+            style: `color: ${textColor}`
+        }
+    },
+    onUpdate: ({ editor }) => {
+      const json = editor.getJSON();
+      debouncedUpdate('content', json);
+    },
+  });
+  
   useEffect(() => {
     setTitle(note.title);
-    setText(note.text);
     setBgColor(note.color);
     setTextColor(note.textColor);
     setPriority(note.priority || 'Medium');
     setImageUrl(note.imageUrl);
-  }, [note]);
+
+    if (editor) {
+        editor.setOptions({
+            editorProps: { attributes: { style: `color: ${note.textColor}` }}
+        })
+        if (JSON.stringify(editor.getJSON()) !== JSON.stringify(note.content)) {
+            editor.commands.setContent(note.content || note.text || '', false);
+        }
+    }
+  }, [note, editor]);
+  
+  useEffect(() => {
+    if (editor && textColor !== note.textColor) {
+         editor.setOptions({
+            editorProps: { attributes: { style: `color: ${textColor}` }}
+        })
+    }
+  }, [textColor, editor, note.textColor]);
+
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+    debouncedUpdate('title', newTitle);
+  }
 
   const handleColorChange = async (newColor: string, type: 'background' | 'text') => {
-    if (!noteRef) return;
     const fieldToUpdate = type === 'background' ? 'color' : 'textColor';
     const stateUpdateFn = type === 'background' ? setBgColor : setTextColor;
     stateUpdateFn(newColor);
-    try {
-      await updateDoc(noteRef, { [fieldToUpdate]: newColor, updatedAt: serverTimestamp() });
-    } catch (e) {
-      toast({ variant: 'destructive', title: `Error updating ${type} color` });
-    }
+    debouncedUpdate(fieldToUpdate, newColor);
   };
   
   const handlePriorityChange = async (newPriority: StickyNote['priority']) => {
-    if (!noteRef) return;
     setPriority(newPriority);
-     try {
-      await updateDoc(noteRef, { priority: newPriority, updatedAt: serverTimestamp() });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Error updating priority' });
-    }
-  };
-
-  useEffect(() => {
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-    debounceTimeout.current = setTimeout(async () => {
-      if (!noteRef) return;
-      if (title !== note.title || text !== note.text) {
-        try {
-          await updateDoc(noteRef, { title, text, updatedAt: serverTimestamp() });
-        } catch (e) { console.error('Error updating note:', e); }
-      }
-    }, 500);
-
-    return () => {
-      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-    };
-  }, [title, text, note.title, note.text, noteRef]);
-
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newText = e.target.value;
-    const wordCount = newText.trim().split(/\s+/).filter(Boolean).length;
-    if (wordCount <= 1000) {
-      setText(newText);
-    } else {
-        toast({ variant: 'destructive', title: 'Word limit reached' });
-    }
+    debouncedUpdate('priority', newPriority);
   };
   
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0 || !user || !noteRef) return;
     const file = event.target.files[0];
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
       toast({ variant: 'destructive', title: 'File too large', description: 'Please upload an image under 5MB.' });
       return;
     }
@@ -140,12 +171,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
   const handleRemoveImage = async () => {
     if (!noteRef) return;
     setImageUrl(undefined);
-    try {
-        await updateDoc(noteRef, { imageUrl: deleteField(), updatedAt: serverTimestamp() });
-        toast({ title: 'Image removed' });
-    } catch(e) {
-         toast({ variant: 'destructive', title: 'Failed to remove image.' });
-    }
+    debouncedUpdate('imageUrl', deleteField());
   };
 
   const handleGrammarCheckClick = (e: React.MouseEvent) => e.stopPropagation();
@@ -161,32 +187,26 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
              <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => handleTitleChange(e.target.value)}
                 className="font-bold bg-transparent border-none focus:outline-none focus:ring-0 text-lg w-full"
                 placeholder="Note Title"
                 style={{ color: 'inherit' }}
             />
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 p-4 overflow-y-auto space-y-4">
+        <StickyNoteToolbar editor={editor}/>
+        <div className="flex-1 p-2 overflow-y-auto space-y-4">
             {imageUrl && (
-              <div className="relative group">
+              <div className="relative group p-2">
                 <Image src={imageUrl} alt={title || 'Note image'} width={500} height={300} className="rounded-md object-cover w-full" />
-                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleRemoveImage}><X/></Button>
+                <Button variant="destructive" size="icon" className="absolute top-4 right-4 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleRemoveImage}><X/></Button>
               </div>
             )}
-            <textarea
-                value={text}
-                onChange={handleTextChange}
-                className="h-full w-full bg-transparent border-none focus:outline-none focus:ring-0 resize-none text-base"
-                placeholder="Type your note here..."
-                style={{ color: 'inherit' }}
-                rows={10}
-            />
+            <EditorContent editor={editor} />
         </div>
         <DialogFooter className="p-2 border-t flex justify-between items-center" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
              <div onClick={handleGrammarCheckClick}>
-                <GrammarCoach text={text} onCorrection={setText} />
+                <GrammarCoach text={editor?.getText()} onCorrection={(corrected) => editor?.commands.setContent(corrected, true)} />
              </div>
              <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10" onClick={() => fileInputRef.current?.click()}>
