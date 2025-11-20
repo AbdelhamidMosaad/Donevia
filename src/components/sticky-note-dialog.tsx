@@ -31,7 +31,7 @@ import { Toggle } from './ui/toggle';
 import { Separator } from './ui/separator';
 import { rephraseText } from '@/ai/flows/rephrase-flow';
 import type { RephraseResponse } from '@/lib/types/rephrase';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 
 interface StickyNoteDialogProps {
   note: StickyNote;
@@ -66,13 +66,8 @@ function RephraseDialog({ text, onApply, onOpenChange, open }: { text: string, o
   const [result, setResult] = useState<RephraseResponse | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (open && text) {
-      handleRephrase();
-    }
-  }, [open, text]);
-
-  const handleRephrase = async () => {
+  const handleRephrase = useCallback(async () => {
+    if (!text) return;
     setIsLoading(true);
     setResult(null);
     try {
@@ -84,7 +79,13 @@ function RephraseDialog({ text, onApply, onOpenChange, open }: { text: string, o
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [text, onOpenChange, toast]);
+
+  useEffect(() => {
+    if (open) {
+      handleRephrase();
+    }
+  }, [open, handleRephrase]);
 
   const handleSelectVersion = (version: string) => {
     onApply(version);
@@ -143,6 +144,7 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRephraseOpen, setIsRephraseOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
 
   const noteRef = user ? doc(db, 'users', user.uid, 'stickyNotes', note.id) : null;
   
@@ -214,6 +216,10 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
       const json = editor.getJSON();
       debouncedUpdate('content', json);
     },
+    onSelectionUpdate: ({ editor }) => {
+        const { from, to } = editor.state.selection;
+        setSelectedText(editor.state.doc.textBetween(from, to, ' '));
+    }
   });
   
   useEffect(() => {
@@ -304,7 +310,9 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
         <DialogFooter className="p-2 border-t flex justify-between items-center" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
              <div onClick={handleGrammarCheckClick} className="flex items-center gap-1">
                 <GrammarCoach text={editor?.getText()} onCorrection={(corrected) => editor?.commands.setContent(corrected, true)} />
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10" onClick={() => setIsRephraseOpen(true)}><Sparkles className="h-4 w-4"/></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10" onClick={() => setIsRephraseOpen(true)} disabled={!selectedText}>
+                    <Sparkles className="h-4 w-4"/>
+                </Button>
              </div>
              <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-inherit hover:bg-black/10" onClick={() => fileInputRef.current?.click()}>
@@ -373,8 +381,11 @@ export function StickyNoteDialog({ note, isOpen, onOpenChange, onNoteDeleted }: 
       <RephraseDialog 
         open={isRephraseOpen} 
         onOpenChange={setIsRephraseOpen}
-        text={editor.getText()}
-        onApply={(newText) => editor.commands.setContent(newText, true)}
+        text={selectedText}
+        onApply={(newText) => {
+            const { from, to } = editor.state.selection;
+            editor.chain().focus().deleteRange({ from, to }).insertContent(newText).run();
+        }}
       />
     )}
     </>
