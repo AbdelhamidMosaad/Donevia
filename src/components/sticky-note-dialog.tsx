@@ -31,7 +31,7 @@ import { Toggle } from './ui/toggle';
 import { Separator } from './ui/separator';
 import { rephraseText } from '@/ai/flows/rephrase-flow';
 import type { RephraseResponse } from '@/lib/types/rephrase';
-import { Card, CardDescription } from './ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 interface StickyNoteDialogProps {
   note: StickyNote;
