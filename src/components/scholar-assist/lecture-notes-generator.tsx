@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -8,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyMaterialRequest, StudyMaterialResponse, Flashcard } from '@/lib/types';
 import { Button } from '../ui/button';
-import { Loader2, Copy, Download, Save, FileText } from 'lucide-react';
+import { Loader2, Copy, Download, Save, FileText, MonitorPlay } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { addDoc as addFirestoreDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -26,6 +25,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import PptxGenJS from 'pptxgenjs';
 
 interface LectureNotesGeneratorProps {
   result: StudyMaterialResponse | null;
@@ -348,6 +348,85 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     }
   };
 
+  const handleExportPPTX = async () => {
+    if (!result?.notesContent || typeof result.notesContent === 'string') {
+      toast({ variant: 'destructive', title: 'Cannot export empty notes.' });
+      return;
+    }
+
+    setIsExporting(true);
+    toast({ title: 'Generating Presentation...', description: 'Please wait.' });
+
+    try {
+        const pptx = new PptxGenJS();
+        
+        // Define a master slide for a consistent look
+        pptx.defineSlideMaster({
+            title: 'MASTER_SLIDE',
+            background: { color: 'F1F5F9' },
+            objects: [
+                { rect: { x: '4%', y: '90%', w: '92%', h: 1, fill: { color: '007bff' } } },
+                { text: { text: 'Donevia AI', options: { x: '4%', y: '92%', w: '40%', fontSize: 10, color: '6c757d' } } },
+            ],
+        });
+
+        // Title Slide
+        const titleSlide = pptx.addSlide({ masterName: 'MASTER_SLIDE' });
+        titleSlide.addText(result.title, { 
+            x: '5%', y: '35%', w: '90%', h: '20%', 
+            align: 'center', fontSize: 44, bold: true, color: '003B73' 
+        });
+        titleSlide.addText(result.notesContent.introduction, { 
+            x: '10%', y: '55%', w: '80%', h: '15%', 
+            align: 'center', fontSize: 18, color: '343A40', italic: true
+        });
+
+        for (const section of result.notesContent.sections) {
+            const sectionSlide = pptx.addSlide({ masterName: 'MASTER_SLIDE' });
+            sectionSlide.addText(section.heading, { x: 0.5, y: 0.25, w: '90%', h: 0.75, fontSize: 28, bold: true, color: '003B73' });
+
+            const bodyOptions: any = { x: 0.5, y: 1.25, w: '90%', h: 5, fontSize: 16, color: '343A40', valign: 'top' };
+            const contentPoints = [];
+
+            for (const item of section.content) {
+                if (item.type === 'paragraph') {
+                    contentPoints.push({ text: item.content, options: { bullet: { type: 'dot' }, indentLevel: 0, bold: item.isKeyPoint } });
+                } else if (Array.isArray(item.content)) {
+                    for (const listItem of item.content) {
+                        contentPoints.push({ text: listItem, options: { bullet: true, indentLevel: 1 } });
+                    }
+                }
+            }
+            if (contentPoints.length > 0) sectionSlide.addText(contentPoints, bodyOptions);
+
+            if (section.subsections) {
+                for (const sub of section.subsections) {
+                    const subSlide = pptx.addSlide({ masterName: 'MASTER_SLIDE' });
+                    subSlide.addText(section.heading, { x: 0.5, y: 0.25, w: '90%', h: 0.5, fontSize: 14, color: '6c757d' });
+                    subSlide.addText(sub.subheading, { x: 0.5, y: 0.75, w: '90%', h: 0.75, fontSize: 24, bold: true, color: '003B73' });
+
+                    const subContentPoints = sub.content.map(item => {
+                         if (item.type === 'paragraph') {
+                            return { text: item.content as string, options: { bullet: {type: 'dot'}, bold: item.isKeyPoint } };
+                         }
+                         return (item.content as string[]).map(li => ({ text: li, options: { bullet: true, indentLevel: 1 } }));
+                    }).flat();
+                    
+                    if (subContentPoints.length > 0) subSlide.addText(subContentPoints, { ...bodyOptions, y: 1.75 });
+                }
+            }
+        }
+        
+        await pptx.writeFile({ fileName: `${fileName.replace(/ /g, '_')}.pptx` });
+        toast({ title: '✓ Presentation Exported Successfully' });
+    } catch (e) {
+        console.error("PPTX Export failed:", e);
+        toast({ variant: 'destructive', title: 'PPTX Export Failed', description: 'An error occurred while generating the presentation.' });
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
 
   const handleSaveToDocs = async () => {
     if (!user || !result || !result.notesContent) {
@@ -588,6 +667,10 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     </Button>
                     <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
                     <Button variant="outline" onClick={() => setIsFileDialogOpen(true)}><Download/> Export as Word</Button>
+                    <Button variant="outline" onClick={handleExportPPTX} disabled={isExporting}>
+                        {isExporting ? <Loader2 className="animate-spin" /> : <MonitorPlay/>}
+                        Export PPTX
+                    </Button>
                     <Button variant="outline" onClick={handleExportPDF} disabled={isExporting}>
                         {isExporting ? <Loader2 className="animate-spin" /> : <FileText/>}
                         Export PDF
