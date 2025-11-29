@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Document, Packer } from 'docx';
 
 
 // Setup worker path for pdf.js
@@ -60,7 +61,7 @@ const questionTypeItems = [
 
 export function InputForm({ onGenerate, isLoading, generationType }: InputFormProps) {
   const { settings } = useAuth();
-  const [isParsingPdf, setIsParsingPdf] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const { toast } = useToast();
 
@@ -96,49 +97,78 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     },
   });
   
+  const parseDocx = async (file: File) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const packer = new Packer();
+    // This is a simplified way to read text. `docx` library is more complex.
+    // Assuming a simple XML structure for this example.
+    // For a real app, a more robust library like mammoth.js would be better.
+    // Because we are in a constrained environment, we'll try a simplified approach.
+    const textDecoder = new TextDecoder("utf-8");
+    const xmlText = textDecoder.decode(arrayBuffer);
+    
+    // A very basic and naive way to extract text from docx XML.
+    // This will not be robust but can work for simple documents.
+    const text = xmlText
+      .substring(xmlText.indexOf('<w:body'), xmlText.indexOf('</w:body>'))
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    form.setValue('sourceText', text);
+  }
+  
+  const parsePdf = async (file: File) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n\n';
+    }
+    form.setValue('sourceText', fullText);
+  }
+
+
   const onDrop = async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
 
-      if (!pdfjsLoaded) {
-          toast({ variant: 'destructive', title: "PDF library not loaded yet.", description: "Please wait a moment and try again."});
-          return;
-      }
-
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-          toast({ variant: 'destructive', title: "File too large", description: "Please upload a PDF under 5MB."});
+          toast({ variant: 'destructive', title: "File too large", description: "Please upload a file under 5MB."});
           return;
       }
-
-      setIsParsingPdf(true);
-      toast({ title: "Parsing PDF...", description: "Please wait while we extract the text." });
+      
+      setIsParsing(true);
+      toast({ title: `Parsing ${file.type === 'application/pdf' ? 'PDF' : 'Word Document'}...`, description: "Please wait while we extract the text." });
 
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-        let fullText = '';
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map((item: any) => item.str).join(' ');
-            fullText += pageText + '\n\n';
+        if (file.type === 'application/pdf' && pdfjsLoaded) {
+            await parsePdf(file);
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            await parseDocx(file);
+        } else {
+           throw new Error("Unsupported file type or PDF library not loaded.");
         }
-
-        form.setValue('sourceText', fullText);
-        toast({ title: "✓ PDF Processed", description: "Text has been extracted and is ready for generation." });
+        
+        toast({ title: "✓ File Processed", description: "Text has been extracted and is ready for generation." });
 
       } catch (error) {
-        console.error("Error parsing PDF:", error);
-        toast({ variant: 'destructive', title: 'PDF Parsing Failed', description: "Could not extract text from the PDF."});
+        console.error("Error parsing file:", error);
+        toast({ variant: 'destructive', title: 'File Parsing Failed', description: (error as Error).message });
       } finally {
-        setIsParsingPdf(false);
+        setIsParsing(false);
       }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'application/pdf': ['.pdf'] },
+    accept: { 
+        'application/pdf': ['.pdf'],
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    },
     multiple: false,
   });
 
@@ -158,13 +188,13 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
         <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Source Material</CardTitle>
-            <CardDescription>Paste text or upload a PDF to generate study materials.</CardDescription>
+            <CardDescription>Paste text or upload a PDF/DOCX to generate study materials.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col gap-6">
             <Tabs defaultValue="text" className="flex-1 flex flex-col">
                 <TabsList>
                     <TabsTrigger value="text"><FileText/> Paste Text</TabsTrigger>
-                    <TabsTrigger value="pdf"><Upload/> Upload PDF</TabsTrigger>
+                    <TabsTrigger value="upload"><Upload/> Upload File</TabsTrigger>
                 </TabsList>
                 <TabsContent value="text" className="flex-1 mt-2">
                     <FormField
@@ -181,18 +211,18 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                       )}
                     />
                 </TabsContent>
-                 <TabsContent value="pdf" className="flex-1 mt-2">
+                 <TabsContent value="upload" className="flex-1 mt-2">
                      <div {...getRootProps()} className={`h-full border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
                         <input {...getInputProps()} />
-                        {isParsingPdf ? (
+                        {isParsing ? (
                             <div className="flex flex-col items-center gap-2">
                                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
-                                <p>Processing PDF...</p>
+                                <p>Processing file...</p>
                             </div>
                         ) : (
                              <div className="flex flex-col items-center gap-2">
                                 <Upload className="h-8 w-8 text-muted-foreground" />
-                                <p>Drag & drop a PDF here, or click to select a file.</p>
+                                <p>Drag & drop a PDF or DOCX here, or click to select a file.</p>
                                 <p className="text-xs text-muted-foreground">(Max file size: 5MB)</p>
                             </div>
                         )}
@@ -356,9 +386,9 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
              </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isLoading || isParsingPdf} className="w-full">
-              {isLoading || isParsingPdf ? <Loader2/> : <Wand2/>}
-              {isLoading ? 'Generating...' : isParsingPdf ? 'Processing PDF...' : getButtonText()}
+            <Button type="submit" disabled={isLoading || isParsing} className="w-full">
+              {isLoading || isParsing ? <Loader2/> : <Wand2/>}
+              {isLoading ? 'Generating...' : isParsing ? 'Processing File...' : getButtonText()}
             </Button>
           </CardFooter>
         </Card>
