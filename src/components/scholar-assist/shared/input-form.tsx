@@ -105,15 +105,18 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
 
     if (content) {
         const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(content, "text/xml");
+        const xmlDoc = parser.parseFromString(content, "application/xml");
         const paragraphs = xmlDoc.getElementsByTagName("w:p");
         let text = "";
-        for (let i = 0; i < paragraphs.length; i++) {
+        for (let i = 0, len = paragraphs.length; i < len; i++) {
+            let fullText = "";
             const texts = paragraphs[i].getElementsByTagName("w:t");
-            for (let j = 0; j < texts.length; j++) {
-                text += texts[j].textContent;
+            for (let j = 0, len2 = texts.length; j < len2; j++) {
+                fullText += texts[j].textContent;
             }
-            text += "\n";
+            if (fullText) {
+                text += fullText + '\n';
+            }
         }
         form.setValue('sourceText', text);
     } else {
