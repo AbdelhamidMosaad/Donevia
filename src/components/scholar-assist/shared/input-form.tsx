@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -16,7 +17,7 @@ import { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Document, Packer } from 'docx';
+import JSZip from 'jszip';
 
 
 // Setup worker path for pdf.js
@@ -98,24 +99,26 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
   });
   
   const parseDocx = async (file: File) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const packer = new Packer();
-    // This is a simplified way to read text. `docx` library is more complex.
-    // Assuming a simple XML structure for this example.
-    // For a real app, a more robust library like mammoth.js would be better.
-    // Because we are in a constrained environment, we'll try a simplified approach.
-    const textDecoder = new TextDecoder("utf-8");
-    const xmlText = textDecoder.decode(arrayBuffer);
-    
-    // A very basic and naive way to extract text from docx XML.
-    // This will not be robust but can work for simple documents.
-    const text = xmlText
-      .substring(xmlText.indexOf('<w:body'), xmlText.indexOf('</w:body>'))
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const jszip = new JSZip();
+    const zip = await jszip.loadAsync(file);
+    const content = await zip.file("word/document.xml")?.async("string");
 
-    form.setValue('sourceText', text);
+    if (content) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(content, "text/xml");
+        const paragraphs = xmlDoc.getElementsByTagName("w:p");
+        let text = "";
+        for (let i = 0; i < paragraphs.length; i++) {
+            const texts = paragraphs[i].getElementsByTagName("w:t");
+            for (let j = 0; j < texts.length; j++) {
+                text += texts[j].textContent;
+            }
+            text += "\n";
+        }
+        form.setValue('sourceText', text);
+    } else {
+        throw new Error("Could not find document.xml in the DOCX file.");
+    }
   }
   
   const parsePdf = async (file: File) => {
@@ -142,7 +145,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
       }
       
       setIsParsing(true);
-      toast({ title: `Parsing ${file.type === 'application/pdf' ? 'PDF' : 'Word Document'}...`, description: "Please wait while we extract the text." });
+      toast({ title: `Parsing ${file.name}...`, description: "Please wait while we extract the text." });
 
       try {
         if (file.type === 'application/pdf' && pdfjsLoaded) {
@@ -150,7 +153,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
         } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             await parseDocx(file);
         } else {
-           throw new Error("Unsupported file type or PDF library not loaded.");
+           throw new Error("Unsupported file type or required library not loaded.");
         }
         
         toast({ title: "✓ File Processed", description: "Text has been extracted and is ready for generation." });
