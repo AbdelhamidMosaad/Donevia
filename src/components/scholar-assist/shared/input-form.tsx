@@ -109,16 +109,18 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
 
         // Function to recursively extract text from nodes
         const getTextFromNode = (node: Node): string => {
+            let text = '';
             if (node.nodeType === Node.TEXT_NODE) {
                 return node.textContent || '';
             }
 
             if (node.nodeType === Node.ELEMENT_NODE) {
                 const element = node as Element;
-                // For paragraphs and table cells, add a newline after processing
-                const isBlock = element.tagName === 'w:p' || element.tagName === 'w:tc';
+                const tagName = element.tagName;
                 
-                let text = '';
+                // Block-level elements that should have a newline after them
+                const isBlock = tagName === 'w:p' || tagName === 'w:tbl';
+
                 if (element.childNodes.length > 0) {
                     for (let i = 0; i < element.childNodes.length; i++) {
                         text += getTextFromNode(element.childNodes[i]);
@@ -128,11 +130,8 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                 if (isBlock) {
                     text += '\n';
                 }
-                
-                return text;
             }
-
-            return '';
+            return text;
         };
         
         const bodyNode = xmlDoc.getElementsByTagName('w:body')[0];
