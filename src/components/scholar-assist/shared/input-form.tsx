@@ -106,20 +106,43 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     if (content) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(content, "application/xml");
-        const paragraphs = xmlDoc.getElementsByTagName("w:p");
-        let text = '';
 
-        for (let i = 0; i < paragraphs.length; i++) {
-            const p = paragraphs[i];
-            const texts = p.getElementsByTagName("w:t");
-            let paragraphText = '';
-            for (let j = 0; j < texts.length; j++) {
-                paragraphText += texts[j].textContent;
+        // Function to recursively extract text from nodes
+        const getTextFromNode = (node: Node): string => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent || '';
             }
-            text += paragraphText + '\n';
+
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const element = node as Element;
+                // For paragraphs and table cells, add a newline after processing
+                const isBlock = element.tagName === 'w:p' || element.tagName === 'w:tc';
+                
+                let text = '';
+                if (element.childNodes.length > 0) {
+                    for (let i = 0; i < element.childNodes.length; i++) {
+                        text += getTextFromNode(element.childNodes[i]);
+                    }
+                }
+                
+                if (isBlock) {
+                    text += '\n';
+                }
+                
+                return text;
+            }
+
+            return '';
+        };
+        
+        const bodyNode = xmlDoc.getElementsByTagName('w:body')[0];
+        if (bodyNode) {
+            const extractedText = getTextFromNode(bodyNode);
+            form.setValue('sourceText', extractedText.trim());
+        } else {
+             throw new Error("Could not find the main body of the DOCX file.");
         }
         
-        form.setValue('sourceText', text.trim());
     } else {
         throw new Error("Could not find document.xml in the DOCX file.");
     }
