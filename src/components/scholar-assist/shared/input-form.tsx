@@ -106,18 +106,12 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     if (content) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(content, "application/xml");
-        const paragraphs = xmlDoc.getElementsByTagName("w:p");
-        let text = "";
-        for (let i = 0, len = paragraphs.length; i < len; i++) {
-            let fullText = "";
-            const texts = paragraphs[i].getElementsByTagName("w:t");
-            for (let j = 0, len2 = texts.length; j < len2; j++) {
-                fullText += texts[j].textContent;
-            }
-            if (fullText) {
-                text += fullText + '\n';
-            }
-        }
+        const paragraphs = Array.from(xmlDoc.getElementsByTagName("w:p"));
+        const text = paragraphs.map(p => {
+          const texts = Array.from(p.getElementsByTagName("w:t"));
+          return texts.map(t => t.textContent).join('');
+        }).join('\n');
+        
         form.setValue('sourceText', text);
     } else {
         throw new Error("Could not find document.xml in the DOCX file.");
