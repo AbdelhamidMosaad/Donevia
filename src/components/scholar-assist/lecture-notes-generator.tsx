@@ -313,22 +313,24 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
-        const ratio = canvasHeight / canvasWidth;
-        
-        const imgWidth = pdfWidth - 20; // with margins
-        const imgHeight = imgWidth * ratio;
-        
+        const ratio = canvasWidth / canvasHeight;
+        let imgWidth = pdfWidth - 20; // with margins
+        let imgHeight = imgWidth / ratio;
         let heightLeft = imgHeight;
         let position = 10; // top margin
+        if (imgHeight > pdfHeight - 20) {
+            imgHeight = pdfHeight - 20;
+            imgWidth = imgHeight * ratio;
+        }
 
         pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= (pdfHeight - 20);
+        heightLeft -= pdfHeight - 20;
 
         while (heightLeft > 0) {
             position = heightLeft - imgHeight + 10;
             pdf.addPage();
             pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-            heightLeft -= (pdfHeight - 20);
+            heightLeft -= pdfHeight - 20;
         }
 
         pdf.save(`${fileName.replace(/ /g, '_')}.pdf`);
@@ -567,7 +569,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        {section.table.headers.map(header => <TableHead key={header}>{header}</TableHead>)}
+                                        {section.table.headers.map((header, index) => <TableHead key={`${header}-${index}`}>{header}</TableHead>)}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -608,7 +610,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                {sub.table.headers.map(header => <TableHead key={header}>{header}</TableHead>)}
+                                                {sub.table.headers.map((header, index) => <TableHead key={`${header}-${index}`}>{header}</TableHead>)}
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
