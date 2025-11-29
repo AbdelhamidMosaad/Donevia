@@ -106,44 +106,26 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     if (content) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(content, "application/xml");
+        const paragraphs = xmlDoc.getElementsByTagName('w:p');
+        let extractedText = '';
 
-        // Function to recursively extract text from nodes
-        const getTextFromNode = (node: Node): string => {
-            let text = '';
-            if (node.nodeType === Node.TEXT_NODE) {
-                return node.textContent || '';
+        for (let i = 0; i < paragraphs.length; i++) {
+            const textNodes = paragraphs[i].getElementsByTagName('w:t');
+            let paraText = '';
+            for (let j = 0; j < textNodes.length; j++) {
+                paraText += textNodes[j].textContent;
             }
-
-            if (node.nodeType === Node.ELEMENT_NODE) {
-                const element = node as Element;
-                const tagName = element.tagName;
-                
-                // Block-level elements that should have a newline after them
-                const isBlock = tagName === 'w:p' || tagName === 'w:tbl';
-
-                if (element.childNodes.length > 0) {
-                    for (let i = 0; i < element.childNodes.length; i++) {
-                        text += getTextFromNode(element.childNodes[i]);
-                    }
-                }
-                
-                if (isBlock) {
-                    text += '\n';
-                }
-            }
-            return text;
-        };
+            extractedText += paraText + '\n';
+        }
         
-        const bodyNode = xmlDoc.getElementsByTagName('w:body')[0];
-        if (bodyNode) {
-            const extractedText = getTextFromNode(bodyNode);
-            form.setValue('sourceText', extractedText.trim());
+        if (extractedText.trim()) {
+          form.setValue('sourceText', extractedText.trim());
         } else {
-             throw new Error("Could not find the main body of the DOCX file.");
+          throw new Error("Could not extract any text from the DOCX file. The file might be empty or in an unsupported format.");
         }
         
     } else {
-        throw new Error("Could not find document.xml in the DOCX file.");
+        throw new Error("Could not find document.xml in the DOCX file. It might be corrupted or not a valid .docx file.");
     }
   }
   
