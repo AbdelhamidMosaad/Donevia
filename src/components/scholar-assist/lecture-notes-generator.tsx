@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -181,42 +182,58 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
     const { title, notesContent } = result;
 
-    const createTextRuns = (text: string, isKeyPoint: boolean = false) => {
+    const createTextRuns = (text: string) => {
         return text.split(/(\*\*.*?\*\*)/g).map(part => {
             const isBoldPart = part.startsWith('**') && part.endsWith('**');
             return new TextRun({
                 text: isBoldPart ? part.slice(2, -2) : part,
-                bold: isBoldPart || isKeyPoint,
+                bold: isBoldPart,
                 font: selectedFont,
             });
         });
     };
 
-    const processContentItems = (items: any[], level: number = 0) => {
-        const docxElements: (Paragraph | DocxTable)[] = [];
+    const processContentItems = (items: any[], level: number = 0): Paragraph[] => {
+        const docxElements: Paragraph[] = [];
 
         items.forEach(item => {
             const isKeyPoint = !!item.isKeyPoint;
+            const shading = isKeyPoint ? { type: ShadingType.CLEAR, fill: "E5E7EB" } : undefined;
             
             if (item.type === 'paragraph' && typeof item.content === 'string') {
-                 const shading = isKeyPoint ? { type: ShadingType.CLEAR, fill: "E5E7EB" } : undefined;
-                docxElements.push(new Paragraph({ children: createTextRuns(item.content, isKeyPoint), shading }));
+                docxElements.push(new Paragraph({ children: createTextRuns(item.content), shading }));
             } else if (item.type === 'bullet-list' && Array.isArray(item.content)) {
                 item.content.forEach((listItem: string) => {
-                     docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), bullet: { level: level } }));
+                     docxElements.push(new Paragraph({ children: createTextRuns(listItem), bullet: { level: level } }));
                 });
-                docxElements.push(new Paragraph("")); // Space after list
+                docxElements.push(new Paragraph(""));
             } else if (item.type === 'numbered-list' && Array.isArray(item.content)) {
                  item.content.forEach((listItem: string) => {
-                    docxElements.push(new Paragraph({ children: createTextRuns(listItem, isKeyPoint), numbering: { reference: "default-numbering", level: level } }));
+                    docxElements.push(new Paragraph({ children: createTextRuns(listItem), numbering: { reference: "default-numbering", level: level } }));
                 });
                 docxElements.push(new Paragraph(""));
             }
         });
         return docxElements;
     };
+
+    const createTable = (tableData: { headers: string[], rows: string[][] }) => {
+        return new DocxTable({
+            rows: [
+                new DocxTableRow({
+                    children: tableData.headers.map(header => new DocxTableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
+                    })),
+                }),
+                ...tableData.rows.map(row => new DocxTableRow({
+                    children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ text: cell })] }))
+                })),
+            ],
+            width: { size: 100, type: WidthType.PERCENTAGE },
+        });
+    };
     
-    const docChildren: any[] = [
+    const docChildren: (Paragraph | DocxTable)[] = [
         new Paragraph({ text: title, heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
         new Paragraph({ children: [new TextRun({ text: notesContent.introduction, italics: true})], spacing: { after: 200 } }),
     ];
@@ -226,19 +243,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         docChildren.push(...processContentItems(section.content));
         
         if (section.table) {
-            docChildren.push(new DocxTable({
-                rows: [
-                    new DocxTableRow({
-                        children: section.table.headers.map(header => new DocxTableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
-                        })),
-                    }),
-                    ...section.table.rows.map(row => new DocxTableRow({
-                        children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({text: cell})]})] }))
-                    })),
-                ],
-                width: { size: 100, type: WidthType.PERCENTAGE },
-            }));
+            docChildren.push(createTable(section.table));
         }
 
         if (section.subsections) {
@@ -246,19 +251,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                 docChildren.push(new Paragraph({ text: subsection.subheading, heading: HeadingLevel.HEADING_3, spacing: { before: 200 } }));
                 docChildren.push(...processContentItems(subsection.content, 1));
                  if (subsection.table) {
-                    docChildren.push(new DocxTable({
-                        rows: [
-                            new DocxTableRow({
-                                children: subsection.table.headers.map(header => new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: header, bold: true })] })],
-                                })),
-                            }),
-                            ...subsection.table.rows.map(row => new DocxTableRow({
-                                children: row.map(cell => new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({text: cell})]})] }))
-                            })),
-                        ],
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                    }));
+                    docChildren.push(createTable(subsection.table));
                 }
             });
         }
