@@ -101,32 +101,41 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
   const parseDocx = async (file: File) => {
     const jszip = new JSZip();
     const zip = await jszip.loadAsync(file);
-    const content = await zip.file("word/document.xml")?.async("string");
-
-    if (content) {
+    const contentXml = await zip.file("word/document.xml")?.async("string");
+    
+    if (contentXml) {
         const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(content, "application/xml");
-        const paragraphs = xmlDoc.getElementsByTagName('w:p');
-        let extractedText = '';
-
-        for (let i = 0; i < paragraphs.length; i++) {
-            const textNodes = paragraphs[i].getElementsByTagName('w:t');
-            let paraText = '';
-            for (let j = 0; j < textNodes.length; j++) {
-                paraText += textNodes[j].textContent;
+        const xmlDoc = parser.parseFromString(contentXml, "application/xml");
+        
+        // This function recursively extracts text from nodes
+        const getTextFromNode = (node: Node): string => {
+            let text = '';
+            if (node.nodeName === 'w:t' && node.textContent) {
+                text += node.textContent;
+            } else if (node.nodeName === 'w:p') {
+                text += '\n'; // Add newline for each new paragraph
+            } else if (node.nodeName === 'w:tab') {
+                text += '\t'; // Handle tabs
             }
-            extractedText += paraText + '\n';
+
+            if (node.hasChildNodes()) {
+                node.childNodes.forEach(child => {
+                    text += getTextFromNode(child);
+                });
+            }
+            return text;
+        };
+
+        const bodyNode = xmlDoc.getElementsByTagName('w:body')[0];
+        if (bodyNode) {
+            const extractedText = getTextFromNode(bodyNode).trim();
+            if (extractedText) {
+                form.setValue('sourceText', extractedText);
+                return;
+            }
         }
-        
-        if (extractedText.trim()) {
-          form.setValue('sourceText', extractedText.trim());
-        } else {
-          throw new Error("Could not extract any text from the DOCX file. The file might be empty or in an unsupported format.");
-        }
-        
-    } else {
-        throw new Error("Could not find document.xml in the DOCX file. It might be corrupted or not a valid .docx file.");
     }
+    throw new Error("Could not extract any text from the DOCX file. The file might be empty, corrupted, or in an unsupported format.");
   }
   
   const parsePdf = async (file: File) => {
@@ -147,8 +156,8 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
       const file = acceptedFiles[0];
       if (!file) return;
 
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-          toast({ variant: 'destructive', title: "File too large", description: "Please upload a file under 5MB."});
+      if (file.size > 15 * 1024 * 1024) { // 15MB limit
+          toast({ variant: 'destructive', title: "File too large", description: "Please upload a file under 15MB."});
           return;
       }
       
@@ -234,7 +243,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                              <div className="flex flex-col items-center gap-2">
                                 <Upload className="h-8 w-8 text-muted-foreground" />
                                 <p>Drag & drop a PDF or DOCX here, or click to select a file.</p>
-                                <p className="text-xs text-muted-foreground">(Max file size: 5MB)</p>
+                                <p className="text-xs text-muted-foreground">(Max file size: 15MB)</p>
                             </div>
                         )}
                     </div>
