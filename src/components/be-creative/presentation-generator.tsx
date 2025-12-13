@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from "react";
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -777,3 +778,5 @@ export function PresentationGenerator() {
 
   return response ? renderResults() : renderInitialState();
 }
+
+    
