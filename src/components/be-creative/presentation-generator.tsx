@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon, Upload } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon, Upload, FileIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
@@ -174,6 +174,7 @@ export function PresentationGenerator() {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isParsing, setIsParsing] = useState(false);
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   
   const slideRefs = useRef<(React.RefObject<HTMLDivElement>)[]>([]);
 
@@ -255,6 +256,7 @@ export function PresentationGenerator() {
   const handleReset = () => {
     form.reset();
     setResponse(null);
+    setFileName(null);
   };
   
    const handleExportPPTX = async () => {
@@ -426,6 +428,7 @@ export function PresentationGenerator() {
           return;
       }
       
+      setFileName(file.name);
       setIsParsing(true);
       toast({ title: `Parsing ${file.name}...` });
 
@@ -444,6 +447,7 @@ export function PresentationGenerator() {
       } catch (error) {
         console.error("Error parsing file:", error);
         toast({ variant: 'destructive', title: 'File Parsing Failed', description: (error as Error).message });
+        setFileName(null);
       } finally {
         setIsParsing(false);
       }
@@ -512,6 +516,12 @@ export function PresentationGenerator() {
                             <div className="flex flex-col items-center gap-2">
                                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
                                 <p>Processing file...</p>
+                            </div>
+                        ) : fileName ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <FileIcon className="h-8 w-8 text-primary" />
+                                <p className="font-semibold">{fileName}</p>
+                                <p className="text-xs text-muted-foreground">Click or drop another file to replace.</p>
                             </div>
                         ) : (
                              <div className="flex flex-col items-center gap-2">

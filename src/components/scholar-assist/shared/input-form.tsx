@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, Wand2, Upload, FileText } from 'lucide-react';
+import { Loader2, Wand2, Upload, FileText, FileIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -64,6 +64,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
   const { settings } = useAuth();
   const [isParsing, setIsParsing] = useState(false);
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -157,10 +158,11 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
       if (!file) return;
 
       if (file.size > 15 * 1024 * 1024) { // 15MB limit
-          toast({ variant: 'destructive', title: "File too large", description: "Please upload a file under 15MB."});
+          toast({ variant: "destructive", title: "File too large", description: "Please upload a file under 15MB."});
           return;
       }
       
+      setFileName(file.name);
       setIsParsing(true);
       toast({ title: `Parsing ${file.name}...`, description: "Please wait while we extract the text." });
 
@@ -178,6 +180,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
       } catch (error) {
         console.error("Error parsing file:", error);
         toast({ variant: 'destructive', title: 'File Parsing Failed', description: (error as Error).message });
+        setFileName(null);
       } finally {
         setIsParsing(false);
       }
@@ -238,6 +241,12 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                             <div className="flex flex-col items-center gap-2">
                                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
                                 <p>Processing file...</p>
+                            </div>
+                        ) : fileName ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <FileIcon className="h-8 w-8 text-primary" />
+                                <p className="font-semibold">{fileName}</p>
+                                <p className="text-xs text-muted-foreground">Click or drop another file to replace.</p>
                             </div>
                         ) : (
                              <div className="flex flex-col items-center gap-2">
