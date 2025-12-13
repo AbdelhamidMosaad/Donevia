@@ -28,7 +28,7 @@ const presentationPrompt = ai.definePrompt({
        - "matrix" → 2x2 or classification
        - "kpi" → metrics and performance indicators
        - "chart" → for bar, pie, line charts
-       - "image" → for general imagery
+       - "icon" → for general imagery
     
     2. Each slide must contain ONLY ONE visual concept.
     
