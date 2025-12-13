@@ -14,7 +14,7 @@ const presentationPrompt = ai.definePrompt({
   input: { schema: PresentationRequestSchema },
   output: { schema: PresentationResponseSchema },
   prompt: `
-    You are a world-class presentation creator. Your task is to generate a compelling presentation based on the user's request.
+    You are an expert presentation designer and content strategist. Your task is to generate a compelling and professional presentation based on the user's request.
 
     **User Request:**
     - **Audience:** {{audience}}
@@ -30,34 +30,38 @@ const presentationPrompt = ai.definePrompt({
       ---
     {{/if}}
 
-    **Your Instructions:**
+    **CRITICAL INSTRUCTIONS:**
 
-    1.  **Analyze Request**:
-        -   If a 'topic' is provided, generate a presentation structure and content from scratch about that topic.
-        -   If 'sourceText' is provided, your entire presentation MUST be a summary and structured representation of that text. Do not introduce outside information.
+    1.  **Analyze and Structure**:
+        -   If 'sourceText' is provided, your primary goal is to intelligently summarize and structure THAT text. Do not introduce outside information.
+        -   Identify the main sections or themes in the source text. Each main theme should become a slide with a clear, descriptive title.
+        -   Extract the most important key points from each section to use as bullet points.
+        -   If a 'topic' is provided, create a logical presentation structure from scratch.
 
-    2.  **Title**: Create a strong, engaging title for the entire presentation.
+    2.  **Generate Speaker-Ready Content**:
+        -   **Concise Bullet Points**: Each slide's content must consist of 3-5 short, impactful bullet points. Each bullet point should be a clean string.
+        -   **No Long Paragraphs**: Do not write long paragraphs. The content must be easy to read and glance at during a live presentation.
+        -   **Speaker Notes**: For each slide, write brief, clear speaker notes that elaborate on the bullet points, providing the presenter with talking points.
 
-    3.  **Slides**: Generate exactly {{numSlides}} slides. 
-        - The first slide MUST be a 'title' layout. Its content should be a concise, impactful subtitle or tagline.
-        - The last slide should be a 'Thank You' or 'Q&A' slide, likely with a 'text-only' layout.
-        - For the slides in between, vary the layout ('text-and-visual', 'text-only', 'visual-only') to keep the presentation engaging.
+    3.  **Slide Structure & Layout**:
+        -   Generate exactly {{numSlides}} slides.
+        -   The **first slide** MUST be a 'title' layout. Its `content` field should contain a concise, engaging subtitle or tagline for the presentation.
+        -   The **last slide** should be a concluding slide (e.g., 'Thank You', 'Q&A', or 'Next Steps') with a 'text-only' layout.
+        -   For the slides in between, you MUST vary the layout ('text-and-visual', 'text-only', 'visual-only') to keep the presentation visually interesting.
 
-    4.  **Slide Content**: For each slide:
-        -   **Title**: Give each slide a clear and concise title.
-        -   **Content**: Provide 3-5 concise bullet points. **Do not use markdown formatting like dashes (-).** Each bullet point should be a clean string, not a long paragraph.
-        -   **Speaker Notes**: Write brief speaker notes for each slide to guide the presenter.
-        -   **Visual Suggestion (CRITICAL)**: For slides with visuals, provide a descriptive suggestion for a relevant visual aid. Be specific. Instead of "image", suggest: 
-            - "bar chart showing growth"
-            - "pie chart of market share"
-            - "timeline of project milestones"
-            - "infographic of 4 key steps"
-            - "lightbulb icon" for an idea
-            - "process flowchart" for a workflow
-            - "team photo" for an 'About Us' slide
-        -   **Layout**: Assign a layout for each slide from: 'title', 'text-and-visual', 'text-only', 'visual-only'.
-
-    Ensure your entire output is a single, valid JSON object.
+    4.  **Suggest Meaningful Visuals (VERY IMPORTANT)**:
+        -   For any slide with a 'text-and-visual' or 'visual-only' layout, you MUST provide a specific and descriptive suggestion in the 'visualSuggestion' field.
+        -   **Be specific**: Instead of "image" or "chart", suggest concrete visual aids.
+        -   Good Examples: 
+            - "bar chart showing user growth from 2022-2024"
+            - "pie chart of market share distribution"
+            - "timeline of key project milestones"
+            - "infographic illustrating the 4-step process"
+            - "photo of a collaborative team working"
+            - "a lightbulb icon representing a new idea"
+            - "process flowchart for the user journey"
+    
+    Ensure your entire output is a single, valid JSON object that strictly adheres to the defined schema.
   `,
   config: {
     temperature: 0.8,
@@ -71,7 +75,7 @@ const generatePresentationFlow = ai.defineFlow(
     outputSchema: PresentationResponseSchema,
   },
   async (input) => {
-    const { output } = await presentationPrompt(input);
+    const { output } = await prompt(input);
 
     if (!output) {
       throw new Error('The AI failed to generate a presentation.');
