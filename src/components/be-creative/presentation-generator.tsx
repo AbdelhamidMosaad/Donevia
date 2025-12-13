@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, createRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
@@ -26,7 +26,11 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import PptxGenJS from 'pptxgenjs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { useDropzone } from 'react-dropzone';
+import JSZip from 'jszip';
 
+let pdfjs: any;
 
 const templates: { id: PresentationTemplate; name: string; bg: string, text: string, accent: string, pptx: { backgroundColor: string, fontColor: string, accentColor: string } }[] = [
     { id: 'default', name: 'Default', bg: 'bg-slate-100', text: 'text-slate-800', accent: 'bg-blue-500', pptx: { backgroundColor: 'F1F5F9', fontColor: '1E293B', accentColor: '3B82F6' } },
@@ -167,13 +171,30 @@ export function PresentationGenerator() {
   const [response, setResponse] = useState<PresentationResponse | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PresentationTemplate>('default');
   const [api, setApi] = useState<CarouselApi>()
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isParsing, setIsParsing] = useState(false);
+  const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   
   const slideRefs = useRef<(React.RefObject<HTMLDivElement>)[]>([]);
 
+   useEffect(() => {
+    const script = document.createElement('script');
+    script.src = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js`;
+    script.onload = () => {
+        pdfjs = (window as any).pdfjsLib;
+        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js`;
+        setPdfjsLoaded(true);
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   useEffect(() => {
     if (response?.slides) {
-      slideRefs.current = response.slides.map(() => createRef());
+      slideRefs.current = response.slides.map(() => React.createRef());
     }
   }, [response]);
 
@@ -209,6 +230,11 @@ export function PresentationGenerator() {
   const handleGenerate = async (values: PresentationFormValues) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in.' });
+      return;
+    }
+    
+     if (values.generationType === 'from_text' && !values.sourceText?.trim()) {
+      toast({ variant: 'destructive', title: 'Source text cannot be empty.' });
       return;
     }
 
@@ -348,75 +374,155 @@ export function PresentationGenerator() {
     } finally {
        setIsExporting(false);
     }
+  };
+
+  const parseDocx = async (file: File) => {
+    const jszip = new JSZip();
+    const zip = await jszip.loadAsync(file);
+    const contentXml = await zip.file("word/document.xml")?.async("string");
+    
+    if (contentXml) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(contentXml, "application/xml");
+        const paragraphs = xmlDoc.getElementsByTagName('w:p');
+        let text = '';
+        for (let i = 0; i < paragraphs.length; i++) {
+            const texts = paragraphs[i].getElementsByTagName('w:t');
+            let paraText = '';
+            for (let j = 0; j < texts.length; j++) {
+                paraText += texts[j].textContent;
+            }
+            if (paraText) {
+                text += paraText + '\n';
+            }
+        }
+        if (text.trim()) {
+            form.setValue('sourceText', text.trim());
+            return;
+        }
+    }
+    throw new Error("Could not extract any text from the DOCX file.");
   }
+  
+  const parsePdf = async (file: File) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n\n';
+    }
+    form.setValue('sourceText', fullText);
+  }
+
+  const onDrop = async (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
+
+      if (file.size > 15 * 1024 * 1024) { 
+          toast({ variant: "destructive", title: "File too large", description: "Please upload a file under 15MB."});
+          return;
+      }
+      
+      setIsParsing(true);
+      toast({ title: `Parsing ${file.name}...` });
+
+      try {
+        if (file.type === 'application/pdf' && pdfjsLoaded) {
+            await parsePdf(file);
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            await parseDocx(file);
+        } else {
+           throw new Error("Unsupported file type or library not loaded.");
+        }
+        
+        form.setValue('generationType', 'from_text');
+        toast({ title: "✓ File Processed", description: "Text extracted. You can now generate the presentation." });
+
+      } catch (error) {
+        console.error("Error parsing file:", error);
+        toast({ variant: 'destructive', title: 'File Parsing Failed', description: (error as Error).message });
+      } finally {
+        setIsParsing(false);
+      }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 
+        'application/pdf': ['.pdf'],
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    },
+    multiple: false,
+  });
   
   const renderInitialState = () => (
     <Card className="h-full max-w-3xl mx-auto">
       <CardHeader>
         <CardTitle>AI Presentation Generator</CardTitle>
         <CardDescription>
-          Describe your topic or paste text, and the AI will create a structured presentation for you.
+          Describe your topic, paste text, or upload a file, and the AI will create a structured presentation for you.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleGenerate)} className="h-full">
           <CardContent className="space-y-4">
-             <FormField
-              control={form.control}
-              name="generationType"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Generation Method</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex space-x-4"
-                    >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="from_topic" /></FormControl>
-                        <FormLabel className="font-normal">From Topic</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="from_text" /></FormControl>
-                        <FormLabel className="font-normal">From Text</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {generationType === 'from_topic' ? (
-                <FormField
-                  control={form.control}
-                  name="topic"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Presentation Topic</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., The Future of Renewable Energy" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            ) : (
-                 <FormField
-                  control={form.control}
-                  name="sourceText"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Source Text</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Paste your article, notes, or any text here..." {...field} rows={6} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            )}
+             <Tabs defaultValue="topic" onValueChange={(value) => form.setValue('generationType', value === 'topic' ? 'from_topic' : 'from_text')}>
+                <TabsList>
+                    <TabsTrigger value="topic">From Topic</TabsTrigger>
+                    <TabsTrigger value="text">From Text</TabsTrigger>
+                    <TabsTrigger value="file">From File</TabsTrigger>
+                </TabsList>
+                 <TabsContent value="topic" className="mt-4">
+                     <FormField
+                        control={form.control}
+                        name="topic"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Presentation Topic</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g., The Future of Renewable Energy" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                </TabsContent>
+                <TabsContent value="text" className="mt-4">
+                    <FormField
+                        control={form.control}
+                        name="sourceText"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Source Text</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Paste your article, notes, or any text here..." {...field} rows={6} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                </TabsContent>
+                 <TabsContent value="file" className="mt-4">
+                     <div {...getRootProps()} className={`h-40 border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
+                        <input {...getInputProps()} />
+                        {isParsing ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="animate-spin h-8 w-8 text-primary" />
+                                <p>Processing file...</p>
+                            </div>
+                        ) : (
+                             <div className="flex flex-col items-center gap-2">
+                                <Upload className="h-8 w-8 text-muted-foreground" />
+                                <p>Drag & drop a PDF or DOCX here, or click to select a file.</p>
+                                <p className="text-xs text-muted-foreground">(Max file size: 15MB)</p>
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+            </Tabs>
            
             <div className="grid md:grid-cols-2 gap-4">
               <FormField
@@ -530,9 +636,9 @@ export function PresentationGenerator() {
 
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
-              {isLoading ? 'Generating...' : 'Generate Presentation'}
+            <Button type="submit" disabled={isLoading || isParsing} className="w-full">
+              {isLoading || isParsing ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
+              {isLoading ? 'Generating...' : isParsing ? 'Parsing File...' : 'Generate Presentation'}
             </Button>
           </CardFooter>
         </form>
