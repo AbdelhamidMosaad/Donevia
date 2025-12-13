@@ -16,7 +16,7 @@ export const SlideSizeSchema = z.enum(['16:9', '4:3']);
 export type SlideSize = z.infer<typeof SlideSizeSchema>;
 
 const VisualDetailSchema = z.object({
-  type: z.enum(['process', 'cycle', 'pyramid', 'timeline', 'chart', 'icon', 'image']).describe("The type of visual to generate."),
+  type: z.enum(['process', 'cycle', 'pyramid', 'timeline', 'chart', 'icon', 'image', 'hierarchy', 'comparison', 'matrix', 'kpi']).describe("The type of visual to generate."),
   items: z.array(z.string()).optional().describe("A list of text items for the visual (e.g., steps in a process, items in a cycle)."),
 }).describe("A structured object representing a suggested visual aid.");
 

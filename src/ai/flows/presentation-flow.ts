@@ -13,8 +13,37 @@ const presentationPrompt = ai.definePrompt({
   input: { schema: PresentationRequestSchema },
   output: { schema: PresentationResponseSchema },
   prompt: `
-    You are an expert presentation designer and content strategist. Your task is to generate a compelling and professional presentation based on the user's request.
+    You are an expert presentation designer and information architect.
 
+    Your task is to convert technical or business content into
+    SMARTART and INFOGRAPHIC slide definitions.
+    
+    RULES:
+    1. Choose the most suitable visual structure:
+       - "process" → step-by-step flow
+       - "cycle" → repeating or continuous loop
+       - "hierarchy" → organizational or priority structure
+       - "comparison" → differences or pros/cons
+       - "timeline" → time-based progression
+       - "matrix" → 2x2 or classification
+       - "kpi" → metrics and performance indicators
+       - "chart" → for bar, pie, line charts
+       - "image" → for general imagery
+    
+    2. Each slide must contain ONLY ONE visual concept.
+    
+    3. Text must be concise and diagram-ready:
+       - Max 5 elements per visual
+       - Each label ≤ 6 words
+    
+    4. Assign icons semantically (sensor, gear, chart, alert, user, clock).
+    
+    5. Include speaker notes explaining the visual.
+    
+    6. Generate exactly {{numSlides}} slides. The first slide MUST be a 'title' slide and the last should be a 'text-only' concluding slide.
+    
+    7. Output STRICT JSON only using the provided schema. Do not include markdown, explanations, or extra text.
+    
     **User Request:**
     - **Number of Slides:** {{numSlides}}
     - **Tone/Style:** {{tone}}
@@ -27,34 +56,6 @@ const presentationPrompt = ai.definePrompt({
       {{{sourceText}}}
       ---
     {{/if}}
-
-    **CRITICAL INSTRUCTIONS:**
-
-    1.  **Analyze and Structure**:
-        -   If 'sourceText' is provided, your primary goal is to intelligently summarize and structure THAT text. Do not introduce outside information.
-        -   Identify the main sections or themes. Each theme should become a slide with a clear, descriptive title.
-        -   Extract the most important key points to use as bullet points.
-        -   If a 'topic' is provided, create a logical presentation structure from scratch.
-
-    2.  **Generate Speaker-Ready Content**:
-        -   **Concise Bullet Points**: Each slide's content must consist of 3-5 short, impactful bullet points.
-        -   **Speaker Notes**: For each slide, write brief, clear speaker notes that elaborate on the bullet points.
-
-    3.  **Slide Structure & Layout**:
-        -   Generate exactly {{numSlides}} slides.
-        -   The **first slide** MUST be a 'title' layout. Its \`content\` field can be empty or have a short tagline.
-        -   The **last slide** should be a concluding slide (e.g., 'Thank You', 'Q&A') with a 'text-only' layout.
-        -   Vary the layout for other slides ('text-and-visual', 'text-only', 'visual-only') to keep it interesting.
-
-    4.  **Generate SMART Visuals (VERY IMPORTANT)**:
-        -   For any slide with a 'text-and-visual' or 'visual-only' layout, you MUST provide a structured 'visual' object.
-        -   **Be Specific**: Do not suggest "image" or "graphic". Choose a specific, meaningful visual type.
-        -   **Valid Visual Types**: 'process', 'cycle', 'chart', 'icon', 'image'.
-        -   **For 'process' or 'cycle'**: You MUST provide an 'items' array with 2-5 short text labels for the diagram steps/stages. Example: \`"visual": { "type": "process", "items": ["Step 1: Research", "Step 2: Design", "Step 3: Build"] }\`
-        -   **For 'chart' or 'icon'**: Provide a descriptive 'items' array with a single string describing what it should be. Example: \`"visual": { "type": "chart", "items": ["Bar chart of user growth"] }\` or \`"visual": { "type": "icon", "items": ["lightbulb"] }\`
-        -   **For 'image'**: Provide a descriptive 'items' array with a single string of 1-2 keywords for a photo. Example: \`"visual": { "type": "image", "items": ["team collaboration"] }\`
-    
-    Ensure your entire output is a single, valid JSON object that strictly adheres to the defined schema.
   `,
   config: {
     temperature: 0.8,

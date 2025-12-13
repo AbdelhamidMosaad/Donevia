@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon, Upload, FileIcon, TrendingUp, Zap, Target } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon, Upload, FileIcon, TrendingUp, Zap, Target, GitCommit, GitPullRequest, GitMerge } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
@@ -95,6 +95,29 @@ const Timeline = () => (
     </div>
 );
 
+const HierarchyDiagram = ({ items }: { items: string[] }) => (
+  <div className="flex flex-col items-center justify-center h-full w-full p-4 gap-4">
+    <div className="p-2 px-4 border rounded-md bg-muted">{items[0] || 'Top Level'}</div>
+    <div className="flex gap-4">
+      {items.slice(1, 3).map((item, i) => (
+        <div key={i} className="flex flex-col items-center gap-2">
+           <div className="h-4 w-px bg-muted-foreground"></div>
+           <div className="p-2 px-4 border rounded-md bg-muted">{item}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const MatrixDiagram = () => (
+  <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-2 p-4">
+    <div className="border rounded-md bg-muted/50 flex items-center justify-center text-xs text-center p-1">Quadrant 1</div>
+    <div className="border rounded-md bg-muted/50 flex items-center justify-center text-xs text-center p-1">Quadrant 2</div>
+    <div className="border rounded-md bg-muted/50 flex items-center justify-center text-xs text-center p-1">Quadrant 3</div>
+    <div className="border rounded-md bg-muted/50 flex items-center justify-center text-xs text-center p-1">Quadrant 4</div>
+  </div>
+);
+
 
 const VisualSuggestion = ({ visual, index }: { visual?: Slide['visual']; index: number }) => {
     if (!visual || !visual.type) return <ImageIcon className="text-muted-foreground" />;
@@ -107,6 +130,10 @@ const VisualSuggestion = ({ visual, index }: { visual?: Slide['visual']; index: 
             return <ProcessDiagram items={items || []} />;
         case 'cycle':
             return <CycleDiagram items={items || []} />;
+        case 'hierarchy':
+            return <HierarchyDiagram items={items || []} />;
+        case 'matrix':
+            return <MatrixDiagram />;
         case 'chart':
              if (suggestionText.toLowerCase().includes('pie')) {
                 return (
@@ -170,7 +197,7 @@ export function PresentationGenerator() {
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   
-  const slideRefs = useRef<(React.RefObject<HTMLDivElement>)[]>([]);
+  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
    useEffect(() => {
     const script = document.createElement('script');
@@ -351,7 +378,7 @@ export function PresentationGenerator() {
         for (let i = 0; i < response.slides.length; i++) {
             if (i > 0) pdf.addPage();
             
-            const slideElement = slideRefs.current[i].current;
+            const slideElement = slideRefs.current[i];
             if (slideElement) {
                 const canvas = await html2canvas(slideElement, { scale: 2 });
                 const imgData = canvas.toDataURL('image/png');
@@ -616,7 +643,7 @@ export function PresentationGenerator() {
                 
                 return (
                   <CarouselItem key={index}>
-                    <div ref={slideRefs.current[index]}>
+                    <div ref={el => slideRefs.current[index] = el}>
                     <Card className={cn(
                         "h-full flex flex-col p-6 aspect-[16/9]",
                         templateStyle.bg, 
