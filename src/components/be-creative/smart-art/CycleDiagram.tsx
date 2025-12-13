@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from "react";
 import { ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
