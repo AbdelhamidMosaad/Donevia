@@ -216,7 +216,7 @@ export function PresentationGenerator() {
 
   useEffect(() => {
     if (response?.slides) {
-      slideRefs.current = response.slides.map(() => React.createRef());
+      slideRefs.current = response.slides.map(() => React.createRef() as any);
     }
   }, [response]);
 
@@ -643,7 +643,7 @@ export function PresentationGenerator() {
                 
                 return (
                   <CarouselItem key={index}>
-                    <div ref={el => slideRefs.current[index] = el}>
+                    <div ref={slideRefs.current[index]}>
                     <Card className={cn(
                         "h-full flex flex-col p-6 aspect-[16/9]",
                         templateStyle.bg, 
