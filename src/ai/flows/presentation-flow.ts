@@ -45,7 +45,7 @@ const presentationPrompt = ai.definePrompt({
 
     3.  **Slide Structure & Layout**:
         -   Generate exactly {{numSlides}} slides.
-        -   The **first slide** MUST be a 'title' layout. Its `content` field should contain a concise, engaging subtitle or tagline for the presentation.
+        -   The **first slide** MUST be a 'title' layout. Its \`content\` field should contain a concise, engaging subtitle or tagline for the presentation.
         -   The **last slide** should be a concluding slide (e.g., 'Thank You', 'Q&A', or 'Next Steps') with a 'text-only' layout.
         -   For the slides in between, you MUST vary the layout ('text-and-visual', 'text-only', 'visual-only') to keep the presentation visually interesting.
 
@@ -75,7 +75,7 @@ const generatePresentationFlow = ai.defineFlow(
     outputSchema: PresentationResponseSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const { output } = await presentationPrompt(input);
 
     if (!output) {
       throw new Error('The AI failed to generate a presentation.');
