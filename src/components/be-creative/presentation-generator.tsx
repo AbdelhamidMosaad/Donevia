@@ -136,7 +136,7 @@ const VisualSuggestion = ({ suggestion, index, content }: { suggestion?: string;
         )
     }
     
-    if (lowerSuggestion.includes('timeline')) {
+    if (lowerSuggestion.includes('timeline') || lowerSuggestion.includes('flowchart')) {
         return <Timeline />;
     }
 
@@ -778,5 +778,3 @@ export function PresentationGenerator() {
 
   return response ? renderResults() : renderInitialState();
 }
-
-    
