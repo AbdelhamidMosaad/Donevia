@@ -205,7 +205,6 @@ export function PresentationGenerator() {
       generationType: "from_topic",
       topic: "",
       sourceText: "",
-      audience: "",
       numSlides: 8,
       tone: "Professional",
       template: 'default',
@@ -386,24 +385,36 @@ export function PresentationGenerator() {
     if (contentXml) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(contentXml, "application/xml");
-        const paragraphs = xmlDoc.getElementsByTagName('w:p');
-        let text = '';
-        for (let i = 0; i < paragraphs.length; i++) {
-            const texts = paragraphs[i].getElementsByTagName('w:t');
-            let paraText = '';
-            for (let j = 0; j < texts.length; j++) {
-                paraText += texts[j].textContent;
+        
+        // This function recursively extracts text from nodes
+        const getTextFromNode = (node: Node): string => {
+            let text = '';
+            if (node.nodeName === 'w:t' && node.textContent) {
+                text += node.textContent;
+            } else if (node.nodeName === 'w:p') {
+                text += '\n'; // Add newline for each new paragraph
+            } else if (node.nodeName === 'w:tab') {
+                text += '\t'; // Handle tabs
             }
-            if (paraText) {
-                text += paraText + '\n';
+
+            if (node.hasChildNodes()) {
+                node.childNodes.forEach(child => {
+                    text += getTextFromNode(child);
+                });
             }
-        }
-        if (text.trim()) {
-            form.setValue('sourceText', text.trim());
-            return;
+            return text;
+        };
+
+        const bodyNode = xmlDoc.getElementsByTagName('w:body')[0];
+        if (bodyNode) {
+            const extractedText = getTextFromNode(bodyNode).trim();
+            if (extractedText) {
+                form.setValue('sourceText', extractedText);
+                return;
+            }
         }
     }
-    throw new Error("Could not extract any text from the DOCX file.");
+    throw new Error("Could not extract any text from the DOCX file. The file might be empty, corrupted, or in an unsupported format.");
   }
   
   const parsePdf = async (file: File) => {
@@ -535,19 +546,6 @@ export function PresentationGenerator() {
             </Tabs>
            
             <div className="grid md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="audience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Audience</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., High School Students, Industry Experts" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
                <FormField
                 control={form.control}
                 name="numSlides"
@@ -561,8 +559,7 @@ export function PresentationGenerator() {
                   </FormItem>
                 )}
               />
-            </div>
-             <FormField
+               <FormField
                 control={form.control}
                 name="tone"
                 render={({ field }) => (
@@ -580,6 +577,7 @@ export function PresentationGenerator() {
                     </FormItem>
                 )}
             />
+            </div>
             
              <FormField
               control={form.control}

@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export const PresentationTemplateSchema = z.enum([
@@ -19,7 +20,6 @@ export const PresentationRequestSchema = z.object({
   generationType: z.enum(['from_topic', 'from_text']),
   topic: z.string().optional(),
   sourceText: z.string().optional(),
-  audience: z.string().min(3, { message: 'Audience must be at least 3 characters.' }),
   numSlides: z.coerce.number().min(3, { message: 'Must generate at least 3 slides.' }).max(30, { message: 'Cannot generate more than 30 slides.' }),
   tone: PresentationToneSchema,
   template: PresentationTemplateSchema,

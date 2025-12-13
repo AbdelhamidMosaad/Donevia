@@ -11,13 +11,12 @@ import { PresentationRequestSchema, PresentationResponseSchema, type Presentatio
 
 const presentationPrompt = ai.definePrompt({
   name: 'presentationPrompt',
-  input: { schema: PresentationRequestSchema },
+  input: { schema: PresentationRequestSchema.omit({ audience: true }) },
   output: { schema: PresentationResponseSchema },
   prompt: `
     You are an expert presentation designer and content strategist. Your task is to generate a compelling and professional presentation based on the user's request.
 
     **User Request:**
-    - **Audience:** {{audience}}
     - **Number of Slides:** {{numSlides}}
     - **Tone/Style:** {{tone}}
 
@@ -71,7 +70,7 @@ const presentationPrompt = ai.definePrompt({
 const generatePresentationFlow = ai.defineFlow(
   {
     name: 'generatePresentationFlow',
-    inputSchema: PresentationRequestSchema,
+    inputSchema: PresentationRequestSchema.omit({ audience: true }),
     outputSchema: PresentationResponseSchema,
   },
   async (input) => {
@@ -86,7 +85,7 @@ const generatePresentationFlow = ai.defineFlow(
 
 
 export async function generatePresentation(
-  input: PresentationRequest
+  input: Omit<PresentationRequest, 'audience'>
 ): Promise<PresentationResponse> {
   return await generatePresentationFlow(input);
 }
