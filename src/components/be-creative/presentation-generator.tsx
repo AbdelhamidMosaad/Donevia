@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon, Upload, FileIcon, TrendingUp, Zap, Target, GitCommit, GitPullRequest, GitMerge } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, Lightbulb, BarChart as BarChartIcon, Users, Settings, Code, FlaskConical, Palette, PieChart as PieChartIcon, FileText, MonitorPlay, ThumbsUp, Handshake, GitBranch as TimelineIcon, Upload, FileIcon, TrendingUp, Zap, Target, GitCommit, GitPullRequest, GitMerge, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
@@ -611,7 +611,7 @@ export function PresentationGenerator() {
 
   const renderResults = () => {
     if (!response) return null;
-    const templateStyle = templates[0]; // Simplified for now
+    const templateStyle = templates.find(t => t.id === selectedTemplate) || templates[0];
     const currentSlide = response.slides[currentSlideIndex];
     
     const getLayoutClasses = (layout: Slide['layout'], isTitleSlide: boolean, isLastSlide: boolean) => {
@@ -694,14 +694,39 @@ export function PresentationGenerator() {
         </Carousel>
 
         <Card className="w-full max-w-4xl mx-auto">
-            <CardHeader>
-                <CardTitle>Speaker Notes</CardTitle>
-                <CardDescription>Slide {currentSlideIndex + 1} of {response.slides.length}</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Slide {currentSlideIndex + 1} of {response.slides.length}: Speaker Notes</CardTitle>
+                </div>
             </CardHeader>
             <CardContent>
                 <p className="text-sm italic">{currentSlide?.speakerNotes || "No notes for this slide."}</p>
             </CardContent>
         </Card>
+        
+         <Card className="w-full max-w-4xl mx-auto">
+            <CardHeader>
+                <CardTitle>Template Design</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-wrap gap-4">
+                    {templates.map(template => (
+                        <div key={template.id} onClick={() => setSelectedTemplate(template.id)} className="cursor-pointer group">
+                             <div className={cn(
+                                'rounded-lg border-2 p-1 transition-all',
+                                selectedTemplate === template.id ? 'border-primary' : 'border-transparent hover:border-primary/50'
+                            )}>
+                                 <div className={cn("h-16 w-24 rounded-md flex items-center justify-center text-xs p-2", template.bg, template.text)}>
+                                     Aa
+                                </div>
+                             </div>
+                             <p className="text-xs text-center mt-1">{template.name}</p>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+
 
         <div className="flex justify-center gap-2">
           <Button onClick={handleReset}>New Presentation</Button>
