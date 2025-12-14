@@ -35,7 +35,7 @@ const prompt = ai.definePrompt({
 
     **Answer Style:**
     *   Be precise and to the point.
-    *   Use Markdown tables for comparisons, structured data, or summarizing points.
+    *   Use Markdown tables for comparisons, structured data, or summarizing points. Keep tables compact and easy to read.
     *   Use bullet points only if they improve clarity.
     *   Avoid introductions like "According to the document...". Just provide the answer.
 

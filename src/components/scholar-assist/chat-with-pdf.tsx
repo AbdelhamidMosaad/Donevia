@@ -124,14 +124,14 @@ export function ChatWithPdf() {
     }
 
     return (
-        <div className="grid md:grid-cols-[400px_1fr] gap-6 h-full min-h-0">
-            <Card className="flex flex-col">
+        <div className="flex flex-col gap-6 h-full min-h-0">
+            <Card>
                 <CardHeader>
                     <CardTitle>Upload Document</CardTitle>
                     <CardDescription>Upload a PDF file (max 15MB) to start chatting.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
-                    <div {...getRootProps()} className={`flex-1 border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
+                <CardContent>
+                    <div {...getRootProps()} className={`h-40 border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
                         <input {...getInputProps()} />
                         {isParsing ? (
                             <div className="flex flex-col items-center gap-2"><Loader2 className="animate-spin h-8 w-8 text-primary" /><p>Processing file...</p></div>
@@ -144,7 +144,7 @@ export function ChatWithPdf() {
                 </CardContent>
             </Card>
 
-            <Card className="flex flex-col h-full">
+            <Card className="flex-1 flex flex-col h-full min-h-0">
                 <CardHeader>
                     <CardTitle>Chat with your PDF</CardTitle>
                     <CardDescription>Ask questions about the content of your uploaded document.</CardDescription>
