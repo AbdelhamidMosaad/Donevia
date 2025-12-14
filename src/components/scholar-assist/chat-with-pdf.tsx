@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -155,13 +156,11 @@ export function ChatWithPdf() {
                             {chatHistory.map((message, index) => (
                                 <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
                                     {message.role === 'assistant' && <Avatar className="h-8 w-8"><AvatarFallback><Bot/></AvatarFallback></Avatar>}
-                                    <div className={`rounded-lg p-3 max-w-lg ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <div className={`rounded-lg p-3 max-w-lg group relative ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                                         <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: marked(message.content) as string }} />
-                                        {message.role === 'assistant' && (
-                                            <div className="text-right mt-2">
-                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(message.content)}><Copy className="h-3 w-3"/></Button>
-                                            </div>
-                                        )}
+                                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(message.content)}><Copy className="h-3 w-3"/></Button>
+                                        </div>
                                     </div>
                                     {message.role === 'user' && <Avatar className="h-8 w-8"><AvatarImage src={user?.photoURL || undefined} /><AvatarFallback>{user?.displayName?.[0]}</AvatarFallback></Avatar>}
                                 </div>

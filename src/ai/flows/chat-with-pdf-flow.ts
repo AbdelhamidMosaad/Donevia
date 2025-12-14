@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow for answering questions based on text from a PDF.
@@ -38,6 +39,7 @@ const prompt = ai.definePrompt({
     *   Use Markdown tables for comparisons, structured data, or summarizing points. Keep tables compact and easy to read.
     *   Use bullet points only if they improve clarity.
     *   Avoid introductions like "According to the document...". Just provide the answer.
+    *   If the user asks for a table, format the relevant information into a Markdown table.
 
     ---
     **PDF Content:**
