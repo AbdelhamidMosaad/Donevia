@@ -6,11 +6,12 @@ import { LectureNotesGenerator } from '@/components/scholar-assist/lecture-notes
 import { QuizGenerator } from '@/components/scholar-assist/quiz-generator';
 import { FlashcardGenerator } from '@/components/scholar-assist/flashcard-generator';
 import { MindMapGenerator } from '@/components/scholar-assist/mind-map-generator';
-import { FileText, HelpCircle, Layers, Save, GitBranch } from 'lucide-react';
+import { FileText, HelpCircle, Layers, Save, GitBranch, MessageSquare } from 'lucide-react';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { SavedQuizzes } from '@/components/scholar-assist/saved-quizzes';
 import type { StudyMaterialResponse } from '@/lib/types';
 import type { MindMapResponse } from '@/lib/types/mindmap-generator';
+import { ChatWithPdf } from '@/components/scholar-assist/chat-with-pdf';
 
 export default function LearningToolPage() {
   const [notesResult, setNotesResult] = useState<StudyMaterialResponse | null>(null);
@@ -52,6 +53,10 @@ export default function LearningToolPage() {
             <GitBranch className="mr-2 h-4 w-4" />
             Mind Map
           </TabsTrigger>
+           <TabsTrigger value="chat-pdf">
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Chat with PDF
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="notes" className="flex-1 mt-4">
@@ -68,6 +73,9 @@ export default function LearningToolPage() {
         </TabsContent>
          <TabsContent value="mindmap" className="flex-1 mt-4">
             <MindMapGenerator result={mindMapResult} setResult={setMindMapResult} />
+        </TabsContent>
+         <TabsContent value="chat-pdf" className="flex-1 mt-4">
+            <ChatWithPdf />
         </TabsContent>
       </Tabs>
     </div>
