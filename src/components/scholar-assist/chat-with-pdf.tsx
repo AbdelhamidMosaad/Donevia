@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,18 +29,29 @@ export function ChatWithPdf() {
     const [isParsing, setIsParsing] = useState(false);
     const [question, setQuestion] = useState('');
     const [chatHistory, setChatHistory] = useState<Message[]>([]);
+    const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    const parsePdf = async (file: File) => {
-        if (typeof window !== 'undefined' && !(window as any).pdfjsLib) {
-             const script = document.createElement('script');
-            script.src = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js`;
-            script.onload = () => {
-                pdfjs = (window as any).pdfjsLib;
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js`;
+        script.onload = () => {
+            pdfjs = (window as any).pdfjsLib;
+            if (pdfjs) {
                 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js`;
-                parsePdf(file); // Retry parsing after script loads
-            };
-            document.body.appendChild(script);
+                setPdfjsLoaded(true);
+            }
+        };
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
+
+    const parsePdf = async (file: File) => {
+        if (!pdfjsLoaded) {
+            toast({ variant: 'destructive', title: "PDF library not loaded yet. Please wait a moment and try again."});
             return;
         }
 
@@ -80,7 +91,7 @@ export function ChatWithPdf() {
         } finally {
             setIsParsing(false);
         }
-    }, [toast]);
+    }, [toast, pdfjsLoaded]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,

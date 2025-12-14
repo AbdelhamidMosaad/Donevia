@@ -1,3 +1,13 @@
+import nextPwa from 'next-pwa';
+
+const isDev = process.env.NODE_ENV === 'development';
+
+const withPWA = nextPwa({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: isDev,
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -36,12 +46,10 @@ const nextConfig = {
       }
     ],
   },
-   experimental: {
-    serverActions: {
-        bodySizeLimit: '20mb',
-    },
+  experimental: {
+    allowedDevOrigins: ["https://6000-firebase-studio-*.cluster-*.cloudworkstations.dev"],
   },
   reactStrictMode: false,
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
