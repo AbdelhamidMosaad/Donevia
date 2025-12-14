@@ -53,5 +53,5 @@ const prompt = ai.definePrompt({
 
 export async function chatWithPdf(input: ChatRequest): Promise<ChatResponse> {
   const { output } = await prompt(input);
-  return output || { answer: "I couldn't find an answer to that." };
+  return output || { answer: "I couldn't find an answer to that. Please try rephrasing your question." };
 }
