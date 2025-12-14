@@ -53,8 +53,5 @@ const prompt = ai.definePrompt({
 
 export async function chatWithPdf(input: ChatRequest): Promise<ChatResponse> {
   const { output } = await prompt(input);
-  if (!output) {
-    throw new Error("The AI failed to generate an answer.");
-  }
-  return output;
+  return output || { answer: "I couldn't find an answer to that." };
 }
