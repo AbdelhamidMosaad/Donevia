@@ -307,7 +307,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         const PAGE_HEIGHT = pdf.internal.pageSize.getHeight();
         const MARGIN = 40;
         const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
-        const LINE_HEIGHT_RATIO = 1.4;
+        const LINE_HEIGHT_RATIO = 1.2; // Corrected line height factor
 
         let y = MARGIN; // The vertical cursor
 
@@ -325,11 +325,15 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         const drawText = (text: string, size: number, style: 'normal' | 'bold' | 'italic', indent = 0) => {
             pdf.setFontSize(size);
             pdf.setFont(FONT, style);
+            // jsPDF's splitTextToSize is the key function for text wrapping
             const lines = pdf.splitTextToSize(text.replace(/(\*\*|__)/g, ''), CONTENT_WIDTH - indent);
-            const textHeight = lines.length * size * (LINE_HEIGHT_RATIO / 2);
+            // Calculate height needed for the text block
+            const textHeight = lines.length * size * LINE_HEIGHT_RATIO;
             checkPageBreak(textHeight);
-            pdf.text(lines, MARGIN + indent, y);
-            y += textHeight + (size / 2);
+             // The text function with options handles line-by-line rendering and spacing
+            pdf.text(lines, MARGIN + indent, y, { lineHeightFactor: LINE_HEIGHT_RATIO });
+            // Increment y position by the calculated height of the text block
+            y += textHeight;
         };
         
         const drawList = (items: string[], type: 'bullet-list' | 'numbered-list') => {
@@ -342,6 +346,8 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         const drawTable = (tableData: { headers: string[], rows: string[][] }) => {
             checkPageBreak(40); // Rough estimate for header height
             
+            // @ts-ignore - jsPDF-autotable is not in the type defs but is often used.
+            // For this implementation, we will draw manually to avoid new dependencies.
             const columnWidths = tableData.headers.map(() => CONTENT_WIDTH / tableData.headers.length);
             const cellPadding = 5;
             const textOptions = { align: 'left' as const, baseline: 'top' as const };
@@ -352,7 +358,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                 let maxHeight = 0;
                 row.forEach((cell, colIndex) => {
                     const lines = pdf.splitTextToSize(cell, columnWidths[colIndex] - cellPadding * 2);
-                    maxHeight = Math.max(maxHeight, lines.length * size * (LINE_HEIGHT_RATIO / 2));
+                    maxHeight = Math.max(maxHeight, lines.length * size * LINE_HEIGHT_RATIO);
                 });
                 return maxHeight + cellPadding * 2;
             };
@@ -360,9 +366,9 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
             // Draw Header
             const headerHeight = calculateRowHeight(tableData.headers, 12, 'bold');
             checkPageBreak(headerHeight);
-            pdf.setFillColor(22, 160, 133); // Header background color
+            pdf.setFillColor(230, 230, 230); // Header background color
             pdf.rect(MARGIN, y, CONTENT_WIDTH, headerHeight, 'F');
-            pdf.setTextColor(255, 255, 255);
+            pdf.setTextColor(0, 0, 0);
             pdf.setFont(FONT, 'bold');
             tableData.headers.forEach((header, index) => {
                 pdf.text(header, MARGIN + columnWidths.slice(0, index).reduce((a, b) => a + b, 0) + cellPadding, y + cellPadding, textOptions);
@@ -390,9 +396,9 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
         pdf.setFontSize(24);
         pdf.setFont(FONT, 'bold');
         const titleLines = pdf.splitTextToSize(title, CONTENT_WIDTH);
-        checkPageBreak(titleLines.length * 24);
+        checkPageBreak(titleLines.length * 24 * LINE_HEIGHT_RATIO);
         pdf.text(titleLines, PAGE_WIDTH / 2, y, { align: 'center' });
-        y += titleLines.length * 24 + 10;
+        y += titleLines.length * 24 * LINE_HEIGHT_RATIO + 10;
         
         drawText(notesContent.introduction, 12, 'italic');
         y += 10;
@@ -644,7 +650,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     {section.content.map((item, itemIndex) => (
                         <div key={itemIndex}>
                             {item.type === 'paragraph' && typeof item.content === 'string' && (
-                                <p className={cn(item.isKeyPoint && "font-bold")}>
+                                <p>
                                     <InlineMarkdown text={item.content} />
                                 </p>
                             )}
@@ -685,7 +691,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                             {sub.content.map((item, itemIndex) => (
                                 <div key={itemIndex}>
                                     {item.type === 'paragraph' && typeof item.content === 'string' && (
-                                        <p className={cn(item.isKeyPoint && "font-bold")}>
+                                        <p>
                                             <InlineMarkdown text={item.content} />
                                         </p>
                                     )}
@@ -820,5 +826,3 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     </>
   )
 }
-
-    
