@@ -548,7 +548,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                     {section.content.map((item, itemIndex) => (
                         <div key={itemIndex}>
                             {item.type === 'paragraph' && typeof item.content === 'string' && (
-                                <p className={cn(item.isKeyPoint && "font-semibold bg-gray-100 dark:bg-gray-800 p-2 rounded-md")}>
+                                <p className={cn(item.isKeyPoint && "font-semibold")}>
                                     <InlineMarkdown text={item.content} />
                                 </p>
                             )}
@@ -589,7 +589,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                             {sub.content.map((item, itemIndex) => (
                                 <div key={itemIndex}>
                                     {item.type === 'paragraph' && typeof item.content === 'string' && (
-                                        <p className={cn(item.isKeyPoint && "font-semibold bg-gray-100 dark:bg-gray-800 p-2 rounded-md")}>
+                                        <p className={cn(item.isKeyPoint && "font-semibold")}>
                                             <InlineMarkdown text={item.content} />
                                         </p>
                                     )}
@@ -724,3 +724,5 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     </>
   )
 }
+
+    
