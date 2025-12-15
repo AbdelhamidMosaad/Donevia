@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, Fragment } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
@@ -25,7 +25,6 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import PptxGenJS from 'pptxgenjs';
 
 interface LectureNotesGeneratorProps {
@@ -291,53 +290,124 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
   };
 
   const handleExportPDF = async () => {
-    if (!exportRef.current) {
-        toast({ variant: 'destructive', title: 'Export failed', description: 'Could not find the content to export.' });
+    if (!result || !result.notesContent || typeof result.notesContent === 'string') {
+        toast({ variant: 'destructive', title: 'Cannot export empty notes.' });
         return;
     }
     setIsExporting(true);
     toast({ title: 'Generating PDF...', description: 'Please wait.' });
 
     try {
-        const canvas = await html2canvas(exportRef.current, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true,
-            windowWidth: exportRef.current.scrollWidth,
-            windowHeight: exportRef.current.scrollHeight
-        });
-        const imgData = canvas.toDataURL('image/png');
-        
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / canvasHeight;
-        let imgWidth = pdfWidth - 20; // with margins
-        let imgHeight = imgWidth / ratio;
-        let heightLeft = imgHeight;
-        let position = 10; // top margin
-        if (imgHeight > pdfHeight - 20) {
-            imgHeight = pdfHeight - 20;
-            imgWidth = imgHeight * ratio;
-        }
+        const { title, notesContent } = result;
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const FONT = 'Helvetica'; // Standard PDF font
 
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight - 20;
+        // --- PDF Generation Utility ---
+        const PAGE_WIDTH = pdf.internal.pageSize.getWidth();
+        const PAGE_HEIGHT = pdf.internal.pageSize.getHeight();
+        const MARGIN = 40;
+        const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+        const LINE_HEIGHT_RATIO = 1.4;
 
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight + 10;
+        let y = MARGIN; // The vertical cursor
+
+        // Helper to add a new page and reset the cursor
+        const addNewPage = () => {
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-            heightLeft -= pdfHeight - 20;
+            y = MARGIN;
+        };
+
+        // Helper to check if content fits and add a new page if it doesn't
+        const checkPageBreak = (contentHeight: number) => {
+            if (y + contentHeight > PAGE_HEIGHT - MARGIN) {
+                addNewPage();
+            }
+        };
+        
+        // Helper to wrap and draw text
+        const drawText = (text: string, size: number, style: 'normal' | 'bold' | 'italic', indent = 0) => {
+            pdf.setFontSize(size);
+            pdf.setFont(FONT, style);
+            const lines = pdf.splitTextToSize(text.replace(/(\*\*|__)/g, ''), CONTENT_WIDTH - indent);
+            checkPageBreak(lines.length * size * LINE_HEIGHT_RATIO);
+            pdf.text(lines, MARGIN + indent, y);
+            y += lines.length * size * LINE_HEIGHT_RATIO;
+        };
+        
+        // Helper to draw lists
+        const drawList = (items: string[], type: 'bullet-list' | 'numbered-list') => {
+            items.forEach((item, index) => {
+                const prefix = type === 'bullet-list' ? '• ' : `${index + 1}. `;
+                drawText(prefix + item, 12, 'normal', 15);
+            });
+        }
+        
+        // Helper to draw tables
+        const drawTable = (tableData: { headers: string[], rows: string[][]}) => {
+             (pdf as any).autoTable({
+                head: [tableData.headers],
+                body: tableData.rows,
+                startY: y,
+                styles: { font: FONT },
+                headStyles: { fillColor: [22, 160, 133] },
+            });
+             y = (pdf as any).lastAutoTable.finalY + 15;
         }
 
+        // --- PDF Content Generation ---
+        
+        // Title
+        pdf.setFontSize(24);
+        pdf.setFont(FONT, 'bold');
+        const titleLines = pdf.splitTextToSize(title, CONTENT_WIDTH);
+        checkPageBreak(titleLines.length * 24);
+        pdf.text(titleLines, PAGE_WIDTH / 2, y, { align: 'center' });
+        y += titleLines.length * 24 + 10;
+        
+        // Introduction
+        drawText(notesContent.introduction, 12, 'italic');
+        y += 10;
+
+        // Sections
+        for (const section of notesContent.sections) {
+            y += 10;
+            checkPageBreak(16);
+            drawText(section.heading, 16, 'bold');
+            y += 5;
+
+            for (const item of section.content) {
+                if (item.type === 'paragraph' && typeof item.content === 'string') {
+                    drawText(item.content, 12, 'normal');
+                } else if (Array.isArray(item.content)) {
+                    drawList(item.content, item.type as 'bullet-list' | 'numbered-list');
+                }
+            }
+            if (section.table) drawTable(section.table);
+
+            if(section.subsections) {
+                for (const sub of section.subsections) {
+                     y += 5;
+                     checkPageBreak(14);
+                     drawText(sub.subheading, 14, 'bold', 10);
+                     y += 5;
+                      for (const item of sub.content) {
+                        if (item.type === 'paragraph' && typeof item.content === 'string') {
+                            drawText(item.content, 12, 'normal', 10);
+                        } else if (Array.isArray(item.content)) {
+                            drawList(item.content, item.type as 'bullet-list' | 'numbered-list');
+                        }
+                    }
+                    if (sub.table) drawTable(sub.table);
+                }
+            }
+            y += 10;
+        }
+
+        // --- Save the PDF ---
         pdf.save(`${fileName.replace(/ /g, '_')}.pdf`);
         toast({ title: '✓ PDF Exported Successfully' });
     } catch (e) {
-        console.error("PDF Export failed:", e);
-        toast({ variant: 'destructive', title: 'PDF Export Failed', description: 'There was an issue generating the PDF.'});
+        toast({ variant: 'destructive', title: 'PDF Export Failed', description: (e as Error).message });
     } finally {
         setIsExporting(false);
     }
@@ -543,12 +613,12 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
             <h1>{result.title}</h1>
             <p className="lead italic">{introduction}</p>
             {sections.map((section, secIndex) => (
-                <React.Fragment key={secIndex}>
+                <Fragment key={secIndex}>
                     <h2>{section.heading}</h2>
                     {section.content.map((item, itemIndex) => (
                         <div key={itemIndex}>
                             {item.type === 'paragraph' && typeof item.content === 'string' && (
-                                <p className={cn(item.isKeyPoint && "font-semibold")}>
+                                <p className={cn(item.isKeyPoint && "bg-muted p-2 rounded-md")}>
                                     <InlineMarkdown text={item.content} />
                                 </p>
                             )}
@@ -589,7 +659,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                             {sub.content.map((item, itemIndex) => (
                                 <div key={itemIndex}>
                                     {item.type === 'paragraph' && typeof item.content === 'string' && (
-                                        <p className={cn(item.isKeyPoint && "font-semibold")}>
+                                        <p className={cn(item.isKeyPoint && "bg-muted p-2 rounded-md")}>
                                             <InlineMarkdown text={item.content} />
                                         </p>
                                     )}
@@ -626,7 +696,7 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
                         </div>
                     ))}
                     {section.addDividerAfter && secIndex < sections.length - 1 && <Separator className="my-6" />}
-                </React.Fragment>
+                </Fragment>
             ))}
         </div>
     );
@@ -724,5 +794,3 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
     </>
   )
 }
-
-    
