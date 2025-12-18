@@ -181,12 +181,12 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
     const { title, notesContent } = result;
 
-    const createTextRuns = (text: string) => {
+    const createTextRuns = (text: string, isKeyPoint: boolean) => {
         return text.split(/(\*\*.*?\*\*)/g).map(part => {
             const isBoldPart = part.startsWith('**') && part.endsWith('**');
             return new TextRun({
                 text: isBoldPart ? part.slice(2, -2) : part,
-                bold: isBoldPart,
+                bold: isBoldPart || isKeyPoint,
                 font: selectedFont,
             });
         });
@@ -197,18 +197,17 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
 
         items.forEach(item => {
             const isKeyPoint = !!item.isKeyPoint;
-            const shading = isKeyPoint ? { type: ShadingType.CLEAR, fill: "E5E7EB" } : undefined;
             
             if (item.type === 'paragraph' && typeof item.content === 'string') {
-                docxElements.push(new Paragraph({ children: createTextRuns(item.content), shading }));
+                docxElements.push(new Paragraph({ children: createTextRuns(item.content, isKeyPoint) }));
             } else if (item.type === 'bullet-list' && Array.isArray(item.content)) {
                 item.content.forEach((listItem: string) => {
-                     docxElements.push(new Paragraph({ children: createTextRuns(listItem), bullet: { level: level } }));
+                     docxElements.push(new Paragraph({ children: createTextRuns(listItem, false), bullet: { level: level } }));
                 });
                 docxElements.push(new Paragraph(""));
             } else if (item.type === 'numbered-list' && Array.isArray(item.content)) {
                  item.content.forEach((listItem: string) => {
-                    docxElements.push(new Paragraph({ children: createTextRuns(listItem), numbering: { reference: "default-numbering", level: level } }));
+                    docxElements.push(new Paragraph({ children: createTextRuns(listItem, false), numbering: { reference: "default-numbering", level: level } }));
                 });
                 docxElements.push(new Paragraph(""));
             }
