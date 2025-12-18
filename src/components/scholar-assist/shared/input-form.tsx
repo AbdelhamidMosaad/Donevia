@@ -138,6 +138,36 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     }
     throw new Error("Could not extract any text from the DOCX file. The file might be empty, corrupted, or in an unsupported format.");
   }
+
+  const parsePptx = async (file: File) => {
+    const jszip = new JSZip();
+    const zip = await jszip.loadAsync(file);
+    const slidePromises: Promise<string>[] = [];
+    zip.folder('ppt/slides')?.forEach((relativePath, zipEntry) => {
+        if(relativePath.endsWith('.xml')) {
+            slidePromises.push(zipEntry.async('string'));
+        }
+    });
+    
+    const slidesXml = await Promise.all(slidePromises);
+    let fullText = '';
+    const parser = new DOMParser();
+
+    slidesXml.forEach(xml => {
+        const xmlDoc = parser.parseFromString(xml, 'application/xml');
+        const textNodes = xmlDoc.getElementsByTagName('a:t');
+        for (let i = 0; i < textNodes.length; i++) {
+            fullText += textNodes[i].textContent + '\n';
+        }
+        fullText += '\n\n'; // Separator for slides
+    });
+
+    if(fullText.trim()) {
+      form.setValue('sourceText', fullText.trim());
+    } else {
+        throw new Error("Could not extract any text from the PPTX file.");
+    }
+  };
   
   const parsePdf = async (file: File) => {
     const arrayBuffer = await file.arrayBuffer();
@@ -150,6 +180,11 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
         fullText += pageText + '\n\n';
     }
     form.setValue('sourceText', fullText);
+  }
+
+  const parseTxt = async (file: File) => {
+      const text = await file.text();
+      form.setValue('sourceText', text);
   }
 
 
@@ -171,6 +206,10 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
             await parsePdf(file);
         } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             await parseDocx(file);
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.name.endsWith('.pptx')) {
+            await parsePptx(file);
+        } else if (file.type === 'text/plain') {
+            await parseTxt(file);
         } else {
            throw new Error("Unsupported file type or required library not loaded.");
         }
@@ -191,6 +230,8 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     accept: { 
         'application/pdf': ['.pdf'],
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+        'text/plain': ['.txt'],
     },
     multiple: false,
   });
@@ -251,7 +292,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                         ) : (
                              <div className="flex flex-col items-center gap-2">
                                 <Upload className="h-8 w-8 text-muted-foreground" />
-                                <p>Drag & drop a PDF or DOCX here, or click to select a file.</p>
+                                <p>Drag & drop a PDF, DOCX, PPTX, or TXT file here.</p>
                                 <p className="text-xs text-muted-foreground">(Max file size: 15MB)</p>
                             </div>
                         )}
