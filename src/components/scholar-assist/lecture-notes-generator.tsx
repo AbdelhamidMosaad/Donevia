@@ -53,6 +53,17 @@ const fonts = [
     { name: 'Courier New', value: 'Courier New' },
     { name: 'Verdana', value: 'Verdana' },
     { name: 'Georgia', value: 'Georgia' },
+    { name: 'Poppins', value: 'Poppins' },
+    { name: 'Inter', value: 'Inter' },
+    { name: 'Roboto', value: 'Roboto' },
+    { name: 'Open Sans', value: 'Open Sans' },
+    { name: 'Lato', value: 'Lato' },
+    { name: 'Source Sans Pro', value: 'Source Sans 3' },
+    { name: 'Nunito', value: 'Nunito' },
+    { name: 'Montserrat', value: 'Montserrat' },
+    { name: 'Playfair Display', value: 'Playfair Display' },
+    { name: 'JetBrains Mono', value: 'JetBrains Mono' },
+    { name: 'Space Grotesk', value: 'Space Grotesk' },
 ];
 
 
@@ -199,7 +210,9 @@ export function LectureNotesGenerator({ result, setResult }: LectureNotesGenerat
             const isKeyPoint = !!item.isKeyPoint;
             
             if (item.type === 'paragraph' && typeof item.content === 'string') {
-                docxElements.push(new Paragraph({ children: createTextRuns(item.content, isKeyPoint) }));
+                docxElements.push(new Paragraph({ 
+                    children: createTextRuns(item.content, isKeyPoint) 
+                }));
             } else if (item.type === 'bullet-list' && Array.isArray(item.content)) {
                 item.content.forEach((listItem: string) => {
                      docxElements.push(new Paragraph({ children: createTextRuns(listItem, false), bullet: { level: level } }));
