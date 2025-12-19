@@ -48,6 +48,7 @@ If the generationType is 'notes', you must follow these instructions:
 6.  **Key Points**: In each section or subsection's content, identify 1-2 "key points" that are critical to understand. For these specific content blocks, set the 'isKeyPoint' flag to true.
 7.  **Tables**: If the source text contains tabular data, you MUST represent it as a table in your JSON output. Fill the 'table' field for the relevant section or subsection.
 8.  **Source Adherence**: Use only the provided source text. Do not add external content.
+9.  **Graceful Handling**: If the source text is not academic or does not contain structured information (e.g., a simple story, random text), create a simple summary with a title and an introduction. Do not try to force it into sections. Ensure the JSON is still valid but contains minimal structure.
 
 ---
 **QUIZ INSTRUCTIONS**
@@ -79,7 +80,7 @@ const generateStudyMaterialFlow = ai.defineFlow(
   async (input) => {
     const { output } = await studyMaterialPrompt(input);
     if (!output) {
-        throw new Error('The AI failed to generate study material. Please try again.');
+        throw new Error('The AI failed to generate study material. The provided text might be too short or unclear. Please try again with different content.');
     }
     
     // The AI model should correctly set the materialType based on the prompt.
