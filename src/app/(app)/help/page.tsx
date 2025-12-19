@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { HelpCircle, LayoutDashboard, Kanban, BarChart3, Sparkles, Briefcase, Repeat, Target, FileText, Bookmark, BrainCircuit, PenSquare, GitBranch, FileSignature, GraduationCap, Timer, Layers, Mail } from "lucide-react";
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
+import placeholderImages from '@/app/lib/placeholder-images.json';
 
 const features = [
     {
@@ -17,20 +18,20 @@ const features = [
             {
                 title: 'Task Overview',
                 text: "Quickly see what's on your plate with cards for Recently Created tasks, High Priority items, and tasks that are Due Soon.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "dashboard tasks overview"
+                image: placeholderImages.dashboardTasksOverview.src,
+                dataAiHint: placeholderImages.dashboardTasksOverview.hint,
             },
             {
                 title: 'Task Analytics',
                 text: "Gain insights into your productivity with charts showing task completion rates, a breakdown of tasks by their current status, and your performance over the last week.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "analytics chart graph"
+                image: placeholderImages.analyticsChartGraph.src,
+                dataAiHint: placeholderImages.analyticsChartGraph.hint,
             },
             {
                 title: 'AI-Powered Recap',
                 text: "Let AI summarize your progress for you. Choose a daily or weekly period, and our AI will analyze your tasks to generate an encouraging summary of your achievements.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "ai robot summary"
+                image: placeholderImages.aiRobotSummary.src,
+                dataAiHint: placeholderImages.aiRobotSummary.hint,
             },
         ],
     },
@@ -43,20 +44,20 @@ const features = [
             {
                 title: 'Task Lists',
                 text: "Group your tasks into lists, like 'Work Projects' or 'Personal Errands'. You can view your lists as visual cards or a compact list, and your preference is saved automatically.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "project folders list"
+                image: placeholderImages.projectFoldersList.src,
+                dataAiHint: placeholderImages.projectFoldersList.hint,
             },
             {
                 title: 'Board View',
                 text: "Visualize your workflow with a Kanban-style board. Drag and drop tasks and columns to reorder them. Customize stages like 'To Do' and 'In Progress' in 'Board Settings'.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "kanban board project"
+                image: placeholderImages.kanbanBoardProject.src,
+                dataAiHint: placeholderImages.kanbanBoardProject.hint,
             },
             {
                 title: 'List, Table, and Calendar Views',
                 text: "Switch between a simple list, a detailed table with customizable columns, and a full-page calendar view to see your tasks by their due dates.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "calendar schedule tasks"
+                image: placeholderImages.calendarScheduleTasks.src,
+                dataAiHint: placeholderImages.calendarScheduleTasks.hint,
             },
         ],
     },
@@ -69,20 +70,20 @@ const features = [
             {
                 title: 'Client Management',
                 text: "Keep a centralized list of all your contacts. Add, edit, and store important details, custom fields, and documents for each client.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "contacts list crm"
+                image: placeholderImages.contactsListCrm.src,
+                dataAiHint: placeholderImages.contactsListCrm.hint,
             },
              {
                 title: 'Sales Pipeline',
                 text: "Visualize your sales process with a Kanban board. Move deals through customizable stages like 'New Request' and 'Proposal Sent'. Customize stages in 'Pipeline Settings'.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "sales pipeline flowchart"
+                image: placeholderImages.salesPipelineFlowchart.src,
+                dataAiHint: placeholderImages.salesPipelineFlowchart.hint,
             },
              {
                 title: 'Quotes & Invoices',
                 text: "Create and manage quotations and invoices directly within a client's profile. Attach relevant files and track their status.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "invoice document billing"
+                image: placeholderImages.invoiceDocumentBilling.src,
+                dataAiHint: placeholderImages.invoiceDocumentBilling.hint,
             },
         ],
     },
@@ -95,8 +96,8 @@ const features = [
             {
                 title: 'Daily Check-ins',
                 text: "Create habits you want to build and check them off each day on the weekly calendar view. Building a streak helps maintain momentum and motivation.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "calendar checkmark habit"
+                image: placeholderImages.calendarCheckmarkHabit.src,
+                dataAiHint: placeholderImages.calendarCheckmarkHabit.hint,
             },
         ],
     },
@@ -109,14 +110,14 @@ const features = [
             {
                 title: 'Set and Track Goals',
                 text: "Create overarching goals with specific start and target dates. Break them down into smaller, actionable milestones. Track your overall progress as you complete each milestone.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "target goal achievement"
+                image: placeholderImages.targetGoalAchievement.src,
+                dataAiHint: placeholderImages.targetGoalAchievement.hint,
             },
              {
                 title: 'Progress Journal',
                 text: "Keep a running log of your thoughts, achievements, and setbacks for each goal. This journal helps you stay reflective and motivated throughout your journey.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "journal writing progress"
+                image: placeholderImages.journalWritingProgress.src,
+                dataAiHint: placeholderImages.journalWritingProgress.hint,
             },
         ],
     },
@@ -129,14 +130,14 @@ const features = [
             {
                 title: 'Structured Planning',
                 text: "Break down large study goals into chapters and topics. Drag and drop to reorder your study plan and track progress with satisfying checklists and progress bars.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "study plan checklist"
+                image: placeholderImages.studyPlanChecklist.src,
+                dataAiHint: placeholderImages.studyPlanChecklist.hint,
             },
             {
                 title: 'Time Tracking & Gamification',
                 text: "Use the built-in timer for each topic to log your study sessions. Level up, earn badges, and build a study streak to stay motivated on your learning journey.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "gamification level up"
+                image: placeholderImages.gamificationLevelUp.src,
+                dataAiHint: placeholderImages.gamificationLevelUp.hint,
             },
         ],
     },
@@ -149,14 +150,14 @@ const features = [
             {
                 title: 'AI-Powered Generation',
                 text: "Paste any text into the AI generator to automatically create a deck of flashcards. You can also create and manage cards manually, and import or export decks as JSON files.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "ai flashcards generation"
+                image: placeholderImages.aiFlashcardsGeneration.src,
+                dataAiHint: placeholderImages.aiFlashcardsGeneration.hint,
             },
             {
                 title: 'Spaced Repetition System (SRS)',
                 text: "The study mode uses an intelligent SRS algorithm to show you cards at the optimal time for memorization, ensuring you retain information effectively.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "learning algorithm chart"
+                image: placeholderImages.learningAlgorithmChart.src,
+                dataAiHint: placeholderImages.learningAlgorithmChart.hint,
             },
         ],
     },
@@ -169,8 +170,8 @@ const features = [
             {
                 title: 'Canvas & Board Views',
                 text: "Organize your notes in two ways: a free-form 'Canvas' where you can arrange notes anywhere you like, or a structured 'Board' that automatically groups your notes by priority.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "sticky notes board"
+                image: placeholderImages.stickyNotesBoard.src,
+                dataAiHint: placeholderImages.stickyNotesBoard.hint,
             },
         ],
     },
@@ -183,8 +184,8 @@ const features = [
             {
                 title: 'Categorize & Find',
                 text: "Save links with titles, descriptions, and categories. Filter by your custom categories or use the search bar to find exactly what you're looking for.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "bookmark collection web"
+                image: placeholderImages.bookmarkCollectionWeb.src,
+                dataAiHint: placeholderImages.bookmarkCollectionWeb.hint,
             },
         ],
     },
@@ -197,20 +198,20 @@ const features = [
              {
                 title: 'Brainstorming Canvas',
                 text: "Capture ideas as colored cards and arrange them in a structured grid. It's perfect for quickly getting thoughts down and organizing them later.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "brainstorming idea cards"
+                image: placeholderImages.brainstormingIdeaCards.src,
+                dataAiHint: placeholderImages.brainstormingIdeaCards.hint,
             },
             {
                 title: 'Whiteboard',
                 text: "A free-form digital canvas. Use the pen, eraser, and shape tools to draw, sketch, and visualize your ideas without limits. Customize the background to suit your needs.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "digital whiteboard drawing"
+                image: placeholderImages.digitalWhiteboardDrawing.src,
+                dataAiHint: placeholderImages.digitalWhiteboardDrawing.hint,
             },
             {
                 title: 'Mind Map',
                 text: "Create structured diagrams by connecting nodes. Add child nodes to build out your ideas logically. Use fullscreen for a focused experience and export your work as an image or PDF.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "mind map chart"
+                image: placeholderImages.mindMapChart.src,
+                dataAiHint: placeholderImages.mindMapChart.hint,
             },
         ],
     },
@@ -223,8 +224,8 @@ const features = [
             {
                 title: 'Rich Text Editing',
                 text: "Create beautiful documents with a full suite of formatting tools, including headings, text styles, colors, tables, and image uploads. Organize your documents into folders for easy management.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "text editor document"
+                image: placeholderImages.textEditorDocument.src,
+                dataAiHint: placeholderImages.textEditorDocument.hint,
             },
         ],
     },
@@ -237,8 +238,8 @@ const features = [
             {
                 title: 'Generate Study Materials',
                 text: "Paste any text or upload a document, and let the AI generate comprehensive notes, interactive quizzes, or a set of flashcards to help you learn faster.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "ai learning study"
+                image: placeholderImages.aiLearningStudy.src,
+                dataAiHint: placeholderImages.aiLearningStudy.hint,
             },
         ],
     },
@@ -251,8 +252,8 @@ const features = [
             {
                 title: 'Stay Focused',
                 text: "Use the Pomodoro technique to break down your work into focused intervals. The timer is always accessible in the header. Customize the duration of your work sessions and breaks in the settings.",
-                image: "https://picsum.photos/600/400",
-                dataAiHint: "pomodoro timer clock"
+                image: placeholderImages.pomodoroTimerClock.src,
+                dataAiHint: placeholderImages.pomodoroTimerClock.hint,
             },
         ],
     },

@@ -1,5 +1,5 @@
 import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {googleAI} from '@genkit-ai/google-genai';
 // import {dotprompt} from '@genkit-ai/dotprompt';
 
 export const ai = genkit({
@@ -9,5 +9,5 @@ export const ai = genkit({
     }),
     // dotprompt(),
   ],
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-1.5-flash',
 });

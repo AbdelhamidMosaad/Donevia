@@ -1,0 +1,99 @@
+
+{
+  "dashboardTasksOverview": {
+    "src": "https://picsum.photos/seed/1/600/400",
+    "hint": "dashboard tasks overview"
+  },
+  "analyticsChartGraph": {
+    "src": "https://picsum.photos/seed/2/600/400",
+    "hint": "analytics chart graph"
+  },
+  "aiRobotSummary": {
+    "src": "https://picsum.photos/seed/3/600/400",
+    "hint": "ai robot summary"
+  },
+  "projectFoldersList": {
+    "src": "https://picsum.photos/seed/4/600/400",
+    "hint": "project folders list"
+  },
+  "kanbanBoardProject": {
+    "src": "https://picsum.photos/seed/5/600/400",
+    "hint": "kanban board project"
+  },
+  "calendarScheduleTasks": {
+    "src": "https://picsum.photos/seed/6/600/400",
+    "hint": "calendar schedule tasks"
+  },
+  "contactsListCrm": {
+    "src": "https://picsum.photos/seed/7/600/400",
+    "hint": "contacts list crm"
+  },
+  "salesPipelineFlowchart": {
+    "src": "https://picsum.photos/seed/8/600/400",
+    "hint": "sales pipeline flowchart"
+  },
+  "invoiceDocumentBilling": {
+    "src": "https://picsum.photos/seed/9/600/400",
+    "hint": "invoice document billing"
+  },
+  "calendarCheckmarkHabit": {
+    "src": "https://picsum.photos/seed/10/600/400",
+    "hint": "calendar checkmark habit"
+  },
+  "targetGoalAchievement": {
+    "src": "https://picsum.photos/seed/11/600/400",
+    "hint": "target goal achievement"
+  },
+  "journalWritingProgress": {
+    "src": "https://picsum.photos/seed/12/600/400",
+    "hint": "journal writing progress"
+  },
+  "studyPlanChecklist": {
+    "src": "https://picsum.photos/seed/13/600/400",
+    "hint": "study plan checklist"
+  },
+  "gamificationLevelUp": {
+    "src": "https://picsum.photos/seed/14/600/400",
+    "hint": "gamification level up"
+  },
+  "aiFlashcardsGeneration": {
+    "src": "https://picsum.photos/seed/15/600/400",
+    "hint": "ai flashcards generation"
+  },
+  "learningAlgorithmChart": {
+    "src": "https://picsum.photos/seed/16/600/400",
+    "hint": "learning algorithm chart"
+  },
+  "stickyNotesBoard": {
+    "src": "https://picsum.photos/seed/17/600/400",
+    "hint": "sticky notes board"
+  },
+  "bookmarkCollectionWeb": {
+    "src": "https://picsum.photos/seed/18/600/400",
+    "hint": "bookmark collection web"
+  },
+  "brainstormingIdeaCards": {
+    "src": "https://picsum.photos/seed/19/600/400",
+    "hint": "brainstorming idea cards"
+  },
+  "digitalWhiteboardDrawing": {
+    "src": "https://picsum.photos/seed/20/600/400",
+    "hint": "digital whiteboard drawing"
+  },
+  "mindMapChart": {
+    "src": "https://picsum.photos/seed/21/600/400",
+    "hint": "mind map chart"
+  },
+  "textEditorDocument": {
+    "src": "https://picsum.photos/seed/22/600/400",
+    "hint": "text editor document"
+  },
+  "aiLearningStudy": {
+    "src": "https://picsum.photos/seed/23/600/400",
+    "hint": "ai learning study"
+  },
+  "pomodoroTimerClock": {
+    "src": "https://picsum.photos/seed/24/600/400",
+    "hint": "pomodoro timer clock"
+  }
+}
