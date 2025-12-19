@@ -35,7 +35,9 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: false,
-  turbopack: {},
+  experimental: {
+    turbopack: {},
+  }
 };
 
 

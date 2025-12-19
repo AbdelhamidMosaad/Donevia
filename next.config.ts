@@ -1,16 +1,14 @@
-import nextPwa from 'next-pwa';
 
-const isDev = process.env.NODE_ENV === 'development';
-
-const withPWA = nextPwa({
+const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: isDev,
+  disable: process.env.NODE_ENV === 'development'
 });
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type {NextConfig} from 'next';
+
+const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
@@ -33,13 +31,13 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https' as const,
         hostname: 'storage.googleapis.com',
         port: '',
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https' as const,
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
@@ -49,7 +47,12 @@ const nextConfig = {
   experimental: {
     allowedDevOrigins: ["https://6000-firebase-studio-*.cluster-*.cloudworkstations.dev"],
   },
-  reactStrictMode: false,
 };
 
-export default withPWA(nextConfig);
+
+const isDev = process.env.NODE_ENV === 'development';
+
+// Only wrap with PWA config in production.
+const config = isDev ? nextConfig : withPWA(nextConfig);
+
+export default config;

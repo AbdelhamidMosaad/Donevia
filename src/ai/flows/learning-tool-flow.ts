@@ -63,17 +63,20 @@ const TableSchema = z.object({
     rows: z.array(z.array(z.string())).describe('The data rows for the table.'),
 });
 
+const SubsectionSchema = z.object({
+    subheading: z.string().describe('Subsection heading (e.g., "Three Basic Activities of Accounting").'),
+    content: z.array(NoteContentItemSchema).describe('An array of content blocks for the subsection.'),
+    table: TableSchema.optional().describe('A table for this subsection.'),
+});
+
 export const LectureNoteSectionSchema = z.object({
   heading: z.string().describe('Section heading (e.g., "Introduction to Accounting").'),
   content: z.array(NoteContentItemSchema).describe('An array of content blocks for the section. Key terms in text should be wrapped in **markdown bold**.'),
   table: TableSchema.optional().describe('A table extracted from the source text, if applicable.'),
-  subsections: z.array(z.object({
-    subheading: z.string().describe('Subsection heading (e.g., "Three Basic Activities of Accounting").'),
-    content: z.array(NoteContentItemSchema).describe('An array of content blocks for the subsection.'),
-    table: TableSchema.optional().describe('A table for this subsection.'),
-  })).optional(),
+  subsections: z.array(SubsectionSchema).optional(),
   addDividerAfter: z.boolean().optional().describe('If true, a horizontal line (---) should be added after this section.')
 });
+
 
 export const NotesContentSchema = z.object({
   introduction: z.string().describe('A short overview paragraph providing context for the notes.'),
