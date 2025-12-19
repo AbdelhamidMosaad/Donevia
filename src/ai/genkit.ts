@@ -10,5 +10,5 @@ export const ai = genkit({
     }),
     // dotprompt(),
   ],
-  model: 'googleai/gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-flash-latest',
 });
