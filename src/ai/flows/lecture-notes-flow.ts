@@ -6,28 +6,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-// Input Schema
-export const LectureNotesRequestSchema = z.object({
-  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
-});
-export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
-
-
-// Output Schema
-const SectionSchema = z.object({
-  heading: z.string().describe("A clear heading for a main section of the notes (e.g., 'Key Concepts', 'Important Formulas')."),
-  content: z.array(z.string()).describe("An array of bullet points, paragraphs, or definitions that fall under this heading."),
-});
-
-export const LectureNotesResponseSchema = z.object({
-  title: z.string().describe("A concise and relevant title for the lecture notes."),
-  overview: z.string().describe("A brief 2-3 sentence overview of the document's main topics or learning objectives."),
-  sections: z.array(SectionSchema).describe("An array of structured sections, each with a heading and content."),
-  summary: z.string().describe("A concluding summary of the key takeaways from the material."),
-});
-export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
+import { LectureNotesRequestSchema, LectureNotesResponseSchema, type LectureNotesRequest, type LectureNotesResponse } from '@/lib/types';
 
 
 // Prompt

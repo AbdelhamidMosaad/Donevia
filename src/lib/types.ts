@@ -8,10 +8,6 @@ import {
     QuizQuestionSchema as GenkitQuizQuestionSchema,
     FlashcardSchema as GenkitFlashcardSchema,
 } from '@/ai/flows/learning-tool-flow';
-import {
-    LectureNotesRequestSchema as GenkitLectureNotesRequestSchema,
-    LectureNotesResponseSchema as GenkitLectureNotesResponseSchema,
-} from '@/ai/flows/lecture-notes-flow';
 import type { MasteryLevel } from "./types/vocabulary";
 
 
@@ -588,9 +584,24 @@ export const QuizQuestionSchema = GenkitQuizQuestionSchema;
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 export const FlashcardSchema = GenkitFlashcardSchema;
 export type Flashcard = z.infer<typeof FlashcardSchema>;
-export const LectureNotesRequestSchema = GenkitLectureNotesRequestSchema;
+
+// Lecture Notes Schemas
+export const LectureNotesRequestSchema = z.object({
+  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
+});
 export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
-export const LectureNotesResponseSchema = GenkitLectureNotesResponseSchema;
+
+const SectionSchema = z.object({
+  heading: z.string().describe("A clear heading for a main section of the notes (e.g., 'Key Concepts', 'Important Formulas')."),
+  content: z.array(z.string()).describe("An array of bullet points, paragraphs, or definitions that fall under this heading."),
+});
+
+export const LectureNotesResponseSchema = z.object({
+  title: z.string().describe("A concise and relevant title for the lecture notes."),
+  overview: z.string().describe("A brief 2-3 sentence overview of the document's main topics or learning objectives."),
+  sections: z.array(SectionSchema).describe("An array of structured sections, each with a heading and content."),
+  summary: z.string().describe("A concluding summary of the key takeaways from the material."),
+});
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
 
@@ -810,4 +821,16 @@ export type MindMapType = {
     connections: WhiteboardConnection[]; // Re-use for simplicity
     scale?: number;
     pan?: { x: number, y: number };
+};
+
+/** Journal */
+export type JournalEntry = {
+    id: string;
+    title: string;
+    content: any; // TipTap JSON
+    ownerId: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    mood: 'Happy' | 'Neutral' | 'Sad';
+    tags: string[];
 };
