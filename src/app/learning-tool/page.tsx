@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -5,12 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { QuizGenerator } from '@/components/scholar-assist/quiz-generator';
 import { FlashcardGenerator } from '@/components/scholar-assist/flashcard-generator';
 import { MindMapGenerator } from '@/components/scholar-assist/mind-map-generator';
-import { HelpCircle, Layers, Save, GitBranch, MessageSquare } from 'lucide-react';
+import { HelpCircle, Layers, Save, GitBranch, MessageSquare, Notebook } from 'lucide-react';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { SavedQuizzes } from '@/components/scholar-assist/saved-quizzes';
 import type { StudyMaterialResponse } from '@/lib/types';
 import type { MindMapResponse } from '@/lib/types/mindmap-generator';
 import { ChatWithPdf } from '@/components/scholar-assist/chat-with-pdf';
+import { LectureNotesGenerator } from '@/components/scholar-assist/lecture-notes-generator';
 
 export default function LearningToolPage() {
   const [quizResult, setQuizResult] = useState<StudyMaterialResponse | null>(null);
@@ -24,13 +26,17 @@ export default function LearningToolPage() {
         <div>
           <h1 className="text-3xl font-bold font-headline">Learning Assistant</h1>
           <p className="text-muted-foreground">
-            Generate quizzes, and flashcards from your study materials.
+            Generate study materials from your documents and text.
           </p>
         </div>
       </div>
 
-      <Tabs defaultValue="quiz" className="flex-1 flex flex-col">
+      <Tabs defaultValue="notes" className="flex-1 flex flex-col">
         <TabsList>
+           <TabsTrigger value="notes">
+            <Notebook className="mr-2 h-4 w-4" />
+            Lecture Notes
+          </TabsTrigger>
           <TabsTrigger value="quiz">
              <HelpCircle className="mr-2 h-4 w-4" />
             Quiz Generator
@@ -53,6 +59,9 @@ export default function LearningToolPage() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="notes" className="flex-1 mt-4">
+            <LectureNotesGenerator />
+        </TabsContent>
         <TabsContent value="quiz" className="flex-1 mt-4">
             <QuizGenerator result={quizResult} setResult={setQuizResult} />
         </TabsContent>

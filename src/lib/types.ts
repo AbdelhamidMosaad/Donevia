@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -7,6 +8,10 @@ import {
     QuizQuestionSchema as GenkitQuizQuestionSchema,
     FlashcardSchema as GenkitFlashcardSchema,
 } from '@/ai/flows/learning-tool-flow';
+import {
+    LectureNotesRequestSchema as GenkitLectureNotesRequestSchema,
+    LectureNotesResponseSchema as GenkitLectureNotesResponseSchema,
+} from '@/ai/flows/lecture-notes-flow';
 import type { MasteryLevel } from "./types/vocabulary";
 
 
@@ -583,6 +588,10 @@ export const QuizQuestionSchema = GenkitQuizQuestionSchema;
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 export const FlashcardSchema = GenkitFlashcardSchema;
 export type Flashcard = z.infer<typeof FlashcardSchema>;
+export const LectureNotesRequestSchema = GenkitLectureNotesRequestSchema;
+export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
+export const LectureNotesResponseSchema = GenkitLectureNotesResponseSchema;
+export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
 
 /** English Coach */
