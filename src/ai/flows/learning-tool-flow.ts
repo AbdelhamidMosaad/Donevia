@@ -1,12 +1,6 @@
-
 import { z } from 'zod';
 
 // ========== Input Schemas ==========
-
-export const NotesOptionsSchema = z.object({
-  style: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
-  complexity: z.enum(['simple', 'medium', 'advanced']),
-});
 
 export const QuizOptionsSchema = z.object({
   numQuestions: z.number().min(1).max(100),
@@ -21,8 +15,7 @@ export const FlashcardsOptionsSchema = z.object({
 
 export const StudyMaterialRequestSchema = z.object({
   sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
-  generationType: z.enum(['notes', 'quiz', 'flashcards']),
-  notesOptions: NotesOptionsSchema.optional(),
+  generationType: z.enum(['quiz', 'flashcards']),
   quizOptions: QuizOptionsSchema.optional(),
   flashcardsOptions: FlashcardsOptionsSchema.optional(),
 });
@@ -47,47 +40,10 @@ export const FlashcardSchema = z.object({
 });
 export type Flashcard = z.infer<typeof FlashcardSchema>;
 
-// Notes (structured)
-const NoteContentItemSchema = z.object({
-  type: z.enum(['paragraph', 'bullet-list', 'numbered-list']),
-  content: z.union([
-    z.string().describe('A single paragraph of text.'),
-    z.array(z.string()).describe('An array of strings, where each string is a list item.')
-  ]),
-  isKeyPoint: z.boolean().optional().describe('Set to true if this block is a critical key point.'),
-});
-
-
-const TableSchema = z.object({
-    headers: z.array(z.string()).describe('The header row for the table.'),
-    rows: z.array(z.array(z.string())).describe('The data rows for the table.'),
-});
-
-const SubsectionSchema = z.object({
-    subheading: z.string().describe('Subsection heading (e.g., "Three Basic Activities of Accounting").'),
-    content: z.array(NoteContentItemSchema).describe('An array of content blocks for the subsection.'),
-    table: TableSchema.optional().describe('A table for this subsection.'),
-});
-
-export const LectureNoteSectionSchema = z.object({
-  heading: z.string().describe('Section heading (e.g., "Introduction to Accounting").'),
-  content: z.array(NoteContentItemSchema).describe('An array of content blocks for the section. Key terms in text should be wrapped in **markdown bold**.'),
-  table: TableSchema.optional().describe('A table extracted from the source text, if applicable.'),
-  subsections: z.array(SubsectionSchema).optional(),
-  addDividerAfter: z.boolean().optional().describe('If true, a horizontal line (---) should be added after this section.')
-});
-
-
-export const NotesContentSchema = z.object({
-  introduction: z.string().describe('A short overview paragraph providing context for the notes.'),
-  sections: z.array(LectureNoteSectionSchema).describe('An organized array of the main lecture note sections.')
-});
-
 // Main Response
 export const StudyMaterialResponseSchema = z.object({
   title: z.string().describe('A concise and relevant title for the generated material.'),
-  materialType: z.enum(['notes', 'quiz', 'flashcards']),
-  notesContent: NotesContentSchema.optional().describe('Structured lecture notes with sections, paragraphs, lists, subsections, and optional dividers. Required if materialType is "notes".'),
+  materialType: z.enum(['quiz', 'flashcards']),
   quizContent: z.array(QuizQuestionSchema).optional().describe('An array of quiz questions. Required if materialType is "quiz".'),
   flashcardContent: z.array(FlashcardSchema).optional().describe('An array of flashcards. Required if materialType is "flashcards".'),
   tags: z.array(z.string()).optional(),

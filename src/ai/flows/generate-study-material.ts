@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview AI flow for generating various study materials from source text.
- * - generateStudyMaterial - A function that generates notes, quizzes, etc.
+ * - generateStudyMaterial - A function that generates quizzes, etc.
  * - StudyMaterialRequest - The input type for the generation.
  * - StudyMaterialResponse - The return type.
  */
@@ -27,28 +27,6 @@ Follow these instructions precisely based on the requested 'generationType'.
 ---
 
 **Generation Type:** {{generationType}}
-
----
-**NOTES INSTRUCTIONS**
-If the generationType is 'notes', you must follow these instructions:
-1.  **Title**: Create a direct and concise title for the material based on its content. Do NOT use prefixes like "Lecture Notes for..." or "University Notes on...". Just state the topic.
-2.  **Output Format**: Produce a well-structured JSON output. Do not use any Markdown formatting (like **bold** or *italics*) within the JSON fields. Key terms should be presented as plain text.
-3.  **Introduction**: Start with a concise introductory paragraph in the 'introduction' field that provides context for the entire text.
-4.  **Structure**:
-    -   Create distinct sections for each major topic. Each section should have a clear 'heading'.
-    -   For each section, provide the main content as an array of 'content' blocks.
-    -   Where appropriate, break down complex sections into smaller 'subsections', each with its own 'subheading' and 'content' blocks.
-5.  **Content Style (CRITICAL)**:
-    -   You MUST use a mix of content block types: 'paragraph', 'bullet-list', and 'numbered-list'.
-    -   Use 'paragraph' for explanatory text and general descriptions. The 'content' field for a paragraph should be a single string.
-    -   Use 'bullet-list' ONLY for unordered lists of items (e.g., characteristics, examples). The 'content' field for a list must be an array of strings.
-    -   Use 'numbered-list' ONLY for sequential steps or ordered items. The 'content' field for a list must be an array of strings.
-    -   **DO NOT** create a list where every item is a full paragraph. Combine related sentences into a single, coherent 'paragraph' block. Use lists for concise points.
-    -   The note style should be '{{notesOptions.style}}' and complexity must match '{{notesOptions.complexity}}'.
-6.  **Key Points**: In each section or subsection's content, identify 1-2 "key points" that are critical to understand. For these specific content blocks, set the 'isKeyPoint' flag to true.
-7.  **Tables**: If the source text contains tabular data, you MUST represent it as a table in your JSON output. Fill the 'table' field for the relevant section or subsection.
-8.  **Source Adherence**: Use only the provided source text. Do not add external content.
-9.  **Graceful Handling**: If the source text is not academic or does not contain structured information (e.g., a simple story, random text), create a simple summary with a title and an introduction. Do not try to force it into sections. Ensure the JSON is still valid but contains minimal structure.
 
 ---
 **QUIZ INSTRUCTIONS**
