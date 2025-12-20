@@ -10,7 +10,16 @@ import { PresentationIcon } from '@/components/icons/tools/presentation-icon';
 import BrainstormingPage from '../brainstorming/page';
 import WhiteboardDashboardPage from '../whiteboard/page';
 import MindMapDashboardPage from '../mind-map/page';
-import { PresentationGenerator } from '@/components/be-creative/presentation-generator';
+
+import dynamic from 'next/dynamic';
+
+const PresentationGenerator = dynamic(
+  () => import('@/components/be-creative/presentation-generator'),
+  {
+    ssr: false,
+    loading: () => <div>Loading Presentation Tool...</div>,
+  }
+);
 
 export default function BeCreativePage() {
   return (
@@ -39,23 +48,26 @@ export default function BeCreativePage() {
             <MindMapIcon className="mr-2 h-4 w-4" />
             Mind Map
           </TabsTrigger>
-           <TabsTrigger value="presentation">
+          <TabsTrigger value="presentation">
             <PresentationIcon className="mr-2 h-4 w-4" />
             Presentation
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="brainstorming" className="flex-1 mt-4">
-           <BrainstormingPage />
+          <BrainstormingPage />
         </TabsContent>
+
         <TabsContent value="whiteboard" className="flex-1 mt-4">
-            <WhiteboardDashboardPage />
+          <WhiteboardDashboardPage />
         </TabsContent>
+
         <TabsContent value="mind-map" className="flex-1 mt-4">
-            <MindMapDashboardPage />
+          <MindMapDashboardPage />
         </TabsContent>
+
         <TabsContent value="presentation" className="flex-1 mt-4">
-            <PresentationGenerator />
+          <PresentationGenerator />
         </TabsContent>
       </Tabs>
     </div>

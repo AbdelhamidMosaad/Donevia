@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@genkit-ai/google-genai": "^1.18.0",
     "@genkit-ai/googleai": "^1.14.1",
     "@genkit-ai/next": "^1.14.1",
     "@hello-pangea/dnd": "^16.6.0",
@@ -63,6 +64,7 @@
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.11",
     "diff-match-patch": "^1.0.5",
+    "docx": "^9.5.1",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
     "file-saver": "^2.0.5",
@@ -76,6 +78,7 @@
     "jotai": "^2.9.0",
     "jspdf": "^3.0.4",
     "jszip": "^3.10.1",
+    "lodash.throttle": "^4.1.1",
     "lucide-react": "^0.475.0",
     "marked": "^17.0.1",
     "moment": "^2.30.1",
@@ -92,6 +95,7 @@
     "react-dropzone": "^14.2.3",
     "react-hook-form": "^7.54.2",
     "react-resizable-panels": "^2.0.19",
+    "react-rnd": "^10.5.2",
     "recharts": "^2.15.1",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
