@@ -1,3 +1,4 @@
+
 'use client';
 import { Node, mergeAttributes } from '@tiptap/core';
 
@@ -23,7 +24,7 @@ export const Callout = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'tiptap-callout' }), 0];
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout' }), 0];
   },
 
   addCommands() {

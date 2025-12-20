@@ -1,3 +1,4 @@
+
 'use client';
 import { Node, mergeAttributes } from '@tiptap/core';
 
@@ -23,7 +24,7 @@ export const Equation = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'equation', class: 'tiptap-equation' }), 0];
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'equation' }), 0];
   },
 
   addCommands() {

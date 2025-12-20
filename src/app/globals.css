@@ -333,22 +333,32 @@ body {
   .prose p {
     @apply text-base;
   }
+  .prose table {
+    @apply w-full my-4 border-collapse border border-border;
+  }
+  .prose th, .prose td {
+    @apply border border-border px-4 py-2;
+  }
+  .prose thead {
+    @apply bg-muted/50;
+  }
+  .prose blockquote {
+    @apply border-l-4 border-primary pl-4 italic;
+  }
   
-  /* Callout block styling */
-  .prose div[data-type="callout"] {
+  div[data-type="callout"] {
     @apply p-4 my-6 bg-muted border-l-4 border-primary rounded-r-lg;
   }
   
-  .prose div[data-type="callout"] p {
+  div[data-type="callout"] p {
     @apply my-0;
   }
 
-  /* Equation block styling */
-  #editor div[data-type="equation"] {
-    @apply relative p-4 my-6 bg-muted rounded-lg font-code;
+  div[data-type="equation"] {
+    @apply relative p-4 my-6 bg-muted rounded-lg font-mono;
   }
   
-  #editor div[data-type="equation"]::before {
+  div[data-type="equation"]::before {
     content: "ƒ(x)";
     @apply absolute top-2 left-2 text-xs text-muted-foreground;
   }

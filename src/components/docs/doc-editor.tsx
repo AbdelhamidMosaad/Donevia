@@ -140,7 +140,7 @@ export function DocEditor({ doc: initialDoc, onEditorInstance, onContentChange }
     editorProps: {
       attributes: {
         id: 'editor',
-        class: 'prose prose-sm prose-black dark:prose-invert max-w-full focus:outline-none p-4 md:p-8',
+        class: 'prose dark:prose-invert max-w-full focus:outline-none p-4 md:p-8',
       },
     },
     onUpdate: ({ editor }) => {

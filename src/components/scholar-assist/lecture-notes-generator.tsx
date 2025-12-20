@@ -15,6 +15,7 @@ import { Packer, Document, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { marked } from 'marked';
 
 export function LectureNotesGenerator() {
   const { user } = useAuth();
@@ -59,7 +60,12 @@ export function LectureNotesGenerator() {
     result.sections.forEach(section => {
         docChildren.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, style: "Heading2" }));
         section.content.forEach(point => {
-            docChildren.push(new Paragraph({ text: point, bullet: { level: 0 } }));
+            // A simple check for list items vs paragraphs
+            const isListItem = point.trim().startsWith('- ') || point.trim().startsWith('* ');
+            docChildren.push(new Paragraph({ 
+                text: isListItem ? point.substring(2) : point, 
+                bullet: isListItem ? { level: 0 } : undefined 
+            }));
         });
     });
 
@@ -85,12 +91,14 @@ export function LectureNotesGenerator() {
 
     result.sections.forEach(section => {
         contentBlocks.push({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: section.heading }] });
-        contentBlocks.push({
-            type: 'bulletList',
-            content: section.content.map(point => ({
-                type: 'listItem',
-                content: [{ type: 'paragraph', content: [{ type: 'text', text: point }] }]
-            }))
+        section.content.forEach(point => {
+            if (point.includes('|')) { // Basic table check
+                // This is a simplification. Tiptap table structure is more complex.
+                // For now, we'll insert as a code block to preserve formatting.
+                 contentBlocks.push({ type: 'codeBlock', content: [{ type: 'text', text: point }] });
+            } else {
+                 contentBlocks.push({ type: 'paragraph', content: [{ type: 'text', text: point }] });
+            }
         });
     });
 
@@ -138,9 +146,9 @@ export function LectureNotesGenerator() {
                 {result.sections.map((section, i) => (
                   <div key={i}>
                     <h3>{section.heading}</h3>
-                    <ul>
-                      {section.content.map((point, j) => <li key={j}>{point}</li>)}
-                    </ul>
+                    {section.content.map((point, j) => (
+                      <div key={j} dangerouslySetInnerHTML={{ __html: marked(point) as string }} />
+                    ))}
                   </div>
                 ))}
                 <h3>Summary</h3>
