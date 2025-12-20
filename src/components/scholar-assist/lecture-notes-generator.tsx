@@ -60,12 +60,8 @@ export function LectureNotesGenerator() {
     result.sections.forEach(section => {
         docChildren.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, style: "Heading2" }));
         section.content.forEach(point => {
-            // A simple check for list items vs paragraphs
-            const isListItem = point.trim().startsWith('- ') || point.trim().startsWith('* ');
-            docChildren.push(new Paragraph({ 
-                text: isListItem ? point.substring(2) : point, 
-                bullet: isListItem ? { level: 0 } : undefined 
-            }));
+            // Treat every point as a plain paragraph
+            docChildren.push(new Paragraph({ text: point }));
         });
     });
 
@@ -92,13 +88,7 @@ export function LectureNotesGenerator() {
     result.sections.forEach(section => {
         contentBlocks.push({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: section.heading }] });
         section.content.forEach(point => {
-            if (point.includes('|')) { // Basic table check
-                // This is a simplification. Tiptap table structure is more complex.
-                // For now, we'll insert as a code block to preserve formatting.
-                 contentBlocks.push({ type: 'codeBlock', content: [{ type: 'text', text: point }] });
-            } else {
-                 contentBlocks.push({ type: 'paragraph', content: [{ type: 'text', text: point }] });
-            }
+             contentBlocks.push({ type: 'paragraph', content: [{ type: 'text', text: point }] });
         });
     });
 
@@ -112,6 +102,7 @@ export function LectureNotesGenerator() {
             ownerId: user.uid,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
+            folderId: null,
         });
         toast({ title: '✓ Saved to Docs' });
         router.push(`/docs/${docRef.id}`);
@@ -147,7 +138,7 @@ export function LectureNotesGenerator() {
                   <div key={i}>
                     <h3>{section.heading}</h3>
                     {section.content.map((point, j) => (
-                      <div key={j} dangerouslySetInnerHTML={{ __html: marked(point) as string }} />
+                      <p key={j}>{point}</p>
                     ))}
                   </div>
                 ))}
