@@ -24,7 +24,6 @@ import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
 import Image from 'next/image';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import PptxGenJS from 'pptxgenjs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -32,7 +31,6 @@ import { useDropzone } from 'react-dropzone';
 import JSZip from 'jszip';
 import { ProcessDiagram } from './smart-art/ProcessDiagram';
 import { CycleDiagram } from './smart-art/CycleDiagram';
-
 
 let pdfjs: any;
 
@@ -184,7 +182,7 @@ const VisualSuggestion = ({ visual, index }: { visual?: Slide['visual']; index: 
 }
 
 
-export function PresentationGenerator() {
+export default function PresentationGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -196,6 +194,7 @@ export function PresentationGenerator() {
   const [isParsing, setIsParsing] = useState(false);
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [pptx, setPptx] = useState<any>(null);
   
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -208,6 +207,11 @@ export function PresentationGenerator() {
         setPdfjsLoaded(true);
     };
     document.body.appendChild(script);
+
+    // Dynamically import pptxgenjs on the client side
+    import('pptxgenjs').then(module => {
+      setPptx(module.default || module);
+    });
 
     return () => {
       document.body.removeChild(script);
@@ -277,17 +281,17 @@ export function PresentationGenerator() {
   };
   
    const handleExportPPTX = async () => {
-    if (!response) return;
+    if (!response || !pptx) return;
     setIsExporting(true);
 
     try {
-      const pptx = new PptxGenJS();
+      const pres = new pptx();
       const templateStyle = templates.find(t => t.id === selectedTemplate)?.pptx || templates[0].pptx;
       
       const layoutName = 'LAYOUT_16x9'; // Always use widescreen for now
-      pptx.layout = layoutName;
+      pres.layout = layoutName;
       
-      pptx.defineSlideMaster({
+      pres.defineSlideMaster({
         title: 'MASTER_SLIDE',
         background: { color: templateStyle.backgroundColor },
       });
@@ -295,7 +299,7 @@ export function PresentationGenerator() {
       for (const [index, slide] of response.slides.entries()) {
         const isTitleSlide = index === 0;
         const isLastSlide = index === response.slides.length - 1;
-        const pptxSlide = pptx.addSlide({ masterName: 'MASTER_SLIDE' });
+        const pptxSlide = pres.addSlide({ masterName: 'MASTER_SLIDE' });
 
         if (isTitleSlide) {
           pptxSlide.addText(response.title, { 
@@ -338,9 +342,9 @@ export function PresentationGenerator() {
               const imageUrl = `https://picsum.photos/seed/${slide.visual.items?.[0]?.replace(/\s+/g, '-')}-${index}/600/400`;
 
               if (slide.visual.type === 'chart' && lowerSuggestion.includes('bar')) {
-                 pptxSlide.addChart(pptx.ChartType.bar, chartData, { x: 5.5, y: 1.5, w: 4, h: 4, barDir: 'bar' });
+                 pptxSlide.addChart(pres.ChartType.bar, chartData, { x: 5.5, y: 1.5, w: 4, h: 4, barDir: 'bar' });
               } else if (slide.visual.type === 'chart' && lowerSuggestion.includes('pie')) {
-                  pptxSlide.addChart(pptx.ChartType.pie, chartData, { x: 5.5, y: 1.5, w: 4, h: 4, showLegend: true });
+                  pptxSlide.addChart(pres.ChartType.pie, chartData, { x: 5.5, y: 1.5, w: 4, h: 4, showLegend: true });
               } else {
                  // For process, cycle, icon, image, timeline we use a placeholder image
                  pptxSlide.addImage({ path: imageUrl, x: 5.5, y: 1.5, w: 4, h: 4 });
@@ -353,7 +357,7 @@ export function PresentationGenerator() {
         }
       }
 
-      await pptx.writeFile({ fileName: `${response.title}.pptx` });
+      await pres.writeFile({ fileName: `${response.title}.pptx` });
       toast({title: "Export successful!", description: "Your presentation has been downloaded."});
 
     } catch (error) {
@@ -730,9 +734,9 @@ export function PresentationGenerator() {
 
         <div className="flex justify-center gap-2">
           <Button onClick={handleReset}>New Presentation</Button>
-           <Button onClick={handleExportPPTX} disabled={isExporting}>
+           <Button onClick={handleExportPPTX} disabled={isExporting || !pptx}>
             <MonitorPlay className="mr-2 h-4 w-4" />
-            {isExporting ? 'Exporting...' : 'Export PPTX'}
+            {isExporting ? 'Exporting...' : !pptx ? 'Loading lib...' : 'Export PPTX'}
           </Button>
            <Button onClick={handleExportPDF} disabled={isExporting}>
             <FileText className="mr-2 h-4 w-4" />
