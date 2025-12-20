@@ -7,7 +7,7 @@ import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '../ui/button';
-import { Loader2, Download, RefreshCw, Save } from 'lucide-react';
+import { Loader2, Download, RefreshCw, Save, FileText } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { generateLectureNotes, type LectureNotesResponse } from '@/ai/flows/lecture-notes-flow';
 import { saveAs } from 'file-saver';
@@ -16,6 +16,12 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { marked } from 'marked';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+
+const availableFonts = [
+    'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans 3', 'Nunito', 'Montserrat', 'Playfair Display', 'JetBrains Mono', 'Bahnschrift'
+];
 
 export function LectureNotesGenerator() {
   const { user } = useAuth();
@@ -24,6 +30,7 @@ export function LectureNotesGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState<LectureNotesResponse | null>(null);
+  const [exportFont, setExportFont] = useState('Inter');
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -52,23 +59,38 @@ export function LectureNotesGenerator() {
   const handleExportWord = () => {
     if (!result) return;
     
+    const createStyledParagraph = (text: string, options: any = {}) => {
+        return new Paragraph({
+            ...options,
+            children: [new TextRun({ text, font: exportFont })],
+        });
+    };
+    
     const docChildren = [
-        new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
-        new Paragraph({ text: result.overview, heading: HeadingLevel.HEADING_3, style: "Heading3" }),
+        createStyledParagraph(result.title, { heading: HeadingLevel.TITLE }),
+        createStyledParagraph(result.overview, { heading: HeadingLevel.HEADING_3, style: "Heading3" }),
     ];
 
     result.sections.forEach(section => {
-        docChildren.push(new Paragraph({ text: section.heading, heading: HeadingLevel.HEADING_2, style: "Heading2" }));
+        docChildren.push(createStyledParagraph(section.heading, { heading: HeadingLevel.HEADING_2, style: "Heading2" }));
         section.content.forEach(point => {
-            // Treat every point as a plain paragraph
-            docChildren.push(new Paragraph({ text: point }));
+            docChildren.push(createStyledParagraph(point));
         });
     });
 
-    docChildren.push(new Paragraph({ text: "Summary", heading: HeadingLevel.HEADING_2, style: "Heading2" }));
-    docChildren.push(new Paragraph(result.summary));
+    docChildren.push(createStyledParagraph("Summary", { heading: HeadingLevel.HEADING_2, style: "Heading2" }));
+    docChildren.push(createStyledParagraph(result.summary));
 
-    const doc = new Document({ sections: [{ children: docChildren }] });
+    const doc = new Document({ 
+        sections: [{ children: docChildren }],
+        styles: {
+            default: {
+                document: {
+                    run: { font: exportFont }
+                }
+            }
+        }
+    });
 
     Packer.toBlob(doc).then(blob => {
         saveAs(blob, `${result.title.replace(/ /g, '_')}_notes.docx`);
@@ -150,10 +172,31 @@ export function LectureNotesGenerator() {
           <CardFooter className="justify-end gap-2">
             <Button variant="outline" onClick={handleReset}><RefreshCw/> Generate New</Button>
             <Button onClick={handleSaveToDocs} disabled={isSaving}>
-                {isSaving ? <Loader2/> : <Save/>}
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save/>}
                 Save to Docs
             </Button>
-            <Button variant="outline" onClick={handleExportWord}><Download/> Export .docx</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline"><Download/> Export</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Export as Word (.docx)</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                      <div className="p-2 space-y-2">
+                        <label className="text-xs font-medium">Select Font</label>
+                         <Select value={exportFont} onValueChange={setExportFont}>
+                           <SelectTrigger><SelectValue/></SelectTrigger>
+                           <SelectContent>
+                             {availableFonts.map(font => <SelectItem key={font} value={font}>{font}</SelectItem>)}
+                           </SelectContent>
+                         </Select>
+                         <Button className="w-full" size="sm" onClick={handleExportWord}>Confirm Export</Button>
+                      </div>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardFooter>
         </Card>
       );
