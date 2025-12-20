@@ -28,8 +28,7 @@ const lectureNotesPrompt = ai.definePrompt({
         *   Identify the key concepts, main points, important definitions, and examples.
         *   Organize these into logical sections. Each section must have a clear \`heading\`.
         *   The \`content\` for each section should be an array of strings.
-        *   **Use Markdown for tables** if the source material contains tabular data.
-        *   **Use bullet points ONLY if they are necessary** for clarity (e.g., for lists of items). Otherwise, use plain paragraphs.
+        *   **Use plain paragraphs for all content, including lists.** Do NOT use Markdown for lists or any other formatting.
         *   **Crucially, preserve all important formulas, numbers, technical content, and specific examples from the source text. Format equations correctly and clearly.**
         *   If the source text is from slides, combine fragmented bullet points into meaningful explanations.
     5.  **Summarize Key Takeaways**: Create a final summary of the most critical points. Place this in the \`summary\` field.
