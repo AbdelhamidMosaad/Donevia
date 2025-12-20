@@ -29,7 +29,7 @@ const lectureNotesPrompt = ai.definePrompt({
         *   Organize these into logical sections. Each section must have a clear \`heading\`.
         *   The \`content\` for each section should be an array of strings.
         *   **Use plain paragraphs for all content, including lists.** Do NOT use Markdown for lists or any other formatting.
-        *   **Crucially, preserve all important formulas, numbers, technical content, and specific examples from the source text. Format equations correctly and clearly.**
+        *   **Crucially, preserve all important formulas, numbers, technical content, and specific examples from the source text. Format equations correctly and clearly using Unicode characters where appropriate (e.g., ∑, ∫, √, exponents with superscripts like x², subscripts like H₂O).**
         *   If the source text is from slides, combine fragmented bullet points into meaningful explanations.
     5.  **Summarize Key Takeaways**: Create a final summary of the most critical points. Place this in the \`summary\` field.
     6.  **No Hallucination**: If any part of the document is unreadable or ambiguous, do not invent content. You can mention "Some content was unclear in the original document" in a relevant section if necessary.

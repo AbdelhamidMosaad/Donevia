@@ -355,12 +355,7 @@ body {
   }
 
   div[data-type="equation"] {
-    @apply relative p-4 my-6 bg-muted rounded-lg font-mono;
-  }
-  
-  div[data-type="equation"]::before {
-    content: "ƒ(x)";
-    @apply absolute top-2 left-2 text-xs text-muted-foreground;
+    @apply relative p-4 my-6 bg-muted rounded-lg font-mono border text-lg;
   }
 
   #editor a { color: #007bff; text-decoration: underline; }
