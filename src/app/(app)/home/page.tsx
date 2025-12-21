@@ -16,7 +16,6 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PlannerIcon } from '@/components/icons/tools/planner-icon';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
-import { CrmIcon } from '@/components/icons/tools/crm-icon';
 import { HabitsIcon } from '@/components/icons/tools/habits-icon';
 import { GoalsIcon } from '@/components/icons/tools/goals-icon';
 import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
@@ -40,7 +39,6 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     planner: PlannerIcon,
     tasks: TasksIcon,
     'to-do-list': ListTodo,
-    crm: CrmIcon,
     habits: HabitsIcon,
     goals: GoalsIcon,
     'study-tracker': StudyTrackerIcon,
@@ -64,7 +62,6 @@ const allTools = [
     { id: 'planner', href: '/planner', title: 'Planner', description: 'Organize your time, events, and tasks.' },
     { id: 'tasks', href: '/dashboard/lists', title: 'Task Management', description: 'Manage projects with boards, lists, and calendars.' },
     { id: 'to-do-list', href: '/to-do-list', title: 'To-do List', description: 'A simple list for daily and weekly tasks.' },
-    { id: 'crm', href: '/crm', title: 'CRM', description: 'Manage clients, sales pipeline, and invoices.' },
     { id: 'habits', href: '/habits', title: 'Habit Tracker', description: 'Build consistency and track your daily habits.' },
     { id: 'goals', href: '/goals', title: 'Goal Tracker', description: 'Define, track, and achieve your ambitions.' },
     { id: 'study-tracker', href: '/study-tracker', title: 'Study Tracker', description: 'Plan and gamify your learning sessions.' },

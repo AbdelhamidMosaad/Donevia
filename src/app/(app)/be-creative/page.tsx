@@ -11,15 +11,8 @@ import BrainstormingPage from '../brainstorming/page';
 import WhiteboardDashboardPage from '../whiteboard/page';
 import MindMapDashboardPage from '../mind-map/page';
 
-import dynamic from 'next/dynamic';
-
-const PresentationGenerator = dynamic(
-  () => import('@/components/be-creative/presentation-generator'),
-  {
-    ssr: false,
-    loading: () => <div>Loading Presentation Tool...</div>,
-  }
-);
+// Import the wrapper instead of dynamic import
+import PresentationGeneratorWrapper from '@/components/be-creative/presentation-generator-wrapper';
 
 export default function BeCreativePage() {
   return (
@@ -67,7 +60,7 @@ export default function BeCreativePage() {
         </TabsContent>
 
         <TabsContent value="presentation" className="flex-1 mt-4">
-          <PresentationGenerator />
+          <PresentationGeneratorWrapper />
         </TabsContent>
       </Tabs>
     </div>

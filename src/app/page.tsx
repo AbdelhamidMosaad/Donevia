@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, LayoutDashboard, BrainCircuit, GitBranch, Repeat, Briefcase, GraduationCap } from 'lucide-react';
+import { CheckCircle, LayoutDashboard, BrainCircuit, GitBranch, Repeat, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DoneviaLogo } from '@/components/logo';
@@ -63,7 +63,7 @@ export default function Home() {
                     The Unified Workspace for Peak Performance
                   </h1>
                   <p className="max-w-[700px] mx-auto text-gray-600 md:text-xl">
-                    Stop switching between apps. Donevia brings your tasks, notes, habits, clients, and goals into one intelligent platform designed for focus and growth.
+                    Stop switching between apps. Donevia brings your tasks, notes, habits, and goals into one intelligent platform designed for focus and growth.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -78,35 +78,35 @@ export default function Home() {
         <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-white/60 backdrop-blur-md">
             <div className="container px-4 md:px-6 space-y-20">
                 
-                {/* Feature 1: Advanced CRM */}
+                {/* Feature 1: AI Learning Tools */}
                 <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
                     <div className="space-y-4">
-                        <div className="inline-block rounded-lg bg-violet-100 px-3 py-1 text-sm text-violet-700 font-medium">Advanced CRM</div>
-                        <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl text-gray-900">From Lead to Invoice, Seamlessly</h2>
+                        <div className="inline-block rounded-lg bg-violet-100 px-3 py-1 text-sm text-violet-700 font-medium">AI Learning Tools</div>
+                        <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl text-gray-900">Learn Smarter, Not Harder</h2>
                         <p className="text-gray-600 md:text-lg">
-                            Transform your client management with a powerful, visual pipeline. Track requests, manage sales stages, and analyze performance without leaving your workspace.
+                           Turn any document, lecture, or text into a powerful learning asset. Our AI tools help you understand and retain information more effectively.
                         </p>
                         <ul className="grid gap-3">
                             <li className="flex items-start gap-3">
                                 <CheckCircle className="mt-1 h-5 w-5 text-violet-600" />
-                                <span><strong>Visual Kanban Pipeline:</strong> Drag-and-drop client requests through customizable stages from 'New Request' to 'Win'.</span>
+                                <span><strong>Instant Notes:</strong> Upload a file (PDF, DOCX) or paste text to generate comprehensive, well-structured notes.</span>
                             </li>
                              <li className="flex items-start gap-3">
                                 <CheckCircle className="mt-1 h-5 w-5 text-violet-600" />
-                                <span><strong>Insightful Analytics:</strong> Track win/loss ratios, deal values, and loss reasons to optimize your sales process.</span>
+                                <span><strong>Custom Quizzes:</strong> Test your knowledge by creating quizzes with various question types and get instant feedback.</span>
                             </li>
                             <li className="flex items-start gap-3">
                                 <CheckCircle className="mt-1 h-5 w-5 text-violet-600" />
-                                <span><strong>Integrated Client Hub:</strong> Manage client details, custom fields, quotations, and invoices all in one place.</span>
+                                <span><strong>Interactive Flashcards:</strong> Master key concepts with generated flashcards, perfect for quick review sessions.</span>
                             </li>
                         </ul>
                     </div>
                      <Image
-                        src="https://images.unsplash.com/photo-1542626991-cbc4e32524cc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0YXNrJTIwbWFuYWdlbWVudHxlbnwwfHx8fDE3NTcyNDE3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                        src="https://images.unsplash.com/photo-1483058712412-4245e9b90334?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwcm9kdWN0aXZpdHl8ZW58MHx8fHwxNzU3MjQyMDAyfDA&ixlib=rb-4.1.0&q=80&w=1080"
                         width="600"
                         height="400"
-                        alt="CRM Feature"
-                        data-ai-hint="crm pipeline dashboard"
+                        alt="AI Learning Tools"
+                        data-ai-hint="ai learning study"
                         className="mx-auto aspect-video overflow-hidden rounded-xl object-cover"
                       />
                 </div>
@@ -138,39 +138,6 @@ export default function Home() {
                             </li>
                         </ul>
                     </div>
-                </div>
-
-                 {/* Feature 3: AI Learning Tools */}
-                <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-                    <div className="space-y-4">
-                        <div className="inline-block rounded-lg bg-violet-100 px-3 py-1 text-sm text-violet-700 font-medium">AI Learning Tools</div>
-                        <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl text-gray-900">Learn Smarter, Not Harder</h2>
-                        <p className="text-gray-600 md:text-lg">
-                           Turn any document, lecture, or text into a powerful learning asset. Our AI tools help you understand and retain information more effectively.
-                        </p>
-                        <ul className="grid gap-3">
-                            <li className="flex items-start gap-3">
-                                <CheckCircle className="mt-1 h-5 w-5 text-violet-600" />
-                                <span><strong>Instant Notes:</strong> Upload a file (PDF, DOCX) or paste text to generate comprehensive, well-structured notes.</span>
-                            </li>
-                             <li className="flex items-start gap-3">
-                                <CheckCircle className="mt-1 h-5 w-5 text-violet-600" />
-                                <span><strong>Custom Quizzes:</strong> Test your knowledge by creating quizzes with various question types and get instant feedback.</span>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <CheckCircle className="mt-1 h-5 w-5 text-violet-600" />
-                                <span><strong>Interactive Flashcards:</strong> Master key concepts with generated flashcards, perfect for quick review sessions.</span>
-                            </li>
-                        </ul>
-                    </div>
-                     <Image
-                        src="https://images.unsplash.com/photo-1483058712412-4245e9b90334?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwcm9kdWN0aXZpdHl8ZW58MHx8fHwxNzU3MjQyMDAyfDA&ixlib=rb-4.1.0&q=80&w=1080"
-                        width="600"
-                        height="400"
-                        alt="AI Learning Tools"
-                        data-ai-hint="ai learning study"
-                        className="mx-auto aspect-video overflow-hidden rounded-xl object-cover"
-                      />
                 </div>
             </div>
         </section>
@@ -206,12 +173,7 @@ export default function Home() {
                     <h3 className="font-bold font-headline text-xl text-gray-900">Habit Tracker</h3>
                     <p className="text-gray-600">Build consistency and achieve your goals by tracking your daily habits.</p>
                 </div>
-                 <div className="flex flex-col items-center text-center gap-2">
-                    <div className="p-3 rounded-full bg-blue-100"><Briefcase className="h-8 w-8 text-blue-600" /></div>
-                    <h3 className="font-bold font-headline text-xl text-gray-900">Advanced CRM</h3>
-                    <p className="text-gray-600">Manage your entire sales pipeline from lead to invoice with our integrated CRM.</p>
-                </div>
-                 <div className="flex flex-col items-center text-center gap-2">
+                <div className="flex flex-col items-center text-center gap-2">
                     <div className="p-3 rounded-full bg-blue-100"><GraduationCap className="h-8 w-8 text-blue-600" /></div>
                     <h3 className="font-bold font-headline text-xl text-gray-900">AI Learning Tools</h3>
                     <p className="text-gray-600">Turn any document into notes, quizzes, and flashcards instantly.</p>

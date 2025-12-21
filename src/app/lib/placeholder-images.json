@@ -24,18 +24,6 @@
     "src": "https://picsum.photos/seed/6/600/400",
     "hint": "calendar schedule tasks"
   },
-  "contactsListCrm": {
-    "src": "https://picsum.photos/seed/7/600/400",
-    "hint": "contacts list crm"
-  },
-  "salesPipelineFlowchart": {
-    "src": "https://picsum.photos/seed/8/600/400",
-    "hint": "sales pipeline flowchart"
-  },
-  "invoiceDocumentBilling": {
-    "src": "https://picsum.photos/seed/9/600/400",
-    "hint": "invoice document billing"
-  },
   "calendarCheckmarkHabit": {
     "src": "https://picsum.photos/seed/10/600/400",
     "hint": "calendar checkmark habit"

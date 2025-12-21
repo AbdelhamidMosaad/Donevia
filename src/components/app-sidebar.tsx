@@ -30,7 +30,6 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { cn } from '@/lib/utils';
 import { PlannerIcon } from '@/components/icons/tools/planner-icon';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
-import { CrmIcon } from '@/components/icons/tools/crm-icon';
 import { HabitsIcon } from '@/components/icons/tools/habits-icon';
 import { GoalsIcon } from '@/components/icons/tools/goals-icon';
 import { StudyTrackerIcon } from '@/components/icons/tools/study-tracker-icon';
@@ -41,14 +40,11 @@ import { BookmarksIcon } from '@/components/icons/tools/bookmarks-icon';
 import { TradingTrackerIcon } from '@/components/icons/tools/trading-tracker-icon';
 import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
 import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
-import { BrainstormingIcon } from '@/components/icons/tools/brainstorming-icon';
-import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
 import { DocsIcon } from '@/components/icons/tools/docs-icon';
 import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from './icons/tools/interview-prep-icon';
 import { JournalIcon } from './icons/tools/journal-icon';
-import { MindMapIcon } from './icons/tools/mind-map-icon';
 import { BeCreativeIcon } from './icons/tools/be-creative-icon';
 import { CreateWithAiIcon } from './icons/tools/create-with-ai-icon';
 
@@ -57,7 +53,6 @@ const defaultMenuItems = [
     { href: '/planner', icon: <PlannerIcon />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
     { href: '/dashboard/lists', icon: <TasksIcon />, label: 'Tasks', tooltip: 'Task Management', id: 'tasks' },
     { href: '/to-do-list', icon: <ListTodo />, label: 'To-do List', tooltip: 'To-do List', id: 'to-do-list' },
-    { href: '/crm', icon: <CrmIcon />, label: 'CRM', tooltip: 'CRM', id: 'crm' },
     { href: '/journal', icon: <JournalIcon />, label: 'Journal', tooltip: 'Journal', id: 'journal' },
     { href: '/habits', icon: <HabitsIcon />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <GoalsIcon />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
@@ -107,9 +102,6 @@ export function AppSidebar() {
     }
      if (href === '/dashboard/lists') {
       return pathname.startsWith('/dashboard');
-    }
-     if (href === '/crm') {
-      return pathname === '/crm' || pathname.startsWith('/crm/');
     }
      if (href === '/flashcards') {
       return pathname.startsWith('/flashcards') && !pathname.startsWith('/flashcards/public');
