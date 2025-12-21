@@ -43,11 +43,16 @@ const nextConfig: NextConfig = {
     ],
   },
   
-  // CRITICAL: Aggressive webpack configuration
   webpack: (config, { isServer, dev, webpack }) => {
     // Prevent processing of pptxgenjs during build
     config.module.rules.push({
       test: /pptxgenjs[\\/].*\.(js|mjs|jsx|ts|tsx)$/,
+      use: 'null-loader'
+    });
+    
+    // Add handlebars rule
+    config.module.rules.push({
+      test: /handlebars/,
       use: 'null-loader'
     });
 
@@ -88,40 +93,3 @@ const isDev = process.env.NODE_ENV === 'development';
 const config = isDev ? nextConfig : withPWA(nextConfig);
 
 export default config;
-webpack: (config, { isServer, webpack }) => {
-  // Prevent processing of pptxgenjs during build
-  config.module.rules.push({
-    test: /pptxgenjs[\\/].*\.(js|mjs|jsx|ts|tsx)$/,
-    use: 'null-loader'
-  });
-  
-  // Add handlebars rule
-  config.module.rules.push({
-    test: /handlebars/,
-    use: 'null-loader'
-  });
-
-  // ... rest of your config ...
-}
-const nextConfig: NextConfig = {
-  // ... existing config ...
-  
-  // Skip problematic API routes during build
-  experimental: {
-    // This will skip the problematic API route during build
-    dynamicIO: true,
-  },
-  
-  // Or use rewrites to bypass during build
-  async rewrites() {
-    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
-      return [
-        {
-          source: '/api/crm/upload',
-          destination: '/api/health', // Create a simple health endpoint
-        }
-      ];
-    }
-    return [];
-  },
-};
