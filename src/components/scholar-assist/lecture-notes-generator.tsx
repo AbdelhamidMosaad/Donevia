@@ -11,11 +11,9 @@ import { Loader2, Download, RefreshCw, Save, FileText } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { generateLectureNotes, type LectureNotesResponse } from '@/ai/flows/lecture-notes-flow';
 import { saveAs } from 'file-saver';
-import { Packer, Document, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { marked } from 'marked';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -31,6 +29,13 @@ export function LectureNotesGenerator() {
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState<LectureNotesResponse | null>(null);
   const [exportFont, setExportFont] = useState('Inter');
+  const [docx, setDocx] = useState<any>(null);
+
+  useState(() => {
+    import('docx').then(module => {
+      setDocx(module);
+    });
+  });
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -57,8 +62,13 @@ export function LectureNotesGenerator() {
   };
 
   const handleExportWord = () => {
-    if (!result) return;
+    if (!result || !docx) {
+        toast({ variant: 'destructive', title: 'Export library not ready.' });
+        return;
+    };
     
+    const { Packer, Document, Paragraph, TextRun, HeadingLevel } = docx;
+
     const createStyledParagraph = (text: string, options: any = {}) => {
         return new Paragraph({
             ...options,
@@ -81,7 +91,7 @@ export function LectureNotesGenerator() {
     docChildren.push(createStyledParagraph("Summary", { heading: HeadingLevel.HEADING_2, style: "Heading2" }));
     docChildren.push(createStyledParagraph(result.summary));
 
-    const doc = new Document({ 
+    const docInstance = new Document({ 
         sections: [{ children: docChildren }],
         styles: {
             default: {
@@ -92,7 +102,7 @@ export function LectureNotesGenerator() {
         }
     });
 
-    Packer.toBlob(doc).then(blob => {
+    Packer.toBlob(docInstance).then(blob => {
         saveAs(blob, `${result.title.replace(/ /g, '_')}_notes.docx`);
     });
     toast({ title: '✓ Exporting as Word document' });
@@ -191,7 +201,9 @@ export function LectureNotesGenerator() {
                              {availableFonts.map(font => <SelectItem key={font} value={font}>{font}</SelectItem>)}
                            </SelectContent>
                          </Select>
-                         <Button className="w-full" size="sm" onClick={handleExportWord}>Confirm Export</Button>
+                         <Button className="w-full" size="sm" onClick={handleExportWord} disabled={!docx}>
+                           {docx ? 'Confirm Export' : 'Loading...'}
+                         </Button>
                       </div>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
