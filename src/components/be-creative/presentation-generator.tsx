@@ -24,8 +24,6 @@ import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
 import Image from 'next/image';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useDropzone } from 'react-dropzone';
 import JSZip from 'jszip';
@@ -367,6 +365,9 @@ export default function PresentationGenerator() {
     setIsExporting(true);
 
     try {
+        const { default: jsPDF } = await import('jspdf');
+        const { default: html2canvas } = await import('html2canvas');
+
         const isLandscape = true; // Always 16:9 for now
         const pdf = new jsPDF({
             orientation: isLandscape ? 'landscape' : 'portrait',
@@ -754,5 +755,3 @@ export default function PresentationGenerator() {
 
   return response ? renderResults() : renderInitialState();
 }
-
-    
