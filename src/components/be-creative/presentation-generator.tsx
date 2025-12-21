@@ -199,23 +199,18 @@ export default function PresentationGenerator() {
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
    useEffect(() => {
-    const script = document.createElement('script');
-    script.src = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js`;
-    script.onload = () => {
-        pdfjs = (window as any).pdfjsLib;
+    // Dynamically import client-side libraries
+    const loadLibs = async () => {
+        const pdfjsLib = await import('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js');
+        pdfjs = pdfjsLib.default;
         pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js`;
         setPdfjsLoaded(true);
-    };
-    document.body.appendChild(script);
 
-    // Dynamically import pptxgenjs on the client side
-    import('pptxgenjs').then(module => {
-      setPptx(module.default || module);
-    });
-
-    return () => {
-      document.body.removeChild(script);
+        const pptxgen = await import('pptxgenjs');
+        setPptx(pptxgen.default || pptxgen);
     };
+
+    loadLibs();
   }, []);
 
   useEffect(() => {
@@ -647,7 +642,7 @@ export default function PresentationGenerator() {
                 
                 return (
                   <CarouselItem key={index}>
-                    <div ref={slideRefs.current[index]}>
+                    <div ref={el => slideRefs.current[index] = el}>
                     <Card className={cn(
                         "h-full flex flex-col p-6 aspect-[16/9]",
                         templateStyle.bg, 
@@ -759,3 +754,5 @@ export default function PresentationGenerator() {
 
   return response ? renderResults() : renderInitialState();
 }
+
+    
