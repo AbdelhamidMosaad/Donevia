@@ -1,4 +1,3 @@
-
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -9,7 +8,6 @@ const withPWA = require('next-pwa')({
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -44,12 +42,24 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  
+  // Add webpack configuration to handle Node.js modules
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        https: false,
+        http: false,
+        stream: false,
+        crypto: false,
+      };
+    }
+    return config;
+  },
 };
 
-
 const isDev = process.env.NODE_ENV === 'development';
-
-// Only wrap with PWA config in production.
 const config = isDev ? nextConfig : withPWA(nextConfig);
 
 export default config;
