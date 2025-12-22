@@ -5,14 +5,10 @@ import { BeCreativeIcon } from '@/components/icons/tools/be-creative-icon';
 import { BrainstormingIcon } from '@/components/icons/tools/brainstorming-icon';
 import { WhiteboardIcon } from '@/components/icons/tools/whiteboard-icon';
 import { MindMapIcon } from '@/components/icons/tools/mind-map-icon';
-import { PresentationIcon } from '@/components/icons/tools/presentation-icon';
 
 import BrainstormingPage from '../brainstorming/page';
 import WhiteboardDashboardPage from '../whiteboard/page';
 import MindMapDashboardPage from '../mind-map/page';
-
-// Import the wrapper instead of dynamic import
-import PresentationGeneratorWrapper from '@/components/be-creative/presentation-generator-wrapper';
 
 export default function BeCreativePage() {
   return (
@@ -27,7 +23,7 @@ export default function BeCreativePage() {
         </div>
       </div>
 
-      <Tabs defaultValue="presentation" className="flex-1 flex flex-col min-h-0">
+      <Tabs defaultValue="brainstorming" className="flex-1 flex flex-col min-h-0">
         <TabsList>
           <TabsTrigger value="brainstorming">
             <BrainstormingIcon className="mr-2 h-4 w-4" />
@@ -41,10 +37,6 @@ export default function BeCreativePage() {
             <MindMapIcon className="mr-2 h-4 w-4" />
             Mind Map
           </TabsTrigger>
-          <TabsTrigger value="presentation">
-            <PresentationIcon className="mr-2 h-4 w-4" />
-            Presentation
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="brainstorming" className="flex-1 mt-4">
@@ -57,10 +49,6 @@ export default function BeCreativePage() {
 
         <TabsContent value="mind-map" className="flex-1 mt-4">
           <MindMapDashboardPage />
-        </TabsContent>
-
-        <TabsContent value="presentation" className="flex-1 mt-4">
-          <PresentationGeneratorWrapper />
         </TabsContent>
       </Tabs>
     </div>
