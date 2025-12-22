@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview An AI flow for generating structured lecture notes from a given text.
+ * @fileOverview An AI flow for generating structured, professional lecture notes from a given text.
  * - generateLectureNotes - A function that uses Gemini to generate notes.
  */
 
@@ -15,25 +15,26 @@ const lectureNotesPrompt = ai.definePrompt({
   input: { schema: LectureNotesRequestSchema },
   output: { schema: LectureNotesResponseSchema },
   prompt: `
-    You are an intelligent lecture-notes builder. The user has provided content from a document. Your task is to generate well-structured lecture notes strictly from this content. Do not add external information or assumptions.
+    Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
 
-    Your goal is to simplify, organize, and clarify the material for learning purposes while preserving all important details.
+    Task: Transform the provided raw content into a structured, professional set of lecture notes suitable for an executive-level or graduate-level course.
 
-    **Instructions:**
+    Formatting Requirements:
 
-    1.  **Analyze the Content**: Carefully read the entire source text to understand its structure and key information.
-    2.  **Create a Title**: Generate a concise, descriptive title for the lecture notes and place it in the \`title\` field.
-    3.  **Write an Overview**: Summarize the main ideas and learning objectives in a brief 2-3 sentence paragraph. Place this in the \`overview\` field.
-    4.  **Build Sections**:
-        *   Identify the key concepts, main points, important definitions, and examples.
-        *   Organize these into logical sections. Each section must have a clear \`heading\`.
-        *   The \`content\` for each section should be an array of strings.
-        *   **Use plain paragraphs for all content, including lists.** Do NOT use Markdown for lists or any other formatting.
-        *   **Crucially, preserve all important formulas, numbers, technical content, and specific examples from the source text. Format equations correctly and clearly using Unicode characters where appropriate (e.g., ∑, ∫, √, exponents with superscripts like x², subscripts like H₂O).**
-        *   If the source text is from slides, combine fragmented bullet points into meaningful explanations.
-    5.  **Summarize Key Takeaways**: Create a final summary of the most critical points. Place this in the \`summary\` field.
-    6.  **No Hallucination**: If any part of the document is unreadable or ambiguous, do not invent content. You can mention "Some content was unclear in the original document" in a relevant section if necessary.
-    7.  **Output**: Ensure your entire output is a single, valid JSON object that strictly adheres to the schema.
+    1.  **Executive Summary**: Start with a high-level overview of the core themes.
+    2.  **Hierarchical Structure**: Use Markdown headings (H1, H2, H3) to organize the content into logical modules.
+    3.  **The "Definitions" Block**: For every key concept, provide a clear, concise definition.
+    4.  **Comparative Analysis**: If there are two or more competing technologies, systems, or methodologies, create a Markdown table comparing their advantages, limitations, and use cases.
+    5.  **Technical Synthesis**: Summarize specific tools, mathematical models, or software platforms into a "Toolbox" or "Methodology" section.
+    6.  **Best Practices & Governance**: Group any "Do/Don’t" or "Procedural" lists into a strategic management section.
+    7.  **Visual Placeholders**: Where the text implies a process or trend (e.g., a data flow or a graph), include a brief description of what a diagram should represent at that point (e.g., "[Diagram: A flowchart illustrating the data pipeline from ingestion to analysis.]").
+    8.  **JSON Output**: Ensure your entire output is a single, valid JSON object that strictly adheres to the required schema.
+
+    Tone and Style:
+    *   Maintain an objective, professional, and insightful tone.
+    *   Use **bolding** for key terms and concepts to improve scannability.
+    *   Avoid "walls of text"; use bullet points and numbered lists to break down complex procedures.
+    *   Ensure all content is logically sequenced—moving from foundational "What" to operational "How" and strategic "Why."
 
     ---
     **Source Text:**
@@ -52,3 +53,4 @@ export async function generateLectureNotes(
   }
   return output;
 }
+

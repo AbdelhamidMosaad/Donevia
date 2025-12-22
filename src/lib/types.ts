@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -514,16 +515,25 @@ export const LectureNotesRequestSchema = z.object({
 });
 export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
 
-const SectionSchema = z.object({
-  heading: z.string().describe("A clear heading for a main section of the notes (e.g., 'Key Concepts', 'Important Formulas')."),
-  content: z.array(z.string()).describe("An array of bullet points, paragraphs, or definitions that fall under this heading."),
-});
-
 export const LectureNotesResponseSchema = z.object({
-  title: z.string().describe("A concise and relevant title for the lecture notes."),
-  overview: z.string().describe("A brief 2-3 sentence overview of the document's main topics or learning objectives."),
-  sections: z.array(SectionSchema).describe("An array of structured sections, each with a heading and content."),
-  summary: z.string().describe("A concluding summary of the key takeaways from the material."),
+    executiveSummary: z.string().describe("A high-level overview of the core themes."),
+    definitions: z.array(z.object({
+        term: z.string(),
+        definition: z.string(),
+    })).describe("A list of key concepts and their concise definitions."),
+    comparativeAnalysis: z.array(z.object({
+        title: z.string().describe("Title for the comparison, e.g., 'LP vs. NLP'"),
+        table: z.string().describe("A Markdown table comparing technologies, systems, or methodologies."),
+    })).optional().describe("An array of markdown tables for comparative analysis."),
+    mainContent: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
+    methodology: z.array(z.object({
+        title: z.string().describe("The name of the tool, model, or methodology."),
+        summary: z.string().describe("A summary of its purpose and function."),
+    })).optional().describe("A synthesis of specific tools or mathematical models."),
+    bestPractices: z.array(z.object({
+        title: z.string().describe("The heading for the strategic/procedural list."),
+        items: z.array(z.string()).describe("A list of best practices or governance points."),
+    })).optional().describe("A collection of strategic 'Do/Don't' or procedural lists.")
 });
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
