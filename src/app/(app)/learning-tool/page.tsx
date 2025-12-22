@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -31,7 +30,7 @@ export default function LearningToolPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="notes" className="flex-1 flex flex-col">
+      <Tabs defaultValue="notes" className="flex-1 flex flex-col min-h-0">
         <TabsList>
            <TabsTrigger value="notes">
             <Notebook className="mr-2 h-4 w-4" />
