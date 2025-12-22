@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { 
@@ -497,7 +496,7 @@ export const StudySessionSchema = z.object({
 export type StudySession = z.infer<typeof StudySessionSchema>;
 
 
-/** Learning Tool Feature */
+/** Studying Assistant Feature */
 export const StudyMaterialRequestSchema = GenkitStudyMaterialRequestSchema;
 export type StudyMaterialRequest = z.infer<typeof StudyMaterialRequestSchema>;
 export const StudyMaterialResponseSchema = GenkitStudyMaterialResponseSchema.extend({
@@ -758,3 +757,14 @@ export type JournalEntry = {
     mood: 'Happy' | 'Neutral' | 'Sad';
     tags: string[];
 };
+
+export type Attachment = {
+    id: string;
+    filename: string;
+    url: string;
+    mimeType: string;
+    size: number;
+    uploadedAt: Timestamp;
+};
+
+    

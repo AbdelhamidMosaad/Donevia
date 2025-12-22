@@ -41,7 +41,7 @@ import { TradingTrackerIcon } from '@/components/icons/tools/trading-tracker-ico
 import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
 import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
 import { DocsIcon } from '@/components/icons/tools/docs-icon';
-import { LearningAssistantIcon } from '@/components/icons/tools/learning-assistant-icon';
+import { StudyingAssistantIcon } from '@/components/icons/tools/studying-assistant-icon';
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from './icons/tools/interview-prep-icon';
 import { JournalIcon } from './icons/tools/journal-icon';
@@ -68,7 +68,7 @@ const defaultMenuItems = [
     { href: '/be-creative', icon: <BeCreativeIcon />, label: 'Be Creative', tooltip: 'Be Creative', id: 'be-creative' },
     { href: '/create-with-ai', icon: <CreateWithAiIcon />, label: 'Create with AI', tooltip: 'Create with AI', id: 'create-with-ai' },
     { href: '/docs', icon: <DocsIcon />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
-    { href: '/learning-tool', icon: <LearningAssistantIcon />, label: 'Learning Assistant', tooltip: 'Learning Assistant', id: 'learning-tool' },
+    { href: '/learning-tool', icon: <StudyingAssistantIcon />, label: 'Studying Assistant', tooltip: 'Studying Assistant', id: 'learning-tool' },
     { href: '/pomodoro', icon: <PomodoroIcon />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
 ];
 
@@ -194,3 +194,5 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
+    
