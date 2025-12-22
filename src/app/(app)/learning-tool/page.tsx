@@ -13,7 +13,7 @@ import type { StudyMaterialResponse } from '@/lib/types';
 import type { MindMapResponse } from '@/lib/types/mindmap-generator';
 import { ChatWithPdf } from '@/components/scholar-assist/chat-with-pdf';
 import { LectureNotesGenerator } from '@/components/scholar-assist/lecture-notes-generator';
-import { AppLayout } from '@/components/main-layout';
+import { MainLayout } from '@/components/main-layout';
 
 export default function StudyingAssistantPage() {
   const [quizResult, setQuizResult] = useState<StudyMaterialResponse | null>(null);
@@ -21,7 +21,7 @@ export default function StudyingAssistantPage() {
   const [mindMapResult, setMindMapResult] = useState<MindMapResponse | null>(null);
 
   return (
-    <AppLayout>
+    <MainLayout>
       <div className="flex flex-col h-full gap-6">
         <div className="flex items-center gap-4">
           <StudyingAssistantIcon className="h-10 w-10 text-primary" />
@@ -81,8 +81,6 @@ export default function StudyingAssistantPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </MainLayout>
   );
 }
-
-    
