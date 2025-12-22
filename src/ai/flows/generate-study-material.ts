@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { StudyMaterialRequestSchema, StudyMaterialResponseSchema } from './learning-tool-flow';
+import { StudyMaterialRequestSchema, StudyMaterialResponseSchema } from './studying-assistant-flow';
 
 // ========== Prompt Template ==========
 
