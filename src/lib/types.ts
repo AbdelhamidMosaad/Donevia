@@ -7,7 +7,7 @@ import {
     StudyMaterialResponseSchema as GenkitStudyMaterialResponseSchema,
     QuizQuestionSchema as GenkitQuizQuestionSchema,
     FlashcardSchema as GenkitFlashcardSchema,
-} from '@/ai/flows/learning-tool-flow';
+} from '@/ai/flows/studying-assistant-flow';
 import type { MasteryLevel } from "./types/vocabulary";
 
 
@@ -516,24 +516,10 @@ export const LectureNotesRequestSchema = z.object({
 export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
 
 export const LectureNotesResponseSchema = z.object({
-    executiveSummary: z.string().describe("A high-level overview of the core themes."),
-    definitions: z.array(z.object({
-        term: z.string(),
-        definition: z.string(),
-    })).describe("A list of key concepts and their concise definitions."),
-    comparativeAnalysis: z.array(z.object({
-        title: z.string().describe("Title for the comparison, e.g., 'LP vs. NLP'"),
-        table: z.string().describe("A Markdown table comparing technologies, systems, or methodologies."),
-    })).optional().describe("An array of markdown tables for comparative analysis."),
-    mainContent: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
-    methodology: z.array(z.object({
-        title: z.string().describe("The name of the tool, model, or methodology."),
-        summary: z.string().describe("A summary of its purpose and function."),
-    })).optional().describe("A synthesis of specific tools or mathematical models."),
-    bestPractices: z.array(z.object({
-        title: z.string().describe("The heading for the strategic/procedural list."),
-        items: z.array(z.string()).describe("A list of best practices or governance points."),
-    })).optional().describe("A collection of strategic 'Do/Don't' or procedural lists.")
+    title: z.string().describe("A concise and relevant title for the generated material."),
+    overview: z.string().describe("An executive summary of the core themes."),
+    notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
+    summary: z.string().describe("A concluding summary of the entire text."),
 });
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
