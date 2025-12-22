@@ -2,31 +2,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import PptxGenJS from 'pptxgenjs';
 
 export default function PresentationGenerator() {
-  const [PptxGenJS, setPptxGenJS] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [pptx, setPptx] = useState<any>(null);
 
   useEffect(() => {
-    const loadPptx = async () => {
-      try {
-        // FIX: Use the correct import path
-        const module = await import('pptxgenjs');
-        setPptxGenJS(module.default || module);
-      } catch (error) {
-        console.error('Failed to load pptxgenjs:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    // Only load on client side
-    if (typeof window !== 'undefined') {
-      loadPptx();
-    }
+    // PptxGenJS is now directly imported, so we just create a new instance.
+    setPptx(new PptxGenJS());
   }, []);
-
-  if (isLoading) {
+  
+  if (!pptx) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -37,20 +23,6 @@ export default function PresentationGenerator() {
     );
   }
 
-  if (!PptxGenJS) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center p-6 border border-destructive/20 rounded-lg bg-destructive/5">
-          <h3 className="text-lg font-semibold text-destructive mb-2">
-            Presentation Tool Unavailable
-          </h3>
-          <p className="text-muted-foreground">
-            The presentation generator failed to load. Please refresh the page.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Your component logic here
   return (
