@@ -13,7 +13,6 @@ import type { StudyMaterialResponse } from '@/lib/types';
 import type { MindMapResponse } from '@/lib/types/mindmap-generator';
 import { ChatWithPdf } from '@/components/scholar-assist/chat-with-pdf';
 import { LectureNotesGenerator } from '@/components/scholar-assist/lecture-notes-generator';
-import { MainLayout } from '@/components/main-layout';
 
 export default function StudyingAssistantPage() {
   const [quizResult, setQuizResult] = useState<StudyMaterialResponse | null>(null);
@@ -21,66 +20,64 @@ export default function StudyingAssistantPage() {
   const [mindMapResult, setMindMapResult] = useState<MindMapResponse | null>(null);
 
   return (
-    <MainLayout>
-      <div className="flex flex-col h-full gap-6">
-        <div className="flex items-center gap-4">
-          <StudyingAssistantIcon className="h-10 w-10 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold font-headline">Studying Assistant</h1>
-            <p className="text-muted-foreground">
-              Generate study materials from your documents and text.
-            </p>
-          </div>
+    <div className="flex flex-col h-full gap-6">
+      <div className="flex items-center gap-4">
+        <StudyingAssistantIcon className="h-10 w-10 text-primary" />
+        <div>
+          <h1 className="text-3xl font-bold font-headline">Studying Assistant</h1>
+          <p className="text-muted-foreground">
+            Generate study materials from your documents and text.
+          </p>
         </div>
-
-        <Tabs defaultValue="notes" className="flex-1 flex flex-col min-h-0">
-          <TabsList>
-            <TabsTrigger value="notes">
-              <Notebook className="mr-2 h-4 w-4" />
-              Lecture Notes
-            </TabsTrigger>
-            <TabsTrigger value="quiz">
-              <HelpCircle className="mr-2 h-4 w-4" />
-              Quiz Generator
-            </TabsTrigger>
-            <TabsTrigger value="saved-quizzes">
-              <Save className="mr-2 h-4 w-4" />
-              Saved Quizzes
-            </TabsTrigger>
-            <TabsTrigger value="flashcards">
-              <Layers className="mr-2 h-4 w-4" />
-              Flashcards
-            </TabsTrigger>
-            <TabsTrigger value="mindmap">
-              <GitBranch className="mr-2 h-4 w-4" />
-              Mind Map
-            </TabsTrigger>
-            <TabsTrigger value="chat-pdf">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Chat with PDF
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="notes" className="flex-1 mt-4">
-            <LectureNotesGenerator />
-          </TabsContent>
-          <TabsContent value="quiz" className="flex-1 mt-4">
-            <QuizGenerator result={quizResult} setResult={setQuizResult} />
-          </TabsContent>
-          <TabsContent value="saved-quizzes" className="flex-1 mt-4">
-            <SavedQuizzes />
-          </TabsContent>
-          <TabsContent value="flashcards" className="flex-1 mt-4">
-            <FlashcardGenerator result={flashcardsResult} setResult={setFlashcardsResult} />
-          </TabsContent>
-          <TabsContent value="mindmap" className="flex-1 mt-4">
-            <MindMapGenerator result={mindMapResult} setResult={setMindMapResult} />
-          </TabsContent>
-          <TabsContent value="chat-pdf" className="flex-1 mt-4">
-            <ChatWithPdf />
-          </TabsContent>
-        </Tabs>
       </div>
-    </MainLayout>
+
+      <Tabs defaultValue="notes" className="flex-1 flex flex-col min-h-0">
+        <TabsList>
+          <TabsTrigger value="notes">
+            <Notebook className="mr-2 h-4 w-4" />
+            Lecture Notes
+          </TabsTrigger>
+          <TabsTrigger value="quiz">
+            <HelpCircle className="mr-2 h-4 w-4" />
+            Quiz Generator
+          </TabsTrigger>
+          <TabsTrigger value="saved-quizzes">
+            <Save className="mr-2 h-4 w-4" />
+            Saved Quizzes
+          </TabsTrigger>
+          <TabsTrigger value="flashcards">
+            <Layers className="mr-2 h-4 w-4" />
+            Flashcards
+          </TabsTrigger>
+          <TabsTrigger value="mindmap">
+            <GitBranch className="mr-2 h-4 w-4" />
+            Mind Map
+          </TabsTrigger>
+          <TabsTrigger value="chat-pdf">
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Chat with PDF
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="notes" className="flex-1 mt-4">
+          <LectureNotesGenerator />
+        </TabsContent>
+        <TabsContent value="quiz" className="flex-1 mt-4">
+          <QuizGenerator result={quizResult} setResult={setQuizResult} />
+        </TabsContent>
+        <TabsContent value="saved-quizzes" className="flex-1 mt-4">
+          <SavedQuizzes />
+        </TabsContent>
+        <TabsContent value="flashcards" className="flex-1 mt-4">
+          <FlashcardGenerator result={flashcardsResult} setResult={setFlashcardsResult} />
+        </TabsContent>
+        <TabsContent value="mindmap" className="flex-1 mt-4">
+          <MindMapGenerator result={mindMapResult} setResult={setMindMapResult} />
+        </TabsContent>
+        <TabsContent value="chat-pdf" className="flex-1 mt-4">
+          <ChatWithPdf />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
