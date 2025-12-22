@@ -43,34 +43,6 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        fs: false,
-        https: false,
-        http: false,
-        stream: false,
-        crypto: false,
-        path: false,
-        os: false,
-        zlib: false,
-        net: false,
-        tls: false,
-        child_process: false,
-        dns: false,
-        module: false,
-        dgram: false,
-      };
-    }
-    
-    // This rule is to prevent an issue with pptxgenjs during the build process
-    config.module.rules.push({
-      test: /pptxgenjs/,
-      use: 'null-loader',
-    });
-
-    return config;
-  },
 };
 
 export default withPWA(nextConfig);
