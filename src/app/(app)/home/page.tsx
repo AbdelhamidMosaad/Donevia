@@ -53,7 +53,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     'be-creative': BeCreativeIcon,
     'create-with-ai': CreateWithAiIcon,
     docs: DocsIcon,
-    'learning-tool': StudyingAssistantIcon,
+    'studying-assistant': StudyingAssistantIcon,
     pomodoro: PomodoroIcon,
     journal: JournalIcon,
 };
@@ -76,7 +76,7 @@ const allTools = [
     { id: 'be-creative', href: '/be-creative', title: 'Be Creative', description: 'A suite of tools for brainstorming and creativity.' },
     { id: 'create-with-ai', href: '/create-with-ai', title: 'Create with AI', description: 'AI-powered writing assistance tools.' },
     { id: 'docs', href: '/docs', title: 'Docs', description: 'A powerful, feature-rich document editor.' },
-    { id: 'learning-tool', href: '/learning-tool', title: 'Studying Assistant', description: 'Generate study materials with AI.' },
+    { id: 'studying-assistant', href: '/studying-assistant', title: 'Studying Assistant', description: 'Generate study materials with AI.' },
     { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },
     { id: 'journal', href: '/journal', title: 'Journal', description: 'Reflect and get insights with an AI-powered journal.' },
 ];
@@ -268,5 +268,7 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
 
     

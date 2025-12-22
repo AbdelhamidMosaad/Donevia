@@ -68,7 +68,7 @@ const defaultMenuItems = [
     { href: '/be-creative', icon: <BeCreativeIcon />, label: 'Be Creative', tooltip: 'Be Creative', id: 'be-creative' },
     { href: '/create-with-ai', icon: <CreateWithAiIcon />, label: 'Create with AI', tooltip: 'Create with AI', id: 'create-with-ai' },
     { href: '/docs', icon: <DocsIcon />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
-    { href: '/learning-tool', icon: <StudyingAssistantIcon />, label: 'Studying Assistant', tooltip: 'Studying Assistant', id: 'learning-tool' },
+    { href: '/studying-assistant', icon: <StudyingAssistantIcon />, label: 'Studying Assistant', tooltip: 'Studying Assistant', id: 'studying-assistant' },
     { href: '/pomodoro', icon: <PomodoroIcon />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
 ];
 
@@ -194,5 +194,7 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
+    
 
     
