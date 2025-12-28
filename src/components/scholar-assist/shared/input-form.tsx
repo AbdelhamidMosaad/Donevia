@@ -263,32 +263,39 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     setSelectedSources(prev => prev.includes(link) ? prev.filter(l => l !== link) : [...prev, link]);
   };
   
-  const customOnSubmit = async (values: InputFormValues) => {
-    if (activeTab === 'web') {
-        if(selectedSources.length === 0) {
-            toast({ variant: 'destructive', title: 'Please select at least one web source.' });
-            return;
+  const handleFormSubmit = async () => {
+    await form.handleSubmit(async (values) => {
+        if (activeTab === 'web') {
+            if(selectedSources.length === 0) {
+                toast({ variant: 'destructive', title: 'Please select at least one web source.' });
+                return;
+            }
+            setIsFetching(true);
+            try {
+                const result = await fetchWebContent({ urls: selectedSources });
+                const combinedContent = result.sources.map(s => `Source: ${s.url}\n\n${s.content}`).join('\n\n---\n\n');
+                onGenerate({...values, sourceText: combinedContent });
+            } catch (e) {
+                toast({ variant: 'destructive', title: 'Failed to fetch web content.' });
+            } finally {
+                setIsFetching(false);
+            }
+        } else {
+            if (!values.sourceText?.trim()) {
+                toast({ variant: 'destructive', title: 'Source text cannot be empty.' });
+                return;
+            }
+            onGenerate(values);
         }
-        setIsFetching(true);
-        try {
-            const result = await fetchWebContent({ urls: selectedSources });
-            const combinedContent = result.sources.map(s => `Source: ${s.url}\n\n${s.content}`).join('\n\n---\n\n');
-            onGenerate({...values, sourceText: combinedContent });
-        } catch (e) {
-            toast({ variant: 'destructive', title: 'Failed to fetch web content.' });
-        } finally {
-            setIsFetching(false);
-        }
-    } else {
-        if (!values.sourceText?.trim()) {
-            toast({ variant: 'destructive', title: 'Source text cannot be empty.' });
-            return;
-        }
-        onGenerate(values);
-    }
+    })();
   }
 
   const getButtonText = () => {
+    if (isLoading || isParsing || isFetching) {
+        if (isLoading) return 'Generating...';
+        if (isParsing) return 'Processing...';
+        if (isFetching) return 'Fetching Content...';
+    }
     if (activeTab === 'web') {
         return `Generate from ${selectedSources.length} source(s)`;
     }
@@ -311,7 +318,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(customOnSubmit)} className="h-full">
+      <div className="h-full flex flex-col">
         <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Source Material</CardTitle>
@@ -392,7 +399,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                      </ScrollArea>
                 </TabsContent>
             </Tabs>
-             <div className="grid md:grid-cols-2 gap-6">
+             <div className="grid md:grid-cols-2 gap-6 pt-6">
                 {generationType === 'notes' && (
                     <>
                         <FormField
@@ -549,13 +556,13 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
              </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isGenerateDisabled()} className="w-full">
-              {isLoading || isParsing || isFetching ? <Loader2/> : <Wand2/>}
-              {isLoading ? 'Generating...' : isParsing ? 'Processing...' : isFetching ? 'Fetching Content...' : getButtonText()}
+            <Button type="button" onClick={handleFormSubmit} disabled={isGenerateDisabled()} className="w-full">
+              {isLoading || isParsing || isFetching ? <Loader2 className="animate-spin" /> : <Wand2/>}
+              {getButtonText()}
             </Button>
           </CardFooter>
         </Card>
-      </form>
+      </div>
     </Form>
   );
 }
