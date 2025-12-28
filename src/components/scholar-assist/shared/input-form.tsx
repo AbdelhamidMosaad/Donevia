@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, Wand2, Upload, FileText, FileIcon } from 'lucide-react';
+import { Loader2, Wand2, Upload, FileText, FileIcon, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,6 +18,8 @@ import { useDropzone } from 'react-dropzone';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import JSZip from 'jszip';
+import { searchWeb, fetchWebContent, WebSearchResponse } from '@/ai/flows/web-search-flow';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 // Setup worker path for pdf.js
@@ -42,7 +44,7 @@ const flashcardsSchema = z.object({
 });
 
 const formSchema = z.object({
-  sourceText: z.string().min(50, 'Source text must be at least 50 characters long.'),
+  sourceText: z.string().min(50, 'Source text must be at least 50 characters long.').optional(),
 }).extend(notesSchema.partial().shape).extend(quizSchema.partial().shape).extend(flashcardsSchema.partial().shape);
 
 
@@ -66,6 +68,13 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<WebSearchResponse['results']>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [activeTab, setActiveTab] = useState('text');
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -236,7 +245,53 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     multiple: false,
   });
 
+  const handleWebSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setSearchResults([]);
+    try {
+        const result = await searchWeb({ query: searchQuery });
+        setSearchResults(result.results);
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Web search failed', description: (e as Error).message });
+    } finally {
+        setIsSearching(false);
+    }
+  };
+  
+  const handleToggleSource = (link: string) => {
+    setSelectedSources(prev => prev.includes(link) ? prev.filter(l => l !== link) : [...prev, link]);
+  };
+  
+  const customOnSubmit = async (values: InputFormValues) => {
+    if (activeTab === 'web') {
+        if(selectedSources.length === 0) {
+            toast({ variant: 'destructive', title: 'Please select at least one web source.' });
+            return;
+        }
+        setIsFetching(true);
+        try {
+            const result = await fetchWebContent({ urls: selectedSources });
+            const combinedContent = result.sources.map(s => `Source: ${s.url}\n\n${s.content}`).join('\n\n---\n\n');
+            onGenerate({...values, sourceText: combinedContent });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Failed to fetch web content.' });
+        } finally {
+            setIsFetching(false);
+        }
+    } else {
+        if (!values.sourceText?.trim()) {
+            toast({ variant: 'destructive', title: 'Source text cannot be empty.' });
+            return;
+        }
+        onGenerate(values);
+    }
+  }
+
   const getButtonText = () => {
+    if (activeTab === 'web') {
+        return `Generate from ${selectedSources.length} source(s)`;
+    }
     switch (generationType) {
         case 'notes': return 'Generate Notes';
         case 'quiz': return 'Generate Quiz';
@@ -245,20 +300,29 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
         default: return 'Generate';
     }
   }
+  
+  const isGenerateDisabled = () => {
+    if (isLoading || isParsing || isFetching) return true;
+    if (activeTab === 'web') {
+        return selectedSources.length === 0;
+    }
+    return !form.watch('sourceText')?.trim();
+  }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onGenerate)} className="h-full">
+      <form onSubmit={form.handleSubmit(customOnSubmit)} className="h-full">
         <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Source Material</CardTitle>
-            <CardDescription>Paste text or upload a PDF/DOCX to generate study materials.</CardDescription>
+            <CardDescription>Paste text, upload a file, or search the web to generate materials.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col gap-6">
-            <Tabs defaultValue="text" className="flex-1 flex flex-col">
+            <Tabs defaultValue="text" onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
                 <TabsList>
                     <TabsTrigger value="text"><FileText/> Paste Text</TabsTrigger>
                     <TabsTrigger value="upload"><Upload/> Upload File</TabsTrigger>
+                    <TabsTrigger value="web"><Search/> Search Web</TabsTrigger>
                 </TabsList>
                 <TabsContent value="text" className="flex-1 mt-2">
                     <FormField
@@ -297,6 +361,35 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                             </div>
                         )}
                     </div>
+                </TabsContent>
+                 <TabsContent value="web" className="flex-1 mt-2 flex flex-col gap-4 min-h-0">
+                    <div className="flex gap-2">
+                        <Input placeholder="Enter a topic to search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleWebSearch()} />
+                        <Button type="button" onClick={handleWebSearch} disabled={isSearching}><Search/> Search</Button>
+                    </div>
+                     <ScrollArea className="flex-1 border rounded-md">
+                        {isSearching ? <div className="p-4 text-center"><Loader2 className="animate-spin"/></div> : (
+                            <div className="p-2 space-y-2">
+                                {searchResults.map((result, index) => (
+                                    <div key={index} className="flex items-start gap-2 p-2 border rounded-md">
+                                        <Checkbox 
+                                            id={`source-${index}`}
+                                            checked={selectedSources.includes(result.link)}
+                                            onCheckedChange={() => handleToggleSource(result.link)}
+                                        />
+                                        <div className="grid gap-1.5 leading-none">
+                                             <label htmlFor={`source-${index}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {result.title}
+                                            </label>
+                                            <p className="text-sm text-muted-foreground">{result.snippet}</p>
+                                            <a href={result.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">{result.link}</a>
+                                        </div>
+                                    </div>
+                                ))}
+                                {searchResults.length === 0 && <p className="p-4 text-center text-muted-foreground">Search results will appear here.</p>}
+                            </div>
+                        )}
+                     </ScrollArea>
                 </TabsContent>
             </Tabs>
              <div className="grid md:grid-cols-2 gap-6">
@@ -456,9 +549,9 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
              </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isLoading || isParsing} className="w-full">
-              {isLoading || isParsing ? <Loader2/> : <Wand2/>}
-              {isLoading ? 'Generating...' : isParsing ? 'Processing File...' : getButtonText()}
+            <Button type="submit" disabled={isGenerateDisabled()} className="w-full">
+              {isLoading || isParsing || isFetching ? <Loader2/> : <Wand2/>}
+              {isLoading ? 'Generating...' : isParsing ? 'Processing...' : isFetching ? 'Fetching Content...' : getButtonText()}
             </Button>
           </CardFooter>
         </Card>
