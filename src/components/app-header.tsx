@@ -70,9 +70,9 @@ export function AppHeader() {
   return (
     <header className="sticky top-4 z-40 mx-4 md:mx-6 my-4">
         <div className="flex h-16 items-center gap-4 rounded-2xl border bg-card px-4 shadow-lg lg:px-6">
-      <Button variant="outline" size="icon" className="md:hidden h-8 w-8" onClick={toggleSidebar}>
-          <DoneviaLogo className="size-6 shrink-0" />
-      </Button>
+      <Link href="/home" className="h-10 w-10 shrink-0 md:hidden">
+        <DoneviaLogo className="h-full w-full" />
+      </Link>
       <div className="w-full flex-1">
         {isClient && (
           <form onSubmit={handleSearch}>

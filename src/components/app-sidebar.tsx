@@ -135,14 +135,11 @@ export function AppSidebar() {
     <Sidebar variant={settings?.sidebarVariant}>
       <SidebarRail />
       <SidebarHeader>
-        <Link href="/home" className="items-center gap-2 flex">
-          <DoneviaLogo className="size-8 shrink-0" />
-          {open && (
-            <div className="flex flex-col">
-              <span className="text-lg font-semibold font-headline leading-none">Donevia</span>
-              <span className="text-xs text-muted-foreground">Get it done, your way.</span>
-            </div>
-          )}
+        <Link href="/home" className="flex items-center gap-2">
+            <DoneviaLogo className="h-10 w-10" />
+            {open && (
+                <span className="text-xl font-headline font-semibold">Donevia</span>
+            )}
         </Link>
       </SidebarHeader>
       <SidebarContent>
