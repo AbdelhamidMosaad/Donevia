@@ -1,3 +1,4 @@
+
 import * as React from "react";
 
 export function GoalsIcon({ className }: { className?: string }) {
@@ -9,8 +10,8 @@ export function GoalsIcon({ className }: { className?: string }) {
     >
       <defs>
         <radialGradient id="goals-grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-          <stop offset="0%" stopColor="#e63946" />
-          <stop offset="100%" stopColor="#d62828" />
+          <stop offset="0%" stopColor="#8E2DE2" />
+          <stop offset="100%" stopColor="#4A00E0" />
         </radialGradient>
         <filter id="goals-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="4" />

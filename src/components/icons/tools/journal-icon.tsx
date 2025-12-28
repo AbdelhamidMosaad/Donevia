@@ -10,8 +10,8 @@ export function JournalIcon({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="journal-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#c19a6b" />
-          <stop offset="100%" stopColor="#8c5e3c" />
+          <stop offset="0%" stopColor="#8E2DE2" />
+          <stop offset="100%" stopColor="#4A00E0" />
         </linearGradient>
         <filter id="journal-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
@@ -27,7 +27,7 @@ export function JournalIcon({ className }: { className?: string }) {
       </defs>
       <g filter="url(#journal-shadow)">
         <rect x="15" y="10" width="90" height="100" rx="8" fill="url(#journal-grad1)" />
-        <rect x="22" y="10" width="8" height="100" fill="#a47a4a" />
+        <rect x="22" y="10" width="8" height="100" fill="#4A00E0" opacity="0.5" />
         <rect x="40" y="25" width="60" height="5" rx="2.5" fill="white" opacity="0.6" />
         <rect x="40" y="40" width="60" height="5" rx="2.5" fill="white" opacity="0.6" />
         <rect x="40" y="55" width="40" height="5" rx="2.5" fill="white" opacity="0.6" />

@@ -1,3 +1,4 @@
+
 import * as React from "react";
 
 export function PlannerIcon({ className }: { className?: string }) {
@@ -9,13 +10,13 @@ export function PlannerIcon({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="planner-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#4ade80" />
-          <stop offset="100%" stopColor="#22c55e" />
+          <stop offset="0%" stopColor="#4361EE" />
+          <stop offset="100%" stopColor="#3A0CA3" />
         </linearGradient>
         <filter id="planner-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
           <feOffset in="blur" dy="4" result="offsetBlur" />
-          <feFlood floodColor="#22c55e" floodOpacity="0.4" result="flood" />
+          <feFlood floodColor="#4361EE" floodOpacity="0.4" result="flood" />
           <feComposite in="flood" in2="offsetBlur" operator="in" result="shadow" />
           <feMerge>
             <feMergeNode in="shadow" />

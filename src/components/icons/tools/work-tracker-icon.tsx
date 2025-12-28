@@ -1,3 +1,4 @@
+
 import * as React from "react";
 
 export function WorkTrackerIcon({ className }: { className?: string }) {
@@ -9,8 +10,8 @@ export function WorkTrackerIcon({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="work-tracker-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fca311" />
-          <stop offset="100%" stopColor="#e85d04" />
+          <stop offset="0%" stopColor="#43D4C4" />
+          <stop offset="100%" stopColor="#3A0CA3" />
         </linearGradient>
         <filter id="work-tracker-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="3" />

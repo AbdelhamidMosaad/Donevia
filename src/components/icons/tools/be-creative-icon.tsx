@@ -10,8 +10,8 @@ export function BeCreativeIcon({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="be-creative-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ff7e5f" />
-          <stop offset="100%" stopColor="#feb47b" />
+          <stop offset="0%" stopColor="#8E2DE2" />
+          <stop offset="100%" stopColor="#4A00E0" />
         </linearGradient>
         <filter id="be-creative-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="4" />

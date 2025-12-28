@@ -10,8 +10,8 @@ export function InterviewPrepIcon({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="interview-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#4A90E2" />
-          <stop offset="100%" stopColor="#50E3C2" />
+          <stop offset="0%" stopColor="#4A00E0" />
+          <stop offset="100%" stopColor="#8E2DE2" />
         </linearGradient>
         <filter id="interview-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="3" />

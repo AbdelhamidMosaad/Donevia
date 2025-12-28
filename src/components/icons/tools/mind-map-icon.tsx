@@ -42,4 +42,3 @@ export function MindMapIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-

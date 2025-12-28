@@ -1,3 +1,4 @@
+
 import * as React from "react";
 
 export function StudyTrackerIcon({ className }: { className?: string }) {
@@ -9,8 +10,8 @@ export function StudyTrackerIcon({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="study-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#a7c957" />
-          <stop offset="100%" stopColor="#386641" />
+          <stop offset="0%" stopColor="#43D4C4" />
+          <stop offset="100%" stopColor="#8E2DE2" />
         </linearGradient>
         <filter id="study-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="4" />
