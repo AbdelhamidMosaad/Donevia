@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
        <head>
-        <meta name="theme-color" content="#00AEEF" />
+        <meta name="theme-color" content="#2D4696" />
       </head>
       <body className={`antialiased ${inter.variable} ${roboto.variable} ${openSans.variable} ${lato.variable} ${poppins.variable} ${sourceSansPro.variable} ${nunito.variable} ${montserrat.variable} ${playfairDisplay.variable} ${jetbrainsMono.variable} ${space_grotesk.variable}`}>
         <AuthProvider>
