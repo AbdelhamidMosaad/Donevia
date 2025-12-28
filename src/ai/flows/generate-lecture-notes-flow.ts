@@ -7,7 +7,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { runFlow } from 'genkit';
 
 const LectureNotesRequestSchema = z.object({
   sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
@@ -21,13 +20,11 @@ const LectureNotesResponseSchema = z.object({
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
 // ========== Prompt Template ==========
-const lectureNotesPrompt = ai.definePrompt(
-  {
+const lectureNotesPrompt = ai.definePrompt({
     name: 'lectureNotesPrompt',
     input: { schema: LectureNotesRequestSchema },
     output: { schema: LectureNotesResponseSchema },
-  },
-  `
+    prompt: `
     Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
 
     Task: Transform the provided raw content into a structured, professional set of lecture notes suitable for an executive-level or graduate-level course.
@@ -46,7 +43,7 @@ const lectureNotesPrompt = ai.definePrompt(
     Source Text:
     {{sourceText}}
   `
-);
+});
 
 // ========== Flow Definition ==========
 const generateLectureNotesFlow = ai.defineFlow(
@@ -72,8 +69,8 @@ export async function generateLectureNotes(
   input: LectureNotesRequest
 ): Promise<LectureNotesResponse> {
   try {
-    // We use runFlow to execute the flow within the Genkit runtime context
-    return await runFlow(generateLectureNotesFlow, input);
+    const result = await generateLectureNotesFlow(input);
+    return result;
   } catch (error) {
     console.error('Lecture Notes Flow Error:', error);
     throw new Error(
