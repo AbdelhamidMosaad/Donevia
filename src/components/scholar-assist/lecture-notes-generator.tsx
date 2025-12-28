@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '../ui/button';
 import { Loader2, Download, RefreshCw, Save, FileText } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import { generateLectureNotes, type LectureNotesResponse } from '@/ai/flows/lecture-notes-flow';
+import { generateLectureNotes, type LectureNotesResponse } from '@/ai/flows/generate-lecture-notes-flow';
 import { saveAs } from 'file-saver';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -17,8 +17,7 @@ import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { marked } from 'marked';
-import { type Packer, Document, Paragraph, TextRun, HeadingLevel } from 'docx';
-
+import { Packer, Document, Paragraph, TextRun, HeadingLevel } from 'docx';
 
 const availableFonts = [
     'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans 3', 'Nunito', 'Montserrat', 'Playfair Display', 'JetBrains Mono', 'Bahnschrift'
@@ -74,10 +73,7 @@ export function LectureNotesGenerator() {
 
     const docChildren = [
       new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
-      new Paragraph({ text: result.overview, style: "IntenseQuote" }),
-      new Paragraph(result.notes),
-      new Paragraph({ text: "Summary", heading: HeadingLevel.HEADING_2 }),
-      new Paragraph(result.summary)
+      new Paragraph(result.notes)
     ];
 
     const docInstance = new Document({ 
@@ -101,13 +97,12 @@ export function LectureNotesGenerator() {
     if (!user || !result) return;
     setIsSaving(true);
     
-    const content = `<h1>${result.title}</h1><blockquote>${result.overview}</blockquote><hr>${result.notes}<hr><h2>Summary</h2><p>${result.summary}</p>`;
+    const content = `<h1>${result.title}</h1>${result.notes}`;
     const parsedContent = await marked.parse(content);
 
-    // This is a simplified conversion. For a true TipTap conversion, a more complex parser is needed.
     const tipTapContent = {
         type: 'doc',
-        content: [{ type: 'paragraph', content: [{ type: 'text', text: parsedContent.replace(/<[^>]*>/g, '\n') }] }] // Basic text extraction
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: parsedContent.replace(/<[^>]*>/g, '\n') }] }]
     };
 
     try {
@@ -147,12 +142,8 @@ export function LectureNotesGenerator() {
           </CardHeader>
           <CardContent className="flex-1 min-h-0">
             <ScrollArea className="h-full pr-4 -mr-4">
-              <div className="space-y-6 prose prose-sm dark:prose-invert max-w-none">
-                <blockquote className="border-l-4 pl-4 italic">{result.overview}</blockquote>
-                <div dangerouslySetInnerHTML={{ __html: marked(result.notes) }} />
-                <h3>Summary</h3>
-                <p>{result.summary}</p>
-              </div>
+              <div className="space-y-6 prose prose-sm dark:prose-invert max-w-none"
+                   dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
             </ScrollArea>
           </CardContent>
           <CardFooter className="justify-end gap-2">

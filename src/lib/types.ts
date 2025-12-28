@@ -9,6 +9,7 @@ import {
     FlashcardSchema as GenkitFlashcardSchema,
 } from '@/ai/flows/studying-assistant-flow';
 import type { MasteryLevel } from "./types/vocabulary";
+import { LectureNotesRequestSchema as GenkitLectureNotesRequestSchema, LectureNotesResponseSchema as GenkitLectureNotesResponseSchema } from '@/ai/flows/generate-lecture-notes-flow';
 
 
 /** Task Management Types */
@@ -510,18 +511,11 @@ export const FlashcardSchema = GenkitFlashcardSchema;
 export type Flashcard = z.infer<typeof FlashcardSchema>;
 
 // Lecture Notes Schemas
-export const LectureNotesRequestSchema = z.object({
-  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
-});
+export const LectureNotesRequestSchema = GenkitLectureNotesRequestSchema;
 export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
-
-export const LectureNotesResponseSchema = z.object({
-    title: z.string().describe("A concise and relevant title for the generated material."),
-    overview: z.string().describe("An executive summary of the core themes."),
-    notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
-    summary: z.string().describe("A concluding summary of the entire text."),
-});
+export const LectureNotesResponseSchema = GenkitLectureNotesResponseSchema;
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
+
 
 
 /** English Coach */
