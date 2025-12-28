@@ -71,10 +71,37 @@ export function LectureNotesGenerator() {
     
     const { Packer, Document, Paragraph, TextRun, HeadingLevel } = docx;
 
-    const docChildren = [
+    const docChildren: (Paragraph | any)[] = [
       new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
-      new Paragraph(result.notes)
     ];
+
+    const lines = result.notes.split('\n');
+
+    lines.forEach(line => {
+      if (line.startsWith('### ')) {
+        docChildren.push(new Paragraph({ text: line.substring(4), heading: HeadingLevel.HEADING_3 }));
+      } else if (line.startsWith('## ')) {
+        docChildren.push(new Paragraph({ text: line.substring(3), heading: HeadingLevel.HEADING_2 }));
+      } else if (line.startsWith('# ')) {
+        docChildren.push(new Paragraph({ text: line.substring(2), heading: HeadingLevel.HEADING_1 }));
+      } else if (line.startsWith('* ')) {
+        const textRuns = line.substring(2).split(/(\*\*.*?\*\*)/g).map(part => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return new TextRun({ text: part.slice(2, -2), bold: true });
+          }
+          return new TextRun(part);
+        });
+        docChildren.push(new Paragraph({ children: textRuns, bullet: { level: 0 } }));
+      } else {
+         const textRuns = line.split(/(\*\*.*?\*\*)/g).map(part => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return new TextRun({ text: part.slice(2, -2), bold: true });
+          }
+          return new TextRun(part);
+        });
+        docChildren.push(new Paragraph({ children: textRuns }));
+      }
+    });
 
     const docInstance = new Document({ 
         sections: [{ children: docChildren }],
@@ -97,13 +124,35 @@ export function LectureNotesGenerator() {
     if (!user || !result) return;
     setIsSaving(true);
     
-    const content = `<h1>${result.title}</h1>${result.notes}`;
-    const parsedContent = await marked.parse(content);
-
+    // Create a Tiptap-compatible JSON structure from the markdown
     const tipTapContent = {
-        type: 'doc',
-        content: [{ type: 'paragraph', content: [{ type: 'text', text: parsedContent.replace(/<[^>]*>/g, '\n') }] }]
+      type: 'doc',
+      content: result.notes.split('\n').map(line => {
+        if (line.startsWith('# ')) {
+          return { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: line.substring(2) }] };
+        }
+        if (line.startsWith('## ')) {
+          return { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: line.substring(3) }] };
+        }
+         if (line.startsWith('### ')) {
+          return { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: line.substring(4) }] };
+        }
+        if (line.startsWith('* ')) {
+          // This is a simplification; full list support is more complex
+          return { type: 'paragraph', content: [{ type: 'text', text: `• ${line.substring(2)}` }] };
+        }
+        
+        const contentParts = line.split(/(\*\*.*?\*\*)/g).map(part => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return { type: 'text', text: part.slice(2, -2), marks: [{ type: 'bold' }] };
+            }
+            return { type: 'text', text: part };
+        });
+
+        return { type: 'paragraph', content: contentParts.filter(p => p.text) };
+      }).filter(Boolean),
     };
+
 
     try {
         const docRef = await addDoc(collection(db, 'users', user.uid, 'docs'), {
