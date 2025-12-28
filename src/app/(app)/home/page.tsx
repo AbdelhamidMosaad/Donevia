@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Task, Stage } from '@/lib/types';
-import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal, ListTodo } from 'lucide-react';
+import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics-dashboard';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -34,11 +34,12 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { JournalIcon } from '@/components/icons/tools/journal-icon';
 import { BeCreativeIcon } from '@/components/icons/tools/be-creative-icon';
 import { CreateWithAiIcon } from '@/components/icons/tools/create-with-ai-icon';
+import { ToDoListIcon } from '../icons/tools/to-do-list-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
     tasks: TasksIcon,
-    'to-do-list': ListTodo,
+    'to-do-list': ToDoListIcon,
     habits: HabitsIcon,
     goals: GoalsIcon,
     'study-tracker': StudyTrackerIcon,
