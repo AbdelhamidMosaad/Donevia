@@ -1,13 +1,12 @@
-
 import * as React from 'react';
 
 export function DoneviaLogo({ className }: { className?: string }) {
   return (
+    // I will replace the content below with the exact SVG code you provide.
     <svg
       viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
       className={className}
+      xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
       <rect width="100" height="100" rx="20" fill="#2A2F7F" />
