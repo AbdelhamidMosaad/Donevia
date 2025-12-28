@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -70,10 +69,11 @@ export function AppHeader() {
   return (
     <header className="sticky top-4 z-40 mx-4 md:mx-6 my-4">
         <div className="flex h-16 items-center gap-4 rounded-2xl border bg-card px-4 shadow-lg lg:px-6">
-      <Link href="/home" className="h-10 w-10 shrink-0 md:hidden">
-        <DoneviaLogo className="h-full w-full" />
+      <Link href="/home" className="flex items-center gap-2">
+        <DoneviaLogo className="h-10 w-10" />
+        <span className="text-xl font-headline font-semibold hidden md:inline-block">Donevia</span>
       </Link>
-      <div className="w-full flex-1">
+      <div className="w-full flex-1 ml-4">
         {isClient && (
           <form onSubmit={handleSearch}>
             <div className="relative">

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -134,14 +133,7 @@ export function AppSidebar() {
   return (
     <Sidebar variant={settings?.sidebarVariant}>
       <SidebarRail />
-      <SidebarHeader>
-        <Link href="/home" className="flex items-center gap-2">
-            <DoneviaLogo className="h-10 w-10" />
-            {open && (
-                <span className="text-xl font-headline font-semibold">Donevia</span>
-            )}
-        </Link>
-      </SidebarHeader>
+      <SidebarHeader />
       <SidebarContent>
         <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="sidebar-menu">
@@ -201,7 +193,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
-    
-
-    
