@@ -1,12 +1,13 @@
 
 'use server';
+
 /**
  * @fileOverview An AI flow for generating structured, professional lecture notes from a given text.
- * - generateLectureNotes - A function that uses Gemini to generate notes.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { runFlow } from 'genkit';
 
 export const LectureNotesRequestSchema = z.object({
   sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
@@ -14,64 +15,69 @@ export const LectureNotesRequestSchema = z.object({
 export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
 
 export const LectureNotesResponseSchema = z.object({
-    title: z.string().describe("A concise and relevant title for the generated material."),
-    notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
+  title: z.string().describe("A concise and relevant title for the generated material."),
+  notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
 });
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
-
 // ========== Prompt Template ==========
-const lectureNotesPrompt = ai.definePrompt({
-  name: 'lectureNotesPrompt',
-  input: { schema: LectureNotesRequestSchema },
-  output: { schema: LectureNotesResponseSchema },
-  prompt: `
+const lectureNotesPrompt = ai.definePrompt(
+  {
+    name: 'lectureNotesPrompt',
+    input: { schema: LectureNotesRequestSchema },
+    output: { schema: LectureNotesResponseSchema },
+  },
+  `
     Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
 
     Task: Transform the provided raw content into a structured, professional set of lecture notes suitable for an executive-level or graduate-level course.
 
     Formatting Requirements:
-
-    1. **Title**: Create a clear and descriptive title for the notes.
-    2. **Hierarchical Structure**: Use Markdown headings (e.g., #, ##, ###) to organize the content into logical sections and subsections.
-    3. **Best Practices & Governance**: Group any "Do/Don’t" or "Procedural" lists into a strategic management section.
-    4. **Visual Placeholders**: Where the text implies a process or trend (e.g., a data flow or a graph), include a brief description of what a diagram should represent at that point (e.g., "[Diagram: A flowchart illustrating the data pipeline from ingestion to analysis.]").
+    1. **Title**: Create a clear and descriptive title.
+    2. **Hierarchical Structure**: Use Markdown headings (#, ##, ###).
+    3. **Best Practices**: Group procedural lists into a strategic section.
+    4. **Visual Placeholders**: Include [Diagram: Description] for trends or processes.
     
     Tone and Style:
-    *   Maintain an objective, professional, and insightful tone.
-    *   Use **bolding** for key terms and concepts to improve scannability.
-    *   Use bullet points and numbered lists to break down complex procedures.
-    *   Ensure all content is logically sequenced—moving from foundational "What" to operational "How" and strategic "Why."
+    * Objective and professional.
+    * Use **bolding** for key terms.
+    * Use bullet points for complex procedures.
 
-    Your entire output in the 'notes' field must be a single, well-formatted Markdown string.
-
-    ---
-    **Source Text:**
-    {{{sourceText}}}
-    ---
-  `,
-});
+    Source Text:
+    {{sourceText}}
+  `
+);
 
 // ========== Flow Definition ==========
-const generateLectureNotesFlow = ai.defineFlow(
+export const generateLectureNotesFlow = ai.defineFlow(
   {
     name: 'generateLectureNotesFlow',
     inputSchema: LectureNotesRequestSchema,
     outputSchema: LectureNotesResponseSchema,
   },
   async (input) => {
+    // Calling the prompt and awaiting the response
     const { output } = await lectureNotesPrompt(input);
+    
     if (!output) {
-      throw new Error('The AI failed to generate lecture notes. The provided text might be too short or unclear.');
+      throw new Error('The AI failed to generate structured output.');
     }
+    
     return output;
   }
 );
 
-
-// ========== API Function Export ==========
+// ========== API Function Export (Server Action) ==========
 export async function generateLectureNotes(
   input: LectureNotesRequest
 ): Promise<LectureNotesResponse> {
-  return await generateLectureNotesFlow(input);
+  try {
+    // We use runFlow to execute the flow within the Genkit runtime context
+    return await runFlow(generateLectureNotesFlow, input);
+  } catch (error) {
+    console.error('Lecture Notes Flow Error:', error);
+    throw new Error(
+      error instanceof Error ? error.message : 'An unexpected error occurred while generating notes.'
+    );
+  }
 }
