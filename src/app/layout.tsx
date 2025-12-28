@@ -30,6 +30,9 @@ export const metadata: Metadata = {
   title: 'Donevia',
   description: 'A personal productivity management web application.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/Donevia_newlogo.png',
+  },
 };
 
 export default function RootLayout({
