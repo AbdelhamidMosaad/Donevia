@@ -20,7 +20,7 @@ export const LectureNotesResponseSchema = z.object({
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
 
-// Prompt
+// ========== Prompt Template ==========
 const lectureNotesPrompt = ai.definePrompt({
   name: 'lectureNotesPrompt',
   input: { schema: LectureNotesRequestSchema },
@@ -52,13 +52,26 @@ const lectureNotesPrompt = ai.definePrompt({
   `,
 });
 
-// Flow
+// ========== Flow Definition ==========
+const generateLectureNotesFlow = ai.defineFlow(
+  {
+    name: 'generateLectureNotesFlow',
+    inputSchema: LectureNotesRequestSchema,
+    outputSchema: LectureNotesResponseSchema,
+  },
+  async (input) => {
+    const { output } = await lectureNotesPrompt(input);
+    if (!output) {
+      throw new Error('The AI failed to generate lecture notes. The provided text might be too short or unclear.');
+    }
+    return output;
+  }
+);
+
+
+// ========== API Function Export ==========
 export async function generateLectureNotes(
   input: LectureNotesRequest
 ): Promise<LectureNotesResponse> {
-  const { output } = await lectureNotesPrompt(input);
-  if (!output) {
-    throw new Error('The AI failed to generate lecture notes. The provided text might be too short or unclear.');
-  }
-  return output;
+  return await generateLectureNotesFlow(input);
 }
