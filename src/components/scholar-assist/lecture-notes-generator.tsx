@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
@@ -16,6 +16,9 @@ import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { marked } from 'marked';
+import { type Packer, Document, Paragraph, TextRun, HeadingLevel } from 'docx';
+
 
 const availableFonts = [
     'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans 3', 'Nunito', 'Montserrat', 'Playfair Display', 'JetBrains Mono', 'Bahnschrift'
@@ -31,11 +34,11 @@ export function LectureNotesGenerator() {
   const [exportFont, setExportFont] = useState('Inter');
   const [docx, setDocx] = useState<any>(null);
 
-  useState(() => {
+  useEffect(() => {
     import('docx').then(module => {
       setDocx(module);
     });
-  });
+  }, []);
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -69,27 +72,13 @@ export function LectureNotesGenerator() {
     
     const { Packer, Document, Paragraph, TextRun, HeadingLevel } = docx;
 
-    const createStyledParagraph = (text: string, options: any = {}) => {
-        return new Paragraph({
-            ...options,
-            children: [new TextRun({ text, font: exportFont })],
-        });
-    };
-    
     const docChildren = [
-        createStyledParagraph(result.title, { heading: HeadingLevel.TITLE }),
-        createStyledParagraph(result.overview, { heading: HeadingLevel.HEADING_3, style: "Heading3" }),
+      new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
+      new Paragraph({ text: result.overview, style: "IntenseQuote" }),
+      new Paragraph(result.notes),
+      new Paragraph({ text: "Summary", heading: HeadingLevel.HEADING_2 }),
+      new Paragraph(result.summary)
     ];
-
-    result.sections.forEach(section => {
-        docChildren.push(createStyledParagraph(section.heading, { heading: HeadingLevel.HEADING_2, style: "Heading2" }));
-        section.content.forEach(point => {
-            docChildren.push(createStyledParagraph(point));
-        });
-    });
-
-    docChildren.push(createStyledParagraph("Summary", { heading: HeadingLevel.HEADING_2, style: "Heading2" }));
-    docChildren.push(createStyledParagraph(result.summary));
 
     const docInstance = new Document({ 
         sections: [{ children: docChildren }],
@@ -102,7 +91,7 @@ export function LectureNotesGenerator() {
         }
     });
 
-    Packer.toBlob(docInstance).then(blob => {
+    Packer.toBlob(docInstance).then((blob: Blob) => {
         saveAs(blob, `${result.title.replace(/ /g, '_')}_notes.docx`);
     });
     toast({ title: '✓ Exporting as Word document' });
@@ -112,25 +101,19 @@ export function LectureNotesGenerator() {
     if (!user || !result) return;
     setIsSaving(true);
     
-    const contentBlocks: any[] = [
-      { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: result.title }] },
-      { type: 'paragraph', content: [{ type: 'text', text: result.overview, marks: [{ type: 'italic' }] }] },
-    ];
+    const content = `<h1>${result.title}</h1><blockquote>${result.overview}</blockquote><hr>${result.notes}<hr><h2>Summary</h2><p>${result.summary}</p>`;
+    const parsedContent = await marked.parse(content);
 
-    result.sections.forEach(section => {
-        contentBlocks.push({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: section.heading }] });
-        section.content.forEach(point => {
-             contentBlocks.push({ type: 'paragraph', content: [{ type: 'text', text: point }] });
-        });
-    });
-
-    contentBlocks.push({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Summary' }] });
-    contentBlocks.push({ type: 'paragraph', content: [{ type: 'text', text: result.summary }] });
+    // This is a simplified conversion. For a true TipTap conversion, a more complex parser is needed.
+    const tipTapContent = {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: parsedContent.replace(/<[^>]*>/g, '\n') }] }] // Basic text extraction
+    };
 
     try {
         const docRef = await addDoc(collection(db, 'users', user.uid, 'docs'), {
             title: result.title,
-            content: { type: 'doc', content: contentBlocks },
+            content: tipTapContent,
             ownerId: user.uid,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -166,14 +149,7 @@ export function LectureNotesGenerator() {
             <ScrollArea className="h-full pr-4 -mr-4">
               <div className="space-y-6 prose prose-sm dark:prose-invert max-w-none">
                 <blockquote className="border-l-4 pl-4 italic">{result.overview}</blockquote>
-                {result.sections.map((section, i) => (
-                  <div key={i}>
-                    <h3>{section.heading}</h3>
-                    {section.content.map((point, j) => (
-                      <p key={j}>{point}</p>
-                    ))}
-                  </div>
-                ))}
+                <div dangerouslySetInnerHTML={{ __html: marked(result.notes) }} />
                 <h3>Summary</h3>
                 <p>{result.summary}</p>
               </div>
