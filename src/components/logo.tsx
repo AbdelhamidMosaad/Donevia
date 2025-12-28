@@ -1,16 +1,20 @@
 
+'use client';
+
 import * as React from 'react';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export function DoneviaLogo({ className }: { className?: string }) {
   return (
-    <Image
-      src="/donevia_newlogo.png"
-      alt="Donevia Logo"
-      width={100}
-      height={120}
-      className={className}
-      aria-hidden="true"
-    />
+    <div className={cn("relative", className)}>
+        <Image
+          src="/donevia_newlogo.png"
+          alt="Donevia Logo"
+          fill
+          className="object-contain"
+          aria-hidden="true"
+        />
+    </div>
   );
 }
