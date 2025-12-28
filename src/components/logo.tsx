@@ -4,15 +4,15 @@ import * as React from 'react';
 export function DoneviaLogo({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      <rect width="24" height="24" rx="6" fill="#2A2F7F"/>
-      <path d="M7.81818 11.4545L11.4545 15.0909L18 8.54545" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M18 12.7273C17.1429 13.9299 15.1111 15.6364 12.3636 15.6364C9.61616 15.6364 7 13.974 7 12.1818" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+      <rect width="120" height="120" rx="30" fill="#2A2F7F"/>
+      <path d="M40.3361 58.8361L54.1722 72.6721L84.8361 42" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M36 80C50.2857 88.2857 74.8 -1.99999 104 26" stroke="#3CE8A4" strokeWidth="10" strokeLinecap="round" />
     </svg>
   );
 }
