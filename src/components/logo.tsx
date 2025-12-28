@@ -1,3 +1,4 @@
+
 export function DoneviaLogo({ className }: { className?: string }) {
   return (
     <svg
@@ -9,10 +10,17 @@ export function DoneviaLogo({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient id="logoGradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#4A00E0" />
+          <stop offset="50%" stopColor="#8E2DE2" />
+          <stop offset="100%" stopColor="#43D4C4" />
+        </linearGradient>
+      </defs>
       <g clipPath="url(#clip0_1_2)">
         <path
           d="M20 3H4C3.44772 3 3 3.44772 3 4V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V4C21 3.44772 20.5523 3 20 3Z"
-          fill="#6D28D9"
+          fill="url(#logoGradient)"
         />
         <g filter="url(#filter0_d_1_2)">
           <path
@@ -23,7 +31,6 @@ export function DoneviaLogo({ className }: { className?: string }) {
             strokeLinejoin="round"
           />
         </g>
-        <circle cx="17.5" cy="8.5" r="2.5" fill="#60A5FA" />
       </g>
       <defs>
         <filter
@@ -68,5 +75,3 @@ export function DoneviaLogo({ className }: { className?: string }) {
     </svg>
   );
 }
-
-    
