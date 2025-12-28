@@ -9,21 +9,14 @@ export function BrainstormingIcon({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <radialGradient
-          id="brainstorming-grad1"
-          cx="50%"
-          cy="50%"
-          r="50%"
-          fx="50%"
-          fy="50%"
-        >
-          <stop offset="0%" stopColor="#F72585" />
-          <stop offset="100%" stopColor="#7209B7" />
-        </radialGradient>
+        <linearGradient id="brainstorming-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2A2F7F" />
+          <stop offset="100%" stopColor="#3CE8A4" />
+        </linearGradient>
         <filter id="brainstorming-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
-          <feOffset in="blur" dy="4" result="offsetBlur" />
-          <feFlood floodColor="#B5179E" floodOpacity="0.5" result="flood" />
+          <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+          <feOffset in="blur" dy="3" result="offsetBlur" />
+          <feFlood floodColor="#2A2F7F" floodOpacity="0.4" result="flood" />
           <feComposite in="flood" in2="offsetBlur" operator="in" result="shadow" />
           <feMerge>
             <feMergeNode in="shadow" />
@@ -34,7 +27,7 @@ export function BrainstormingIcon({ className }: { className?: string }) {
       <g filter="url(#brainstorming-shadow)">
         <path
           d="M60 10 C 30 10, 10 35, 10 60 C 10 80, 25 100, 45 108 L 40 95 C 45 98, 50 100, 55 100 L 55 110 L 65 110 L 65 100 C 70 100, 75 98, 80 95 L 75 108 C 95 100, 110 80, 110 60 C 110 35, 90 10, 60 10 Z"
-          fill="url(#brainstorming-grad1)"
+          fill="url(#brainstorming-grad)"
         />
         <circle cx="60" cy="60" r="30" fill="white" opacity="0.1" />
         <path
