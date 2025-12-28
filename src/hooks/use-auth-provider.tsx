@@ -85,9 +85,11 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [clientSide, setClientSide] = useState(false);
   const [settings, setSettings] = useState<Partial<UserSettings>>(defaultSettings);
 
   useEffect(() => {
+    setClientSide(true); // Ensures this only runs on the client after mounting
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -141,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      return () => unsubscribeSettings();
   }, [user]);
   
-  if (loading) {
+  if (loading || !clientSide) {
     return <WelcomeScreen />;
   }
 
