@@ -133,12 +133,7 @@ export function AppSidebar() {
   return (
     <Sidebar variant={settings?.sidebarVariant}>
       <SidebarRail />
-      <SidebarHeader>
-        <Link href="/home" className="flex items-center gap-2">
-            <DoneviaLogo className="h-8 w-8" />
-            {open && <span className="font-bold font-headline text-lg">Donevia</span>}
-        </Link>
-      </SidebarHeader>
+      <SidebarHeader />
       <SidebarContent>
         <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="sidebar-menu">
