@@ -9,14 +9,14 @@ export function HabitsIcon({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient id="habits-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#4361EE" />
-          <stop offset="100%" stopColor="#3A0CA3" />
+        <linearGradient id="habits-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2A2F7F" />
+          <stop offset="100%" stopColor="#3CE8A4" />
         </linearGradient>
-        <filter id="habits-shadow" x="-20%" y="-20%" width="140%" height="140%">
+         <filter id="habits-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
           <feOffset in="blur" dy="3" result="offsetBlur" />
-          <feFlood floodColor="#4361EE" floodOpacity="0.5" result="flood" />
+          <feFlood floodColor="#2A2F7F" floodOpacity="0.4" result="flood" />
           <feComposite in="flood" in2="offsetBlur" operator="in" result="shadow" />
           <feMerge>
             <feMergeNode in="shadow" />
@@ -25,23 +25,11 @@ export function HabitsIcon({ className }: { className?: string }) {
         </filter>
       </defs>
       <g filter="url(#habits-shadow)">
-        <path
-          d="M 60,15 A 45,45 0 1 1 15,60 M 60,15 A 45,45 0 1 0 105,60"
-          stroke="url(#habits-grad1)"
-          strokeWidth="12"
-          fill="none"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 50 60 L 60 70 L 80 50"
-          stroke="white"
-          strokeWidth="8"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path d="M 105 60 L 95 50 L 105 40" stroke="url(#habits-grad1)" strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M 15 60 L 25 70 L 15 80" stroke="url(#habits-grad1)" strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M 60,20 A 40,40 0 0 1 95.3,44.7" stroke="url(#habits-grad)" strokeWidth="12" fill="none" strokeLinecap="round" />
+        <path d="M 95.3,44.7 L 105,35" stroke="url(#habits-grad)" strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M 60,20 A 40,40 0 1 0 24.7,44.7" stroke="url(#habits-grad)" strokeWidth="12" fill="none" strokeLinecap="round" />
+        <path d="M 24.7,44.7 L 15,35" stroke="url(#habits-grad)" strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M 45 60 L 55 70 L 75 50" stroke="white" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       </g>
     </svg>
   );
