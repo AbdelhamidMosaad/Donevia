@@ -47,7 +47,7 @@ import { JournalIcon } from './icons/tools/journal-icon';
 import { BeCreativeIcon } from './icons/tools/be-creative-icon';
 import { CreateWithAiIcon } from './icons/tools/create-with-ai-icon';
 import { DoneviaLogo } from './logo';
-import { ToDoListIcon } from './icons/tools/to-do-list-icon';
+import { ToDoListIcon } from '@/components/icons/tools/to-do-list-icon';
 
 const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },

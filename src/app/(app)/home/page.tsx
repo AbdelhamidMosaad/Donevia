@@ -34,7 +34,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { JournalIcon } from '@/components/icons/tools/journal-icon';
 import { BeCreativeIcon } from '@/components/icons/tools/be-creative-icon';
 import { CreateWithAiIcon } from '@/components/icons/tools/create-with-ai-icon';
-import { ToDoListIcon } from '../icons/tools/to-do-list-icon';
+import { ToDoListIcon } from '@/components/icons/tools/to-do-list-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
