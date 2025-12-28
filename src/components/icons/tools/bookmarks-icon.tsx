@@ -8,25 +8,8 @@ export function BookmarksIcon({ className }: { className?: string }) {
       className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <defs>
-        <linearGradient id="bookmarks-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2A2F7F" />
-          <stop offset="100%" stopColor="#3CE8A4" />
-        </linearGradient>
-        <filter id="bookmarks-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
-          <feOffset in="blur" dy="3" result="offsetBlur" />
-          <feFlood floodColor="#2A2F7F" floodOpacity="0.4" result="flood" />
-          <feComposite in="flood" in2="offsetBlur" operator="in" result="shadow" />
-          <feMerge>
-            <feMergeNode in="shadow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <g filter="url(#bookmarks-shadow)">
-        <path d="M30 15 H 90 C 98.284 15, 105 21.716, 105 30 V 100 L 60 75 L 15 100 V 30 C 15 21.716, 21.716 15, 30 15 Z" fill="url(#bookmarks-grad)" />
-      </g>
+      <rect x="10" y="10" width="100" height="100" rx="20" fill="#2D4696" />
+      <path d="M30 20 H 90 C 95.523 20, 100 24.477, 100 30 V 100 L 60 80 L 20 100 V 30 C 20 24.477, 24.477 20, 30 20 Z" fill="white" />
     </svg>
   );
 }

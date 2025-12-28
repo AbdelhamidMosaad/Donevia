@@ -756,5 +756,3 @@ export type Attachment = {
     size: number;
     uploadedAt: Timestamp;
 };
-
-    

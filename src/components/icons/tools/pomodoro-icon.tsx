@@ -8,28 +8,10 @@ export function PomodoroIcon({ className }: { className?: string }) {
       className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <defs>
-        <linearGradient id="pomodoro-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2A2F7F" />
-          <stop offset="100%" stopColor="#3CE8A4" />
-        </linearGradient>
-         <filter id="pomodoro-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
-          <feOffset in="blur" dy="3" result="offsetBlur" />
-          <feFlood floodColor="#2A2F7F" floodOpacity="0.4" result="flood" />
-          <feComposite in="flood" in2="offsetBlur" operator="in" result="shadow" />
-          <feMerge>
-            <feMergeNode in="shadow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <g filter="url(#pomodoro-shadow)">
-        <circle cx="60" cy="65" r="45" fill="url(#pomodoro-grad)" />
-        <path d="M45 25 L 75 25 L 70 15 L 50 15 Z" fill="#2A2F7F" />
-        <path d="M 60 20 A 40 40 0 0 0 60 100 A 40 40 0 0 0 60 20" fill="white" opacity="0.8" />
-        <path d="M 60 65 L 60 40" stroke="#333" strokeWidth="4" strokeLinecap="round" />
-      </g>
+      <rect x="10" y="10" width="100" height="100" rx="20" fill="#2D4696" />
+      <circle cx="60" cy="65" r="40" fill="white" />
+      <path d="M45 25 L 75 25 L 70 15 L 50 15 Z" fill="#2D4696" />
+      <path d="M 60 65 L 60 40" stroke="#2D4696" strokeWidth="5" strokeLinecap="round" />
     </svg>
   );
 }

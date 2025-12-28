@@ -8,34 +8,9 @@ export function BrainstormingIcon({ className }: { className?: string }) {
       className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <defs>
-        <linearGradient id="brainstorming-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2A2F7F" />
-          <stop offset="100%" stopColor="#3CE8A4" />
-        </linearGradient>
-        <filter id="brainstorming-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
-          <feOffset in="blur" dy="3" result="offsetBlur" />
-          <feFlood floodColor="#2A2F7F" floodOpacity="0.4" result="flood" />
-          <feComposite in="flood" in2="offsetBlur" operator="in" result="shadow" />
-          <feMerge>
-            <feMergeNode in="shadow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <g filter="url(#brainstorming-shadow)">
-        <path
-          d="M60 10 C 30 10, 10 35, 10 60 C 10 80, 25 100, 45 108 L 40 95 C 45 98, 50 100, 55 100 L 55 110 L 65 110 L 65 100 C 70 100, 75 98, 80 95 L 75 108 C 95 100, 110 80, 110 60 C 110 35, 90 10, 60 10 Z"
-          fill="url(#brainstorming-grad)"
-        />
-        <circle cx="60" cy="60" r="30" fill="white" opacity="0.1" />
-        <path
-          d="M60 40 L 50 55 L 70 55 L 60 40 Z M 60 80 L 50 65 L 70 65 L 60 80 Z M 40 60 L 55 70 L 55 50 L 40 60 Z M 80 60 L 65 70 L 65 50 L 80 60 Z"
-          fill="white"
-          opacity="0.8"
-        />
-      </g>
+      <rect x="10" y="10" width="100" height="100" rx="20" fill="#2D4696" />
+      <path d="M60 20 C 35 20, 20 40, 20 60 C 20 80, 35 100, 55 100 L 55 90 L 65 90 L 65 100 C 85 100, 100 80, 100 60 C 100 40, 85 20, 60 20 Z" fill="white" />
+      <circle cx="60" cy="60" r="15" fill="#2D4696" />
     </svg>
   );
 }

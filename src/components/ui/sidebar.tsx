@@ -191,7 +191,7 @@ const Sidebar = React.forwardRef<
           >
              <SheetHeader className="p-4 border-b">
                 <div className="flex items-center gap-2">
-                    
+                    <DoneviaLogo className="h-8 w-8" />
                     <SheetTitle>Donevia</SheetTitle>
                 </div>
                 <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
@@ -223,7 +223,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "fixed inset-y-0 z-10 hidden h-svh transition-all duration-200 ease-linear md:flex",
+            "fixed inset-y-0 z-10 hidden h-svh transition-all duration-200 ease-linear md:flex m-4 mr-0",
             open ? "w-[var(--sidebar-width-expanded)]" : "w-[var(--sidebar-width-collapsed)]",
             "group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
@@ -308,7 +308,7 @@ const SidebarInset = React.forwardRef<
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background",
         "transition-all duration-200 ease-linear",
-        open ? "md:ml-[var(--sidebar-width-expanded)]" : "md:ml-[var(--sidebar-width-collapsed)]",
+        open ? "md:ml-[calc(var(--sidebar-width-expanded)_+_1rem)]" : "md:ml-[calc(var(--sidebar-width-collapsed)_+_1rem)]",
         className
       )}
       {...props}
@@ -345,7 +345,7 @@ const SidebarHeader = React.forwardRef<
       ref={ref}
       data-sidebar="header"
       className={cn(
-        "flex h-14 items-center gap-2 p-4",
+        "flex h-16 items-center gap-2 p-4",
         !open && "justify-center px-2",
         className
       )}
@@ -524,6 +524,10 @@ const sidebarMenuButtonVariants = cva(
         sm: "h-7 text-xs",
         lg: "h-12 text-sm",
       },
+      isActive: {
+        true: "bg-sidebar-accent text-sidebar-accent-foreground",
+        false: "bg-transparent text-sidebar-foreground",
+      }
     },
     defaultVariants: {
       variant: "default",
@@ -568,28 +572,24 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), !open && "w-10 h-10 justify-center p-0", isActive && "animated-gradient-background shadow-lg shadow-primary/40 text-sidebar-accent-foreground", className)}
+        className={cn(sidebarMenuButtonVariants({ variant, size, isActive }), !open && "w-10 h-10 justify-center p-0", className)}
         {...props}
       >
         {buttonContent}
       </Comp>
     )
 
-    if (!tooltip) {
+    if (!tooltip || open) {
       return button
     }
     
-    if (open) {
-        const { children: tooltipChildren, ...tooltipProps } = typeof tooltip === 'string' ? { children: tooltip } : tooltip;
-        return (
-            <Tooltip>
-                <TooltipTrigger asChild>{button}</TooltipTrigger>
-                <TooltipContent {...tooltipProps}>{tooltipChildren}</TooltipContent>
-            </Tooltip>
-        );
-    }
-    
-    return button;
+    const { children: tooltipChildren, ...tooltipProps } = typeof tooltip === 'string' ? { children: tooltip } : tooltip;
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>{button}</TooltipTrigger>
+            <TooltipContent {...tooltipProps}>{tooltipChildren}</TooltipContent>
+        </Tooltip>
+    );
   }
 )
 SidebarMenuButton.displayName = "SidebarMenuButton"
