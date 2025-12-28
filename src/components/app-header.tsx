@@ -73,15 +73,6 @@ export function AppHeader() {
       <Button variant="outline" size="icon" className="md:hidden h-8 w-8" onClick={toggleSidebar}>
           <DoneviaLogo className="size-6 shrink-0" />
       </Button>
-      <div className="hidden items-center gap-4 md:flex">
-        <Link href="/home" className="items-center gap-2 flex">
-          <DoneviaLogo className="size-8 shrink-0" />
-          <div className="flex flex-col">
-            <span className="text-lg font-semibold font-headline leading-none">Donevia</span>
-            <span className="text-xs text-muted-foreground">Get it done, your way.</span>
-          </div>
-        </Link>
-      </div>
       <div className="w-full flex-1">
         {isClient && (
           <form onSubmit={handleSearch}>

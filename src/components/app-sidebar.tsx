@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -47,6 +48,7 @@ import { InterviewPrepIcon } from './icons/tools/interview-prep-icon';
 import { JournalIcon } from './icons/tools/journal-icon';
 import { BeCreativeIcon } from './icons/tools/be-creative-icon';
 import { CreateWithAiIcon } from './icons/tools/create-with-ai-icon';
+import { DoneviaLogo } from './logo';
 
 const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
@@ -133,7 +135,15 @@ export function AppSidebar() {
     <Sidebar variant={settings?.sidebarVariant}>
       <SidebarRail />
       <SidebarHeader>
-        
+        <Link href="/home" className="items-center gap-2 flex">
+          <DoneviaLogo className="size-8 shrink-0" />
+          {open && (
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold font-headline leading-none">Donevia</span>
+              <span className="text-xs text-muted-foreground">Get it done, your way.</span>
+            </div>
+          )}
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <DragDropContext onDragEnd={handleDragEnd}>
