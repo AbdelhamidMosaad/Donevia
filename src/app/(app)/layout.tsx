@@ -1,6 +1,4 @@
 
-
-
 'use client';
 
 import { AppHeader } from '@/components/app-header';
@@ -10,16 +8,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { WelcomeScreen } from '@/components/welcome-screen';
-import { TaskReminderProvider } from '@/hooks/use-task-reminders';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { PomodoroProvider } from '@/hooks/use-pomodoro';
-import { StudyReminderProvider } from '@/hooks/use-study-reminders';
-import { PlannerReminderProvider } from '@/hooks/use-planner-reminders';
-import { ReminderDialogProvider } from '@/hooks/use-reminder-dialog';
-import { ReminderDialog } from '@/components/reminder-dialog';
-import { StudyTimerProvider } from '@/hooks/use-study-timer';
-import { TaskTimerProvider } from '@/hooks/use-task-timer';
 import { useTasks } from '@/hooks/use-tasks';
 
 
@@ -56,32 +46,17 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <TaskReminderProvider>
-      <StudyReminderProvider>
-        <ReminderDialogProvider>
-          <PlannerReminderProvider>
-            <PomodoroProvider>
-                <TaskTimerProvider>
-                  <StudyTimerProvider>
-                    <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
-                      <AppSidebar />
-                      <SidebarInset>
-                          <div className="flex flex-col h-screen">
-                            <AppHeader />
-                            <main className="flex-1 overflow-y-auto px-4 md:px-6">
-                                {children}
-                            </main>
-                          </div>
-                      </SidebarInset>
-                    </SidebarProvider>
-                  </StudyTimerProvider>
-                </TaskTimerProvider>
-            </PomodoroProvider>
-          </PlannerReminderProvider>
-           <ReminderDialog />
-        </ReminderDialogProvider>
-      </StudyReminderProvider>
-    </TaskReminderProvider>
+    <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
+      <AppSidebar />
+      <SidebarInset>
+          <div className="flex flex-col h-screen">
+            <AppHeader />
+            <main className="flex-1 overflow-y-auto px-4 md:px-6">
+                {children}
+            </main>
+          </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
