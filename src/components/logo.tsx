@@ -1,9 +1,7 @@
+
 import * as React from 'react';
 
 export function DoneviaLogo({ className }: { className?: string }) {
-  // Use a static ID to prevent hydration mismatch between server and client
-  const logoGradientId = 'logoGradient';
-
   return (
     <svg
       width="24"
@@ -14,27 +12,9 @@ export function DoneviaLogo({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <defs>
-        <linearGradient id={logoGradientId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#8E2DE2" />
-          <stop offset="100%" stopColor="#4A00E0" />
-        </linearGradient>
-      </defs>
-      <rect
-        x="3"
-        y="3"
-        width="18"
-        height="18"
-        rx="6"
-        fill={`url(#${logoGradientId})`}
-      />
-      <path
-        d="M6.66663 12.8704L9.91663 16.1204L17.0104 9.02609"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <rect width="24" height="24" rx="6" fill="#2A2F7F"/>
+      <path d="M7.65186 12.3182L10.5185 15.1849L17.6852 8.01825" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17.6852 10.3516C15.9185 12.0183 13.0519 14.2183 10.5185 15.1849" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
