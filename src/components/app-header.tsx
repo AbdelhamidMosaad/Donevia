@@ -71,7 +71,6 @@ export function AppHeader() {
         <div className="flex h-16 items-center gap-4 rounded-2xl border bg-card px-4 shadow-lg lg:px-6">
       <Link href="/home" className="flex items-center justify-center gap-2">
         <DoneviaLogo className="h-8 w-8" />
-        <span className="hidden sm:inline-block font-bold font-headline text-xl">Donevia</span>
       </Link>
       <div className="w-full flex-1 ml-4">
         {isClient && (
