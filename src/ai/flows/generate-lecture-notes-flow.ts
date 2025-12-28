@@ -9,12 +9,12 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { runFlow } from 'genkit';
 
-export const LectureNotesRequestSchema = z.object({
+const LectureNotesRequestSchema = z.object({
   sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
 });
 export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
 
-export const LectureNotesResponseSchema = z.object({
+const LectureNotesResponseSchema = z.object({
   title: z.string().describe("A concise and relevant title for the generated material."),
   notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
 });
@@ -49,7 +49,7 @@ const lectureNotesPrompt = ai.definePrompt(
 );
 
 // ========== Flow Definition ==========
-export const generateLectureNotesFlow = ai.defineFlow(
+const generateLectureNotesFlow = ai.defineFlow(
   {
     name: 'generateLectureNotesFlow',
     inputSchema: LectureNotesRequestSchema,
