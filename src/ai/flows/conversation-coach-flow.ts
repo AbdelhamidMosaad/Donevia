@@ -6,6 +6,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
 import { ConversationCoachRequestSchema, ConversationCoachResponseSchema, type ConversationCoachRequest, type ConversationCoachResponse } from '@/lib/types/conversation-coach';
 

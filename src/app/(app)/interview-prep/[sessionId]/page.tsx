@@ -10,6 +10,7 @@ import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import moment from 'moment';
 
 // This is a placeholder for the detailed session view.
 // In a real implementation, you would fetch the session and its questions/answers from Firestore.

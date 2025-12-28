@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import type { StickyNote } from '@/lib/types';
@@ -63,7 +62,7 @@ export function StickyNoteCard({ note, onClick, onDelete, style, className }: St
     >
       {note.imageUrl && (
         <div className="relative w-full aspect-video mb-2 rounded-md overflow-hidden">
-            <Image src={note.imageUrl} alt={note.title || 'Note image'} layout="fill" objectFit="cover" />
+            <Image src={note.imageUrl} alt={note.title || 'Note image'} fill objectFit="cover" />
         </div>
       )}
       {priorityInfo && (

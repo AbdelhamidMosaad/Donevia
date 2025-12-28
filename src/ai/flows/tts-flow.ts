@@ -5,6 +5,7 @@
  * - generateAudio - Converts a given string of text into a playable audio data URI.
  */
 import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
 import wav from 'wav';
 
@@ -50,7 +51,7 @@ const generateAudioFlow = ai.defineFlow(
   },
   async ({ text, voice }) => {
     const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: googleAI.model('gemini-2.5-flash-preview-tts'),
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
