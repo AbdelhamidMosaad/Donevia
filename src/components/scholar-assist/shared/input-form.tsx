@@ -81,8 +81,10 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     script.src = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js`;
     script.onload = () => {
         pdfjs = (window as any).pdfjsLib;
-        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js`;
-        setPdfjsLoaded(true);
+        if (pdfjs) {
+            pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js`;
+            setPdfjsLoaded(true);
+        }
     };
     document.body.appendChild(script);
 
@@ -179,6 +181,10 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
   };
   
   const parsePdf = async (file: File) => {
+    if (!pdfjsLoaded) {
+        toast({ variant: 'destructive', title: "PDF library not loaded yet. Please wait a moment and try again."});
+        return;
+    }
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjs.getDocument(arrayBuffer).promise;
     let fullText = '';
@@ -225,7 +231,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
         
         toast({ title: "✓ File Processed", description: "Text has been extracted and is ready for generation." });
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error parsing file:", error);
         toast({ variant: 'destructive', title: 'File Parsing Failed', description: (error as Error).message });
         setFileName(null);
@@ -252,7 +258,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     try {
         const result = await searchWeb({ query: searchQuery });
         setSearchResults(result.results);
-    } catch(e) {
+    } catch(e: any) {
         toast({ variant: 'destructive', title: 'Web search failed', description: (e as Error).message });
     } finally {
         setIsSearching(false);

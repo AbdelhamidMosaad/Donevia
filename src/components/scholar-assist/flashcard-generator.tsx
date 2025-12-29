@@ -20,166 +20,118 @@ interface FlashcardGeneratorProps {
   setResult: (result: StudyMaterialResponse | null) => void;
 }
 
-export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [isSaveOpen, setIsSaveOpen] = useState(false);
+const FlashcardTaker = ({ result, onReset }: { result: StudyMaterialResponse, onReset: () => void }) => {
+    const [isSaveOpen, setIsSaveOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const [currentCardIndex, setCurrentCardIndex] = useState(0);
+    const [isFlipped, setIsFlipped] = useState(false);
+    const { toast } = useToast();
 
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  
-  const flashcardRefs = useRef<Array<HTMLDivElement | null>>([]);
-  if(result && flashcardRefs.current.length !== result.flashcardContent?.length) {
-      flashcardRefs.current = Array(result.flashcardContent?.length).fill(null).map((_, i) => flashcardRefs.current[i] || React.createRef());
-  }
+    const handleCopy = () => {
+        if (!result?.flashcardContent) return;
+        let text = `${result.title}\n\n`;
+        result.flashcardContent.forEach((card, i) => {
+        text += `Card ${i + 1}\nFront: ${card.front}\nBack: ${card.back}\n\n`;
+        });
+        navigator.clipboard.writeText(text);
+        toast({ title: '✓ Copied to clipboard!' });
+    };
+    
+    const handleDownload = () => {
+        if (!result?.flashcardContent) return;
+        let text = `${result.title}\n\n`;
+        result.flashcardContent.forEach((card, i) => {
+        text += `Card ${i + 1}\nFront: ${card.front}\nBack: ${card.back}\n\n`;
+        });
 
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${result.title.replace(/ /g, '_')}_flashcards.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        toast({ title: '✓ Download started' });
+    };
+    
+    const handleExportPDF = async () => {
+        if (!result || !result.flashcardContent) return;
+        setIsExporting(true);
+        toast({ title: 'Generating PDF...', description: 'This may take a moment for many cards.' });
 
-  const handleGenerate = async (values: InputFormValues) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'You must be logged in.' });
-      return;
-    }
+        try {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const margin = 10;
+            const cardWidth = (pdfWidth - 3 * margin) / 2;
+            const cardHeight = cardWidth * (2/3); // Aspect ratio
+            
+            let x = margin;
+            let y = margin;
+            let pageCount = 1;
 
-    setIsLoading(true);
-    setResult(null);
-    setCurrentCardIndex(0);
-    setIsFlipped(false);
+            for (let i = 0; i < result.flashcardContent.length; i++) {
+                const cardData = result.flashcardContent[i];
 
-    try {
-      const requestPayload: StudyMaterialRequest = {
-        sourceText: values.sourceText,
-        generationType: 'flashcards',
-        flashcardsOptions: {
-            numCards: values.numCards,
-            style: values.cardStyle,
-        },
-      };
-
-      const data = await generateStudyMaterial(requestPayload);
-      setResult(data);
-
-    } catch (error) {
-      console.error("Flashcard generation failed:", error);
-      toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleReset = () => {
-    setResult(null);
-    setCurrentCardIndex(0);
-    setIsFlipped(false);
-  };
-  
-  const handleCopy = () => {
-    if (!result?.flashcardContent) return;
-    let text = `${result.title}\n\n`;
-    result.flashcardContent.forEach((card, i) => {
-      text += `Card ${i + 1}\nFront: ${card.front}\nBack: ${card.back}\n\n`;
-    });
-    navigator.clipboard.writeText(text);
-    toast({ title: '✓ Copied to clipboard!' });
-  };
-  
-  const handleDownload = () => {
-    if (!result?.flashcardContent) return;
-    let text = `${result.title}\n\n`;
-    result.flashcardContent.forEach((card, i) => {
-      text += `Card ${i + 1}\nFront: ${card.front}\nBack: ${card.back}\n\n`;
-    });
-
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${result.title.replace(/ /g, '_')}_flashcards.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-    toast({ title: '✓ Download started' });
-  };
-  
-  const handleExportPDF = async () => {
-    if (!result || !result.flashcardContent) return;
-    setIsExporting(true);
-    toast({ title: 'Generating PDF...', description: 'This may take a moment for many cards.' });
-
-    try {
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const margin = 10;
-        const cardWidth = (pdfWidth - 3 * margin) / 2;
-        const cardHeight = cardWidth * (2/3); // Aspect ratio
-        
-        let x = margin;
-        let y = margin;
-        let pageCount = 1;
-
-        for (let i = 0; i < result.flashcardContent.length; i++) {
-            const cardData = result.flashcardContent[i];
-
-            for (const side of ['front', 'back']) {
-                if (y + cardHeight > pdfHeight - margin) {
-                    pdf.addPage();
-                    pageCount++;
-                    y = margin;
+                for (const side of ['front', 'back']) {
+                    if (y + cardHeight > pdfHeight - margin) {
+                        pdf.addPage();
+                        pageCount++;
+                        y = margin;
+                    }
+                    if (x + cardWidth > pdfWidth - margin) {
+                        x = margin;
+                        y += cardHeight + margin;
+                    }
+                    
+                    if (y + cardHeight > pdfHeight - margin && pageCount > 1) { // Check again after moving to next row
+                        pdf.addPage();
+                        y = margin;
+                    }
+                    
+                    const canvas = await html2canvas(document.getElementById(`flashcard-export-${i}-${side}`)!, { scale: 2 });
+                    const imgData = canvas.toDataURL('image/png');
+                    pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
+                    x += cardWidth + margin;
                 }
-                 if (x + cardWidth > pdfWidth - margin) {
-                    x = margin;
-                    y += cardHeight + margin;
-                }
-                
-                 if (y + cardHeight > pdfHeight - margin && pageCount > 1) { // Check again after moving to next row
-                    pdf.addPage();
-                    y = margin;
-                }
-                
-                const canvas = await html2canvas(document.getElementById(`flashcard-export-${i}-${side}`)!, { scale: 2 });
-                const imgData = canvas.toDataURL('image/png');
-                pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
-                x += cardWidth + margin;
             }
+
+            pdf.save(`${result.title.replace(/ /g, '_')}.pdf`);
+            toast({ title: '✓ PDF Exported Successfully' });
+        } catch(e) {
+            toast({ variant: 'destructive', title: 'Error exporting PDF' });
+        } finally {
+            setIsExporting(false);
         }
-
-        pdf.save(`${result.title.replace(/ /g, '_')}.pdf`);
-        toast({ title: '✓ PDF Exported Successfully' });
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Error exporting PDF' });
-    } finally {
-        setIsExporting(false);
+    };
+    
+    const navigateCard = (direction: 'prev' | 'next') => {
+        setIsFlipped(false);
+        if (direction === 'prev') {
+            setCurrentCardIndex(i => Math.max(0, i - 1));
+        } else {
+            setCurrentCardIndex(i => Math.min((result?.flashcardContent?.length || 1) - 1, i + 1));
+        }
     }
-  };
-  
-  const navigateCard = (direction: 'prev' | 'next') => {
-    setIsFlipped(false);
-    if (direction === 'prev') {
-        setCurrentCardIndex(i => Math.max(0, i - 1));
-    } else {
-        setCurrentCardIndex(i => Math.min((result?.flashcardContent?.length || 1) - 1, i + 1));
-    }
-  }
 
-  const currentCard = result?.flashcardContent?.[currentCardIndex];
-  const totalCards = result?.flashcardContent?.length || 0;
+    const currentCard = result?.flashcardContent?.[currentCardIndex];
+    const totalCards = result?.flashcardContent?.length || 0;
 
-  const renderFlashcardTaker = () => {
-    if (!result || !result.flashcardContent || !currentCard) return null;
+    if (!currentCard) return null;
     
     return (
-      <>
+        <>
         {/* Hidden elements for export */}
         <div className="absolute -left-[9999px] -top-[9999px]">
-            {result.flashcardContent.map((card, index) => (
+            {result.flashcardContent?.map((card, index) => (
                 <React.Fragment key={index}>
                     <div id={`flashcard-export-${index}-front`} className="w-[300px] h-[200px] p-4 flex items-center justify-center text-center bg-primary text-primary-foreground">
                         <p className="text-lg font-bold">{card.front}</p>
                     </div>
-                     <div id={`flashcard-export-${index}-back`} className="w-[300px] h-[200px] p-4 flex items-center justify-center text-center bg-card border">
+                        <div id={`flashcard-export-${index}-back`} className="w-[300px] h-[200px] p-4 flex items-center justify-center text-center bg-card border">
                         <p className="text-sm">{card.back}</p>
                     </div>
                 </React.Fragment>
@@ -221,7 +173,7 @@ export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProp
                 </div>
             </CardContent>
             <CardFooter className="flex-wrap justify-end gap-2">
-                <Button variant="outline" onClick={handleReset}>Generate New Flashcards</Button>
+                <Button variant="outline" onClick={onReset}>Generate New Flashcards</Button>
                 <Button onClick={() => setIsSaveOpen(true)}><Save/> Save to Deck</Button>
                 <Button variant="outline" onClick={handleCopy}><Copy/> Copy Text</Button>
                 <Button variant="outline" onClick={handleDownload}><Download/> Download .txt</Button>
@@ -234,14 +186,54 @@ export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProp
         <SaveToDeckDialog
             isOpen={isSaveOpen}
             onOpenChange={setIsSaveOpen}
-            cards={result.flashcardContent}
+            cards={result.flashcardContent || []}
             deckNameSuggestion={result.title}
-            onSaveComplete={handleReset}
+            onSaveComplete={onReset}
         />
       </>
-    );
-  };
+    )
+}
 
+export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  
+
+  const handleGenerate = async (values: InputFormValues) => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'You must be logged in.' });
+      return;
+    }
+
+    setIsLoading(true);
+    setResult(null);
+
+    try {
+      const requestPayload: StudyMaterialRequest = {
+        sourceText: values.sourceText,
+        generationType: 'flashcards',
+        flashcardsOptions: {
+            numCards: values.numCards || 10,
+            style: values.cardStyle || 'basic',
+        },
+      };
+
+      const data = await generateStudyMaterial(requestPayload);
+      setResult(data);
+
+    } catch (error: any) {
+      console.error("Flashcard generation failed:", error);
+      toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleReset = () => {
+    setResult(null);
+  };
+  
   const renderContent = () => {
     if (isLoading) {
         return (
@@ -253,7 +245,7 @@ export function FlashcardGenerator({ result, setResult }: FlashcardGeneratorProp
         );
     }
     if (result) {
-        return renderFlashcardTaker();
+        return <FlashcardTaker result={result} onReset={handleReset} />;
     }
     return <InputForm onGenerate={handleGenerate} generationType="flashcards" />;
   }
