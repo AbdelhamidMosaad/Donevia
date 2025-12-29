@@ -70,7 +70,7 @@ export function AppHeader() {
     <header className="sticky top-4 z-40 mx-4 md:mx-6 my-4">
         <div className="flex h-16 items-center gap-4 rounded-2xl border bg-card px-4 shadow-lg lg:px-6">
       <Link href="/home" className="flex items-center justify-center gap-2">
-        <DoneviaLogo className="h-8 w-8" />
+        <DoneviaLogo className="h-12 w-12" />
       </Link>
       <div className="w-full flex-1 ml-4">
         {isClient && (
