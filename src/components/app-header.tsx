@@ -69,26 +69,29 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-40 my-4">
-        <div className="flex h-16 items-center gap-4 px-4 md:px-6 shadow-sm">
-      <Link href="/home" className="flex items-center justify-center gap-2 -mt-2">
-        <DoneviaLogo className="h-20 w-20" />
-      </Link>
-      <div className="w-full flex-1 ml-4">
-        {isClient && (
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                name="search"
-                placeholder="Search everywhere..."
-                className="w-full appearance-none bg-background/50 backdrop-blur-sm pl-8 shadow-sm md:w-2/3 lg:w-1/2"
-              />
-            </div>
-          </form>
-        )}
+        <div className="flex h-16 items-center justify-between gap-4 px-4 md:px-6 shadow-sm">
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+          <Link href="/home" className="flex items-center justify-center gap-2 -mt-2 shrink-0">
+            <DoneviaLogo className="h-20 w-20" />
+          </Link>
+          <div className="w-full flex-1 ml-4">
+            {isClient && (
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    name="search"
+                    placeholder="Search everywhere..."
+                    className="w-full appearance-none bg-background/50 backdrop-blur-sm pl-8 shadow-sm md:w-2/3 lg:w-1/2"
+                  />
+                </div>
+              </form>
+            )}
+          </div>
       </div>
 
+      <div className="flex items-center gap-2 shrink-0">
        <TaskTimerHeaderWidget />
        <StudyTimerHeaderWidget />
        <PomodoroHeaderWidget />
@@ -156,6 +159,7 @@ export function AppHeader() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
         </div>
     </header>
   );
