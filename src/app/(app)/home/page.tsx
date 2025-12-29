@@ -1,18 +1,16 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, setDoc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Task, Stage } from '@/lib/types';
-import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal, Wrench } from 'lucide-react';
+import type { Task, Stage, PlannerEvent } from '@/lib/types';
+import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal, Wrench, Calendar, ListTodo, ClipboardList } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AnalyticsDashboard } from '@/components/analytics-dashboard';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PlannerIcon } from '@/components/icons/tools/planner-icon';
 import { TasksIcon } from '@/components/icons/tools/tasks-icon';
@@ -35,6 +33,9 @@ import { JournalIcon } from '@/components/icons/tools/journal-icon';
 import { BeCreativeIcon } from '@/components/icons/tools/be-creative-icon';
 import { CreateWithAiIcon } from '@/components/icons/tools/create-with-ai-icon';
 import { ToDoListIcon } from '@/components/icons/tools/to-do-list-icon';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import moment from 'moment';
+import { useTasks } from '@/hooks/use-tasks';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -85,10 +86,84 @@ const allTools = [
 type CardSize = 'small' | 'medium' | 'large';
 type View = 'tools' | 'overview';
 
+function AgendaView({ events }: { events: PlannerEvent[] }) {
+    const upcomingEvents = useMemo(() => {
+        const now = moment();
+        return events
+            .filter(event => moment(event.start).isSameOrAfter(now, 'day'))
+            .sort((a,b) => moment(a.start).valueOf() - moment(b.start).valueOf())
+            .slice(0, 7);
+    }, [events]);
+
+    if (upcomingEvents.length === 0) {
+        return <p className="text-sm text-muted-foreground text-center py-4">No upcoming events.</p>
+    }
+
+    return (
+        <div className="space-y-3">
+            {upcomingEvents.map(event => (
+                <div key={event.id} className="flex items-start gap-3 text-sm">
+                    <div className="font-semibold text-center w-12 shrink-0">
+                        <p>{moment(event.start).format('MMM')}</p>
+                        <p className="text-2xl">{moment(event.start).format('D')}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded-md flex-1">
+                        <p className="font-semibold truncate">{event.title}</p>
+                        <p className="text-xs text-muted-foreground">{event.allDay ? 'All Day' : moment(event.start).format('h:mm A')}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function UpcomingTasksView({ tasks, stages }: { tasks: Task[], stages: Stage[] }) {
+    const todoStageId = useMemo(() => stages.find(s => s.name.toLowerCase() === 'to do')?.id, [stages]);
+    const backlogStageId = useMemo(() => stages.find(s => s.name.toLowerCase() === 'backlog')?.id, [stages]);
+    
+    const todoTasks = useMemo(() => {
+        return tasks.filter(t => t.status === todoStageId).slice(0, 5);
+    }, [tasks, todoStageId]);
+
+    const backlogTasks = useMemo(() => {
+        return tasks.filter(t => t.status === backlogStageId).slice(0, 5);
+    }, [tasks, backlogStageId]);
+    
+    return (
+        <div className="space-y-6">
+            <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><ClipboardList/> To Do</h3>
+                {todoTasks.length > 0 ? (
+                    <div className="space-y-2">
+                        {todoTasks.map(task => (
+                             <Link key={task.id} href="/dashboard/lists" className="block p-2 bg-muted/50 rounded-md hover:bg-muted">
+                                <p className="text-sm font-medium truncate">{task.title}</p>
+                            </Link>
+                        ))}
+                    </div>
+                ): <p className="text-sm text-muted-foreground text-center py-4">No tasks in 'To Do'.</p>}
+            </div>
+             <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><ListTodo/> Backlog</h3>
+                 {backlogTasks.length > 0 ? (
+                    <div className="space-y-2">
+                        {backlogTasks.map(task => (
+                             <Link key={task.id} href="/dashboard/lists" className="block p-2 bg-muted/50 rounded-md hover:bg-muted">
+                                <p className="text-sm font-medium truncate">{task.title}</p>
+                            </Link>
+                        ))}
+                    </div>
+                ): <p className="text-sm text-muted-foreground text-center py-4">Backlog is empty.</p>}
+            </div>
+        </div>
+    )
+}
+
+
 export default function HomePage() {
   const { user, loading, settings } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [stages, setStages] = useState<Stage[]>([]);
+  const { tasks, stages, isLoading: tasksLoading } = useTasks();
+  const [plannerEvents, setPlannerEvents] = useState<PlannerEvent[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [orderedTools, setOrderedTools] = useState(allTools);
   const [cardSize, setCardSize] = useState<CardSize>(settings.homeCardSize || 'large');
@@ -122,27 +197,24 @@ export default function HomePage() {
     if (user) {
       setDataLoading(true);
       
-      const collectionsToFetch = [
-        { name: 'tasks', setter: setTasks, queryConstraints: [where('deleted', '!=', true)] },
-        { name: 'taskLists', setter: setStages, transform: (docs: any[]) => {
-            const allStages: Stage[] = [];
-            docs.forEach(doc => { if (doc.stages) allStages.push(...doc.stages) });
-            return allStages.filter((stage, index, self) => index === self.findIndex(s => s.id === stage.id && s.name === stage.name));
-        }},
-      ];
-
-      const unsubscribes = collectionsToFetch.map(({ name, setter, queryConstraints = [], transform }) => {
-        const collRef = collection(db, 'users', user.uid, name);
-        const q = query(collRef, ...queryConstraints);
-        return onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setter(transform ? transform(data) : data);
-        });
+      const eventsQuery = query(collection(db, 'users', user.uid, 'plannerEvents'), orderBy('start', 'asc'));
+      const unsubEvents = onSnapshot(eventsQuery, snapshot => {
+          setPlannerEvents(snapshot.docs.map(doc => {
+              const data = doc.data();
+              return {
+                  id: doc.id,
+                  ...data,
+                  start: data.start.toDate(),
+                  end: data.end.toDate(),
+              } as PlannerEvent
+          }));
       });
 
       setDataLoading(false);
 
-      return () => unsubscribes.forEach(unsub => unsub());
+      return () => {
+          unsubEvents();
+      };
     }
   }, [user]);
   
@@ -178,7 +250,7 @@ export default function HomePage() {
     await setDoc(settingsRef, { toolOrder: newOrder }, { merge: true });
   };
 
-  if (loading || !user || dataLoading) {
+  if (loading || !user || dataLoading || tasksLoading) {
     return <div>Loading home...</div>;
   }
   
@@ -205,8 +277,8 @@ export default function HomePage() {
         
         <Tabs value={activeTab} onValueChange={(v) => handleTabChange(v as View)} className="flex-1 flex flex-col min-h-0">
             <TabsList>
-                <TabsTrigger value="tools"><Wrench className="mr-2 h-4 w-4"/> Tools</TabsTrigger>
                 <TabsTrigger value="overview"><BarChart3 className="mr-2 h-4 w-4"/> Overview</TabsTrigger>
+                <TabsTrigger value="tools"><Wrench className="mr-2 h-4 w-4"/> Tools</TabsTrigger>
             </TabsList>
             
             <TabsContent value="tools" className="flex-1 mt-4">
@@ -263,14 +335,26 @@ export default function HomePage() {
                 </DragDropContext>
             </TabsContent>
             <TabsContent value="overview" className="flex-1 mt-4">
-                <AnalyticsDashboard tasks={tasks} stages={stages} />
+                 <div className="grid md:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Calendar/> Agenda</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <AgendaView events={plannerEvents} />
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Upcoming Tasks</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <UpcomingTasksView tasks={tasks} stages={stages} />
+                        </CardContent>
+                    </Card>
+                 </div>
             </TabsContent>
         </Tabs>
     </div>
   );
 }
-
-    
-
-    
-
