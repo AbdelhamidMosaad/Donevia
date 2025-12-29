@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   description: 'A personal productivity management web application.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/Donevia_newlogo-removebg.png',
+    icon: '/icon.svg',
   },
 };
 
