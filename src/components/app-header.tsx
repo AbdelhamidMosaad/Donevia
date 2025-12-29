@@ -69,9 +69,9 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-4 z-40 mx-4 md:mx-6 my-4">
-        <div className="flex h-16 items-center gap-4 rounded-2xl border bg-card px-4 shadow-lg lg:px-6">
+        <div className="flex h-16 items-center gap-4 px-4 lg:px-6">
       <Link href="/home" className="flex items-center justify-center gap-2">
-        <DoneviaLogo className="h-14 w-14" />
+        <DoneviaLogo className="h-20 w-20" />
       </Link>
       <div className="w-full flex-1 ml-4">
         {isClient && (
