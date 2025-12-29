@@ -14,6 +14,8 @@ import { generateStudyMaterial } from '@/ai/flows/generate-study-material';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDropzone } from 'react-dropzone';
 import JSZip from 'jszip';
+import { Packer, Document } from 'docx';
+
 
 let pdfjs: any;
 
@@ -58,25 +60,20 @@ export function AIGenerator({ deckId }: AIGeneratorProps) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(contentXml, "application/xml");
         
-        const getTextFromNode = (node: Node): string => {
-            let text = '';
-            if (node.nodeName === 'w:t' && node.textContent) {
-                text += node.textContent;
-            } else if (node.nodeName === 'w:p') {
-                text += '\n';
-            } else if (node.hasChildNodes()) {
-                node.childNodes.forEach(child => text += getTextFromNode(child));
+        let extractedText = "";
+        const paragraphs = xmlDoc.getElementsByTagName('w:p');
+        for(let i = 0; i < paragraphs.length; i++) {
+            const textNodes = paragraphs[i].getElementsByTagName('w:t');
+            let paraText = "";
+            for (let j = 0; j < textNodes.length; j++) {
+                paraText += textNodes[j].textContent;
             }
-            return text;
-        };
-
-        const bodyNode = xmlDoc.getElementsByTagName('w:body')[0];
-        if (bodyNode) {
-            const extractedText = getTextFromNode(bodyNode).trim();
-            if (extractedText) {
-                setText(extractedText);
-                return;
-            }
+            extractedText += paraText + "\n";
+        }
+        
+        if (extractedText.trim()) {
+            setText(extractedText.trim());
+            return;
         }
     }
     throw new Error("Could not extract any text from the DOCX file.");
