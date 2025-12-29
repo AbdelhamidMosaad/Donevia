@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Task, Stage } from '@/lib/types';
-import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal } from 'lucide-react';
+import { Home, BarChart3, GripVertical, Plus, Minus, GripHorizontal, Wrench } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics-dashboard';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -83,7 +83,7 @@ const allTools = [
 ];
 
 type CardSize = 'small' | 'medium' | 'large';
-type View = 'overview' | 'analytics';
+type View = 'tools' | 'overview';
 
 export default function HomePage() {
   const { user, loading, settings } = useAuth();
@@ -92,7 +92,7 @@ export default function HomePage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [orderedTools, setOrderedTools] = useState(allTools);
   const [cardSize, setCardSize] = useState<CardSize>(settings.homeCardSize || 'large');
-  const [activeTab, setActiveTab] = useState<View>(settings.homeView || 'overview');
+  const [activeTab, setActiveTab] = useState<View>(settings.homeView || 'tools');
 
   useEffect(() => {
     if (settings.homeView) {
@@ -194,7 +194,7 @@ export default function HomePage() {
                     <p className="text-muted-foreground">{welcomeMessage}</p>
                 </div>
             </div>
-            {activeTab === 'overview' && (
+            {activeTab === 'tools' && (
                 <ToggleGroup type="single" value={cardSize} onValueChange={handleCardSizeChange} aria-label="Card size toggle">
                     <ToggleGroupItem value="small" aria-label="Small cards"><GripHorizontal/></ToggleGroupItem>
                     <ToggleGroupItem value="medium" aria-label="Medium cards"><Minus/></ToggleGroupItem>
@@ -205,11 +205,11 @@ export default function HomePage() {
         
         <Tabs value={activeTab} onValueChange={(v) => handleTabChange(v as View)} className="flex-1 flex flex-col min-h-0">
             <TabsList>
-                <TabsTrigger value="overview"><Home className="mr-2 h-4 w-4"/> Overview</TabsTrigger>
-                <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4"/> Analytics</TabsTrigger>
+                <TabsTrigger value="tools"><Wrench className="mr-2 h-4 w-4"/> Tools</TabsTrigger>
+                <TabsTrigger value="overview"><BarChart3 className="mr-2 h-4 w-4"/> Overview</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="flex-1 mt-4">
+            <TabsContent value="tools" className="flex-1 mt-4">
                 <DragDropContext onDragEnd={onDragEnd}>
                     <Droppable droppableId="tools">
                         {(provided) => (
@@ -262,7 +262,7 @@ export default function HomePage() {
                     </Droppable>
                 </DragDropContext>
             </TabsContent>
-            <TabsContent value="analytics" className="flex-1 mt-4">
+            <TabsContent value="overview" className="flex-1 mt-4">
                 <AnalyticsDashboard tasks={tasks} stages={stages} />
             </TabsContent>
         </Tabs>
@@ -273,3 +273,4 @@ export default function HomePage() {
     
 
     
+
