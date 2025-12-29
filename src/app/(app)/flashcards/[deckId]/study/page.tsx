@@ -80,11 +80,10 @@ export default function StudyPage() {
     }
   }, [user, deckId, router, loadDueCards]);
 
+  const handleQuality = useCallback(async (quality: number) => {
+    if (!user || !queue[currentIndex]) return;
 
-  const handleQuality = async (quality: number) => {
-    if (!user || !currentCard) return;
-
-    const { card, progress } = currentCard;
+    const { card, progress } = queue[currentIndex];
     const progressRef = doc(db, 'users', user.uid, 'flashcardDecks', deckId, 'progress', card.id);
     const cardRef = doc(db, 'users', user.uid, 'flashcardDecks', deckId, 'cards', card.id);
     
@@ -105,9 +104,26 @@ export default function StudyPage() {
         setCurrentIndex(nextIndex);
         setIsFlipped(false);
     } else {
-        await loadDueCards();
+        await loadDueCards(); // Reload when queue is finished
     }
-  };
+  }, [user, currentIndex, queue, deckId, loadDueCards]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isFlipped) {
+        const keyNumber = parseInt(event.key);
+        if (keyNumber >= 0 && keyNumber <= 5) {
+          handleQuality(keyNumber);
+        }
+      }
+      if (event.code === 'Space') {
+        event.preventDefault();
+        setIsFlipped(f => !f);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFlipped, handleQuality]);
 
   const currentCard = queue[currentIndex];
 
@@ -134,37 +150,41 @@ export default function StudyPage() {
 
   return (
     <div className="flex flex-col h-full items-center justify-center gap-6">
-        <div className="w-full max-w-2xl">
+       <div className="w-full max-w-2xl flex-1 flex flex-col justify-center">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold font-headline">Reviewing: {deck?.name}</h1>
+          <p className="text-muted-foreground">Card {currentIndex + 1} of {queue.length}</p>
+        </div>
+
+        <StudyCard card={currentCard.card} isFlipped={isFlipped} onFlip={() => setIsFlipped(!isFlipped)} />
+
+        <div className="h-32 mt-6">
+           {isFlipped && (
+                <div className="space-y-4 text-center">
+                    <p className="font-semibold">How well did you know this? (0-5)</p>
+                    <div className="flex items-center justify-center gap-2">
+                        <Button variant="destructive" onClick={() => handleQuality(0)} title="Forgot completely (0)">0</Button>
+                        <Button variant="destructive" onClick={() => handleQuality(1)} title="Recalled with great difficulty (1)">1</Button>
+                        <Button variant="secondary" onClick={() => handleQuality(2)} title="Recalled with difficulty (2)">2</Button>
+                        <Button variant="secondary" onClick={() => handleQuality(3)} title="Recalled correctly, but with hesitation (3)">3</Button>
+                        <Button onClick={() => handleQuality(4)} title="Recalled with ease (4)">4</Button>
+                        <Button onClick={() => handleQuality(5)} title="Recalled perfectly (5)" className="bg-green-600 hover:bg-green-700">5</Button>
+                    </div>
+                </div>
+           )}
+
+           {!isFlipped && (
+                <div className="mt-4 flex justify-center">
+                    <Button size="lg" onClick={() => setIsFlipped(true)}>Show Answer (Space)</Button>
+                </div>
+           )}
+        </div>
+       </div>
+       <div className="w-full max-w-2xl py-4">
             <Button variant="outline" onClick={() => router.push(`/flashcards/${deckId}`)} className="mb-4">
                 <ArrowLeft /> Back to Deck
             </Button>
         </div>
-       <div className="text-center">
-        <h1 className="text-3xl font-bold font-headline">Reviewing: {deck?.name}</h1>
-        <p className="text-muted-foreground">Card {currentIndex + 1} of {queue.length}</p>
-       </div>
-
-       <StudyCard card={currentCard.card} isFlipped={isFlipped} onFlip={() => setIsFlipped(!isFlipped)} />
-
-       {isFlipped && (
-            <div className="mt-4 space-y-4 text-center">
-                <p className="font-semibold">How well did you know this?</p>
-                <div className="flex items-center justify-center gap-2">
-                    <Button variant="destructive" onClick={() => handleQuality(0)} title="Forgot completely">0</Button>
-                    <Button variant="destructive" onClick={() => handleQuality(1)} title="Recalled with great difficulty">1</Button>
-                    <Button variant="secondary" onClick={() => handleQuality(2)} title="Recalled with difficulty">2</Button>
-                    <Button variant="secondary" onClick={() => handleQuality(3)} title="Recalled correctly, but with hesitation">3</Button>
-                    <Button onClick={() => handleQuality(4)} title="Recalled with ease">4</Button>
-                    <Button onClick={() => handleQuality(5)} title="Recalled perfectly" className="bg-green-600 hover:bg-green-700">5</Button>
-                </div>
-            </div>
-       )}
-
-       {!isFlipped && (
-             <div className="mt-4">
-                <Button size="lg" onClick={() => setIsFlipped(true)}>Show Answer</Button>
-            </div>
-       )}
     </div>
   );
 }
