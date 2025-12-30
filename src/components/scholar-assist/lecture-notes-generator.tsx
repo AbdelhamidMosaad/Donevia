@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -13,10 +14,12 @@ import { saveAs } from 'file-saver';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { marked } from 'marked';
 import { Packer, Document, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } from 'docx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Input } from '../ui/input';
 
 const availableFonts = [
     'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans 3', 'Nunito', 'Montserrat', 'Playfair Display', 'JetBrains Mono', 'Bahnschrift'
@@ -30,6 +33,8 @@ export function LectureNotesGenerator() {
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState<LectureNotesResponse | null>(null);
   const [exportFont, setExportFont] = useState('Inter');
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportFilename, setExportFilename] = useState('');
   const [docx, setDocx] = useState<any>(null);
 
   useEffect(() => {
@@ -37,6 +42,12 @@ export function LectureNotesGenerator() {
       setDocx(module);
     });
   }, []);
+
+  useEffect(() => {
+    if (result?.title) {
+        setExportFilename(result.title);
+    }
+  }, [result]);
 
   const handleGenerate = async (values: InputFormValues) => {
     if (!user) {
@@ -151,9 +162,10 @@ export function LectureNotesGenerator() {
     });
 
     Packer.toBlob(docInstance).then((blob: Blob) => {
-        saveAs(blob, `${result.title.replace(/ /g, '_')}_notes.docx`);
+        saveAs(blob, `${exportFilename.replace(/ /g, '_')}.docx`);
     });
     toast({ title: '✓ Exporting as Word document' });
+    setIsExportDialogOpen(false);
   };
   
   const handleSaveToDocs = async () => {
@@ -237,30 +249,38 @@ export function LectureNotesGenerator() {
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save/>}
                 Save to Docs
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline"><Download/> Export</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>Export as Word (.docx)</DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                      <div className="p-2 space-y-2">
-                        <label className="text-xs font-medium">Select Font</label>
-                         <Select value={exportFont} onValueChange={setExportFont}>
-                           <SelectTrigger><SelectValue/></SelectTrigger>
-                           <SelectContent>
-                             {availableFonts.map(font => <SelectItem key={font} value={font}>{font}</SelectItem>)}
-                           </SelectContent>
-                         </Select>
-                         <Button className="w-full" size="sm" onClick={handleExportWord} disabled={!docx}>
-                           {docx ? 'Confirm Export' : 'Loading...'}
-                         </Button>
-                      </div>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline"><Download/> Export</Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Export Options</DialogTitle>
+                        <DialogDescription>Set your preferred options for the Word document.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="filename">File Name</Label>
+                            <Input id="filename" value={exportFilename} onChange={(e) => setExportFilename(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="font-select">Font</Label>
+                             <Select value={exportFont} onValueChange={setExportFont}>
+                                <SelectTrigger id="font-select"><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    {availableFonts.map(font => <SelectItem key={font} value={font}>{font}</SelectItem>)}
+                                </SelectContent>
+                             </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleExportWord} disabled={!docx}>
+                            {docx ? 'Confirm Export' : 'Loading...'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
           </CardFooter>
         </Card>
       );
