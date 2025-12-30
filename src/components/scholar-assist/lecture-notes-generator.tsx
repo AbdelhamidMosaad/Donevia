@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -17,7 +16,7 @@ import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { marked } from 'marked';
-import { Packer, Document, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { Packer, Document, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } from 'docx';
 
 const availableFonts = [
     'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans 3', 'Nunito', 'Montserrat', 'Playfair Display', 'JetBrains Mono', 'Bahnschrift'
@@ -69,15 +68,51 @@ export function LectureNotesGenerator() {
         return;
     };
     
-    const { Packer, Document, Paragraph, TextRun, HeadingLevel } = docx;
+    const { Packer, Document, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } = docx;
 
-    const docChildren: (Paragraph | any)[] = [
+    const docChildren: any[] = [
       new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
     ];
 
     const lines = result.notes.split('\n');
+    let i = 0;
 
-    lines.forEach(line => {
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Handle Tables
+      if (line.trim().startsWith('|')) {
+        let tableLines = [];
+        while (i < lines.length && lines[i].trim().startsWith('|')) {
+          tableLines.push(lines[i]);
+          i++;
+        }
+        
+        // Header
+        const headerCells = tableLines[0].split('|').slice(1, -1).map(cell => new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: cell.trim(), bold: true })] })],
+        }));
+        
+        // Assumes a separator line exists, we skip it
+        const bodyRows = tableLines.slice(2).map(rowLine => {
+          const rowCells = rowLine.split('|').slice(1, -1).map(cell => new TableCell({
+            children: [new Paragraph(cell.trim())],
+          }));
+          return new TableRow({ children: rowCells });
+        });
+        
+        const table = new Table({
+          rows: [new TableRow({ children: headerCells }), ...bodyRows],
+          width: {
+            size: 100,
+            type: WidthType.PERCENTAGE,
+          },
+        });
+        docChildren.push(table);
+        continue; // continue to next line after table block
+      }
+      
+      // Handle other elements
       if (line.startsWith('### ')) {
         docChildren.push(new Paragraph({ text: line.substring(4), heading: HeadingLevel.HEADING_3 }));
       } else if (line.startsWith('## ')) {
@@ -101,7 +136,8 @@ export function LectureNotesGenerator() {
         });
         docChildren.push(new Paragraph({ children: textRuns }));
       }
-    });
+      i++; // Move to next line
+    }
 
     const docInstance = new Document({ 
         sections: [{ children: docChildren }],
