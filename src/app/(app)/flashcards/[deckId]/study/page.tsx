@@ -150,15 +150,17 @@ export default function StudyPage() {
 
   return (
     <div className="flex flex-col h-full items-center gap-6">
-       <div className="w-full max-w-2xl mt-4">
-            <Button variant="outline" onClick={() => router.push(`/flashcards/${deckId}`)}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Deck
-            </Button>
-        </div>
        <div className="w-full max-w-2xl flex-1 flex flex-col justify-center">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold font-headline">Reviewing: {deck?.name}</h1>
-          <p className="text-muted-foreground">Card {currentIndex + 1} of {queue.length}</p>
+        <div className="relative text-center mb-6">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                <Button variant="outline" onClick={() => router.push(`/flashcards/${deckId}`)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Deck
+                </Button>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold font-headline">Reviewing: {deck?.name}</h1>
+              <p className="text-muted-foreground">Card {currentIndex + 1} of {queue.length}</p>
+            </div>
         </div>
 
         <StudyCard card={currentCard.card} isFlipped={isFlipped} onFlip={() => setIsFlipped(!isFlipped)} />
