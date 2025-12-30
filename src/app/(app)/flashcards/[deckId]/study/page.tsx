@@ -149,8 +149,8 @@ export default function StudyPage() {
   }
 
   return (
-    <div className="flex flex-col h-full items-center justify-center gap-6">
-       <div className="absolute top-4 left-4">
+    <div className="flex flex-col h-full items-center gap-6">
+       <div className="w-full max-w-2xl mt-4">
             <Button variant="outline" onClick={() => router.push(`/flashcards/${deckId}`)}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Deck
             </Button>
