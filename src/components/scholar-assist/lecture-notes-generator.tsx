@@ -91,7 +91,6 @@ export function LectureNotesGenerator() {
     while (i < lines.length) {
       const line = lines[i];
 
-      // Handle Tables
       if (line.trim().startsWith('|')) {
         let tableLines = [];
         while (i < lines.length && lines[i].trim().startsWith('|')) {
@@ -99,31 +98,28 @@ export function LectureNotesGenerator() {
           i++;
         }
         
-        // Header
-        const headerCells = tableLines[0].split('|').slice(1, -1).map(cell => new TableCell({
-          children: [new Paragraph({ children: [new TextRun({ text: cell.trim(), bold: true })] })],
-        }));
+        const processRow = (rowLine: string, isHeader = false) => {
+            const cells = rowLine.split('|').slice(1, -1).map(cellText => {
+                const textRun = new TextRun({ text: cellText.trim(), bold: isHeader });
+                return new TableCell({ children: [new Paragraph({ children: [textRun] })] });
+            });
+            return new TableRow({ children: cells });
+        };
         
-        // Assumes a separator line exists, we skip it
-        const bodyRows = tableLines.slice(2).map(rowLine => {
-          const rowCells = rowLine.split('|').slice(1, -1).map(cell => new TableCell({
-            children: [new Paragraph(cell.trim())],
-          }));
-          return new TableRow({ children: rowCells });
-        });
+        const headerRow = processRow(tableLines[0], true);
+        const bodyRows = tableLines.slice(2).map(rowLine => processRow(rowLine, false));
         
         const table = new Table({
-          rows: [new TableRow({ children: headerCells }), ...bodyRows],
+          rows: [headerRow, ...bodyRows],
           width: {
             size: 100,
             type: WidthType.PERCENTAGE,
           },
         });
         docChildren.push(table);
-        continue; // continue to next line after table block
+        continue;
       }
       
-      // Handle other elements
       if (line.startsWith('### ')) {
         docChildren.push(new Paragraph({ text: line.substring(4), heading: HeadingLevel.HEADING_3 }));
       } else if (line.startsWith('## ')) {
@@ -147,7 +143,7 @@ export function LectureNotesGenerator() {
         });
         docChildren.push(new Paragraph({ children: textRuns }));
       }
-      i++; // Move to next line
+      i++;
     }
 
     const docInstance = new Document({ 
@@ -172,7 +168,6 @@ export function LectureNotesGenerator() {
     if (!user || !result) return;
     setIsSaving(true);
     
-    // Create a Tiptap-compatible JSON structure from the markdown
     const tipTapContent = {
       type: 'doc',
       content: result.notes.split('\n').map(line => {
@@ -186,8 +181,10 @@ export function LectureNotesGenerator() {
           return { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: line.substring(4) }] };
         }
         if (line.startsWith('* ')) {
-          // This is a simplification; full list support is more complex
-          return { type: 'paragraph', content: [{ type: 'text', text: `• ${line.substring(2)}` }] };
+          return { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: line.substring(2) }] }] }]};
+        }
+        if (line.trim().startsWith('|')) { // Basic table support
+             return { type: 'paragraph', content: [{ type: 'text', text: line }] };
         }
         
         const contentParts = line.split(/(\*\*.*?\*\*)/g).map(part => {
