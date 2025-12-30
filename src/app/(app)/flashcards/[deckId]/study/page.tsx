@@ -150,6 +150,11 @@ export default function StudyPage() {
 
   return (
     <div className="flex flex-col h-full items-center justify-center gap-6">
+       <div className="absolute top-4 left-4">
+            <Button variant="outline" onClick={() => router.push(`/flashcards/${deckId}`)}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Deck
+            </Button>
+        </div>
        <div className="w-full max-w-2xl flex-1 flex flex-col justify-center">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold font-headline">Reviewing: {deck?.name}</h1>
@@ -180,11 +185,6 @@ export default function StudyPage() {
            )}
         </div>
        </div>
-       <div className="w-full max-w-2xl py-4">
-            <Button variant="outline" onClick={() => router.push(`/flashcards/${deckId}`)} className="mb-4">
-                <ArrowLeft /> Back to Deck
-            </Button>
-        </div>
     </div>
   );
 }
