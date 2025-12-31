@@ -62,80 +62,83 @@ export function FolderCard({ folder, onDelete, size = 'large' }: FolderCardProps
     }
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    if (isEditing || (e.target as HTMLElement).closest('button, [role="menu"]')) {
-      e.preventDefault();
-    }
-  };
-  
   const handleActionClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
   };
+  
+  const cardContent = (
+    <div className={cn("p-6 flex flex-col items-center text-center h-full justify-center",
+        size === 'medium' && 'p-4',
+        size === 'small' && 'p-3'
+    )}>
+         <Folder className={cn("mb-4 text-primary",
+            size === 'large' && 'h-24 w-24',
+            size === 'medium' && 'h-16 w-16',
+            size === 'small' && 'h-12 w-12 mb-2'
+         )} />
+        {isEditing ? (
+          <Input 
+            ref={inputRef}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleRename}
+            className="text-lg font-headline text-center bg-transparent"
+             onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <h3 className={cn("font-bold font-headline text-foreground",
+            size === 'large' && 'text-lg',
+            size === 'medium' && 'text-base',
+            size === 'small' && 'text-sm'
+          )}>{folder.name}</h3>
+        )}
+         {size !== 'small' && <p className="text-xs text-muted-foreground mt-1">
+            Folder
+        </p>}
+    </div>
+  );
 
   return (
-    <Link href={`/flashcards/folder/${folder.id}`} onClick={handleCardClick} className="group block h-full">
-        <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
-            <div className={cn("p-6 flex flex-col items-center text-center h-full justify-center",
-                size === 'medium' && 'p-4',
-                size === 'small' && 'p-3'
-            )}>
-                 <Folder className={cn("mb-4 text-primary",
-                    size === 'large' && 'h-24 w-24',
-                    size === 'medium' && 'h-16 w-16',
-                    size === 'small' && 'h-12 w-12 mb-2'
-                 )} />
-                {isEditing ? (
-                  <Input 
-                    ref={inputRef}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onBlur={handleRename}
-                    className="text-lg font-headline text-center bg-transparent"
-                     onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <h3 className={cn("font-bold font-headline text-foreground",
-                    size === 'large' && 'text-lg',
-                    size === 'medium' && 'text-base',
-                    size === 'small' && 'text-sm'
-                  )}>{folder.name}</h3>
-                )}
-                 {size !== 'small' && <p className="text-xs text-muted-foreground mt-1">
-                    Folder
-                </p>}
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={handleActionClick}>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent onClick={handleActionClick}>
-                <DropdownMenuItem onSelect={() => setIsEditing(true)}>
-                  <Edit className="mr-2 h-4 w-4" /> Rename
-                </DropdownMenuItem>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent onClick={handleActionClick}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>This will delete the folder "{folder.name}". Decks inside will not be deleted.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={onDelete} className="bg-destructive hover:bg-destructive/90">Delete Folder</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </DropdownMenuContent>
-            </DropdownMenu>
-        </Card>
-    </Link>
+    <Card className="relative h-full overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm border-white/20 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl cursor-pointer">
+      {!isEditing ? (
+        <Link href={`/flashcards/folder/${folder.id}`} className="block h-full w-full">
+          {cardContent}
+        </Link>
+      ) : (
+        cardContent
+      )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={handleActionClick}>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent onClick={handleActionClick}>
+          <DropdownMenuItem onSelect={() => setIsEditing(true)}>
+            <Edit className="mr-2 h-4 w-4" /> Rename
+          </DropdownMenuItem>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" /> Delete
+              </DropdownMenuItem>
+            </AlertDialogTrigger>
+            <AlertDialogContent onClick={handleActionClick}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>This will delete the folder "{folder.name}". Decks inside will not be deleted.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} className="bg-destructive hover:bg-destructive/90">Delete Folder</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Card>
   );
 }
