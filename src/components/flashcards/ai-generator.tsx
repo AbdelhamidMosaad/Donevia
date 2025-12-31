@@ -192,7 +192,7 @@ export function AIGenerator({ deckId }: AIGeneratorProps) {
         sourceText: text,
         generationType: 'flashcards',
         flashcardsOptions: {
-            numCards: 10,
+            maxCards: 30, // Set a reasonable max limit
             style: 'basic',
         }
       };

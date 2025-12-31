@@ -9,7 +9,7 @@ export const QuizOptionsSchema = z.object({
 });
 
 export const FlashcardsOptionsSchema = z.object({
-  numCards: z.number().min(1).max(30),
+  maxCards: z.number().min(1).max(50),
   style: z.enum(['basic', 'detailed', 'question']),
 });
 

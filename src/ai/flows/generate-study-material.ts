@@ -41,9 +41,10 @@ If the generationType is 'quiz', you must follow these instructions:
 ---
 **FLASHCARDS INSTRUCTIONS**
 If the generationType is 'flashcards', you must follow these instructions:
-1.  **Number of Flashcards**: Generate exactly {{flashcardsOptions.numCards}} flashcards.
-2.  **Card Style**: The flashcards must be in the "{{flashcardsOptions.style}}" style.
-3.  **Content**: All flashcards must be based *only* on the provided source text. Create concise terms/questions for the front and clear, comprehensive definitions/answers for the back.
+1.  **Identify Key Concepts**: Analyze the source text to identify the most important concepts, terms, and key information suitable for flashcards.
+2.  **Determine Quantity**: Based on the text's length and density, generate a suitable number of flashcards—typically between 5 and 20. Do not create more than {{flashcardsOptions.maxCards}} cards.
+3.  **Card Style**: The flashcards must be in the "{{flashcardsOptions.style}}" style.
+4.  **Content**: All flashcards must be based *only* on the provided source text. Create concise terms/questions for the front and clear, comprehensive definitions/answers for the back.
   `,
 });
 

@@ -39,7 +39,7 @@ const quizSchema = z.object({
 });
 
 const flashcardsSchema = z.object({
-    numCards: z.coerce.number().min(1).max(30),
+    maxCards: z.coerce.number().min(1).max(50).optional(),
     cardStyle: z.enum(['basic', 'detailed', 'question']),
 });
 
@@ -105,7 +105,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
       questionTypes: ['multiple-choice'],
       difficulty: 'medium',
       // Flashcard defaults
-      numCards: 10,
+      maxCards: 30,
       cardStyle: 'basic',
     },
   });
@@ -528,13 +528,13 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                 )}
                 {generationType === 'flashcards' && (
                     <>
-                        <FormField
+                         <FormField
                             control={form.control}
-                            name="numCards"
+                            name="maxCards"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Number of Flashcards</FormLabel>
-                                    <FormControl><Input type="number" min="1" max="30" {...field} /></FormControl>
+                                    <FormLabel>Max Number of Flashcards</FormLabel>
+                                    <FormControl><Input type="number" min="5" max="50" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
