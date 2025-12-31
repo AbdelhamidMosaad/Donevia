@@ -32,8 +32,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '../ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { updateDeck } from '@/lib/flashcards';
 import { FlashcardsIcon } from '../icons/tools/flashcards-icon';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -69,9 +68,8 @@ export function DeckCard({ deck, folders, onDelete, onMove, size = 'large' }: De
       return;
     }
 
-    const deckRef = doc(db, 'users', user.uid, 'flashcardDecks', deck.id);
     try {
-      await updateDoc(deckRef, { name: editingName.trim() });
+      await updateDeck(user.uid, deck.id, { name: editingName.trim() });
       toast({ title: '✓ Deck Renamed' });
     } catch (e) {
       toast({ variant: 'destructive', title: 'Error renaming deck' });
