@@ -13,17 +13,19 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-
-    // Match all collections for a specific user
-    match /users/{userId}/{document=**} {
-      allow read, write: if isAuthenticated() && isOwner(userId);
-    }
     
     // Specific, stricter rule for Google Auth Tokens
+    // This rule must come before the general /users/{userId} rule
     match /users/{userId}/googleAuthTokens/{tokenId} {
-      allow read, write: if isAuthenticated() && isOwner(userId) && resource.data.userId == userId;
-      // Deny list access to everyone to prevent leaking tokens
-      allow list: if false;
+      // Only the owner can read, create, or update their own token.
+      allow read, create, update: if isAuthenticated() && isOwner(userId);
+      // Deny list and delete access to everyone to prevent leaking tokens and accidental deletion.
+      allow list, delete: if false;
+    }
+
+    // General rule for all other user data
+    match /users/{userId}/{document=**} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
     }
     
     // Rules for public data, if any
