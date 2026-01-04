@@ -114,30 +114,25 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
     }
   }, [user, toast]);
   
-  // --- Google Calendar API Functions ---
-
   const createGoogleEvent = async (event: PlannerEvent) => {
-    const res = await fetchWithAuth('/api/firebase/custom-token', {
+    return fetchWithAuth('/api/firebase/custom-token', {
         method: 'POST',
         body: JSON.stringify({ action: 'create', event }),
-    });
-    return res.json();
+    }).then(res => res.json());
   };
 
   const updateGoogleEvent = async (eventId: string, event: PlannerEvent) => {
-     const res = await fetchWithAuth('/api/firebase/custom-token', {
+     return fetchWithAuth('/api/firebase/custom-token', {
         method: 'POST',
         body: JSON.stringify({ action: 'update', eventId, event }),
-    });
-    return res.json();
+    }).then(res => res.json());
   };
   
   const deleteGoogleEvent = async (eventId: string) => {
-     const res = await fetchWithAuth('/api/firebase/custom-token', {
+     return fetchWithAuth('/api/firebase/custom-token', {
         method: 'POST',
         body: JSON.stringify({ action: 'delete', eventId }),
-    });
-    return res.json();
+    }).then(res => res.json());
   }
 
   const value = {
