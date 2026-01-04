@@ -19,6 +19,7 @@ import { useEventReminders } from '@/hooks/use-planner-reminders';
 import { PlannerIcon } from '@/components/icons/tools/planner-icon';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { GoogleCalendarManager } from '@/components/planner/google-calendar-manager';
 
 
 const localizer = momentLocalizer(moment);
@@ -269,6 +270,7 @@ export default function PlannerPage() {
             </div>
         </div>
         <div className="flex items-center gap-2">
+            <GoogleCalendarManager />
             <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)}>
                 <Settings className="mr-2 h-4 w-4" /> Manage Categories
             </Button>

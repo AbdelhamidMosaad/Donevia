@@ -11,6 +11,7 @@ import { WelcomeScreen } from '@/components/welcome-screen';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useTasks } from '@/hooks/use-tasks';
+import { GoogleCalendarProvider } from '@/hooks/use-google-calendar';
 
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
@@ -46,17 +47,19 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
-      <AppSidebar />
-      <SidebarInset>
-          <div className="flex flex-col h-screen">
-            <AppHeader />
-            <main className="flex-1 overflow-y-auto px-4 md:px-6">
-                {children}
-            </main>
-          </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <GoogleCalendarProvider>
+      <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange}>
+        <AppSidebar />
+        <SidebarInset>
+            <div className="flex flex-col h-screen">
+              <AppHeader />
+              <main className="flex-1 overflow-y-auto px-4 md:px-6">
+                  {children}
+              </main>
+            </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </GoogleCalendarProvider>
   );
 }
 
