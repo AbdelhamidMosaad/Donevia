@@ -13,9 +13,9 @@ import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { fetchWithAuth } from '@/lib/client-helpers';
 import type { PlannerEvent } from '@/lib/types';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 interface GoogleCalendarContextType {
   isConnected: boolean;
@@ -45,8 +45,39 @@ export function useGoogleCalendar() {
 export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Handle OAuth callback
+  useEffect(() => {
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
+
+    if (code && state && user && state === user.uid) {
+      setIsLoading(true);
+      fetchWithAuth('/api/gcal', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'oauth_callback', code }),
+      })
+      .then(() => {
+          toast({ title: 'Success!', description: 'Google Calendar connected.' });
+          // Clean the URL
+          router.replace(pathname);
+      })
+      .catch((e) => {
+          console.error('OAuth callback failed', e);
+          toast({ variant: 'destructive', title: 'Connection Failed', description: e.message });
+      })
+      .finally(() => {
+          setIsLoading(false);
+      });
+    }
+  }, [searchParams, user, toast, router, pathname]);
+  
 
   useEffect(() => {
     if (user) {
@@ -78,25 +109,9 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
 
   const connect = useCallback(async () => {
     if (!user) return;
-
-    try {
-      const functions = getFunctions();
-      const getAuthUrl = httpsCallable(functions, 'getAuthUrl');
-      const result = (await getAuthUrl()) as { data: { url: string } };
-      
-      const authUrl = `${result.data.url}&state=${user.uid}`;
-      
-      window.open(authUrl, 'googleAuth', 'width=500,height=600');
-
-    } catch (error) {
-      console.error('Error getting auth URL:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not initiate Google Calendar connection.',
-      });
-    }
-  }, [user, toast]);
+    // Redirect to our own API route which will then generate the Google URL
+    window.location.href = `/api/gcal?uid=${user.uid}`;
+  }, [user]);
 
   const disconnect = useCallback(async () => {
     if (!user) return;
@@ -115,21 +130,21 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
   }, [user, toast]);
   
   const createGoogleEvent = async (event: PlannerEvent) => {
-    return fetchWithAuth('/api/firebase/custom-token', {
+    return fetchWithAuth('/api/gcal', {
         method: 'POST',
         body: JSON.stringify({ action: 'create', event }),
     }).then(res => res.json());
   };
 
   const updateGoogleEvent = async (eventId: string, event: PlannerEvent) => {
-     return fetchWithAuth('/api/firebase/custom-token', {
+     return fetchWithAuth('/api/gcal', {
         method: 'POST',
         body: JSON.stringify({ action: 'update', eventId, event }),
     }).then(res => res.json());
   };
   
   const deleteGoogleEvent = async (eventId: string) => {
-     return fetchWithAuth('/api/firebase/custom-token', {
+     return fetchWithAuth('/api/gcal', {
         method: 'POST',
         body: JSON.stringify({ action: 'delete', eventId }),
     }).then(res => res.json());
