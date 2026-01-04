@@ -9,9 +9,9 @@ admin.initializeApp();
 const corsHandler = cors({ origin: true });
 
 const oauth2Client = new google.auth.OAuth2(
-  functions.config().google.client_id,
-  functions.config().google.client_secret,
-  functions.config().google.redirect_uri
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
 );
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar.events.readonly", "https://www.googleapis.com/auth/calendar.events"];
