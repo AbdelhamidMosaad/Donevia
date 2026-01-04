@@ -14,13 +14,14 @@ const oauth2Client = new google.auth.OAuth2(
   functions.config().google.redirect_uri
 );
 
-const SCOPES = ["https://www.googleapis.com/auth/calendar.events.readonly"];
+const SCOPES = ["https://www.googleapis.com/auth/calendar.events.readonly", "https://www.googleapis.com/auth/calendar.events"];
 
 export const getAuthUrl = functions.https.onRequest((req, res) => {
   corsHandler(req, res, () => {
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
       scope: SCOPES,
+      prompt: 'consent',
     });
     res.send({ url: authUrl });
   });
@@ -29,7 +30,7 @@ export const getAuthUrl = functions.https.onRequest((req, res) => {
 export const oauthCallback = functions.https.onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
     const code = req.query.code as string;
-    const uid = req.query.state as string; // We'll pass UID in state
+    const uid = req.query.state as string; 
 
     if (!uid) {
       res.status(400).send("No user ID provided in state.");
@@ -38,7 +39,7 @@ export const oauthCallback = functions.https.onRequest(async (req, res) => {
 
     try {
       const { tokens } = await oauth2Client.getToken(code);
-      const { access_token, refresh_token, expiry_date } = tokens;
+      const { access_token, refresh_token, expiry_date, scope } = tokens;
 
       if (!access_token || !expiry_date) {
         throw new Error("Failed to retrieve access token.");
@@ -48,15 +49,15 @@ export const oauthCallback = functions.https.onRequest(async (req, res) => {
         userId: uid,
         accessToken: access_token,
         expiryDate: expiry_date,
-        ...(refresh_token && { refreshToken: refresh_token }), // only store if it exists
+        scope: scope,
+        ...(refresh_token && { refreshToken: refresh_token }), 
       };
       
-      // Store tokens securely in a subcollection under the user
       await admin.firestore()
         .collection('users')
         .doc(uid)
         .collection('googleAuthTokens')
-        .doc('primary') // Use a consistent doc ID
+        .doc('primary')
         .set(tokenData, { merge: true });
 
       res.send("<html><body><h1>Authentication successful!</h1><p>You can close this window.</p></body></html>");
