@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -20,10 +19,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase/firestore';
 import { useDropzone } from 'react-dropzone';
 import { getAuth } from 'firebase/auth';
-import { Paperclip, Trash2, Check, Palette } from 'lucide-react';
+import { Paperclip, Trash2, Check, Palette, Link as LinkIcon, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
-
+import { useGoogleCalendar } from '@/hooks/use-google-calendar';
 
 interface EventDialogProps {
   isOpen: boolean;
@@ -56,6 +55,8 @@ const getInitialFormData = (event: Partial<PlannerEvent> | null): Partial<Planne
             color: undefined,
             taskId: undefined,
             categoryId: undefined,
+            googleEventId: undefined,
+            syncWithGoogle: false,
         };
     }
     return {
@@ -65,6 +66,7 @@ const getInitialFormData = (event: Partial<PlannerEvent> | null): Partial<Planne
         attachments: event.attachments || [],
         reminders: event.reminders || [],
         recurring: event.recurring || 'none',
+        syncWithGoogle: !!event.googleEventId,
     };
 };
 
@@ -75,6 +77,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
   const [formData, setFormData] = useState<Partial<PlannerEvent>>(getInitialFormData(event));
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
+  const { isConnected: isGoogleConnected, createGoogleEvent, updateGoogleEvent, deleteGoogleEvent } = useGoogleCalendar();
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: acceptedFiles => setFilesToUpload(prev => [...prev, ...acceptedFiles]),
@@ -141,7 +144,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
             const body = new FormData();
             body.append('file', file);
             body.append('idToken', idToken!);
-            body.append('type', 'planner'); // Differentiate from CRM uploads
+            body.append('type', 'planner');
             
             const res = await fetch('/api/planner/upload', { method: 'POST', body });
             if (!res.ok) throw new Error(`Upload failed for ${file.name}`);
@@ -165,12 +168,39 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
         }
     }
 
+    let googleEventId = formData.googleEventId;
+    if (formData.syncWithGoogle) {
+        try {
+            if (googleEventId) {
+                const updatedEvent = await updateGoogleEvent(googleEventId, formData as PlannerEvent);
+                googleEventId = updatedEvent.id;
+            } else {
+                const newEvent = await createGoogleEvent(formData as PlannerEvent);
+                googleEventId = newEvent.id;
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Google Calendar Sync Failed", description: (error as Error).message });
+            return;
+        }
+    } else if (googleEventId) {
+        // If sync is turned off for an existing synced event, delete it from Google Calendar
+        try {
+            await deleteGoogleEvent(googleEventId);
+            googleEventId = undefined; // Clear the ID
+        } catch (error) {
+            console.warn("Failed to delete Google Calendar event:", error);
+            // Don't block the save, just warn the user.
+            toast({ variant: 'destructive', title: "Could not remove from Google Calendar. You may need to delete it manually." });
+        }
+    }
+
     const eventData: Partial<PlannerEvent> & { [key: string]: any } = { 
         ...formData, 
         taskId: formData.taskId || null,
         attachments: uploadedAttachments,
         recurringEndDate: formData.recurring === 'none' ? null : (formData.recurringEndDate ? formData.recurringEndDate : null),
         color: formData.color,
+        googleEventId: googleEventId,
     };
     
     if (eventData.recurring === 'none' || !eventData.recurring) {
@@ -179,7 +209,7 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
     if (eventData.color === undefined) {
         delete eventData.color;
     }
-
+    delete eventData.syncWithGoogle; // This is a client-side state, don't save to Firestore
 
     try {
         if(eventData.id) {
@@ -204,6 +234,9 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
   const handleDelete = async () => {
     if(!user || !formData.id) return;
     try {
+        if (formData.googleEventId) {
+            await deleteGoogleEvent(formData.googleEventId);
+        }
         const eventRef = doc(db, 'users', user.uid, 'plannerEvents', formData.id);
         await deleteDoc(eventRef);
         toast({ title: 'Event deleted' });
@@ -388,6 +421,12 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
                 ))}
             </ul>
           </div>
+           {isGoogleConnected && (
+                <div className="flex items-center space-x-2 pt-4 border-t">
+                    <Checkbox id="sync-google" checked={formData.syncWithGoogle} onCheckedChange={(checked) => handleChange('syncWithGoogle', checked)} />
+                    <Label htmlFor="sync-google">Sync with Google Calendar</Label>
+                </div>
+            )}
         </div>
         <DialogFooter className="justify-between">
            {formData.id ? (
@@ -395,7 +434,10 @@ export function EventDialog({ isOpen, onOpenChange, event, categories }: EventDi
            ) : <div />}
            <div className="flex gap-2">
             <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave}>
+              <Save className="mr-2 h-4 w-4" />
+              {formData.syncWithGoogle ? 'Save & Sync' : 'Save'}
+            </Button>
            </div>
         </DialogFooter>
       </DialogContent>

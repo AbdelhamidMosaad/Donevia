@@ -14,12 +14,17 @@ import { db } from '@/lib/firebase';
 import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { fetchWithAuth } from '@/lib/client-helpers';
+import type { PlannerEvent } from '@/lib/types';
 
 interface GoogleCalendarContextType {
   isConnected: boolean;
   isLoading: boolean;
   connect: () => void;
   disconnect: () => void;
+  createGoogleEvent: (event: PlannerEvent) => Promise<any>;
+  updateGoogleEvent: (eventId: string, event: PlannerEvent) => Promise<any>;
+  deleteGoogleEvent: (eventId: string) => Promise<any>;
 }
 
 const GoogleCalendarContext = createContext<
@@ -78,10 +83,8 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
       const getAuthUrl = httpsCallable(functions, 'getAuthUrl');
       const result = (await getAuthUrl()) as { data: { url: string } };
       
-      // Append user's UID to the state parameter for the callback to use
       const authUrl = `${result.data.url}&state=${user.uid}`;
       
-      // Open a popup for the user to authenticate
       window.open(authUrl, 'googleAuth', 'width=500,height=600');
 
     } catch (error) {
@@ -109,12 +112,41 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
       });
     }
   }, [user, toast]);
+  
+  // --- Google Calendar API Functions ---
+
+  const createGoogleEvent = async (event: PlannerEvent) => {
+    const res = await fetchWithAuth('/api/calendar-proxy', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'create', event }),
+    });
+    return res.json();
+  };
+
+  const updateGoogleEvent = async (eventId: string, event: PlannerEvent) => {
+     const res = await fetchWithAuth('/api/calendar-proxy', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'update', eventId, event }),
+    });
+    return res.json();
+  };
+  
+  const deleteGoogleEvent = async (eventId: string) => {
+     const res = await fetchWithAuth('/api/calendar-proxy', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'delete', eventId }),
+    });
+    return res.json();
+  }
 
   const value = {
     isConnected,
     isLoading,
     connect,
     disconnect,
+    createGoogleEvent,
+    updateGoogleEvent,
+    deleteGoogleEvent,
   };
 
   return (
