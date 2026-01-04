@@ -56,6 +56,13 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
+    const error = searchParams.get('error');
+
+    if(error) {
+      toast({ variant: 'destructive', title: 'Authentication Failed', description: error });
+      router.replace(pathname); // Clean URL
+      return;
+    }
 
     if (code && state && user && state === user.uid) {
       setIsLoading(true);
@@ -65,8 +72,6 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
       })
       .then(() => {
           toast({ title: 'Success!', description: 'Google Calendar connected.' });
-          // Clean the URL
-          router.replace(pathname);
       })
       .catch((e) => {
           console.error('OAuth callback failed', e);
@@ -74,6 +79,8 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => {
           setIsLoading(false);
+           // Clean the URL after processing
+          router.replace(pathname);
       });
     }
   }, [searchParams, user, toast, router, pathname]);

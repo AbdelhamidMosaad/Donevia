@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, eventId, event, code } = body;
     
-    // Handle OAuth Callback
+    // Handle OAuth Callback from the frontend
     if (action === 'oauth_callback') {
       if (!code) {
         return NextResponse.json({ error: 'Authorization code is missing' }, { status: 400 });
@@ -151,6 +151,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Google Calendar API error:', error);
+    // If the error is about invalid credentials, it likely means the token was revoked.
+    if (error.message.includes('invalid_grant') || error.message.includes('invalid credentials')) {
+        return NextResponse.json({ error: 'Authentication token is invalid. Please reconnect your calendar.' }, { status: 401 });
+    }
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
