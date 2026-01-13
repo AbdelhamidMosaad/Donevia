@@ -98,7 +98,7 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     defaultValues: {
       sourceText: "",
       // Notes defaults
-      noteStyle: settings.defaultNoteStyle || 'detailed',
+      noteStyle: settings.defaultNoteStyle || 'concise',
       complexity: settings.defaultComplexity || 'medium',
       // Quiz defaults
       numQuestions: 5,
