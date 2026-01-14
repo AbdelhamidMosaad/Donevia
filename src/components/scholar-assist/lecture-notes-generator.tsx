@@ -1,11 +1,12 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '../ui/button';
-import { Loader2, Download, RefreshCw, Save, FileText, Wand2 } from 'lucide-react';
+import { Loader2, Download, RefreshCw, Save, FileText, Wand2, Upload, FileIcon } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { generateLectureNotes, type LectureNotesResponse } from '@/ai/flows/generate-lecture-notes-flow';
 import { saveAs } from 'file-saver';
@@ -13,43 +14,38 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { marked } from 'marked';
-import { Packer, Document, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { Packer, Document as DocxDocument, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDropzone } from 'react-dropzone';
+import JSZip from 'jszip';
 
-const availableFonts = [
-    'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans 3', 'Nunito', 'Montserrat', 'Playfair Display', 'JetBrains Mono', 'Bahnschrift'
-];
+let pdfjs: any;
 
 function NotesResultView({ result, onReset }: { result: LectureNotesResponse; onReset: () => void }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-  const [docx, setDocx] = useState<any>(null);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [exportFilename, setExportFilename] = useState(result.title);
-  const [exportFont, setExportFont] = useState('Inter');
 
-  useEffect(() => {
-    import('docx').then(module => {
-      setDocx(module);
-    });
-  }, []);
-
-  const handleExportWord = () => {
-    if (!result || !docx) {
+  const handleExportWord = async () => {
+    if (!result) {
         toast({ variant: 'destructive', title: 'Export library not ready.' });
         return;
     };
     
-    const { Packer, Document, Paragraph, TextRun, HeadingLevel } = docx;
-
     const docChildren = [
       new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
       new Paragraph({ text: " " }),
+      new Paragraph({ text: "Learning Summary", heading: HeadingLevel.HEADING_1 }),
+      new Paragraph(result.learningSummary),
+      new Paragraph({ text: " " }),
+      new Paragraph({ text: "Detailed Notes", heading: HeadingLevel.HEADING_1 }),
     ];
     
     result.notes.split('\n').forEach(line => {
@@ -66,10 +62,7 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
       }
     });
 
-    const docInstance = new Document({ 
-        sections: [{ children: docChildren }],
-        styles: { default: { document: { run: { font: exportFont } } } }
-    });
+    const docInstance = new DocxDocument({ sections: [{ children: docChildren }] });
 
     Packer.toBlob(docInstance).then((blob: Blob) => {
         saveAs(blob, `${exportFilename.replace(/ /g, '_')}.docx`);
@@ -86,7 +79,16 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
       type: 'doc',
       content: [
           { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: result.title }] },
-          ...result.notes.split('\n').map(line => ({ type: 'paragraph', content: [{ type: 'text', text: line }] }))
+          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: "Learning Summary" }] },
+          { type: 'paragraph', content: [{ type: 'text', text: result.learningSummary }] },
+          { type: 'horizontalRule' },
+          ...result.notes.split('\n').map(line => {
+              if (line.startsWith('# ')) return { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: line.substring(2) }] };
+              if (line.startsWith('## ')) return { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: line.substring(3) }] };
+              if (line.startsWith('### ')) return { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: line.substring(4) }] };
+              if (line.startsWith('* ')) return { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: line.substring(2) }] }] }] };
+              return { type: 'paragraph', content: line ? [{ type: 'text', text: line }] : [] };
+          })
       ]
     };
 
@@ -109,13 +111,18 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
   }
 
     return (
+      <>
         <Card className="flex-1 flex flex-col h-full">
           <CardHeader>
             <CardTitle>{result.title}</CardTitle>
             <CardDescription>Your AI-generated lecture notes are ready.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <ScrollArea className="h-full pr-4 -mr-4">
+          <CardContent className="flex-1 min-h-0 space-y-4">
+            <div className="p-4 bg-primary/10 border-l-4 border-primary rounded-r-lg">
+                <h3 className="font-bold">Learning Summary</h3>
+                <p>{result.learningSummary}</p>
+            </div>
+            <ScrollArea className="h-[calc(100%-120px)] pr-4 -mr-4">
               <div className="space-y-6 prose prose-sm dark:prose-invert max-w-none"
                    dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
             </ScrollArea>
@@ -143,14 +150,15 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleExportWord} disabled={!docx}>
-                            {docx ? 'Confirm Export' : 'Loading...'}
+                        <Button onClick={handleExportWord}>
+                            Confirm Export
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
           </CardFooter>
         </Card>
+      </>
     );
 }
 
@@ -160,6 +168,28 @@ export function LectureNotesGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<LectureNotesResponse | null>(null);
   const [sourceText, setSourceText] = useState('');
+  const [activeTab, setActiveTab] = useState('text');
+  
+  const [isParsing, setIsParsing] = useState(false);
+  const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js`;
+    script.onload = () => {
+        pdfjs = (window as any).pdfjsLib;
+        if (pdfjs) {
+            pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js`;
+            setPdfjsLoaded(true);
+        }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const handleGenerate = async () => {
     if (!sourceText.trim()) {
@@ -179,6 +209,93 @@ export function LectureNotesGenerator() {
       setIsLoading(false);
     }
   };
+  
+    const parseDocx = async (file: File) => {
+    const jszip = new JSZip();
+    const zip = await jszip.loadAsync(file);
+    const contentXml = await zip.file("word/document.xml")?.async("string");
+    
+    if (contentXml) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(contentXml, "application/xml");
+        const paragraphs = xmlDoc.getElementsByTagName('w:p');
+        let extractedText = "";
+        for(let i = 0; i < paragraphs.length; i++) {
+            extractedText += paragraphs[i].textContent + "\n";
+        }
+        if (extractedText.trim()) {
+            setSourceText(extractedText.trim());
+            return;
+        }
+    }
+    throw new Error("Could not extract any text from the DOCX file.");
+  }
+  
+  const parsePdf = async (file: File) => {
+    if (!pdfjsLoaded) {
+        toast({ variant: 'destructive', title: "PDF library not loaded yet. Please try again."});
+        return;
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n\n';
+    }
+    setSourceText(fullText);
+  }
+
+  const parseTxt = async (file: File) => {
+      const text = await file.text();
+      setSourceText(text);
+  }
+
+    const onDrop = useCallback(async (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
+
+      if (file.size > 15 * 1024 * 1024) {
+          toast({ variant: "destructive", title: "File too large", description: "Please upload a file under 15MB."});
+          return;
+      }
+      
+      setFileName(file.name);
+      setIsParsing(true);
+      toast({ title: `Parsing ${file.name}...` });
+
+      try {
+        if (file.type === 'application/pdf' && pdfjsLoaded) {
+            await parsePdf(file);
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            await parseDocx(file);
+        } else if (file.type === 'text/plain') {
+            await parseTxt(file);
+        } else {
+           throw new Error("Unsupported file type or required library not loaded.");
+        }
+        
+        toast({ title: "✓ File Processed", description: "Text has been extracted." });
+        setActiveTab('text');
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'File Parsing Failed', description: (error as Error).message });
+        setFileName(null);
+      } finally {
+        setIsParsing(false);
+      }
+  }, [toast, pdfjsLoaded]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 
+        'application/pdf': ['.pdf'],
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+        'text/plain': ['.txt'],
+    },
+    multiple: false,
+  });
 
   const renderContent = () => {
     if (isLoading) {
@@ -197,20 +314,44 @@ export function LectureNotesGenerator() {
         <Card className="h-full flex flex-col">
             <CardHeader>
                 <CardTitle>Generate Lecture Notes</CardTitle>
-                <CardDescription>Paste your source text below and let the AI create structured notes for you.</CardDescription>
+                <CardDescription>Paste text or upload a document and let the AI create structured notes for you.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-6">
-                <Textarea 
-                    placeholder="Paste your document, article, or notes here..." 
-                    className="flex-1 resize-y text-foreground" 
-                    value={sourceText}
-                    onChange={(e) => setSourceText(e.target.value)}
-                />
+                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+                    <TabsList>
+                        <TabsTrigger value="text"><FileText/> Paste Text</TabsTrigger>
+                        <TabsTrigger value="upload"><Upload/> Upload File</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="text" className="flex-1 mt-2">
+                        <Textarea 
+                            placeholder="Paste your document, article, or notes here..." 
+                            className="flex-1 resize-y text-foreground h-full" 
+                            value={sourceText}
+                            onChange={(e) => setSourceText(e.target.value)}
+                        />
+                    </TabsContent>
+                    <TabsContent value="upload" className="flex-1 mt-2">
+                        <div {...getRootProps()} className={`h-full border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
+                            <input {...getInputProps()} />
+                            {isParsing ? (
+                                <div className="flex flex-col items-center gap-2"><Loader2 className="animate-spin h-8 w-8 text-primary" /><p>Processing file...</p></div>
+                            ) : fileName ? (
+                                <div className="flex flex-col items-center gap-2"><FileIcon className="h-8 w-8 text-primary" /><p className="font-semibold">{fileName}</p><p className="text-xs text-muted-foreground">Click or drop another file to replace.</p></div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-2">
+                                    <Upload className="h-8 w-8 text-muted-foreground" />
+                                    <p>Drag & drop a PDF, DOCX, or TXT file here.</p>
+                                    <p className="text-xs text-muted-foreground">(Max file size: 15MB)</p>
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </CardContent>
             <CardFooter>
-                <Button type="button" onClick={handleGenerate} className="w-full">
+                <Button type="button" onClick={handleGenerate} className="w-full" disabled={isParsing || !sourceText.trim()}>
                     <Wand2 className="mr-2 h-4 w-4"/>
-                    Generate Notes
+                    {isParsing ? 'Processing...' : 'Generate Notes'}
                 </Button>
             </CardFooter>
         </Card>
@@ -219,3 +360,4 @@ export function LectureNotesGenerator() {
 
   return <div className="flex flex-col h-full gap-6">{renderContent()}</div>;
 }
+    

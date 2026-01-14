@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/use-auth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -406,47 +406,6 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
                 </TabsContent>
             </Tabs>
              <div className="grid md:grid-cols-2 gap-6 pt-6">
-                {generationType === 'notes' && (
-                    <>
-                        <FormField
-                            control={form.control}
-                            name="noteStyle"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Note Style</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                    <SelectItem value="detailed">Detailed Notes</SelectItem>
-                                    <SelectItem value="concise">Concise Notes</SelectItem>
-                                    <SelectItem value="bullet">Bullet Points</SelectItem>
-                                    <SelectItem value="outline">Outline Format</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="complexity"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Complexity Level</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                    <SelectItem value="simple">Simple</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="advanced">Advanced</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </>
-                )}
                 {generationType === 'quiz' && (
                     <>
                         <FormField
@@ -572,3 +531,5 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     </Form>
   );
 }
+
+    
