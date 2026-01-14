@@ -125,21 +125,23 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
             <CardTitle>{result.title}</CardTitle>
             <CardDescription>Your AI-generated lecture notes are ready.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0 space-y-4">
-             <div className="p-4 bg-primary/10 border-l-4 border-primary rounded-r-lg">
-                <h3 className="font-bold">Learning Objectives</h3>
-                <ul className="list-disc pl-5 mt-2">
-                    {result.learningObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
-                </ul>
-            </div>
-            <ScrollArea className="h-[calc(100%-240px)] pr-4 -mr-4">
-              <div className="space-y-6 prose prose-sm dark:prose-invert max-w-none"
-                   dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
+          <CardContent className="flex-1 min-h-0">
+            <ScrollArea className="h-full pr-4 -mr-4">
+                <div className="space-y-6">
+                    <div className="p-4 bg-primary/10 border-l-4 border-primary rounded-r-lg">
+                        <h3 className="font-bold">Learning Objectives</h3>
+                        <ul className="list-disc pl-5 mt-2">
+                            {result.learningObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
+                        </ul>
+                    </div>
+                    <div className="space-y-6 prose prose-sm dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 rounded-r-lg">
+                        <h3 className="font-bold">Learning Summary</h3>
+                        <p>{result.learningSummary}</p>
+                    </div>
+                </div>
             </ScrollArea>
-             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 rounded-r-lg">
-                <h3 className="font-bold">Learning Summary</h3>
-                <p>{result.learningSummary}</p>
-            </div>
           </CardContent>
           <CardFooter className="justify-end gap-2">
             <Button variant="outline" onClick={onReset}><RefreshCw/> Generate New</Button>
@@ -374,4 +376,3 @@ export function LectureNotesGenerator() {
 
   return <div className="flex flex-col h-full gap-6">{renderContent()}</div>;
 }
-    
