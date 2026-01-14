@@ -34,6 +34,7 @@ const lectureNotesPrompt = ai.definePrompt({
     2. **Hierarchical Structure**: Use Markdown headings (#, ##, ###).
     3. **Best Practices**: Group procedural lists into a strategic section.
     4. **Visual Placeholders**: Include [Diagram: Description] for trends or processes.
+    5. **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways and main points of the entire text.
     
     Tone and Style:
     * Objective and professional.
