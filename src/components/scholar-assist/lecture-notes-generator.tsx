@@ -42,8 +42,8 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
     const docChildren = [
       new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
       new Paragraph({ text: " " }),
-      new Paragraph({ text: "Learning Summary", heading: HeadingLevel.HEADING_1 }),
-      new Paragraph(result.learningSummary),
+      new Paragraph({ text: "Learning Objectives", heading: HeadingLevel.HEADING_1 }),
+      ...result.learningObjectives.map(obj => new Paragraph({ text: obj, bullet: { level: 0 } })),
       new Paragraph({ text: " " }),
       new Paragraph({ text: "Detailed Notes", heading: HeadingLevel.HEADING_1 }),
     ];
@@ -61,6 +61,11 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
         docChildren.push(new Paragraph(line));
       }
     });
+    
+    docChildren.push(new Paragraph({ text: " " }));
+    docChildren.push(new Paragraph({ text: "Learning Summary", heading: HeadingLevel.HEADING_1 }));
+    docChildren.push(new Paragraph(result.learningSummary));
+
 
     const docInstance = new DocxDocument({ sections: [{ children: docChildren }] });
 
@@ -79,8 +84,8 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
       type: 'doc',
       content: [
           { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: result.title }] },
-          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: "Learning Summary" }] },
-          { type: 'paragraph', content: [{ type: 'text', text: result.learningSummary }] },
+          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: "Learning Objectives" }] },
+          { type: 'bulletList', content: result.learningObjectives.map(obj => ({ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: obj }] }] })) },
           { type: 'horizontalRule' },
           ...result.notes.split('\n').map(line => {
               if (line.startsWith('# ')) return { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: line.substring(2) }] };
@@ -88,7 +93,10 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
               if (line.startsWith('### ')) return { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: line.substring(4) }] };
               if (line.startsWith('* ')) return { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: line.substring(2) }] }] }] };
               return { type: 'paragraph', content: line ? [{ type: 'text', text: line }] : [] };
-          })
+          }),
+           { type: 'horizontalRule' },
+          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: "Learning Summary" }] },
+          { type: 'paragraph', content: [{ type: 'text', text: result.learningSummary }] },
       ]
     };
 
@@ -118,14 +126,20 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
             <CardDescription>Your AI-generated lecture notes are ready.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 min-h-0 space-y-4">
-            <div className="p-4 bg-primary/10 border-l-4 border-primary rounded-r-lg">
-                <h3 className="font-bold">Learning Summary</h3>
-                <p>{result.learningSummary}</p>
+             <div className="p-4 bg-primary/10 border-l-4 border-primary rounded-r-lg">
+                <h3 className="font-bold">Learning Objectives</h3>
+                <ul className="list-disc pl-5 mt-2">
+                    {result.learningObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
+                </ul>
             </div>
-            <ScrollArea className="h-[calc(100%-120px)] pr-4 -mr-4">
+            <ScrollArea className="h-[calc(100%-240px)] pr-4 -mr-4">
               <div className="space-y-6 prose prose-sm dark:prose-invert max-w-none"
                    dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
             </ScrollArea>
+             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 rounded-r-lg">
+                <h3 className="font-bold">Learning Summary</h3>
+                <p>{result.learningSummary}</p>
+            </div>
           </CardContent>
           <CardFooter className="justify-end gap-2">
             <Button variant="outline" onClick={onReset}><RefreshCw/> Generate New</Button>

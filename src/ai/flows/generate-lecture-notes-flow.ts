@@ -15,6 +15,7 @@ export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
 
 const LectureNotesResponseSchema = z.object({
   title: z.string().describe("A concise and relevant title for the generated material."),
+  learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the source text."),
   notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
   learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways of the lecture notes."),
 });
@@ -32,15 +33,15 @@ const lectureNotesPrompt = ai.definePrompt({
     Task: Transform the provided raw content into a structured, professional set of lecture notes. The output must be simple and concise.
 
     Core Instructions:
-    1.  **Comprehensive Coverage**: You MUST process the entire source text provided below. Your primary goal is to ensure all topics mentioned in the input are covered in the output.
-    2.  **Conciseness is Key**: Summarize points and avoid verbose explanations. Your goal is to be thorough but brief.
-    3.  **Structure and Formatting**:
+    1.  **Learning Objectives**: Start by creating a list of 3-5 key learning objectives that a student should achieve after reviewing the material. Place these in the 'learningObjectives' array.
+    2.  **Comprehensive Coverage**: You MUST process the entire source text provided below. Your primary goal is to ensure all topics mentioned in the input are covered in the output.
+    3.  **Conciseness is Key**: Summarize points and avoid verbose explanations. Your goal is to be thorough but brief.
+    4.  **Structure and Formatting**:
         -   Create a clear and descriptive title.
         -   Use Markdown headings (#, ##, ###) for a hierarchical structure.
         -   Use **bolding** for key terms and concepts.
         -   Use bullet points for lists.
-
-    4.  **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways of the entire text. Place this summary text into the 'learningSummary' output field.
+    5.  **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways of the entire text. Place this summary text into the 'learningSummary' output field.
 
     ---
     **Source Text:**
