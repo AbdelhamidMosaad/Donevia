@@ -21,36 +21,71 @@ const LectureNotesResponseSchema = z.object({
 });
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
-// ========== Prompt Template ==========
-const lectureNotesPrompt = ai.definePrompt({
-    name: 'lectureNotesPrompt',
-    input: { schema: LectureNotesRequestSchema },
-    output: { schema: LectureNotesResponseSchema },
-    model: 'googleai/gemini-2.5-flash',
-    prompt: `
-    Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
 
-    Task: Transform the provided raw content into a structured, professional set of lecture notes. The output must be simple and concise.
+// ========== STEP 1: Generate Core Notes ==========
 
-    Core Instructions:
-    1.  **Learning Objectives**: Start by creating a list of 3-5 key learning objectives that a student should achieve after reviewing the material. Place these in the 'learningObjectives' array.
-    2.  **Comprehensive Coverage**: You MUST process the entire source text provided below. Your primary goal is to ensure all topics mentioned in the input are covered in the output.
-    3.  **Conciseness is Key**: Summarize points and avoid verbose explanations. Your goal is to be thorough but brief.
-    4.  **Structure and Formatting**:
-        -   Create a clear and descriptive title.
-        -   Use Markdown headings (#, ##, ###) for a hierarchical structure.
-        -   Use **bolding** for key terms and concepts.
-        -   Use bullet points for lists.
-    5.  **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways of the entire text. Place this summary text into the 'learningSummary' output field.
-
-    ---
-    **Source Text:**
-    {{{sourceText}}}
-    ---
-  `
+const CoreNotesSchema = z.object({
+    title: z.string().describe("A concise and relevant title for the generated material."),
+    notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
 });
 
-// ========== Flow Definition ==========
+const coreNotesPrompt = ai.definePrompt({
+    name: 'coreLectureNotesPrompt',
+    input: { schema: LectureNotesRequestSchema },
+    output: { schema: CoreNotesSchema },
+    model: 'googleai/gemini-2.5-flash',
+    prompt: `
+        Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
+
+        Task: Transform the provided raw content into a structured, professional set of lecture notes.
+        Your entire output must be a single, well-formatted Markdown string.
+
+        Core Instructions:
+        1.  **Comprehensive Coverage**: You MUST process the entire source text. Your primary goal is to ensure all topics are covered.
+        2.  **Conciseness**: Summarize points and avoid verbose explanations. Your goal is to be thorough but brief.
+        3.  **Structure and Formatting**:
+            -   Create a clear and descriptive title for the material.
+            -   Use Markdown headings (#, ##, ###) for a hierarchical structure.
+            -   Use **bolding** for key terms and concepts.
+            -   Use bullet points for lists.
+        
+        ---
+        **Source Text:**
+        {{{sourceText}}}
+        ---
+    `
+});
+
+// ========== STEP 2: Generate Summary and Objectives from Notes ==========
+
+const SummaryRequestSchema = z.object({
+    notes: z.string(),
+});
+
+const SummaryResponseSchema = z.object({
+    learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the provided notes."),
+    learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways of the notes."),
+});
+
+const summaryPrompt = ai.definePrompt({
+    name: 'lectureSummaryPrompt',
+    input: { schema: SummaryRequestSchema },
+    output: { schema: SummaryResponseSchema },
+    model: 'googleai/gemini-2.5-flash',
+    prompt: `
+        Based on the following lecture notes, please generate:
+        1. A list of 3-5 key learning objectives.
+        2. A concise 2-3 sentence summary of the main takeaways.
+
+        ---
+        **Lecture Notes:**
+        {{{notes}}}
+        ---
+    `
+});
+
+
+// ========== Flow Definition (Two-step process) ==========
 const generateLectureNotesFlow = ai.defineFlow(
   {
     name: 'generateLectureNotesFlow',
@@ -58,14 +93,27 @@ const generateLectureNotesFlow = ai.defineFlow(
     outputSchema: LectureNotesResponseSchema,
   },
   async (input) => {
-    // Calling the prompt and awaiting the response
-    const { output } = await lectureNotesPrompt(input);
-    
-    if (!output) {
-      throw new Error('The AI failed to generate structured output.');
+    // Step 1: Generate the core title and notes.
+    const coreResult = await coreNotesPrompt(input);
+    if (!coreResult.output) {
+      throw new Error('The AI failed to generate the core lecture notes.');
     }
-    
-    return output;
+    const { title, notes } = coreResult.output;
+
+    // Step 2: Generate summary and objectives from the notes.
+    const summaryResult = await summaryPrompt({ notes });
+     if (!summaryResult.output) {
+      throw new Error('The AI failed to generate the summary and objectives.');
+    }
+    const { learningObjectives, learningSummary } = summaryResult.output;
+
+    // Combine results and return
+    return {
+      title,
+      notes,
+      learningObjectives,
+      learningSummary,
+    };
   }
 );
 
