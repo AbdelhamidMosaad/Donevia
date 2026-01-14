@@ -25,14 +25,15 @@ const lectureNotesPrompt = ai.definePrompt({
     name: 'lectureNotesPrompt',
     input: { schema: LectureNotesRequestSchema },
     output: { schema: LectureNotesResponseSchema },
+    model: 'googleai/gemini-2.5-flash',
     prompt: `
     Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
 
     Task: Transform the provided raw content into a structured, professional set of lecture notes suitable for an executive-level or graduate-level course.
 
     Core Instructions:
-    1.  **Comprehensive Coverage**: You MUST process the entire source text provided below. Do not stop halfway. Your output should reflect all the topics mentioned in the input.
-    2.  **Conciseness is Key**: While being comprehensive, be concise. Summarize points and avoid verbose explanations to manage the output size effectively.
+    1.  **Comprehensive Coverage**: You MUST process the entire source text provided below. Your primary goal is to ensure all topics mentioned in the input are covered in the output.
+    2.  **Conciseness is Key**: To avoid being cut off, be concise. Summarize points and avoid verbose explanations. Your goal is to be thorough but brief.
     3.  **Structure and Formatting**:
         -   Create a clear and descriptive title.
         -   Use Markdown headings (#, ##, ###) for a hierarchical structure.
