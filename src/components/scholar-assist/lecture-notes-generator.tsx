@@ -14,7 +14,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { marked } from 'marked';
-import { Packer, Document as DocxDocument, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { Packer, Document as DocxDocument, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -22,8 +22,13 @@ import { Textarea } from '../ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDropzone } from 'react-dropzone';
 import JSZip from 'jszip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 let pdfjs: any;
+
+const fonts = [
+  'Arial', 'Calibri', 'Times New Roman', 'Courier New', 'Georgia', 'Verdana'
+];
 
 function NotesResultView({ result, onReset }: { result: LectureNotesResponse; onReset: () => void }) {
   const { user } = useAuth();
@@ -32,6 +37,8 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
   const [isSaving, setIsSaving] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [exportFilename, setExportFilename] = useState(result.title);
+  const [exportFont, setExportFont] = useState('Arial');
+
 
   const handleExportWord = async () => {
     if (!result) {
@@ -39,35 +46,53 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
         return;
     };
     
+    const createStyledParagraph = (text: string, options: any = {}) => {
+        return new Paragraph({
+            children: [new TextRun({ text, font: exportFont })],
+            ...options,
+        });
+    }
+
     const docChildren = [
-      new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
-      new Paragraph({ text: " " }),
-      new Paragraph({ text: "Learning Objectives", heading: HeadingLevel.HEADING_1 }),
-      ...result.learningObjectives.map(obj => new Paragraph({ text: obj, bullet: { level: 0 } })),
-      new Paragraph({ text: " " }),
-      new Paragraph({ text: "Detailed Notes", heading: HeadingLevel.HEADING_1 }),
+      createStyledParagraph(result.title, { heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
+      createStyledParagraph(" "),
+      createStyledParagraph("Learning Objectives", { heading: HeadingLevel.HEADING_1 }),
+      ...result.learningObjectives.map(obj => createStyledParagraph(obj, { bullet: { level: 0 } })),
+      createStyledParagraph(" "),
+      createStyledParagraph("Detailed Notes", { heading: HeadingLevel.HEADING_1 }),
     ];
     
     result.notes.split('\n').forEach(line => {
       if (line.startsWith('### ')) {
-        docChildren.push(new Paragraph({ text: line.substring(4), heading: HeadingLevel.HEADING_3 }));
+        docChildren.push(createStyledParagraph(line.substring(4), { heading: HeadingLevel.HEADING_3 }));
       } else if (line.startsWith('## ')) {
-        docChildren.push(new Paragraph({ text: line.substring(3), heading: HeadingLevel.HEADING_2 }));
+        docChildren.push(createStyledParagraph(line.substring(3), { heading: HeadingLevel.HEADING_2 }));
       } else if (line.startsWith('# ')) {
-        docChildren.push(new Paragraph({ text: line.substring(2), heading: HeadingLevel.HEADING_1 }));
+        docChildren.push(createStyledParagraph(line.substring(2), { heading: HeadingLevel.HEADING_1 }));
       } else if (line.startsWith('* ')) {
-        docChildren.push(new Paragraph({ text: line.substring(2), bullet: { level: 0 } }));
+        docChildren.push(createStyledParagraph(line.substring(2), { bullet: { level: 0 } }));
       } else {
-        docChildren.push(new Paragraph(line));
+        docChildren.push(createStyledParagraph(line));
       }
     });
     
-    docChildren.push(new Paragraph({ text: " " }));
-    docChildren.push(new Paragraph({ text: "Learning Summary", heading: HeadingLevel.HEADING_1 }));
-    docChildren.push(new Paragraph(result.learningSummary));
+    docChildren.push(createStyledParagraph(" "));
+    docChildren.push(createStyledParagraph("Learning Summary", { heading: HeadingLevel.HEADING_1 }));
+    docChildren.push(createStyledParagraph(result.learningSummary));
 
 
-    const docInstance = new DocxDocument({ sections: [{ children: docChildren }] });
+    const docInstance = new DocxDocument({ 
+        sections: [{ children: docChildren }],
+        styles: {
+            default: {
+                document: {
+                    run: {
+                        font: exportFont,
+                    },
+                },
+            },
+        },
+    });
 
     Packer.toBlob(docInstance).then((blob: Blob) => {
         saveAs(blob, `${exportFilename.replace(/ /g, '_')}.docx`);
@@ -127,20 +152,35 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
           </CardHeader>
           <CardContent className="flex-1 min-h-0">
             <ScrollArea className="h-full pr-4 -mr-4">
-                <div className="space-y-6">
-                    <div className="p-4 bg-primary/10 border-l-4 border-primary rounded-r-lg">
-                        <h3 className="font-bold">Learning Objectives</h3>
-                        <ul className="list-disc pl-5 mt-2">
+              <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Learning Objectives</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="list-disc pl-5 mt-2 space-y-1">
                             {result.learningObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
                         </ul>
-                    </div>
-                    <div className="space-y-6 prose prose-sm dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 rounded-r-lg">
-                        <h3 className="font-bold">Learning Summary</h3>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Notes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="prose prose-sm dark:prose-invert max-w-none"
+                            dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Learning Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
                         <p>{result.learningSummary}</p>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
+              </div>
             </ScrollArea>
           </CardContent>
           <CardFooter className="justify-end gap-2">
@@ -162,6 +202,15 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
                         <div className="space-y-2">
                             <Label htmlFor="filename">File Name</Label>
                             <Input id="filename" value={exportFilename} onChange={(e) => setExportFilename(e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                          <Label htmlFor="font-select">Font Family</Label>
+                          <Select value={exportFont} onValueChange={setExportFont}>
+                            <SelectTrigger id="font-select"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {fonts.map(font => <SelectItem key={font} value={font}>{font}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                         </div>
                     </div>
                     <DialogFooter>
