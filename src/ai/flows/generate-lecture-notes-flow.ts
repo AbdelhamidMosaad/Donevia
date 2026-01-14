@@ -30,20 +30,22 @@ const lectureNotesPrompt = ai.definePrompt({
 
     Task: Transform the provided raw content into a structured, professional set of lecture notes suitable for an executive-level or graduate-level course.
 
-    Formatting Requirements:
-    1. **Title**: Create a clear and descriptive title.
-    2. **Hierarchical Structure**: Use Markdown headings (#, ##, ###).
-    3. **Best Practices**: Group procedural lists into a strategic section.
-    4. **Visual Placeholders**: Include [Diagram: Description] for trends or processes.
-    5. **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways and main points of the entire text. Place this summary text into the 'learningSummary' output field.
-    
-    Tone and Style:
-    * Objective and professional.
-    * Use **bolding** for key terms.
-    * Use bullet points for complex procedures.
+    Core Instructions:
+    1.  **Comprehensive Coverage**: You MUST process the entire source text provided below. Do not stop halfway. Your output should reflect all the topics mentioned in the input.
+    2.  **Conciseness is Key**: While being comprehensive, be concise. Summarize points and avoid verbose explanations to manage the output size effectively.
+    3.  **Structure and Formatting**:
+        -   Create a clear and descriptive title.
+        -   Use Markdown headings (#, ##, ###) for a hierarchical structure.
+        -   Use **bolding** for key terms and concepts.
+        -   Use bullet points for lists and complex procedures.
+        -   Where a diagram would be useful, include a placeholder like [Diagram: A flowchart illustrating the process].
 
-    Source Text:
-    {{sourceText}}
+    4.  **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways of the entire text. Place this summary text into the 'learningSummary' output field.
+
+    ---
+    **Source Text:**
+    {{{sourceText}}}
+    ---
   `
 });
 
