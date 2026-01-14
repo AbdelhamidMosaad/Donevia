@@ -343,7 +343,6 @@ export function LectureNotesGenerator() {
         }
         
         toast({ title: "✓ File Processed", description: "Text has been extracted." });
-        setActiveTab('text');
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'File Parsing Failed', description: (error as Error).message });
         setFileName(null);
@@ -425,3 +424,5 @@ export function LectureNotesGenerator() {
 
   return <div className="flex flex-col h-full gap-6">{renderContent()}</div>;
 }
+
+    
