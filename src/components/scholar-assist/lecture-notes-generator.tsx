@@ -1,13 +1,11 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
-import { InputForm, type InputFormValues } from './shared/input-form';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '../ui/button';
-import { Loader2, Download, RefreshCw, Save, FileText } from 'lucide-react';
+import { Loader2, Download, RefreshCw, Save, FileText, Wand2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { generateLectureNotes, type LectureNotesResponse } from '@/ai/flows/generate-lecture-notes-flow';
 import { saveAs } from 'file-saver';
@@ -15,27 +13,25 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { marked } from 'marked';
-import { Packer, Document, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } from 'docx';
+import { Packer, Document, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 
 const availableFonts = [
     'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans 3', 'Nunito', 'Montserrat', 'Playfair Display', 'JetBrains Mono', 'Bahnschrift'
 ];
 
-export function LectureNotesGenerator() {
+function NotesResultView({ result, onReset }: { result: LectureNotesResponse; onReset: () => void }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [result, setResult] = useState<LectureNotesResponse | null>(null);
-  const [exportFont, setExportFont] = useState('Inter');
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [exportFilename, setExportFilename] = useState('');
   const [docx, setDocx] = useState<any>(null);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportFilename, setExportFilename] = useState(result.title);
+  const [exportFont, setExportFont] = useState('Inter');
 
   useEffect(() => {
     import('docx').then(module => {
@@ -43,83 +39,20 @@ export function LectureNotesGenerator() {
     });
   }, []);
 
-  useEffect(() => {
-    if (result?.title) {
-        setExportFilename(result.title);
-    }
-  }, [result]);
-
-  const handleGenerate = async (values: InputFormValues) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'You must be logged in.' });
-      return;
-    }
-
-    setIsLoading(true);
-    setResult(null);
-
-    try {
-      const data = await generateLectureNotes({ sourceText: values.sourceText });
-      setResult(data);
-    } catch (error) {
-      console.error("Note generation failed:", error);
-      toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleReset = () => {
-    setResult(null);
-  };
-
   const handleExportWord = () => {
     if (!result || !docx) {
         toast({ variant: 'destructive', title: 'Export library not ready.' });
         return;
     };
     
-    const { Packer, Document, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } = docx;
+    const { Packer, Document, Paragraph, TextRun, HeadingLevel } = docx;
 
-    const docChildren: any[] = [
+    const docChildren = [
       new Paragraph({ text: result.title, heading: HeadingLevel.TITLE }),
+      new Paragraph({ text: " " }),
     ];
-
-    const lines = result.notes.split('\n');
-    let i = 0;
-
-    while (i < lines.length) {
-      const line = lines[i];
-
-      if (line.trim().startsWith('|')) {
-        let tableLines = [];
-        while (i < lines.length && lines[i].trim().startsWith('|')) {
-          tableLines.push(lines[i]);
-          i++;
-        }
-        
-        const processRow = (rowLine: string, isHeader = false) => {
-            const cells = rowLine.split('|').slice(1, -1).map(cellText => {
-                const textRun = new TextRun({ text: cellText.trim(), bold: isHeader });
-                return new TableCell({ children: [new Paragraph({ children: [textRun] })] });
-            });
-            return new TableRow({ children: cells });
-        };
-        
-        const headerRow = processRow(tableLines[0], true);
-        const bodyRows = tableLines.slice(2).map(rowLine => processRow(rowLine, false));
-        
-        const table = new Table({
-          rows: [headerRow, ...bodyRows],
-          width: {
-            size: 100,
-            type: WidthType.PERCENTAGE,
-          },
-        });
-        docChildren.push(table);
-        continue;
-      }
-      
+    
+    result.notes.split('\n').forEach(line => {
       if (line.startsWith('### ')) {
         docChildren.push(new Paragraph({ text: line.substring(4), heading: HeadingLevel.HEADING_3 }));
       } else if (line.startsWith('## ')) {
@@ -127,34 +60,15 @@ export function LectureNotesGenerator() {
       } else if (line.startsWith('# ')) {
         docChildren.push(new Paragraph({ text: line.substring(2), heading: HeadingLevel.HEADING_1 }));
       } else if (line.startsWith('* ')) {
-        const textRuns = line.substring(2).split(/(\*\*.*?\*\*)/g).map(part => {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            return new TextRun({ text: part.slice(2, -2), bold: true });
-          }
-          return new TextRun(part);
-        });
-        docChildren.push(new Paragraph({ children: textRuns, bullet: { level: 0 } }));
+        docChildren.push(new Paragraph({ text: line.substring(2), bullet: { level: 0 } }));
       } else {
-         const textRuns = line.split(/(\*\*.*?\*\*)/g).map(part => {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            return new TextRun({ text: part.slice(2, -2), bold: true });
-          }
-          return new TextRun(part);
-        });
-        docChildren.push(new Paragraph({ children: textRuns }));
+        docChildren.push(new Paragraph(line));
       }
-      i++;
-    }
+    });
 
     const docInstance = new Document({ 
         sections: [{ children: docChildren }],
-        styles: {
-            default: {
-                document: {
-                    run: { font: exportFont }
-                }
-            }
-        }
+        styles: { default: { document: { run: { font: exportFont } } } }
     });
 
     Packer.toBlob(docInstance).then((blob: Blob) => {
@@ -170,34 +84,11 @@ export function LectureNotesGenerator() {
     
     const tipTapContent = {
       type: 'doc',
-      content: result.notes.split('\n').map(line => {
-        if (line.startsWith('# ')) {
-          return { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: line.substring(2) }] };
-        }
-        if (line.startsWith('## ')) {
-          return { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: line.substring(3) }] };
-        }
-         if (line.startsWith('### ')) {
-          return { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: line.substring(4) }] };
-        }
-        if (line.startsWith('* ')) {
-          return { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: line.substring(2) }] }] }]};
-        }
-        if (line.trim().startsWith('|')) { // Basic table support
-             return { type: 'paragraph', content: [{ type: 'text', text: line }] };
-        }
-        
-        const contentParts = line.split(/(\*\*.*?\*\*)/g).map(part => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-                return { type: 'text', text: part.slice(2, -2), marks: [{ type: 'bold' }] };
-            }
-            return { type: 'text', text: part };
-        });
-
-        return { type: 'paragraph', content: contentParts.filter(p => p.text) };
-      }).filter(Boolean),
+      content: [
+          { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: result.title }] },
+          ...result.notes.split('\n').map(line => ({ type: 'paragraph', content: [{ type: 'text', text: line }] }))
+      ]
     };
-
 
     try {
         const docRef = await addDoc(collection(db, 'users', user.uid, 'docs'), {
@@ -217,18 +108,7 @@ export function LectureNotesGenerator() {
     }
   }
 
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
-          <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
-          <h3 className="text-xl font-semibold font-headline">Generating Your Notes...</h3>
-          <p className="text-muted-foreground">The AI is processing your document. This may take a moment.</p>
-        </div>
-      );
-    }
-    if (result) {
-      return (
+    return (
         <Card className="flex-1 flex flex-col h-full">
           <CardHeader>
             <CardTitle>{result.title}</CardTitle>
@@ -241,7 +121,7 @@ export function LectureNotesGenerator() {
             </ScrollArea>
           </CardContent>
           <CardFooter className="justify-end gap-2">
-            <Button variant="outline" onClick={handleReset}><RefreshCw/> Generate New</Button>
+            <Button variant="outline" onClick={onReset}><RefreshCw/> Generate New</Button>
             <Button onClick={handleSaveToDocs} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save/>}
                 Save to Docs
@@ -260,15 +140,6 @@ export function LectureNotesGenerator() {
                             <Label htmlFor="filename">File Name</Label>
                             <Input id="filename" value={exportFilename} onChange={(e) => setExportFilename(e.target.value)} />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="font-select">Font</Label>
-                             <Select value={exportFont} onValueChange={setExportFont}>
-                                <SelectTrigger id="font-select"><SelectValue/></SelectTrigger>
-                                <SelectContent>
-                                    {availableFonts.map(font => <SelectItem key={font} value={font}>{font}</SelectItem>)}
-                                </SelectContent>
-                             </Select>
-                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancel</Button>
@@ -280,9 +151,70 @@ export function LectureNotesGenerator() {
             </Dialog>
           </CardFooter>
         </Card>
+    );
+}
+
+
+export function LectureNotesGenerator() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<LectureNotesResponse | null>(null);
+  const [sourceText, setSourceText] = useState('');
+
+  const handleGenerate = async () => {
+    if (!sourceText.trim()) {
+        toast({ variant: 'destructive', title: 'Source text cannot be empty.' });
+        return;
+    }
+    setIsLoading(true);
+    setResult(null);
+
+    try {
+      const data = await generateLectureNotes({ sourceText });
+      setResult(data);
+    } catch (error) {
+      console.error("Note generation failed:", error);
+      toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
+          <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
+          <h3 className="text-xl font-semibold font-headline">Generating Your Notes...</h3>
+          <p className="text-muted-foreground">The AI is processing your text. This may take a moment.</p>
+        </div>
       );
     }
-    return <InputForm onGenerate={handleGenerate} generationType="notes" />;
+    if (result) {
+      return <NotesResultView result={result} onReset={() => setResult(null)} />;
+    }
+    return (
+        <Card className="h-full flex flex-col">
+            <CardHeader>
+                <CardTitle>Generate Lecture Notes</CardTitle>
+                <CardDescription>Paste your source text below and let the AI create structured notes for you.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col gap-6">
+                <Textarea 
+                    placeholder="Paste your document, article, or notes here..." 
+                    className="flex-1 resize-y text-foreground" 
+                    value={sourceText}
+                    onChange={(e) => setSourceText(e.target.value)}
+                />
+            </CardContent>
+            <CardFooter>
+                <Button type="button" onClick={handleGenerate} className="w-full">
+                    <Wand2 className="mr-2 h-4 w-4"/>
+                    Generate Notes
+                </Button>
+            </CardFooter>
+        </Card>
+    );
   }
 
   return <div className="flex flex-col h-full gap-6">{renderContent()}</div>;

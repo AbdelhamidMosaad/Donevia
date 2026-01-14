@@ -29,17 +29,16 @@ const lectureNotesPrompt = ai.definePrompt({
     prompt: `
     Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
 
-    Task: Transform the provided raw content into a structured, professional set of lecture notes suitable for an executive-level or graduate-level course.
+    Task: Transform the provided raw content into a structured, professional set of lecture notes. The output must be simple and concise.
 
     Core Instructions:
     1.  **Comprehensive Coverage**: You MUST process the entire source text provided below. Your primary goal is to ensure all topics mentioned in the input are covered in the output.
-    2.  **Conciseness is Key**: To avoid being cut off, be concise. Summarize points and avoid verbose explanations. Your goal is to be thorough but brief.
+    2.  **Conciseness is Key**: Summarize points and avoid verbose explanations. Your goal is to be thorough but brief.
     3.  **Structure and Formatting**:
         -   Create a clear and descriptive title.
         -   Use Markdown headings (#, ##, ###) for a hierarchical structure.
         -   Use **bolding** for key terms and concepts.
-        -   Use bullet points for lists and complex procedures.
-        -   Where a diagram would be useful, include a placeholder like [Diagram: A flowchart illustrating the process].
+        -   Use bullet points for lists.
 
     4.  **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways of the entire text. Place this summary text into the 'learningSummary' output field.
 
