@@ -16,6 +16,7 @@ export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
 const LectureNotesResponseSchema = z.object({
   title: z.string().describe("A concise and relevant title for the generated material."),
   notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
+  learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways of the lecture notes."),
 });
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
@@ -34,7 +35,7 @@ const lectureNotesPrompt = ai.definePrompt({
     2. **Hierarchical Structure**: Use Markdown headings (#, ##, ###).
     3. **Best Practices**: Group procedural lists into a strategic section.
     4. **Visual Placeholders**: Include [Diagram: Description] for trends or processes.
-    5. **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways and main points of the entire text.
+    5. **Learning Summary**: At the very end of the notes, add a "## Learning Summary" section. This section must contain a 2-3 sentence paragraph that concisely summarizes the key takeaways and main points of the entire text. Place this summary text into the 'learningSummary' output field.
     
     Tone and Style:
     * Objective and professional.
