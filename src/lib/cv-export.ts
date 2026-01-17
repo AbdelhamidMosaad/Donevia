@@ -29,7 +29,7 @@ export const exportCvToDocx = async (cvData: CVData) => {
             new Paragraph({
                 children: [
                     new TextRun({ text: exp.jobTitle, bold: true }),
-                    new TextRun(` | ${exp.company}`).bold(),
+                    new TextRun({ text: ` | ${exp.company}`, bold: true }),
                 ]
             }),
             new Paragraph({ text: `${exp.startDate} | ${exp.location}` }),
