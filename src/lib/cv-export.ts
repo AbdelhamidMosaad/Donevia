@@ -55,6 +55,17 @@ export const exportCvToDocx = async (cvData: CVData) => {
 
         new Paragraph({ text: 'Skills', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
         new Paragraph(cvData.skills),
+
+        ...(cvData.languages && cvData.languages.length > 0 && cvData.languages.some(l => l.language) ? [
+            new Paragraph({ text: 'Languages', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
+            ...cvData.languages.flatMap(lang => lang.language ? [
+                new Paragraph({ children: [
+                    new TextRun({ text: `${lang.language}: `, bold: true }),
+                    new TextRun(lang.proficiency),
+                ]}),
+            ] : []),
+            new Paragraph(""),
+        ] : []),
       ],
     }],
   });
@@ -166,6 +177,24 @@ export const exportCvToPdf = (cvData: CVData) => {
     doc.setFontSize(11);
     const skillsLines = doc.splitTextToSize(cvData.skills, 180);
     doc.text(skillsLines, 15, y);
+    y += skillsLines.length * 5 + 5;
+
+    if (cvData.languages && cvData.languages.length > 0 && cvData.languages.some(l => l.language)) {
+        if (y > 260) { doc.addPage(); y = 20; }
+        doc.setFontSize(16);
+        doc.text('Languages', 15, y);
+        y += 2;
+        doc.line(15, y, 195, y);
+        y += 8;
+        doc.setFontSize(11);
+        cvData.languages.forEach(lang => {
+            if (lang.language) {
+                if (y > 280) { doc.addPage(); y = 20; }
+                doc.text(`• ${lang.language}: ${lang.proficiency}`, 20, y);
+                y += 7;
+            }
+        });
+    }
 
     doc.save(`${cvData.personalDetails.fullName.replace(/ /g, '_')}_CV.pdf`);
 };

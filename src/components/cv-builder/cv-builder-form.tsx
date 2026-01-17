@@ -22,6 +22,7 @@ export function CVBuilderForm() {
             experience: [{ id: '1', jobTitle: '', company: '', location: '', startDate: '', endDate: '', description: '' }],
             education: [{ id: '1', degree: '', school: '', location: '', graduationDate: '' }],
             courses: [{ id: '1', courseName: '', institution: '', completionDate: '' }],
+            languages: [{ id: '1', language: '', proficiency: '' }],
             skills: '',
         }
     });
@@ -39,6 +40,11 @@ export function CVBuilderForm() {
     const { fields: courseFields, append: appendCourse, remove: removeCourse } = useFieldArray({
         control: form.control,
         name: 'courses'
+    });
+    
+    const { fields: languageFields, append: appendLanguage, remove: removeLanguage } = useFieldArray({
+        control: form.control,
+        name: 'languages'
     });
 
     const handleExport = (format: 'docx' | 'pdf') => {
@@ -171,6 +177,26 @@ export function CVBuilderForm() {
                         placeholder="List your skills, separated by commas (e.g., JavaScript, React, Node.js)."
                         context={{ section: 'Skills Section' }}
                     />
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader><CardTitle>Languages</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                    {languageFields.map((field, index) => (
+                        <div key={field.id} className="p-4 border rounded-lg space-y-3 relative">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Input placeholder="Language (e.g., Spanish)" {...form.register(`languages.${index}.language`)} />
+                                <Input placeholder="Proficiency (e.g., Native, Fluent, Conversational)" {...form.register(`languages.${index}.proficiency`)} />
+                            </div>
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeLanguage(index)}>
+                                <Trash2 className="h-4 w-4 text-destructive"/>
+                            </Button>
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" onClick={() => appendLanguage({ id: uuidv4(), language: '', proficiency: '' })}>
+                        <PlusCircle/> Add Language
+                    </Button>
                 </CardContent>
             </Card>
         </form>
