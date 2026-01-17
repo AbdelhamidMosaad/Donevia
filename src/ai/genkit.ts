@@ -36,7 +36,7 @@ try {
   }
 } catch (error) {
   // Don't crash during build - just log a warning
-  console.warn('Firebase Admin SDK initialization skipped during build:', error.message);
+  console.warn('Firebase Admin SDK initialization skipped during build:', (error as Error).message);
 }
 
 export const ai = genkit({
@@ -47,7 +47,7 @@ export const ai = genkit({
     }),
     // dotprompt(),
   ],
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-1.5-flash-latest',
 });
 
 // Optional: Export firebaseAdmin if needed elsewhere
