@@ -55,8 +55,9 @@ export function LectureNotesGenerator() {
 
     try {
       if (file.type === 'application/pdf') {
-        const pdfjs = await import('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js');
-        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+        const pdfjs = await import('pdfjs-dist/build/pdf');
+        const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
+        pdfjs.GlobalWorkerOptions.worker = pdfjsWorker;
 
         const arrayBuffer = await file.arrayBuffer();
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
