@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, ChangeEvent, useRef } from 'react';
@@ -57,9 +58,7 @@ export function LectureNotesGenerator() {
     try {
       if (file.type === 'application/pdf') {
         const pdfjs = await import('pdfjs-dist');
-        // @ts-ignore
-        const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.mjs');
-        pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
         const arrayBuffer = await file.arrayBuffer();
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
