@@ -12,9 +12,9 @@ export const exportCvToDocx = async (cvData: CVData) => {
             alignment: AlignmentType.CENTER,
             children: [
                 new TextRun(cvData.personalDetails.email),
-                new TextRun(" | ").break(),
+                new TextRun(" | "),
                 new TextRun(cvData.personalDetails.phone),
-                new TextRun(" | ").break(),
+                new TextRun(" | "),
                 new TextRun(cvData.personalDetails.address),
             ]
         }),
