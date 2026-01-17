@@ -9,12 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import type { UserSettings } from '@/lib/types';
 import pdfParse from 'pdf-parse';
-import mammoth from 'mammoth';
 import { generateLectureNotes, LectureNotesResponse } from '@/ai/flows/lecture-notes-flow';
 import { exportLectureNotesToDocx } from '@/lib/lecture-notes-export';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '../ui/scroll-area';
 import { marked } from 'marked';
 
 type Font = UserSettings['font'];
@@ -61,6 +60,7 @@ export function LectureNotesGenerator() {
         const data = await pdfParse(arrayBuffer);
         setSourceText(data.text);
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const mammoth = (await import('mammoth')).default;
         const arrayBuffer = await file.arrayBuffer();
         const { value } = await mammoth.extractRawText({ arrayBuffer });
         setSourceText(value);
