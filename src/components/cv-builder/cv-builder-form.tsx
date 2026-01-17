@@ -8,14 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CVSection } from './cv-section';
 import { exportCvToDocx, exportCvToPdf } from '@/lib/cv-export';
-import { FileDown, PlusCircle, Trash2, CalendarIcon, Search, Loader2, Check, Save } from 'lucide-react';
+import { FileDown, PlusCircle, Trash2, Search, Loader2, Check, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { suggestSkills, type SuggestSkillsResponse } from '@/ai/flows/suggest-skills-flow';
 import { Badge } from '@/components/ui/badge';
@@ -294,52 +290,6 @@ export function CVBuilderForm() {
         form.setValue('softSkills', newSoft);
     };
     
-    const DatePickerField = ({ name, label, placeholder }: { name: any, label: string, placeholder?: string }) => (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-                <FormItem className="flex flex-col">
-                    <FormLabel>{label}</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full pl-3 text-left font-normal",
-                                        !field.value && "text-muted-foreground"
-                                    )}
-                                >
-                                    {field.value ? (
-                                        format(new Date(field.value), "PPP")
-                                    ) : (
-                                        <span>{placeholder || 'Pick a date'}</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start"
-                            onOpenAutoFocus={(e) => e.preventDefault()}
-                        >
-                            <Calendar
-                                mode="single"
-                                selected={field.value ? new Date(field.value) : undefined}
-                                onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
-                                initialFocus
-                                captionLayout="dropdown-nav"
-                                fromYear={new Date().getFullYear() - 70}
-                                toYear={new Date().getFullYear()}
-                            />
-                        </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-    );
-
     return (
         <Form {...form}>
             <form className="space-y-6">
@@ -446,8 +396,8 @@ export function CVBuilderForm() {
                                     <Input placeholder="Company" {...form.register(`experience.${index}.company`)} />
                                     <Input placeholder="Location" {...form.register(`experience.${index}.location`)} />
                                     <div className="grid grid-cols-2 gap-2">
-                                        <DatePickerField name={`experience.${index}.startDate`} label="Start Date" placeholder="Start Date"/>
-                                        <DatePickerField name={`experience.${index}.endDate`} label="End Date" placeholder="End Date" />
+                                        <Input placeholder="Start Date" {...form.register(`experience.${index}.startDate`)} />
+                                        <Input placeholder="End Date" {...form.register(`experience.${index}.endDate`)} />
                                     </div>
                                 </div>
                                 <CVSection
@@ -476,7 +426,7 @@ export function CVBuilderForm() {
                                     <Input placeholder="Degree (e.g., B.S. in Computer Science)" {...form.register(`education.${index}.degree`)} />
                                     <Input placeholder="School/University" {...form.register(`education.${index}.school`)} />
                                     <Input placeholder="Location" {...form.register(`education.${index}.location`)} />
-                                    <DatePickerField name={`education.${index}.graduationDate`} label="Graduation Date" placeholder="Graduation Date" />
+                                    <Input placeholder="Graduation Date" {...form.register(`education.${index}.graduationDate`)} />
                                 </div>
                                 <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeEducation(index)}>
                                     <Trash2 className="h-4 w-4 text-destructive"/>
@@ -498,7 +448,7 @@ export function CVBuilderForm() {
                                     <Input placeholder="Course or Certification Name" {...form.register(`courses.${index}.courseName`)} />
                                     <Input placeholder="Issuing Institution (e.g., Coursera, Udemy)" {...form.register(`courses.${index}.institution`)} />
                                 </div>
-                                <DatePickerField name={`courses.${index}.completionDate`} label="Completion Date" placeholder="Completion Date" />
+                                <Input placeholder="Completion Date" {...form.register(`courses.${index}.completionDate`)} />
                                 <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeCourse(index)}>
                                     <Trash2 className="h-4 w-4 text-destructive"/>
                                 </Button>
@@ -604,4 +554,3 @@ export function CVBuilderForm() {
         </Form>
     );
 }
-    
