@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CVDataSchema, type CVData } from '@/lib/types/cv-builder';
@@ -11,7 +11,7 @@ import { exportCvToDocx, exportCvToPdf } from '@/lib/cv-export';
 import { FileDown, PlusCircle, Trash2, CalendarIcon, Search, Loader2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { suggestSkills, type SuggestSkillsResponse } from '@/ai/flows/suggest-skills-flow';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function SuggestSkillsDialog({
     isOpen,
@@ -364,15 +365,49 @@ export function CVBuilderForm() {
                     </CardContent>
                 </Card>
 
-
                 <Card>
                     <CardHeader><CardTitle>Languages</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         {languageFields.map((field, index) => (
                             <div key={field.id} className="p-4 border rounded-lg space-y-3 relative">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input placeholder="Language (e.g., Spanish)" {...form.register(`languages.${index}.language`)} />
-                                    <Input placeholder="Proficiency (e.g., Native, Fluent, Conversational)" {...form.register(`languages.${index}.proficiency`)} />
+                                    <FormField
+                                        control={form.control}
+                                        name={`languages.${index}.language`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Language</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., Spanish" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name={`languages.${index}.proficiency`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Proficiency</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select a proficiency level" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Native or Bilingual">Native or Bilingual</SelectItem>
+                                                        <SelectItem value="Full Professional Proficiency">Full Professional Proficiency</SelectItem>
+                                                        <SelectItem value="Professional Working Proficiency">Professional Working Proficiency</SelectItem>
+                                                        <SelectItem value="Limited Working Proficiency">Limited Working Proficiency</SelectItem>
+                                                        <SelectItem value="Elementary Proficiency">Elementary Proficiency</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
                                 <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeLanguage(index)}>
                                     <Trash2 className="h-4 w-4 text-destructive"/>
