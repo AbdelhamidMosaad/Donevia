@@ -56,10 +56,7 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
     const docChildren = [
       createStyledParagraph(result.title, { heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
       createStyledParagraph(" "),
-      createStyledParagraph("Learning Objectives", { heading: HeadingLevel.HEADING_1 }),
-      ...result.learningObjectives.map(obj => createStyledParagraph(obj, { bullet: { level: 0 } })),
-      createStyledParagraph(" "),
-      createStyledParagraph("Detailed Notes", { heading: HeadingLevel.HEADING_1 }),
+      createStyledParagraph("Notes", { heading: HeadingLevel.HEADING_1 }),
     ];
     
     result.notes.split('\n').forEach(line => {
@@ -75,11 +72,6 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
         docChildren.push(createStyledParagraph(line));
       }
     });
-    
-    docChildren.push(createStyledParagraph(" "));
-    docChildren.push(createStyledParagraph("Learning Summary", { heading: HeadingLevel.HEADING_1 }));
-    docChildren.push(createStyledParagraph(result.learningSummary));
-
 
     const docInstance = new DocxDocument({ 
         sections: [{ children: docChildren }],
@@ -109,8 +101,6 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
       type: 'doc',
       content: [
           { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: result.title }] },
-          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: "Learning Objectives" }] },
-          { type: 'bulletList', content: result.learningObjectives.map(obj => ({ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: obj }] }] })) },
           { type: 'horizontalRule' },
           ...result.notes.split('\n').map(line => {
               if (line.startsWith('# ')) return { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: line.substring(2) }] };
@@ -119,9 +109,6 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
               if (line.startsWith('* ')) return { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: line.substring(2) }] }] }] };
               return { type: 'paragraph', content: line ? [{ type: 'text', text: line }] : [] };
           }),
-           { type: 'horizontalRule' },
-          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: "Learning Summary" }] },
-          { type: 'paragraph', content: [{ type: 'text', text: result.learningSummary }] },
       ]
     };
 
@@ -152,35 +139,8 @@ function NotesResultView({ result, onReset }: { result: LectureNotesResponse; on
           </CardHeader>
           <CardContent className="flex-1 min-h-0">
             <ScrollArea className="h-full pr-4 -mr-4">
-              <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Learning Objectives</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="list-disc pl-5 mt-2 space-y-1">
-                            {result.learningObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
-                        </ul>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Notes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="prose prose-sm dark:prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Learning Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p>{result.learningSummary}</p>
-                    </CardContent>
-                </Card>
-              </div>
+               <div className="prose prose-sm dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: marked.parse(result.notes) }} />
             </ScrollArea>
           </CardContent>
           <CardFooter className="justify-end gap-2">
@@ -424,5 +384,3 @@ export function LectureNotesGenerator() {
 
   return <div className="flex flex-col h-full gap-6">{renderContent()}</div>;
 }
-
-    
