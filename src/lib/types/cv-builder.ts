@@ -32,6 +32,12 @@ export const CVDataSchema = z.object({
     location: z.string(),
     graduationDate: z.string(),
   })),
+  courses: z.array(z.object({
+    id: z.string(),
+    courseName: z.string(),
+    institution: z.string(),
+    completionDate: z.string(),
+  })),
   skills: z.string(),
 });
 

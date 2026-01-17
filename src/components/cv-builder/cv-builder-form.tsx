@@ -21,6 +21,7 @@ export function CVBuilderForm() {
             summary: '',
             experience: [{ id: '1', jobTitle: '', company: '', location: '', startDate: '', endDate: '', description: '' }],
             education: [{ id: '1', degree: '', school: '', location: '', graduationDate: '' }],
+            courses: [{ id: '1', courseName: '', institution: '', completionDate: '' }],
             skills: '',
         }
     });
@@ -33,6 +34,11 @@ export function CVBuilderForm() {
     const { fields: educationFields, append: appendEducation, remove: removeEducation } = useFieldArray({
         control: form.control,
         name: 'education'
+    });
+
+    const { fields: courseFields, append: appendCourse, remove: removeCourse } = useFieldArray({
+        control: form.control,
+        name: 'courses'
     });
 
     const handleExport = (format: 'docx' | 'pdf') => {
@@ -130,6 +136,27 @@ export function CVBuilderForm() {
                     ))}
                     <Button type="button" variant="outline" onClick={() => appendEducation({ id: uuidv4(), degree: '', school: '', location: '', graduationDate: '' })}>
                         <PlusCircle/> Add Education
+                    </Button>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader><CardTitle>Courses &amp; Certifications</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                    {courseFields.map((field, index) => (
+                        <div key={field.id} className="p-4 border rounded-lg space-y-3 relative">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Input placeholder="Course or Certification Name" {...form.register(`courses.${index}.courseName`)} />
+                                <Input placeholder="Issuing Institution (e.g., Coursera, Udemy)" {...form.register(`courses.${index}.institution`)} />
+                                <Input placeholder="Completion Date" {...form.register(`courses.${index}.completionDate`)} />
+                            </div>
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeCourse(index)}>
+                                <Trash2 className="h-4 w-4 text-destructive"/>
+                            </Button>
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" onClick={() => appendCourse({ id: uuidv4(), courseName: '', institution: '', completionDate: '' })}>
+                        <PlusCircle/> Add Course
                     </Button>
                 </CardContent>
             </Card>

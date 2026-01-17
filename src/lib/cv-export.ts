@@ -44,6 +44,15 @@ export const exportCvToDocx = async (cvData: CVData) => {
             new Paragraph(""), // spacing
         ]),
 
+        ...(cvData.courses && cvData.courses.length > 0 && cvData.courses.some(c => c.courseName) ? [
+            new Paragraph({ text: 'Courses & Certifications', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
+            ...cvData.courses.flatMap(course => course.courseName ? [
+                new Paragraph({ children: [new TextRun({ text: course.courseName, bold: true })] }),
+                new Paragraph({ text: `${course.institution} | Completed: ${course.completionDate}` }),
+                new Paragraph(""), // spacing
+            ] : [])
+        ] : []),
+
         new Paragraph({ text: 'Skills', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
         new Paragraph(cvData.skills),
       ],
@@ -126,6 +135,27 @@ export const exportCvToPdf = (cvData: CVData) => {
         doc.text(`${edu.school} | ${edu.location} | Graduated: ${edu.graduationDate}`, 15, y);
         y += 10;
     });
+
+    if (cvData.courses && cvData.courses.length > 0 && cvData.courses.some(c => c.courseName)) {
+        if (y > 250) { doc.addPage(); y = 20; }
+        doc.setFontSize(16);
+        doc.text('Courses & Certifications', 15, y);
+        y += 2;
+        doc.line(15, y, 195, y);
+        y += 8;
+        doc.setFontSize(11);
+        cvData.courses.forEach(course => {
+            if (y > 270) { doc.addPage(); y = 20; }
+            if (course.courseName) {
+                doc.setFont(undefined, 'bold');
+                doc.text(course.courseName, 15, y);
+                y += 5;
+                doc.setFont(undefined, 'normal');
+                doc.text(`${course.institution} | Completed: ${course.completionDate}`, 15, y);
+                y += 10;
+            }
+        });
+    }
 
     if (y > 260) { doc.addPage(); y = 20; }
     doc.setFontSize(16);
