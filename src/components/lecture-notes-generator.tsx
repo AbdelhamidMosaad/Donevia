@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
@@ -8,7 +9,6 @@ import { Loader2, Sparkles, Upload, FileText, Download, Wand2 } from 'lucide-rea
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import type { UserSettings } from '@/lib/types';
-import pdfParse from 'pdf-parse';
 import { generateLectureNotes, LectureNotesResponse } from '@/ai/flows/lecture-notes-flow';
 import { exportLectureNotesToDocx } from '@/lib/lecture-notes-export';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -56,6 +56,7 @@ export function LectureNotesGenerator() {
 
     try {
       if (file.type === 'application/pdf') {
+        const pdfParse = (await import('pdf-parse')).default;
         const arrayBuffer = await file.arrayBuffer();
         const data = await pdfParse(arrayBuffer);
         setSourceText(data.text);
@@ -180,3 +181,4 @@ export function LectureNotesGenerator() {
     </div>
   );
 }
+    
