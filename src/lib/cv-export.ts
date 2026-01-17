@@ -53,8 +53,15 @@ export const exportCvToDocx = async (cvData: CVData) => {
             ] : [])
         ] : []),
 
-        new Paragraph({ text: 'Skills', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
-        new Paragraph(cvData.skills),
+        ...(cvData.technicalSkills ? [
+            new Paragraph({ text: 'Technical Skills', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
+            new Paragraph(cvData.technicalSkills),
+        ] : []),
+
+        ...(cvData.softSkills ? [
+            new Paragraph({ text: 'Soft Skills', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
+            new Paragraph(cvData.softSkills),
+        ] : []),
 
         ...(cvData.languages && cvData.languages.length > 0 && cvData.languages.some(l => l.language) ? [
             new Paragraph({ text: 'Languages', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
@@ -168,16 +175,31 @@ export const exportCvToPdf = (cvData: CVData) => {
         });
     }
 
-    if (y > 260) { doc.addPage(); y = 20; }
-    doc.setFontSize(16);
-    doc.text('Skills', 15, y);
-    y += 2;
-    doc.line(15, y, 195, y);
-    y += 8;
-    doc.setFontSize(11);
-    const skillsLines = doc.splitTextToSize(cvData.skills, 180);
-    doc.text(skillsLines, 15, y);
-    y += skillsLines.length * 5 + 5;
+    if (cvData.technicalSkills) {
+        if (y > 260) { doc.addPage(); y = 20; }
+        doc.setFontSize(16);
+        doc.text('Technical Skills', 15, y);
+        y += 2;
+        doc.line(15, y, 195, y);
+        y += 8;
+        doc.setFontSize(11);
+        const technicalSkillsLines = doc.splitTextToSize(cvData.technicalSkills, 180);
+        doc.text(technicalSkillsLines, 15, y);
+        y += technicalSkillsLines.length * 5 + 5;
+    }
+
+    if (cvData.softSkills) {
+        if (y > 260) { doc.addPage(); y = 20; }
+        doc.setFontSize(16);
+        doc.text('Soft Skills', 15, y);
+        y += 2;
+        doc.line(15, y, 195, y);
+        y += 8;
+        doc.setFontSize(11);
+        const softSkillsLines = doc.splitTextToSize(cvData.softSkills, 180);
+        doc.text(softSkillsLines, 15, y);
+        y += softSkillsLines.length * 5 + 5;
+    }
 
     if (cvData.languages && cvData.languages.length > 0 && cvData.languages.some(l => l.language)) {
         if (y > 260) { doc.addPage(); y = 20; }

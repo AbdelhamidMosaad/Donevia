@@ -23,7 +23,8 @@ export function CVBuilderForm() {
             education: [{ id: '1', degree: '', school: '', location: '', graduationDate: '' }],
             courses: [{ id: '1', courseName: '', institution: '', completionDate: '' }],
             languages: [{ id: '1', language: '', proficiency: '' }],
-            skills: '',
+            technicalSkills: '',
+            softSkills: '',
         }
     });
     
@@ -168,14 +169,27 @@ export function CVBuilderForm() {
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>Skills</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Technical Skills</CardTitle></CardHeader>
                 <CardContent>
                      <CVSection
                         title=""
-                        value={form.watch('skills')}
-                        onChange={(val) => form.setValue('skills', val)}
-                        placeholder="List your skills, separated by commas (e.g., JavaScript, React, Node.js)."
-                        context={{ section: 'Skills Section' }}
+                        value={form.watch('technicalSkills')}
+                        onChange={(val) => form.setValue('technicalSkills', val)}
+                        placeholder="e.g., JavaScript, React, Node.js, Python, SQL"
+                        context={{ section: 'Technical Skills' }}
+                    />
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader><CardTitle>Soft Skills</CardTitle></CardHeader>
+                <CardContent>
+                     <CVSection
+                        title=""
+                        value={form.watch('softSkills')}
+                        onChange={(val) => form.setValue('softSkills', val)}
+                        placeholder="e.g., Communication, Teamwork, Problem-solving"
+                        context={{ section: 'Soft Skills' }}
                     />
                 </CardContent>
             </Card>

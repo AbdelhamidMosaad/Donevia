@@ -43,7 +43,8 @@ export const CVDataSchema = z.object({
     language: z.string(),
     proficiency: z.string(),
   })).optional(),
-  skills: z.string(),
+  technicalSkills: z.string(),
+  softSkills: z.string(),
 });
 
 export type CVData = z.infer<typeof CVDataSchema>;
