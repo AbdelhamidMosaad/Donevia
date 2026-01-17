@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
@@ -44,8 +43,8 @@ export function LectureNotesGenerator() {
     const file = acceptedFiles[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        toast({ variant: 'destructive', title: 'File size exceeds 2MB limit.' });
+    if (file.size > 15 * 1024 * 1024) { // 15MB limit
+        toast({ variant: 'destructive', title: 'File size exceeds 15MB limit.' });
         return;
     }
     
@@ -119,7 +118,7 @@ export function LectureNotesGenerator() {
         <Card className="flex flex-col">
             <CardHeader>
                 <CardTitle>1. Upload Your Document</CardTitle>
-                <CardDescription>Upload a PDF or DOCX file (max 2MB).</CardDescription>
+                <CardDescription>Upload a PDF or DOCX file (max 15MB).</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-4">
                 <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer ${isDragActive ? 'border-primary' : ''}`}>
