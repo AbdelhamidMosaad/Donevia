@@ -31,6 +31,8 @@ const prompt = ai.definePrompt({
         - "Replaced 'Responsible for' with the action verb 'Managed' to show more ownership."
         - "Added a quantifiable metric ('increased sales by 15%') to demonstrate concrete impact."
         - "Simplified the language to ensure it is easily parsed by ATS systems."
+
+    3.  **JSON Output**: Ensure your entire output is a single, valid JSON object that strictly adheres to the required schema. Do not include any text or formatting outside of this JSON structure.
   `,
 });
 
