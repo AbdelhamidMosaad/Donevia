@@ -41,6 +41,7 @@ const FinalSummaryResponseSchema = z.object({
 
 const continueNotesPrompt = ai.definePrompt({
     name: 'continueLectureNotesPrompt',
+    model: 'googleai/gemini-2.0-flash',
     input: { schema: ContinueNotesRequestSchema },
     output: { schema: ContinueNotesResponseSchema },
     prompt: `
@@ -69,6 +70,7 @@ const continueNotesPrompt = ai.definePrompt({
 
 const finalSummaryPrompt = ai.definePrompt({
     name: 'finalSummaryPrompt',
+    model: 'googleai/gemini-2.0-flash',
     input: { schema: FinalSummaryRequestSchema },
     output: { schema: FinalSummaryResponseSchema },
     prompt: `
