@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -48,16 +47,18 @@ import { CreateWithAiIcon } from './icons/tools/create-with-ai-icon';
 import { DoneviaLogo } from './logo';
 import { ToDoListIcon } from '@/components/icons/tools/to-do-list-icon';
 import { CVBuilderIcon } from './icons/tools/cv-builder-icon';
+import { LectureNotesIcon } from './icons/tools/lecture-notes-icon';
 
 const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
     { href: '/planner', icon: <PlannerIcon />, label: 'Planner', tooltip: 'Planner', id: 'planner' },
-    { href: '/dashboard/lists', icon: <TasksIcon />, label: 'Tasks', tooltip: 'Task Management', id: 'tasks' },
+    { href: '/tasks', icon: <TasksIcon />, label: 'Tasks', tooltip: 'Task Management', id: 'tasks' },
     { href: '/to-do-list', icon: <ToDoListIcon />, label: 'To-do List', tooltip: 'To-do List', id: 'to-do-list' },
     { href: '/journal', icon: <JournalIcon />, label: 'Journal', tooltip: 'Journal', id: 'journal' },
     { href: '/habits', icon: <HabitsIcon />, label: 'Habit Tracker', tooltip: 'Habit Tracker', id: 'habits' },
     { href: '/goals', icon: <GoalsIcon />, label: 'Goals', tooltip: 'Goals', id: 'goals' },
     { href: '/study-tracker', icon: <StudyTrackerIcon />, label: 'Study Tracker', tooltip: 'Study Tracker', id: 'study-tracker' },
+    { href: '/lecture-notes', icon: <LectureNotesIcon />, label: 'Lecture Notes', tooltip: 'Lecture Notes Generator', id: 'lecture-notes' },
     { href: '/flashcards', icon: <FlashcardsIcon />, label: 'Flashcards', tooltip: 'Flashcards', id: 'flashcards' },
     { href: '/meeting-notes', icon: <MeetingNotesIcon />, label: 'Meeting Notes', tooltip: 'Meeting Notes', id: 'meeting-notes' },
     { href: '/notes', icon: <StickyNotesIcon />, label: 'Sticky Notes', tooltip: 'Sticky Notes', id: 'notes' },
@@ -117,6 +118,9 @@ export function AppSidebar() {
     }
     if (href === '/study-tracker') {
         return pathname.startsWith('/study-tracker');
+    }
+    if (href === '/tasks') {
+        return pathname.startsWith('/dashboard');
     }
     return pathname.startsWith(href);
   };

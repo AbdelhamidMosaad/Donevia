@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -7,6 +6,7 @@ import { HelpCircle, LayoutDashboard, Kanban, BarChart3, Sparkles, Repeat, Targe
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import placeholderImages from '@/app/lib/placeholder-images.json';
+import { LectureNotesIcon } from "@/components/icons/tools/lecture-notes-icon";
 
 const features = [
     {
@@ -96,6 +96,20 @@ const features = [
         ],
     },
     {
+        id: 'lecture-notes',
+        icon: <LectureNotesIcon className="h-6 w-6 text-orange-500" />,
+        title: 'Lecture Notes Generator',
+        description: 'Automatically create structured lecture notes from your documents.',
+        details: [
+            {
+                title: 'Upload and Generate',
+                text: "Upload a PDF or DOCX file, and the AI will generate structured, easy-to-understand notes. It includes headings, bullet points, and diagram placeholders.",
+                image: placeholderImages.lectureNotesGeneration.src,
+                dataAiHint: placeholderImages.lectureNotesGeneration.hint,
+            },
+        ],
+    },
+    {
         id: 'study-tracker',
         icon: <GraduationCap className="h-6 w-6 text-lime-500" />,
         title: 'Study Tracker',
@@ -122,8 +136,8 @@ const features = [
         description: 'Master any subject with smart flashcards.',
         details: [
             {
-                title: 'AI-Powered Generation',
-                text: "Paste any text into the AI generator to automatically create a deck of flashcards. You can also create and manage cards manually, and import or export decks as JSON files.",
+                title: 'Manual and Bulk Creation',
+                text: "Create cards one by one or import/export entire decks using a simple JSON format. This gives you full control over your study materials.",
                 image: placeholderImages.aiFlashcardsGeneration.src,
                 dataAiHint: placeholderImages.aiFlashcardsGeneration.hint,
             },
@@ -226,7 +240,7 @@ export default function HelpPage() {
             <HelpCircle className="h-8 w-8 text-primary"/>
             <div>
                 <h1 className="text-3xl font-bold font-headline">Help & Documentation</h1>
-                <p className="text-muted-foreground">Find everything you need to know about using Donevia.</p>
+                <p className="text-muted-foreground">Find everything you need to know about Donevia.</p>
             </div>
         </div>
 

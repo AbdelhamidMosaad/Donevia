@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -36,6 +35,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import moment from 'moment';
 import { useTasks } from '@/hooks/use-tasks';
 import { CVBuilderIcon } from '@/components/icons/tools/cv-builder-icon';
+import { LectureNotesIcon } from '@/components/icons/tools/lecture-notes-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -44,6 +44,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     habits: HabitsIcon,
     goals: GoalsIcon,
     'study-tracker': StudyTrackerIcon,
+    'lecture-notes': LectureNotesIcon,
     flashcards: FlashcardsIcon,
     'meeting-notes': MeetingNotesIcon,
     notes: StickyNotesIcon,
@@ -67,6 +68,7 @@ const allTools = [
     { id: 'habits', href: '/habits', title: 'Habit Tracker', description: 'Build consistency and track your daily habits.' },
     { id: 'goals', href: '/goals', title: 'Goal Tracker', description: 'Define, track, and achieve your ambitions.' },
     { id: 'study-tracker', href: '/study-tracker', title: 'Study Tracker', description: 'Plan and gamify your learning sessions.' },
+    { id: 'lecture-notes', href: '/lecture-notes', title: 'Lecture Notes', description: 'Generate structured notes from documents.' },
     { id: 'flashcards', href: '/flashcards', title: 'Flashcards', description: 'Master any subject with smart flashcards.' },
     { id: 'meeting-notes', href: '/meeting-notes', title: 'Meeting Notes', description: 'Capture and organize meeting minutes.' },
     { id: 'notes', href: '/notes', title: 'Sticky Notes', description: 'A flexible space for quick thoughts & reminders.' },
