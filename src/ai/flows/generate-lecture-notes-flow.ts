@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -21,30 +22,30 @@ const LectureNotesResponseSchema = z.object({
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
 
-// ========== SINGLE COMBINED PROMPT ==========
+// ========== STEP 1: Generate Core Notes ==========
 
-const generateLectureNotesPrompt = ai.definePrompt({
-    name: 'generateFullLectureNotesPrompt',
+const CoreNotesSchema = z.object({
+    title: z.string().describe("A concise and relevant title for the generated material."),
+    notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
+});
+
+const coreNotesPrompt = ai.definePrompt({
+    name: 'coreLectureNotesPrompt',
     input: { schema: LectureNotesRequestSchema },
-    output: { schema: LectureNotesResponseSchema },
+    output: { schema: CoreNotesSchema },
     prompt: `
-        Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
+        Your task is to transform the provided source text into a complete and well-structured set of academic lecture notes.
 
-        Task: Transform the provided raw content into a comprehensive set of study materials.
+        **Instructions:**
+        1.  **Generate a Title**: Create a concise and descriptive title for the lecture notes.
+        2.  **Structure the Content**: Organize the information using a clear hierarchy with Markdown headings (#, ##, ###).
+        3.  **Format for Clarity**:
+            *   Use **bold formatting** for all key terms, definitions, and important concepts.
+            *   Use bullet points for lists, steps, or features.
+        4.  **Ensure Completeness**: You MUST process the entire source text from beginning to end. Do not omit any sections or concepts. Your output must not be truncated.
 
-        Your entire output must be a single, valid JSON object that adheres to the schema.
+        The final output should be a professional, easy-to-read document ready for distribution. Do not add any information that is not present in the source text.
 
-        Instructions:
-
-        1.  **Title**: Create a clear and descriptive title for the material.
-        2.  **Learning Objectives**: Generate a list of 3-5 key learning objectives based on the source text.
-        3.  **Notes**: Transform the entire source text into structured, professional lecture notes.
-            -   Use Markdown headings (#, ##, ###) for a hierarchical structure.
-            -   Use **bolding** for key terms and concepts.
-            -   Use bullet points for lists.
-            -   Ensure all topics from the source text are covered concisely.
-        4.  **Learning Summary**: Write a concise 2-3 sentence summary of the main takeaways from the notes.
-        
         ---
         **Source Text:**
         {{{sourceText}}}
@@ -52,8 +53,35 @@ const generateLectureNotesPrompt = ai.definePrompt({
     `
 });
 
+// ========== STEP 2: Generate Summary and Objectives from Notes ==========
 
-// ========== Flow Definition (Single-step process) ==========
+const SummaryRequestSchema = z.object({
+    notes: z.string(),
+});
+
+const SummaryResponseSchema = z.object({
+    learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the provided notes."),
+    learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways of the notes."),
+});
+
+const summaryPrompt = ai.definePrompt({
+    name: 'lectureSummaryPrompt',
+    input: { schema: SummaryRequestSchema },
+    output: { schema: SummaryResponseSchema },
+    prompt: `
+        Based on the following lecture notes, please generate:
+        1. A list of 3-5 key learning objectives.
+        2. A concise 2-3 sentence summary of the main takeaways.
+
+        ---
+        **Lecture Notes:**
+        {{{notes}}}
+        ---
+    `
+});
+
+
+// ========== Flow Definition (Two-step process) ==========
 const generateLectureNotesFlow = ai.defineFlow(
   {
     name: 'generateLectureNotesFlow',
@@ -61,11 +89,27 @@ const generateLectureNotesFlow = ai.defineFlow(
     outputSchema: LectureNotesResponseSchema,
   },
   async (input) => {
-    const { output } = await generateLectureNotesPrompt(input);
-    if (!output) {
-      throw new Error('The AI failed to generate the lecture notes.');
+    // Step 1: Generate the core title and notes.
+    const coreResult = await coreNotesPrompt(input);
+    if (!coreResult.output || !coreResult.output.notes) {
+      throw new Error('The AI failed to generate the core lecture notes.');
     }
-    return output;
+    const { title, notes } = coreResult.output;
+
+    // Step 2: Generate summary and objectives from the notes.
+    const summaryResult = await summaryPrompt({ notes });
+     if (!summaryResult.output) {
+      throw new Error('The AI failed to generate the summary and objectives.');
+    }
+    const { learningObjectives, learningSummary } = summaryResult.output;
+
+    // Combine results and return
+    return {
+      title,
+      notes,
+      learningObjectives,
+      learningSummary,
+    };
   }
 );
 
@@ -83,3 +127,4 @@ export async function generateLectureNotes(
     );
   }
 }
+
