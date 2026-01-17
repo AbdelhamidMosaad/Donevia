@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -36,6 +35,7 @@ import { ToDoListIcon } from '@/components/icons/tools/to-do-list-icon';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import moment from 'moment';
 import { useTasks } from '@/hooks/use-tasks';
+import { CVBuilderIcon } from '@/components/icons/tools/cv-builder-icon';
 
 const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
     planner: PlannerIcon,
@@ -54,6 +54,7 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     'interview-prep': InterviewPrepIcon,
     'be-creative': BeCreativeIcon,
     'create-with-ai': CreateWithAiIcon,
+    'cv-builder': CVBuilderIcon,
     docs: DocsIcon,
     'studying-assistant': StudyingAssistantIcon,
     pomodoro: PomodoroIcon,
@@ -77,6 +78,7 @@ const allTools = [
     { id: 'interview-prep', href: '/interview-prep', title: 'Interview Prep', description: 'Practice for your next job interview.' },
     { id: 'be-creative', href: '/be-creative', title: 'Be Creative', description: 'A suite of tools for brainstorming and creativity.' },
     { id: 'create-with-ai', href: '/create-with-ai', title: 'Create with AI', description: 'AI-powered writing assistance tools.' },
+    { id: 'cv-builder', href: '/cv-builder', title: 'CV Builder', description: 'Build an ATS-friendly resume.' },
     { id: 'docs', href: '/docs', title: 'Docs', description: 'A powerful, feature-rich document editor.' },
     { id: 'studying-assistant', href: '/studying-assistant', title: 'Studying Assistant', description: 'Generate study materials with AI.' },
     { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },

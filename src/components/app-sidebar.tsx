@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -48,6 +47,7 @@ import { BeCreativeIcon } from './icons/tools/be-creative-icon';
 import { CreateWithAiIcon } from './icons/tools/create-with-ai-icon';
 import { DoneviaLogo } from './logo';
 import { ToDoListIcon } from '@/components/icons/tools/to-do-list-icon';
+import { CVBuilderIcon } from './icons/tools/cv-builder-icon';
 
 const defaultMenuItems = [
     { href: '/home', icon: <Home />, label: 'Home', tooltip: 'Home', id: 'dashboard' },
@@ -68,6 +68,7 @@ const defaultMenuItems = [
     { href: '/interview-prep', icon: <InterviewPrepIcon />, label: 'Interview Prep', tooltip: 'Interview Prep', id: 'interview-prep' },
     { href: '/be-creative', icon: <BeCreativeIcon />, label: 'Be Creative', tooltip: 'Be Creative', id: 'be-creative' },
     { href: '/create-with-ai', icon: <CreateWithAiIcon />, label: 'Create with AI', tooltip: 'Create with AI', id: 'create-with-ai' },
+    { href: '/cv-builder', icon: <CVBuilderIcon />, label: 'CV Builder', tooltip: 'CV Builder', id: 'cv-builder' },
     { href: '/docs', icon: <DocsIcon />, label: 'Docs', tooltip: 'Docs', id: 'docs' },
     { href: '/studying-assistant', icon: <StudyingAssistantIcon />, label: 'Studying Assistant', tooltip: 'Studying Assistant', id: 'studying-assistant' },
     { href: '/pomodoro', icon: <PomodoroIcon />, label: 'Pomodoro', tooltip: 'Pomodoro Timer', id: 'pomodoro' },
@@ -78,6 +79,11 @@ export function AppSidebar() {
   const { user, settings } = useAuth();
   const { open } = useSidebar();
   const [menuItems, setMenuItems] = React.useState(defaultMenuItems);
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   React.useEffect(() => {
     if (user) {
@@ -130,45 +136,63 @@ export function AppSidebar() {
       await setDoc(settingsRef, { sidebarOrder: newOrder }, { merge: true });
   }
 
+  const renderMenuItems = () => (
+    menuItems.map((item, index) => (
+      <Draggable key={item.id} draggableId={item.id} index={index}>
+        {(provided) => (
+          <SidebarMenuItem ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive(item.href)}
+              tooltip={item.tooltip}
+            >
+              <Link href={item.href || '#'} className="flex items-center w-full">
+                <div className={cn("p-1 text-muted-foreground", !open && "hidden")}>
+                  <GripVertical className="h-4 w-4"/>
+                </div>
+                <div className="w-8 h-8 flex items-center justify-center">
+                  {React.cloneElement(item.icon as React.ReactElement, { className: "h-6 w-6" })}
+                </div>
+                {open && <span className="flex-1 ml-2">{item.label}</span>}
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        )}
+      </Draggable>
+    ))
+  );
+
   return (
     <Sidebar variant={settings?.sidebarVariant}>
       <SidebarRail />
       <SidebarHeader />
       <SidebarContent>
-        <DragDropContext onDragEnd={handleDragEnd}>
+        {isClient ? (
+           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="sidebar-menu">
                 {(provided) => (
                     <SidebarMenu {...provided.droppableProps} ref={provided.innerRef}>
-                    {menuItems.map((item, index) => {
-                        return (
-                             <Draggable key={item.id} draggableId={item.id} index={index}>
-                                {(provided) => (
-                                    <SidebarMenuItem ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                        <SidebarMenuButton
-                                            asChild
-                                            isActive={isActive(item.href)}
-                                            tooltip={item.tooltip}
-                                        >
-                                            <Link href={item.href || '#'} className="flex items-center w-full">
-                                                <div className={cn("p-1 text-muted-foreground", !open && "hidden")}>
-                                                    <GripVertical className="h-4 w-4"/>
-                                                </div>
-                                                <div className="w-8 h-8 flex items-center justify-center">
-                                                  {React.cloneElement(item.icon as React.ReactElement, { className: "h-6 w-6" })}
-                                                </div>
-                                                {open && <span className="flex-1 ml-2">{item.label}</span>}
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                )}
-                            </Draggable>
-                        )
-                    })}
-                    {provided.placeholder}
+                      {renderMenuItems()}
+                      {provided.placeholder}
                     </SidebarMenu>
                 )}
             </Droppable>
         </DragDropContext>
+        ) : (
+           <SidebarMenu>
+              {menuItems.map(item => (
+                 <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton asChild isActive={isActive(item.href)} tooltip={item.tooltip}>
+                        <Link href={item.href || '#'} className="flex items-center w-full">
+                            <div className={cn("p-1 text-muted-foreground", !open && "hidden")}><GripVertical className="h-4 w-4"/></div>
+                            <div className="w-8 h-8 flex items-center justify-center">{React.cloneElement(item.icon as React.ReactElement, { className: "h-6 w-6" })}</div>
+                            {open && <span className="flex-1 ml-2">{item.label}</span>}
+                        </Link>
+                    </SidebarMenuButton>
+                 </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>

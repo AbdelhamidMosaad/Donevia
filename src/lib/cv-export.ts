@@ -1,0 +1,141 @@
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { jsPDF } from 'jspdf';
+import { saveAs } from 'file-saver';
+import type { CVData } from './types/cv-builder';
+
+export const exportCvToDocx = async (cvData: CVData) => {
+  const doc = new Document({
+    sections: [{
+      children: [
+        new Paragraph({ text: cvData.personalDetails.fullName, heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+                new TextRun(cvData.personalDetails.email),
+                new TextRun(" | ").break(),
+                new TextRun(cvData.personalDetails.phone),
+                new TextRun(" | ").break(),
+                new TextRun(cvData.personalDetails.address),
+            ]
+        }),
+        cvData.personalDetails.linkedIn ? new Paragraph({ text: `LinkedIn: ${cvData.personalDetails.linkedIn}`, alignment: AlignmentType.CENTER }) : new Paragraph(""),
+        cvData.personalDetails.website ? new Paragraph({ text: `Website: ${cvData.personalDetails.website}`, alignment: AlignmentType.CENTER }) : new Paragraph(""),
+        
+        new Paragraph({ text: 'Summary', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
+        new Paragraph(cvData.summary),
+
+        new Paragraph({ text: 'Work Experience', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
+        ...cvData.experience.flatMap(exp => [
+            new Paragraph({
+                children: [
+                    new TextRun({ text: exp.jobTitle, bold: true }),
+                    new TextRun(` | ${exp.company}`).bold(),
+                ]
+            }),
+            new Paragraph({ text: `${exp.startDate} - ${exp.endDate} | ${exp.location}` }),
+            ...exp.description.split('\n').map(desc => new Paragraph({ text: desc, bullet: { level: 0 } })),
+            new Paragraph(""), // spacing
+        ]),
+
+        new Paragraph({ text: 'Education', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
+         ...cvData.education.flatMap(edu => [
+            new Paragraph({ children: [new TextRun({ text: edu.degree, bold: true })] }),
+            new Paragraph({ text: `${edu.school} | ${edu.location} | Graduated: ${edu.graduationDate}` }),
+            new Paragraph(""), // spacing
+        ]),
+
+        new Paragraph({ text: 'Skills', heading: HeadingLevel.HEADING_1, border: { bottom: { color: "auto", space: 1, value: "single", size: 6 } } }),
+        new Paragraph(cvData.skills),
+      ],
+    }],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  saveAs(blob, `${cvData.personalDetails.fullName.replace(/ /g, '_')}_CV.docx`);
+};
+
+export const exportCvToPdf = (cvData: CVData) => {
+    const doc = new jsPDF();
+    let y = 20;
+
+    doc.setFontSize(22);
+    doc.text(cvData.personalDetails.fullName, 105, y, { align: 'center' });
+    y += 10;
+    doc.setFontSize(10);
+    doc.text(`${cvData.personalDetails.email} | ${cvData.personalDetails.phone} | ${cvData.personalDetails.address}`, 105, y, { align: 'center' });
+    y += 5;
+     if (cvData.personalDetails.linkedIn) {
+        doc.text(`LinkedIn: ${cvData.personalDetails.linkedIn}`, 105, y, { align: 'center' });
+        y += 5;
+    }
+    if (cvData.personalDetails.website) {
+        doc.text(`Website: ${cvData.personalDetails.website}`, 105, y, { align: 'center' });
+    }
+    
+    y += 10;
+    doc.setFontSize(16);
+    doc.text('Summary', 15, y);
+    y += 2;
+    doc.setLineWidth(0.5);
+    doc.line(15, y, 195, y);
+    y += 8;
+    doc.setFontSize(11);
+    const summaryLines = doc.splitTextToSize(cvData.summary, 180);
+    doc.text(summaryLines, 15, y);
+    y += summaryLines.length * 5 + 5;
+    
+    doc.setFontSize(16);
+    doc.text('Work Experience', 15, y);
+    y += 2;
+    doc.line(15, y, 195, y);
+    y += 8;
+    doc.setFontSize(11);
+
+    cvData.experience.forEach(exp => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.setFont(undefined, 'bold');
+        doc.text(`${exp.jobTitle} | ${exp.company}`, 15, y);
+        doc.setFont(undefined, 'normal');
+        y += 5;
+        doc.setFontSize(10);
+        doc.text(`${exp.startDate} - ${exp.endDate} | ${exp.location}`, 15, y);
+        y += 5;
+        doc.setFontSize(11);
+        const descLines = doc.splitTextToSize(exp.description, 175);
+        descLines.forEach((line: string) => {
+             if (y > 280) { doc.addPage(); y = 20; }
+             doc.text(`• ${line}`, 20, y);
+             y+= 5;
+        })
+        y += 5;
+    });
+    
+    if (y > 250) { doc.addPage(); y = 20; }
+    doc.setFontSize(16);
+    doc.text('Education', 15, y);
+    y += 2;
+    doc.line(15, y, 195, y);
+    y += 8;
+    doc.setFontSize(11);
+     cvData.education.forEach(edu => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.setFont(undefined, 'bold');
+        doc.text(edu.degree, 15, y);
+        y += 5;
+        doc.setFont(undefined, 'normal');
+        doc.text(`${edu.school} | ${edu.location} | Graduated: ${edu.graduationDate}`, 15, y);
+        y += 10;
+    });
+
+    if (y > 260) { doc.addPage(); y = 20; }
+    doc.setFontSize(16);
+    doc.text('Skills', 15, y);
+    y += 2;
+    doc.line(15, y, 195, y);
+    y += 8;
+    doc.setFontSize(11);
+    const skillsLines = doc.splitTextToSize(cvData.skills, 180);
+    doc.text(skillsLines, 15, y);
+
+    doc.save(`${cvData.personalDetails.fullName.replace(/ /g, '_')}_CV.pdf`);
+};
