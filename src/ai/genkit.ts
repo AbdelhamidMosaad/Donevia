@@ -55,7 +55,7 @@ export const ai = genkit({
     }),
     // dotprompt(),
   ],
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-2.0-flash',
 });
 
 // Optional: Export firebaseAdmin if needed elsewhere
