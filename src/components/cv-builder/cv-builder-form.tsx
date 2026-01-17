@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -209,7 +210,7 @@ export function CVBuilderForm() {
         
         const isValid = await form.trigger();
         if(!isValid) {
-            toast({ variant: 'destructive', title: 'Please fill in all required fields.', description: "The 'CV Name' field cannot be empty." });
+            toast({ variant: 'destructive', title: 'Please fill in all required fields.', description: "The 'Draft Name' field cannot be empty." });
             return;
         }
 
@@ -297,27 +298,45 @@ export function CVBuilderForm() {
                     <Button type="button" variant="outline" onClick={() => handleExport('pdf')}><FileDown/> Export PDF</Button>
                     <Button type="button" onClick={() => handleExport('docx')}><FileDown/> Export Word</Button>
                 </div>
-
+                
                 <Card>
                     <CardHeader>
                         <CardTitle>CV Management</CardTitle>
                         <CardDescription>Save, load, and manage your CV drafts.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1">
-                            <Label>Load Draft</Label>
+                    <CardContent className="space-y-4">
+                        <div>
+                            <Label>Load Existing Draft</Label>
                             <Select onValueChange={handleLoadDraft} value={currentDraftId || 'new'}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="new">-- New CV --</SelectItem>
+                                    <SelectItem value="new">-- Start a New CV --</SelectItem>
                                     {drafts.map(d => (
                                         <SelectItem key={d.id} value={d.id}>{d.name} (Updated {moment(d.updatedAt).fromNow()})</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="flex gap-2">
-                             <Button type="button" onClick={handleSaveDraft}><Save/> Save Draft</Button>
+
+                        <div>
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Draft Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Enter a name for your new or updated draft..." {...field} />
+                                        </FormControl>
+                                        <FormDescription>This name will be used to save or update your draft.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        
+                        <div className="flex gap-2 justify-end">
+                             <Button type="button" onClick={handleSaveDraft}><Save/> {currentDraftId ? 'Update Draft' : 'Save as New Draft'}</Button>
                              {currentDraftId && (
                                  <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -336,27 +355,6 @@ export function CVBuilderForm() {
                                  </AlertDialog>
                              )}
                         </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>CV Name</CardTitle>
-                        <CardDescription>This name will be used to identify your saved draft.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormControl>
-                                    <Input placeholder="e.g., John Doe - Software Engineer CV" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                     </CardContent>
                 </Card>
 
