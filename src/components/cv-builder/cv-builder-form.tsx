@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CVSection } from './cv-section';
-import { FileDown, PlusCircle, Trash2, Search, Loader2, Check, Save } from 'lucide-react';
+import { FileDown, PlusCircle, Trash2, Search, Loader2, Check, Save, GripVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDescriptionComponent, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription as FormDescriptionComponent } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { suggestSkills, type SuggestSkillsResponse } from '@/ai/flows/suggest-skills-flow';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Label } from '../ui/label';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 
 function SuggestSkillsDialog({
     isOpen,
@@ -86,7 +87,7 @@ function SuggestSkillsDialog({
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>AI Skill Suggestions for "{jobTitle}"</DialogTitle>
-                    <DialogDescriptionComponent>Select the skills you'd like to add to your CV.</DialogDescriptionComponent>
+                    <DialogDescription>Select the skills you'd like to add to your CV.</DialogDescription>
                 </DialogHeader>
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64">
@@ -172,7 +173,7 @@ export function CVBuilderForm() {
         name: 'education'
     });
     
-    const { fields: courseFields, append: appendCourse, remove: removeCourse } = useFieldArray({
+    const { fields: courseFields, append: appendCourse, remove: removeCourse, move: moveCourse } = useFieldArray({
         control: form.control,
         name: 'courses'
     });
@@ -290,6 +291,13 @@ export function CVBuilderForm() {
         form.setValue('technicalSkills', newTechnical);
         form.setValue('softSkills', newSoft);
     };
+
+    const onCoursesDragEnd = (result: DropResult) => {
+        if (!result.destination) {
+          return;
+        }
+        moveCourse(result.source.index, result.destination.index);
+    };
     
     return (
         <Form {...form}>
@@ -299,7 +307,7 @@ export function CVBuilderForm() {
                     <Button type="button" onClick={() => handleExport('docx')}><FileDown/> Export Word</Button>
                 </div>
                 
-                <Card>
+                 <Card>
                     <CardHeader>
                         <CardTitle>CV Management</CardTitle>
                         <CardDescription>Save, load, and manage your CV drafts.</CardDescription>
@@ -331,7 +339,7 @@ export function CVBuilderForm() {
                                         <FormControl>
                                             <Input placeholder="Enter a name for your new or updated draft..." {...field} />
                                         </FormControl>
-                                        <FormDescription>This name will be used to save or update your draft.</FormDescription>
+                                        <FormDescriptionComponent>This name will be used to save or update your draft.</FormDescriptionComponent>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -447,18 +455,36 @@ export function CVBuilderForm() {
                 <Card>
                     <CardHeader><CardTitle>Courses &amp; Certifications</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
-                        {courseFields.map((field, index) => (
-                            <div key={field.id} className="p-4 border rounded-lg space-y-3 relative">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input placeholder="Course or Certification Name" {...form.register(`courses.${index}.courseName`)} />
-                                    <Input placeholder="Issuing Institution (e.g., Coursera, Udemy)" {...form.register(`courses.${index}.institution`)} />
-                                </div>
-                                <Input placeholder="Completion Date" {...form.register(`courses.${index}.completionDate`)} />
-                                <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeCourse(index)}>
-                                    <Trash2 className="h-4 w-4 text-destructive"/>
-                                </Button>
-                            </div>
-                        ))}
+                        <DragDropContext onDragEnd={onCoursesDragEnd}>
+                            <Droppable droppableId="coursesList">
+                                {(provided) => (
+                                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                                        {courseFields.map((field, index) => (
+                                            <Draggable key={field.id} draggableId={field.id} index={index}>
+                                                {(provided) => (
+                                                    <div ref={provided.innerRef} {...provided.draggableProps} className="p-4 border rounded-lg flex items-center gap-2 bg-background/50">
+                                                        <div {...provided.dragHandleProps} className="cursor-grab touch-none p-2 -ml-2">
+                                                            <GripVertical className="h-5 w-5 text-muted-foreground" />
+                                                        </div>
+                                                        <div className="flex-1 space-y-3">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <Input placeholder="Course or Certification Name" {...form.register(`courses.${index}.courseName`)} />
+                                                                <Input placeholder="Issuing Institution (e.g., Coursera, Udemy)" {...form.register(`courses.${index}.institution`)} />
+                                                            </div>
+                                                            <Input placeholder="Completion Date" {...form.register(`courses.${index}.completionDate`)} />
+                                                        </div>
+                                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeCourse(index)}>
+                                                            <Trash2 className="h-4 w-4 text-destructive"/>
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </Draggable>
+                                        ))}
+                                        {provided.placeholder}
+                                    </div>
+                                )}
+                            </Droppable>
+                        </DragDropContext>
                         <Button type="button" variant="outline" onClick={() => appendCourse({ id: uuidv4(), courseName: '', institution: '', completionDate: '' })}>
                             <PlusCircle/> Add Course
                         </Button>
