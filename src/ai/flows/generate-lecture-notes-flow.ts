@@ -1,19 +1,21 @@
-
 'use server';
 
 /**
  * @fileOverview An AI flow for generating structured, professional lecture notes from a given text.
+ * This flow uses an iterative, chunk-based approach to handle large inputs safely.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-const LectureNotesRequestSchema = z.object({
+// ========== Input/Output Schemas (Public Interface) ==========
+
+export const LectureNotesRequestSchema = z.object({
   sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
 });
 export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
 
-const LectureNotesResponseSchema = z.object({
+export const LectureNotesResponseSchema = z.object({
   title: z.string().describe("A concise and relevant title for the generated material."),
   learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the source text."),
   notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
@@ -22,66 +24,78 @@ const LectureNotesResponseSchema = z.object({
 export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
 
 
-// ========== STEP 1: Generate Core Notes ==========
+// ========== Internal Schemas for Chunked Generation ==========
 
-const CoreNotesSchema = z.object({
-    title: z.string().describe("A concise and relevant title for the generated material."),
-    notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
+const ContinueNotesRequestSchema = z.object({
+    sourceText: z.string(),
+    existingNotes: z.string().describe("The notes that have been generated so far. This will be empty on the first run."),
 });
 
-const coreNotesPrompt = ai.definePrompt({
-    name: 'coreLectureNotesPrompt',
-    input: { schema: LectureNotesRequestSchema },
-    output: { schema: CoreNotesSchema },
+const ContinueNotesResponseSchema = z.object({
+    notesChunk: z.string().describe("The next chunk of notes, formatted in Markdown. This should be a logical continuation of the existing notes."),
+    isComplete: z.boolean().describe("Set to true only when the entire source text has been fully processed and no more notes need to be written."),
+});
+
+const FinalSummaryRequestSchema = z.object({
+    notes: z.string(),
+});
+
+const FinalSummaryResponseSchema = z.object({
+    title: z.string().describe("A concise and relevant title for the generated material."),
+    learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the notes."),
+    learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways."),
+});
+
+// ========== Internal Prompts for Flow Logic ==========
+
+const continueNotesPrompt = ai.definePrompt({
+    name: 'continueLectureNotesPrompt',
+    input: { schema: ContinueNotesRequestSchema },
+    output: { schema: ContinueNotesResponseSchema },
     prompt: `
-        Your task is to transform the provided source text into a complete and well-structured set of academic lecture notes.
-
+        You are an expert at creating structured, academic lecture notes from a source text.
+        
+        Your task is to analyze the full source text and the notes generated so far, and then write the *next* logical section of the notes.
+        
         **Instructions:**
-        1.  **Generate a Title**: Create a concise and descriptive title for the lecture notes.
-        2.  **Structure the Content**: Organize the information using a clear hierarchy with Markdown headings (#, ##, ###).
-        3.  **Format for Clarity**:
-            *   Use **bold formatting** for all key terms, definitions, and important concepts.
-            *   Use bullet points for lists, steps, or features.
-        4.  **Ensure Completeness**: You MUST process the entire source text from beginning to end. Do not omit any sections or concepts. Your output must not be truncated.
-
-        The final output should be a professional, easy-to-read document ready for distribution. Do not add any information that is not present in the source text.
+        1.  **Analyze**: Review the \`sourceText\` and the \`existingNotes\` to understand what has already been covered.
+        2.  **Continue**: Identify the next main topic or section from the source text that needs to be documented.
+        3.  **Generate Chunk**: Write the notes for that section only. Use clear Markdown formatting (headings, lists, bolding for key terms).
+        4.  **Do Not Repeat**: Crucially, do not repeat any information that is already present in the \`existingNotes\`.
+        5.  **Check for Completion**: After generating the chunk, decide if the *entire* source text has now been covered.
+            - If yes, set \`isComplete\` to \`true\`.
+            - If there is more content to process, set \`isComplete\` to \`false\`.
 
         ---
-        **Source Text:**
+        **Full Source Text:**
         {{{sourceText}}}
+        ---
+        **Existing Notes (what you've written so far):**
+        {{{existingNotes}}}
         ---
     `
 });
 
-// ========== STEP 2: Generate Summary and Objectives from Notes ==========
-
-const SummaryRequestSchema = z.object({
-    notes: z.string(),
-});
-
-const SummaryResponseSchema = z.object({
-    learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the provided notes."),
-    learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways of the notes."),
-});
-
-const summaryPrompt = ai.definePrompt({
-    name: 'lectureSummaryPrompt',
-    input: { schema: SummaryRequestSchema },
-    output: { schema: SummaryResponseSchema },
+const finalSummaryPrompt = ai.definePrompt({
+    name: 'finalSummaryPrompt',
+    input: { schema: FinalSummaryRequestSchema },
+    output: { schema: FinalSummaryResponseSchema },
     prompt: `
-        Based on the following lecture notes, please generate:
-        1. A list of 3-5 key learning objectives.
-        2. A concise 2-3 sentence summary of the main takeaways.
+        Based on the complete set of lecture notes provided below, please generate the following:
+        1.  **Title**: A concise and relevant title for the entire lecture.
+        2.  **Learning Objectives**: A list of 3-5 key learning objectives that a student should achieve after reviewing these notes.
+        3.  **Learning Summary**: A 2-3 sentence paragraph that concisely summarizes the main takeaways.
 
         ---
-        **Lecture Notes:**
+        **Complete Lecture Notes:**
         {{{notes}}}
         ---
     `
 });
 
 
-// ========== Flow Definition (Two-step process) ==========
+// ========== Flow Definition (Iterative Process) ==========
+
 const generateLectureNotesFlow = ai.defineFlow(
   {
     name: 'generateLectureNotesFlow',
@@ -89,31 +103,49 @@ const generateLectureNotesFlow = ai.defineFlow(
     outputSchema: LectureNotesResponseSchema,
   },
   async (input) => {
-    // Step 1: Generate the core title and notes.
-    const coreResult = await coreNotesPrompt(input);
-    if (!coreResult.output || !coreResult.output.notes) {
-      throw new Error('The AI failed to generate the core lecture notes.');
-    }
-    const { title, notes } = coreResult.output;
+    let allNotes = '';
+    let isComplete = false;
+    const MAX_ITERATIONS = 8; // Safety break to prevent infinite loops
 
-    // Step 2: Generate summary and objectives from the notes.
-    const summaryResult = await summaryPrompt({ notes });
-     if (!summaryResult.output) {
-      throw new Error('The AI failed to generate the summary and objectives.');
-    }
-    const { learningObjectives, learningSummary } = summaryResult.output;
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+        const result = await continueNotesPrompt({
+            sourceText: input.sourceText,
+            existingNotes: allNotes,
+        });
 
-    // Combine results and return
+        if (result.output) {
+            allNotes += result.output.notesChunk + '\n\n';
+            isComplete = result.output.isComplete;
+        }
+
+        if (isComplete) {
+            break; // Exit loop if AI signals completion
+        }
+    }
+
+    if (!isComplete) {
+        console.warn('Lecture notes generation may have been truncated (max iterations reached).');
+    }
+
+    // Once all note chunks are assembled, generate the final summary and title.
+    const finalSummaryResult = await finalSummaryPrompt({ notes: allNotes });
+
+    if (!finalSummaryResult.output) {
+        throw new Error('The AI failed to generate the final summary and title.');
+    }
+
+    // Combine results and return in the expected public format
     return {
-      title,
-      notes,
-      learningObjectives,
-      learningSummary,
+      title: finalSummaryResult.output.title,
+      notes: allNotes.trim(),
+      learningObjectives: finalSummaryResult.output.learningObjectives,
+      learningSummary: finalSummaryResult.output.learningSummary,
     };
   }
 );
 
 // ========== API Function Export (Server Action) ==========
+
 export async function generateLectureNotes(
   input: LectureNotesRequest
 ): Promise<LectureNotesResponse> {
@@ -127,4 +159,3 @@ export async function generateLectureNotes(
     );
   }
 }
-
