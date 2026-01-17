@@ -203,20 +203,6 @@ const features = [
             },
         ],
     },
-    {
-        id: 'learning-tool',
-        icon: <GraduationCap className="h-6 w-6 text-lime-500" />,
-        title: 'Learning Assistant',
-        description: 'Supercharge your study sessions with AI.',
-        details: [
-            {
-                title: 'Generate Study Materials',
-                text: "Paste any text or upload a document, and let the AI generate comprehensive notes, interactive quizzes, or a set of flashcards to help you learn faster.",
-                image: placeholderImages.aiLearningStudy.src,
-                dataAiHint: placeholderImages.aiLearningStudy.hint,
-            },
-        ],
-    },
      {
         id: 'pomodoro',
         icon: <Timer className="h-6 w-6 text-rose-500" />,

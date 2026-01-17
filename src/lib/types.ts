@@ -1,16 +1,7 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
-import { 
-    StudyMaterialRequestSchema as GenkitStudyMaterialRequestSchema, 
-    StudyMaterialResponseSchema as GenkitStudyMaterialResponseSchema,
-    QuizQuestionSchema as GenkitQuizQuestionSchema,
-    FlashcardSchema as GenkitFlashcardSchema,
-} from '@/ai/flows/studying-assistant-flow';
 import type { MasteryLevel } from "./types/vocabulary";
-import { LectureNotesRequestSchema as GenkitLectureNotesRequestSchema, LectureNotesResponseSchema as GenkitLectureNotesResponseSchema } from '@/ai/flows/generate-lecture-notes-flow';
-
 
 /** Task Management Types */
 export const StageSchema = z.object({
@@ -497,25 +488,13 @@ export const StudySessionSchema = z.object({
 });
 export type StudySession = z.infer<typeof StudySessionSchema>;
 
-
 /** Studying Assistant Feature */
-export const StudyMaterialRequestSchema = GenkitStudyMaterialRequestSchema;
-export type StudyMaterialRequest = z.infer<typeof StudyMaterialRequestSchema>;
-export const StudyMaterialResponseSchema = GenkitStudyMaterialResponseSchema.extend({
-    tags: z.array(z.string()).optional(),
-});
-export type StudyMaterialResponse = z.infer<typeof StudyMaterialResponseSchema>;
-export const QuizQuestionSchema = GenkitQuizQuestionSchema;
-export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
-export const FlashcardSchema = GenkitFlashcardSchema;
-export type Flashcard = z.infer<typeof FlashcardSchema>;
-
-// Lecture Notes Schemas
-export const LectureNotesRequestSchema = GenkitLectureNotesRequestSchema;
-export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
-export const LectureNotesResponseSchema = GenkitLectureNotesResponseSchema;
-export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
-
+export type StudyMaterialRequest = any;
+export type StudyMaterialResponse = any;
+export type QuizQuestion = any;
+export type Flashcard = any;
+export type LectureNotesRequest = any;
+export type LectureNotesResponse = any;
 
 
 /** English Coach */

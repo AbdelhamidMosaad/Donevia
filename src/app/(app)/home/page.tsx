@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -24,7 +25,6 @@ import { TradingTrackerIcon } from '@/components/icons/tools/trading-tracker-ico
 import { WorkTrackerIcon } from '@/components/icons/tools/work-tracker-icon';
 import { EnglishCoachIcon } from '@/components/icons/tools/english-coach-icon';
 import { DocsIcon } from '@/components/icons/tools/docs-icon';
-import { StudyingAssistantIcon } from '@/components/icons/tools/studying-assistant-icon';
 import { PomodoroIcon } from '@/components/icons/tools/pomodoro-icon';
 import { InterviewPrepIcon } from '@/components/icons/tools/interview-prep-icon';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -56,7 +56,6 @@ const toolIcons: { [key: string]: React.ComponentType<{ className?: string }> } 
     'create-with-ai': CreateWithAiIcon,
     'cv-builder': CVBuilderIcon,
     docs: DocsIcon,
-    'studying-assistant': StudyingAssistantIcon,
     pomodoro: PomodoroIcon,
     journal: JournalIcon,
 };
@@ -80,7 +79,6 @@ const allTools = [
     { id: 'create-with-ai', href: '/create-with-ai', title: 'Create with AI', description: 'AI-powered writing assistance tools.' },
     { id: 'cv-builder', href: '/cv-builder', title: 'CV Builder', description: 'Build an ATS-friendly resume.' },
     { id: 'docs', href: '/docs', title: 'Docs', description: 'A powerful, feature-rich document editor.' },
-    { id: 'studying-assistant', href: '/studying-assistant', title: 'Studying Assistant', description: 'Generate study materials with AI.' },
     { id: 'pomodoro', href: '/pomodoro', title: 'Pomodoro', description: 'Improve focus with a time management tool.' },
     { id: 'journal', href: '/journal', title: 'Journal', description: 'Reflect and get insights with an AI-powered journal.' },
 ];
