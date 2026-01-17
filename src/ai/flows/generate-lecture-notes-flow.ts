@@ -7,21 +7,12 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-
-// ========== Input/Output Schemas (Public Interface) ==========
-
-export const LectureNotesRequestSchema = z.object({
-  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
-});
-export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
-
-export const LectureNotesResponseSchema = z.object({
-  title: z.string().describe("A concise and relevant title for the generated material."),
-  learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the source text."),
-  notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
-  learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways of the lecture notes."),
-});
-export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
+import { 
+    LectureNotesRequestSchema, 
+    LectureNotesResponseSchema, 
+    type LectureNotesRequest, 
+    type LectureNotesResponse 
+} from '@/lib/types/lecture-notes';
 
 
 // ========== Internal Schemas for Chunked Generation ==========
@@ -43,7 +34,7 @@ const FinalSummaryRequestSchema = z.object({
 const FinalSummaryResponseSchema = z.object({
     title: z.string().describe("A concise and relevant title for the generated material."),
     learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the notes."),
-    learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways."),
+    learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the main takeaways."),
 });
 
 // ========== Internal Prompts for Flow Logic ==========
