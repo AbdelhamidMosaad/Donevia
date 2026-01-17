@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -12,8 +11,8 @@ import { exportCvToDocx, exportCvToPdf } from '@/lib/cv-export';
 import { FileDown, PlusCircle, Trash2, Search, Loader2, Check, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDescriptionComponent, DialogFooter } from '@/components/ui/dialog';
 import { suggestSkills, type SuggestSkillsResponse } from '@/ai/flows/suggest-skills-flow';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -88,7 +87,7 @@ function SuggestSkillsDialog({
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>AI Skill Suggestions for "{jobTitle}"</DialogTitle>
-                    <DialogDescription>Select the skills you'd like to add to your CV.</DialogDescription>
+                    <DialogDescriptionComponent>Select the skills you'd like to add to your CV.</DialogDescriptionComponent>
                 </DialogHeader>
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64">
@@ -305,26 +304,29 @@ export function CVBuilderForm() {
                         <CardDescription>Save, load, and manage your CV drafts.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div>
-                            <Label>Load Existing Draft</Label>
-                            <Select onValueChange={handleLoadDraft} value={currentDraftId || 'new'}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="new">-- Start a New CV --</SelectItem>
-                                    {drafts.map(d => (
-                                        <SelectItem key={d.id} value={d.id}>{d.name} (Updated {moment(d.updatedAt).fromNow()})</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                        <div className="flex flex-col md:flex-row gap-4 items-end">
+                            <div className="flex-1">
+                                <Label>Load Draft</Label>
+                                <Select onValueChange={handleLoadDraft} value={currentDraftId || 'new'}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="new">-- Start a New CV --</SelectItem>
+                                        {drafts.map(d => (
+                                            <SelectItem key={d.id} value={d.id}>{d.name} (Updated {moment(d.updatedAt).fromNow()})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button type="button" onClick={handleNewDraft}>Start New</Button>
                         </div>
 
-                        <div>
+                         <div className="pt-4 border-t">
                             <FormField
                                 control={form.control}
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Draft Name</FormLabel>
+                                        <FormLabel>Current Draft Name</FormLabel>
                                         <FormControl>
                                             <Input placeholder="Enter a name for your new or updated draft..." {...field} />
                                         </FormControl>
