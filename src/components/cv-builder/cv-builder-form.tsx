@@ -2,13 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CVDataSchema, type CVData } from '@/lib/types/cv-builder';
+import { CVDataSchema, type CVData, type CVDraft } from '@/lib/types/cv-builder';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CVSection } from './cv-section';
 import { exportCvToDocx, exportCvToPdf } from '@/lib/cv-export';
-import { FileDown, PlusCircle, Trash2, CalendarIcon, Search, Loader2, Check } from 'lucide-react';
+import { FileDown, PlusCircle, Trash2, CalendarIcon, Search, Loader2, Check, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -20,6 +20,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { suggestSkills, type SuggestSkillsResponse } from '@/ai/flows/suggest-skills-flow';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, orderBy, doc, setDoc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import moment from 'moment';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 function SuggestSkillsDialog({
     isOpen,
@@ -130,18 +145,25 @@ function SuggestSkillsDialog({
 
 export function CVBuilderForm() {
     const { toast } = useToast();
+    const { user } = useAuth();
+    const [drafts, setDrafts] = useState<CVDraft[]>([]);
+    const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+
+    const defaultFormValues: CVData = {
+        name: 'Untitled CV',
+        personalDetails: { fullName: '', email: '', phone: '', address: '', linkedIn: '', website: '' },
+        summary: '',
+        experience: [{ id: uuidv4(), jobTitle: '', company: '', location: '', startDate: '', endDate: '', description: '' }],
+        education: [{ id: uuidv4(), degree: '', school: '', location: '', graduationDate: '' }],
+        courses: [{ id: uuidv4(), courseName: '', institution: '', completionDate: '' }],
+        languages: [{ id: uuidv4(), language: '', proficiency: '' }],
+        technicalSkills: '',
+        softSkills: '',
+    };
+    
     const form = useForm<CVData>({
         resolver: zodResolver(CVDataSchema),
-        defaultValues: {
-            personalDetails: { fullName: '', email: '', phone: '', address: '' },
-            summary: '',
-            experience: [{ id: '1', jobTitle: '', company: '', location: '', startDate: '', endDate: '', description: '' }],
-            education: [{ id: '1', degree: '', school: '', location: '', graduationDate: '' }],
-            courses: [{ id: '1', courseName: '', institution: '', completionDate: '' }],
-            languages: [{ id: '1', language: '', proficiency: '' }],
-            technicalSkills: '',
-            softSkills: '',
-        }
+        defaultValues: defaultFormValues,
     });
     
     const { fields: experienceFields, append: appendExperience, remove: removeExperience } = useFieldArray({
@@ -167,6 +189,83 @@ export function CVBuilderForm() {
     const [isSuggestSkillsOpen, setIsSuggestSkillsOpen] = useState(false);
 
     const firstJobTitle = form.watch('experience.0.jobTitle');
+    
+    useEffect(() => {
+        if (!user) return;
+        const q = query(collection(db, 'users', user.uid, 'cvs'), orderBy('updatedAt', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const savedDrafts = snapshot.docs.map(d => {
+                const data = d.data();
+                return { 
+                    ...data,
+                    id: d.id, 
+                    updatedAt: data.updatedAt?.toDate() 
+                } as CVDraft;
+            });
+            setDrafts(savedDrafts);
+        });
+        return () => unsubscribe();
+    }, [user]);
+
+    const handleSaveDraft = async () => {
+        if(!user) return;
+        
+        const isValid = await form.trigger();
+        if(!isValid) {
+            toast({ variant: 'destructive', title: 'Please fill in all required fields.', description: "The 'CV Name' field cannot be empty." });
+            return;
+        }
+
+        const data = form.getValues();
+        const draftData = {
+            ...data,
+            ownerId: user.uid,
+            updatedAt: serverTimestamp(),
+        };
+        
+        if (currentDraftId) {
+            const docRef = doc(db, 'users', user.uid, 'cvs', currentDraftId);
+            await setDoc(docRef, draftData, { merge: true });
+            toast({ title: 'CV Draft Updated!'});
+        } else {
+            const docRef = await addDoc(collection(db, 'users', user.uid, 'cvs'), draftData);
+            setCurrentDraftId(docRef.id);
+            toast({ title: 'CV Draft Saved!'});
+        }
+    };
+    
+    const handleLoadDraft = (draftId: string) => {
+        if (draftId === 'new') {
+            handleNewDraft();
+            return;
+        }
+        const draftToLoad = drafts.find(d => d.id === draftId);
+        if (draftToLoad) {
+            const loadedData = {
+                ...draftToLoad,
+                experience: draftToLoad.experience?.map(e => ({...e, id: e.id || uuidv4()})) || [],
+                education: draftToLoad.education?.map(e => ({...e, id: e.id || uuidv4()})) || [],
+                courses: draftToLoad.courses?.map(e => ({...e, id: e.id || uuidv4()})) || [],
+                languages: draftToLoad.languages?.map(e => ({...e, id: e.id || uuidv4()})) || [],
+            };
+            form.reset(loadedData);
+            setCurrentDraftId(draftId);
+            toast({ title: 'Draft Loaded', description: `Now editing "${draftToLoad.name}".`});
+        }
+    };
+
+    const handleNewDraft = () => {
+        form.reset(defaultFormValues);
+        setCurrentDraftId(null);
+    };
+
+    const handleDeleteDraft = async () => {
+        if (!currentDraftId || !user) return;
+        await deleteDoc(doc(db, 'users', user.uid, 'cvs', currentDraftId));
+        toast({ title: 'Draft Deleted' });
+        handleNewDraft();
+    };
+
 
     const handleExport = (format: 'docx' | 'pdf') => {
         const data = form.getValues();
@@ -220,15 +319,21 @@ export function CVBuilderForm() {
                                 </Button>
                             </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0" align="start"
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                        >
                             <Calendar
                                 mode="single"
                                 selected={field.value ? new Date(field.value) : undefined}
                                 onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
                                 initialFocus
+                                captionLayout="dropdown-nav"
+                                fromYear={new Date().getFullYear() - 70}
+                                toYear={new Date().getFullYear()}
                             />
                         </PopoverContent>
                     </Popover>
+                    <FormMessage />
                 </FormItem>
             )}
         />
@@ -241,6 +346,70 @@ export function CVBuilderForm() {
                     <Button type="button" variant="outline" onClick={() => handleExport('pdf')}><FileDown/> Export PDF</Button>
                     <Button type="button" onClick={() => handleExport('docx')}><FileDown/> Export Word</Button>
                 </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>CV Management</CardTitle>
+                        <CardDescription>Save, load, and manage your CV drafts.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="flex-1">
+                            <Label>Load Draft</Label>
+                            <Select onValueChange={handleLoadDraft} value={currentDraftId || 'new'}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="new">-- New CV --</SelectItem>
+                                    {drafts.map(d => (
+                                        <SelectItem key={d.id} value={d.id}>{d.name} (Updated {moment(d.updatedAt).fromNow()})</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex gap-2">
+                             <Button type="button" onClick={handleSaveDraft}><Save/> Save Draft</Button>
+                             {currentDraftId && (
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                         <Button type="button" variant="destructive"><Trash2 /> Delete Draft</Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will permanently delete the draft "{form.getValues('name')}".</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleDeleteDraft}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                 </AlertDialog>
+                             )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>CV Name</CardTitle>
+                        <CardDescription>This name will be used to identify your saved draft.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormControl>
+                                    <Input placeholder="e.g., John Doe - Software Engineer CV" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+
+
                 <Card>
                     <CardHeader><CardTitle>Personal Details</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -342,7 +511,10 @@ export function CVBuilderForm() {
                 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Skills</CardTitle>
+                        <div>
+                            <CardTitle>Skills</CardTitle>
+                            <CardDescription>Enter the first job title to get AI suggestions.</CardDescription>
+                        </div>
                          <Button type="button" variant="outline" size="sm" onClick={() => setIsSuggestSkillsOpen(true)} disabled={!firstJobTitle}>
                             <Search className="mr-2 h-4 w-4" /> Suggest Skills
                         </Button>
@@ -431,3 +603,4 @@ export function CVBuilderForm() {
         </Form>
     );
 }
+    

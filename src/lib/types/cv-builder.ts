@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Timestamp } from 'firebase/firestore';
 
 export const CVSectionSchema = z.object({
   id: z.string(),
@@ -7,6 +8,8 @@ export const CVSectionSchema = z.object({
 });
 
 export const CVDataSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'CV Name is required.'),
   personalDetails: z.object({
     fullName: z.string(),
     email: z.string(),
@@ -49,6 +52,15 @@ export const CVDataSchema = z.object({
 
 export type CVData = z.infer<typeof CVDataSchema>;
 
+const FirebaseTimestampSchema = z.custom<Timestamp>((val) => val instanceof Timestamp);
+export const CVDraftSchema = CVDataSchema.extend({
+    id: z.string(),
+    ownerId: z.string(),
+    updatedAt: z.any(),
+});
+export type CVDraft = z.infer<typeof CVDraftSchema>;
+
+
 export const CVSectionEnhancementRequestSchema = z.object({
   section: z.string().describe("The name of the CV section (e.g., 'Work Experience Description', 'Summary')."),
   originalText: z.string().describe("The user's original text for that section."),
@@ -61,3 +73,5 @@ export const CVSectionEnhancementResponseSchema = z.object({
   tips: z.array(z.string()).describe("A list of tips explaining the improvements made."),
 });
 export type CVSectionEnhancementResponse = z.infer<typeof CVSectionEnhancementResponseSchema>;
+
+    
