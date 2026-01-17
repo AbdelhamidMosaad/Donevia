@@ -7,11 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CVSection } from './cv-section';
-import { exportCvToDocx, exportCvToPdf } from '@/lib/cv-export';
 import { FileDown, PlusCircle, Trash2, Search, Loader2, Check, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDescriptionComponent, DialogFooter } from '@/components/ui/dialog';
 import { suggestSkills, type SuggestSkillsResponse } from '@/ai/flows/suggest-skills-flow';
 import { Badge } from '@/components/ui/badge';
@@ -151,7 +150,7 @@ export function CVBuilderForm() {
         personalDetails: { fullName: '', email: '', phone: '', address: '', linkedIn: '', website: '' },
         summary: '',
         experience: [{ id: uuidv4(), jobTitle: '', company: '', location: '', startDate: '', endDate: '', description: '' }],
-        education: [{ id: uuidv4(), degree: '', school: '', location: '', graduationDate: '' }],
+        education: [{ id: uuidv4(), degree: '', school: '', location: '', graduationDate: '', description: '' }],
         courses: [{ id: uuidv4(), courseName: '', institution: '', completionDate: '' }],
         languages: [{ id: uuidv4(), language: '', proficiency: '' }],
         technicalSkills: '',
@@ -241,7 +240,7 @@ export function CVBuilderForm() {
             const loadedData = {
                 ...draftToLoad,
                 experience: draftToLoad.experience?.map(e => ({...e, id: e.id || uuidv4()})) || [],
-                education: draftToLoad.education?.map(e => ({...e, id: e.id || uuidv4()})) || [],
+                education: draftToLoad.education?.map(e => ({...e, id: e.id || uuidv4(), description: e.description || '' })) || [],
                 courses: draftToLoad.courses?.map(e => ({...e, id: e.id || uuidv4()})) || [],
                 languages: draftToLoad.languages?.map(e => ({...e, id: e.id || uuidv4()})) || [],
             };
@@ -264,12 +263,14 @@ export function CVBuilderForm() {
     };
 
 
-    const handleExport = (format: 'docx' | 'pdf') => {
+    const handleExport = async (format: 'docx' | 'pdf') => {
         const data = form.getValues();
         try {
             if (format === 'docx') {
+                const { exportCvToDocx } = await import('@/lib/cv-export');
                 exportCvToDocx(data);
             } else {
+                const { exportCvToPdf } = await import('@/lib/cv-export');
                 exportCvToPdf(data);
             }
              toast({ title: `Exporting CV as ${format.toUpperCase()}` });
@@ -395,10 +396,7 @@ export function CVBuilderForm() {
                                     <Input placeholder="Job Title" {...form.register(`experience.${index}.jobTitle`)} />
                                     <Input placeholder="Company" {...form.register(`experience.${index}.company`)} />
                                     <Input placeholder="Location" {...form.register(`experience.${index}.location`)} />
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <Input placeholder="Start Date" {...form.register(`experience.${index}.startDate`)} />
-                                        <Input placeholder="End Date" {...form.register(`experience.${index}.endDate`)} />
-                                    </div>
+                                    <Input placeholder="Start - End Date" {...form.register(`experience.${index}.startDate`)} />
                                 </div>
                                 <CVSection
                                     title="Description"
@@ -428,12 +426,19 @@ export function CVBuilderForm() {
                                     <Input placeholder="Location" {...form.register(`education.${index}.location`)} />
                                     <Input placeholder="Graduation Date" {...form.register(`education.${index}.graduationDate`)} />
                                 </div>
+                                 <CVSection
+                                    title="Description"
+                                    value={form.watch(`education.${index}.description`) || ''}
+                                    onChange={(val) => form.setValue(`education.${index}.description`, val)}
+                                    placeholder="Describe your relevant coursework, projects, or honors..."
+                                    context={{ section: 'Education Description', jobTitle: form.watch(`education.${index}.degree`) }}
+                                />
                                 <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeEducation(index)}>
                                     <Trash2 className="h-4 w-4 text-destructive"/>
                                 </Button>
                             </div>
                         ))}
-                        <Button type="button" variant="outline" onClick={() => appendEducation({ id: uuidv4(), degree: '', school: '', location: '', graduationDate: '' })}>
+                        <Button type="button" variant="outline" onClick={() => appendEducation({ id: uuidv4(), degree: '', school: '', location: '', graduationDate: '', description: '' })}>
                             <PlusCircle/> Add Education
                         </Button>
                     </CardContent>

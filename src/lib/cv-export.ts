@@ -32,7 +32,7 @@ export const exportCvToDocx = async (cvData: CVData) => {
                     new TextRun(` | ${exp.company}`).bold(),
                 ]
             }),
-            new Paragraph({ text: `${exp.startDate} - ${exp.endDate} | ${exp.location}` }),
+            new Paragraph({ text: `${exp.startDate} | ${exp.location}` }),
             ...exp.description.split('\n').map(desc => new Paragraph({ text: desc, bullet: { level: 0 } })),
             new Paragraph(""), // spacing
         ]),
@@ -41,6 +41,7 @@ export const exportCvToDocx = async (cvData: CVData) => {
          ...cvData.education.flatMap(edu => [
             new Paragraph({ children: [new TextRun({ text: edu.degree, bold: true })] }),
             new Paragraph({ text: `${edu.school} | ${edu.location} | Graduated: ${edu.graduationDate}` }),
+            ...(edu.description ? edu.description.split('\n').map(d => new Paragraph({ children: [new TextRun(d)], bullet: { level: 0 } })) : []),
             new Paragraph(""), // spacing
         ]),
 
@@ -125,7 +126,7 @@ export const exportCvToPdf = (cvData: CVData) => {
         doc.setFont(undefined, 'normal');
         y += 5;
         doc.setFontSize(10);
-        doc.text(`${exp.startDate} - ${exp.endDate} | ${exp.location}`, 15, y);
+        doc.text(`${exp.startDate} | ${exp.location}`, 15, y);
         y += 5;
         doc.setFontSize(11);
         const descLines = doc.splitTextToSize(exp.description, 175);
@@ -151,7 +152,18 @@ export const exportCvToPdf = (cvData: CVData) => {
         y += 5;
         doc.setFont(undefined, 'normal');
         doc.text(`${edu.school} | ${edu.location} | Graduated: ${edu.graduationDate}`, 15, y);
-        y += 10;
+        y += 5;
+        if (edu.description) {
+            doc.setFontSize(10);
+            const descLines = doc.splitTextToSize(edu.description, 175);
+            descLines.forEach((line: string) => {
+                if (y > 280) { doc.addPage(); y = 20; }
+                doc.text(`• ${line}`, 20, y);
+                y+= 5;
+            });
+            doc.setFontSize(11);
+        }
+        y += 5;
     });
 
     if (cvData.courses && cvData.courses.length > 0 && cvData.courses.some(c => c.courseName)) {
