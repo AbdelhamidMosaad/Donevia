@@ -85,6 +85,8 @@ export const exportCvToDocx = async (cvData: CVData) => {
 export const exportCvToPdf = (cvData: CVData) => {
     const doc = new jsPDF();
     let y = 20;
+    const bulletIndent = 20;
+    const wrapIndent = 25;
 
     doc.setFontSize(22);
     doc.text(cvData.personalDetails.fullName, 105, y, { align: 'center' });
@@ -129,12 +131,20 @@ export const exportCvToPdf = (cvData: CVData) => {
         doc.text(`${exp.startDate} | ${exp.location}`, 15, y);
         y += 5;
         doc.setFontSize(11);
-        const descLines = doc.splitTextToSize(exp.description, 175);
-        descLines.forEach((line: string) => {
-             if (y > 280) { doc.addPage(); y = 20; }
-             doc.text(`• ${line}`, 20, y);
-             y+= 5;
-        })
+        
+        const descriptionPoints = exp.description.split('\n').filter(p => p.trim() !== '');
+        descriptionPoints.forEach(point => {
+            const pointLines = doc.splitTextToSize(point, 175);
+            pointLines.forEach((line: string, index: number) => {
+                if (y > 280) { doc.addPage(); y = 20; }
+                if (index === 0) {
+                    doc.text(`• ${line}`, bulletIndent, y);
+                } else {
+                    doc.text(line, wrapIndent, y); // Indent wrapped lines
+                }
+                y+= 5;
+            });
+        });
         y += 5;
     });
     
@@ -155,11 +165,18 @@ export const exportCvToPdf = (cvData: CVData) => {
         y += 5;
         if (edu.description) {
             doc.setFontSize(10);
-            const descLines = doc.splitTextToSize(edu.description, 175);
-            descLines.forEach((line: string) => {
-                if (y > 280) { doc.addPage(); y = 20; }
-                doc.text(`• ${line}`, 20, y);
-                y+= 5;
+            const descriptionPoints = edu.description.split('\n').filter(p => p.trim() !== '');
+            descriptionPoints.forEach(point => {
+                const pointLines = doc.splitTextToSize(point, 175);
+                pointLines.forEach((line: string, index: number) => {
+                    if (y > 280) { doc.addPage(); y = 20; }
+                    if (index === 0) {
+                        doc.text(`• ${line}`, bulletIndent, y);
+                    } else {
+                        doc.text(line, wrapIndent, y);
+                    }
+                    y+= 5;
+                });
             });
             doc.setFontSize(11);
         }
