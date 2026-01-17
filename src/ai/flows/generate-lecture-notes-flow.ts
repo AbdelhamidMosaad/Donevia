@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -87,17 +86,15 @@ const generateLectureNotesFlow = ai.defineFlow(
     }
     const { title, sections } = outlineResponse.output;
 
-    // Step 2: Generate notes for each section in parallel
-    const notePromises = sections.map(async (sectionTitle) => {
-      const sectionResponse = await sectionNotesPrompt({
-        sourceText: input.sourceText,
-        sectionTitle,
-      });
-      // Return the section title as a heading plus the notes
-      return `## ${sectionTitle}\n\n${sectionResponse.output?.sectionNotes || ''}`;
-    });
-
-    const generatedSections = await Promise.all(notePromises);
+    // Step 2: Generate notes for each section sequentially to avoid rate limiting
+    const generatedSections = [];
+    for (const sectionTitle of sections) {
+        const sectionResponse = await sectionNotesPrompt({
+            sourceText: input.sourceText,
+            sectionTitle,
+        });
+        generatedSections.push(`## ${sectionTitle}\n\n${sectionResponse.output?.sectionNotes || ''}`);
+    }
 
     // Step 3: Combine all sections into a single markdown string
     const finalNotes = generatedSections.join('\n\n');
