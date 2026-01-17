@@ -1,6 +1,28 @@
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 // import { dotprompt } from '@genkit-ai/dotprompt';
+
+// Load environment variables from local.env
+try {
+  const envPath = resolve(process.cwd(), 'local.env');
+  const envFileContent = readFileSync(envPath, { encoding: 'utf-8' });
+  envFileContent.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+        const [key, ...valueParts] = trimmedLine.split('=');
+        const value = valueParts.join('=').trim().replace(/^['"]|['"]$/g, '');
+        if (key && value) {
+            const trimmedKey = key.trim();
+            // Always set the variable from local.env to ensure it takes precedence
+            process.env[trimmedKey] = value;
+        }
+    }
+  });
+} catch (e) {
+  // It's okay if the file doesn't exist
+}
 
 // Firebase Admin SDK initialization (Build-safe)
 let firebaseAdminInitialized = false;
