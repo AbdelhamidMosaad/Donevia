@@ -13,7 +13,7 @@ import { generateLectureNotes, LectureNotesResponse } from '@/ai/flows/lecture-n
 import { exportLectureNotesToDocx } from '@/lib/lecture-notes-export';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { marked } from 'marked';
 
 type Font = UserSettings['font'];
