@@ -32,7 +32,7 @@ const prompt = ai.definePrompt({
         - "Added a quantifiable metric ('increased sales by 15%') to demonstrate concrete impact."
         - "Simplified the language to ensure it is easily parsed by ATS systems."
 
-    3.  **JSON Output**: Ensure your entire output is a single, valid JSON object that strictly adheres to the required schema. Do not include any text or formatting outside of this JSON structure.
+    3.  **Strict JSON Output**: Your entire output must be a single, valid JSON object that strictly adheres to the required schema. Do not include any text, markdown, or code fences (e.g., \`\`\`json) outside of the JSON object itself.
   `,
 });
 
