@@ -1,4 +1,3 @@
-
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 // import { dotprompt } from '@genkit-ai/dotprompt';
@@ -40,22 +39,15 @@ try {
   console.warn('Firebase Admin SDK initialization skipped during build:', error.message);
 }
 
-const geminiApiKey = process.env.GEMINI_API_KEY;
-if (!geminiApiKey) {
-  console.warn(
-    'GEMINI_API_KEY is not set. AI features will not work. Please ensure it is in your local.env file.'
-  );
-}
-
 export const ai = genkit({
   plugins: [
     googleAI({
-      apiKey: geminiApiKey,
+      apiKey: process.env.GEMINI_API_KEY,
       apiVersion: 'v1beta',
     }),
     // dotprompt(),
   ],
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-2.5-flash',
 });
 
 // Optional: Export firebaseAdmin if needed elsewhere
