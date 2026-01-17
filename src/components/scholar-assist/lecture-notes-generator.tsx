@@ -338,7 +338,9 @@ export function LectureNotesGenerator() {
         <Card className="h-full flex flex-col">
             <CardHeader>
                 <CardTitle>Generate Lecture Notes</CardTitle>
-                <CardDescription>Paste text or upload a document and let the AI create structured notes for you.</CardDescription>
+                <CardDescription>
+                    Paste text or upload a document to create structured notes. For best results with large documents (&gt;10 pages), ensure the text is clear and well-formatted.
+                </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-6">
                  <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
