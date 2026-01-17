@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, ChangeEvent, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,10 +55,21 @@ export function LectureNotesGenerator() {
 
     try {
       if (file.type === 'application/pdf') {
-        const pdfParse = (await import('pdf-parse')).default;
+        const pdfjs = await import('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js');
+        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
         const arrayBuffer = await file.arrayBuffer();
-        const data = await pdfParse(arrayBuffer);
-        setSourceText(data.text);
+        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item: any) => item.str).join(' ');
+          fullText += pageText + '\n\n';
+        }
+        setSourceText(fullText);
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         const mammoth = (await import('mammoth')).default;
         const arrayBuffer = await file.arrayBuffer();
