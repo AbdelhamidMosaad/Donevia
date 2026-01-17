@@ -1,3 +1,4 @@
+
 import type { NextConfig } from 'next';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -13,9 +14,8 @@ try {
         const value = valueParts.join('=').trim().replace(/^['"]|['"]$/g, '');
         if (key && value) {
             const trimmedKey = key.trim();
-            if (!process.env[trimmedKey]) {
-                process.env[trimmedKey] = value;
-            }
+            // Always set the variable from local.env to ensure it takes precedence
+            process.env[trimmedKey] = value;
         }
     }
   });
