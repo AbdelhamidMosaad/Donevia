@@ -48,7 +48,7 @@ export function CVSection({ title, value, onChange, placeholder, context }: CVSe
         {context && (
             <Button variant="ghost" size="sm" onClick={handleGetSuggestion} disabled={isLoading || !value.trim()}>
                 {isLoading ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                Suggest
+                Suggest Improvement
             </Button>
         )}
       </div>

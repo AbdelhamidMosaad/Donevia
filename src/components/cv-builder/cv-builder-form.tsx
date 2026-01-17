@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CVSection } from './cv-section';
 import { exportCvToDocx, exportCvToPdf } from '@/lib/cv-export';
-import { FileDown, PlusCircle, Trash2, CalendarIcon } from 'lucide-react';
+import { FileDown, PlusCircle, Trash2, CalendarIcon, Search, Loader2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -16,6 +16,116 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { suggestSkills, type SuggestSkillsResponse } from '@/ai/flows/suggest-skills-flow';
+import { Badge } from '@/components/ui/badge';
+
+function SuggestSkillsDialog({
+    isOpen,
+    onOpenChange,
+    jobTitle,
+    onSkillsSelected,
+}: {
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+    jobTitle: string;
+    onSkillsSelected: (skills: { technicalSkills: string[], softSkills: string[] }) => void;
+}) {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [suggestions, setSuggestions] = useState<SuggestSkillsResponse | null>(null);
+    const [selectedTechnical, setSelectedTechnical] = useState<string[]>([]);
+    const [selectedSoft, setSelectedSoft] = useState<string[]>([]);
+    
+    useEffect(() => {
+        if (isOpen && jobTitle) {
+            const fetchSuggestions = async () => {
+                setIsLoading(true);
+                setSuggestions(null);
+                try {
+                    const result = await suggestSkills({ jobTitle });
+                    setSuggestions(result);
+                } catch (e) {
+                    toast({ variant: 'destructive', title: 'Failed to get suggestions.' });
+                    onOpenChange(false);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchSuggestions();
+        }
+    }, [isOpen, jobTitle, toast, onOpenChange]);
+
+    const toggleSkill = (skill: string, type: 'technical' | 'soft') => {
+        if (type === 'technical') {
+            setSelectedTechnical(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
+        } else {
+            setSelectedSoft(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
+        }
+    };
+
+    const handleAddSkills = () => {
+        onSkillsSelected({ technicalSkills: selectedTechnical, softSkills: selectedSoft });
+        onOpenChange(false);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>AI Skill Suggestions for "{jobTitle}"</DialogTitle>
+                    <DialogDescription>Select the skills you'd like to add to your CV.</DialogDescription>
+                </DialogHeader>
+                {isLoading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+                    </div>
+                ) : suggestions ? (
+                    <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
+                        <Card>
+                            <CardHeader><CardTitle className="text-lg">Technical Skills</CardTitle></CardHeader>
+                            <CardContent className="flex flex-wrap gap-2">
+                                {suggestions.technicalSkills.map(skill => (
+                                    <Badge
+                                        key={skill}
+                                        variant={selectedTechnical.includes(skill) ? 'default' : 'secondary'}
+                                        onClick={() => toggleSkill(skill, 'technical')}
+                                        className="cursor-pointer"
+                                    >
+                                        {selectedTechnical.includes(skill) && <Check className="mr-1 h-3 w-3" />}
+                                        {skill}
+                                    </Badge>
+                                ))}
+                            </CardContent>
+                        </Card>
+                        <Card>
+                             <CardHeader><CardTitle className="text-lg">Soft Skills</CardTitle></CardHeader>
+                            <CardContent className="flex flex-wrap gap-2">
+                                {suggestions.softSkills.map(skill => (
+                                    <Badge
+                                        key={skill}
+                                        variant={selectedSoft.includes(skill) ? 'default' : 'secondary'}
+                                        onClick={() => toggleSkill(skill, 'soft')}
+                                        className="cursor-pointer"
+                                    >
+                                        {selectedSoft.includes(skill) && <Check className="mr-1 h-3 w-3" />}
+                                        {skill}
+                                    </Badge>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    </div>
+                ) : null}
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleAddSkills} disabled={selectedTechnical.length === 0 && selectedSoft.length === 0}>
+                        Add Selected Skills
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export function CVBuilderForm() {
     const { toast } = useToast();
@@ -53,6 +163,10 @@ export function CVBuilderForm() {
         name: 'languages'
     });
 
+    const [isSuggestSkillsOpen, setIsSuggestSkillsOpen] = useState(false);
+
+    const firstJobTitle = form.watch('experience.0.jobTitle');
+
     const handleExport = (format: 'docx' | 'pdf') => {
         const data = form.getValues();
         try {
@@ -67,6 +181,17 @@ export function CVBuilderForm() {
             console.error(e);
         }
     }
+
+    const handleSkillsSelected = (skills: { technicalSkills: string[], softSkills: string[] }) => {
+        const currentTechnical = form.getValues('technicalSkills') || '';
+        const currentSoft = form.getValues('softSkills') || '';
+    
+        const newTechnical = [...new Set([...currentTechnical.split(',').map(s=>s.trim()).filter(Boolean), ...skills.technicalSkills])].join(', ');
+        const newSoft = [...new Set([...currentSoft.split(',').map(s=>s.trim()).filter(Boolean), ...skills.softSkills])].join(', ');
+    
+        form.setValue('technicalSkills', newTechnical);
+        form.setValue('softSkills', newSoft);
+    };
     
     const DatePickerField = ({ name, label, placeholder }: { name: any, label: string, placeholder?: string }) => (
         <FormField
@@ -213,32 +338,32 @@ export function CVBuilderForm() {
                         </Button>
                     </CardContent>
                 </Card>
-
+                
                 <Card>
-                    <CardHeader><CardTitle>Technical Skills</CardTitle></CardHeader>
-                    <CardContent>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Skills</CardTitle>
+                         <Button type="button" variant="outline" size="sm" onClick={() => setIsSuggestSkillsOpen(true)} disabled={!firstJobTitle}>
+                            <Search className="mr-2 h-4 w-4" /> Suggest Skills
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                         <CVSection
-                            title=""
+                            title="Technical Skills"
                             value={form.watch('technicalSkills')}
                             onChange={(val) => form.setValue('technicalSkills', val)}
                             placeholder="e.g., JavaScript, React, Node.js, Python, SQL"
-                            context={{ section: 'Technical Skills' }}
+                            context={{ section: 'Technical Skills', jobTitle: firstJobTitle }}
+                        />
+                        <CVSection
+                            title="Soft Skills"
+                            value={form.watch('softSkills')}
+                            onChange={(val) => form.setValue('softSkills', val)}
+                            placeholder="e.g., Communication, Teamwork, Problem-solving"
+                            context={{ section: 'Soft Skills', jobTitle: firstJobTitle }}
                         />
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader><CardTitle>Soft Skills</CardTitle></CardHeader>
-                    <CardContent>
-                        <CVSection
-                            title=""
-                            value={form.watch('softSkills')}
-                            onChange={(val) => form.setValue('softSkills', val)}
-                            placeholder="e.g., Communication, Teamwork, Problem-solving"
-                            context={{ section: 'Soft Skills' }}
-                        />
-                    </CardContent>
-                </Card>
 
                 <Card>
                     <CardHeader><CardTitle>Languages</CardTitle></CardHeader>
@@ -260,6 +385,14 @@ export function CVBuilderForm() {
                     </CardContent>
                 </Card>
             </form>
+             {isSuggestSkillsOpen && firstJobTitle && (
+                <SuggestSkillsDialog
+                    isOpen={isSuggestSkillsOpen}
+                    onOpenChange={setIsSuggestSkillsOpen}
+                    jobTitle={firstJobTitle}
+                    onSkillsSelected={handleSkillsSelected}
+                />
+            )}
         </Form>
     );
 }
