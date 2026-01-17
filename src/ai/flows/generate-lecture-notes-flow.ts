@@ -6,34 +6,18 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-const LectureNotesRequestSchema = z.object({
-  sourceText: z.string().min(50, { message: 'Source text must be at least 50 characters.' }),
-});
-export type LectureNotesRequest = z.infer<typeof LectureNotesRequestSchema>;
-
-const LectureNotesResponseSchema = z.object({
-  title: z.string().describe("A concise and relevant title for the generated material."),
-  learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the source text."),
-  notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
-  learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways of the lecture notes."),
-});
-export type LectureNotesResponse = z.infer<typeof LectureNotesResponseSchema>;
+import { LectureNotesRequestSchema, LectureNotesResponseSchema, type LectureNotesRequest, type LectureNotesResponse } from '@/lib/types/lecture-notes';
 
 
 // ========== STEP 1: Generate Core Notes ==========
 
-const CoreNotesSchema = z.object({
-    title: z.string().describe("A concise and relevant title for the generated material."),
-    notes: z.string().describe("The main body of the notes, structured with Markdown headings, lists, and bolded key terms."),
-});
+const CoreNotesSchema = LectureNotesResponseSchema.pick({ title: true, notes: true });
 
 const coreNotesPrompt = ai.definePrompt({
     name: 'coreLectureNotesPrompt',
     input: { schema: LectureNotesRequestSchema },
     output: { schema: CoreNotesSchema },
-    model: 'googleai/gemini-2.0-flash',
+    model: 'googleai/gemini-2.5-flash',
     prompt: `
         Role: Act as a Senior University Teaching Assistant and Subject Matter Expert.
 
@@ -58,20 +42,15 @@ const coreNotesPrompt = ai.definePrompt({
 
 // ========== STEP 2: Generate Summary and Objectives from Notes ==========
 
-const SummaryRequestSchema = z.object({
-    notes: z.string(),
-});
+const SummaryRequestSchema = LectureNotesResponseSchema.pick({ notes: true });
+const SummaryResponseSchema = LectureNotesResponseSchema.pick({ learningObjectives: true, learningSummary: true });
 
-const SummaryResponseSchema = z.object({
-    learningObjectives: z.array(z.string()).describe("An array of 3-5 key learning objectives based on the provided notes."),
-    learningSummary: z.string().describe("A 2-3 sentence paragraph that concisely summarizes the key takeaways of the notes."),
-});
 
 const summaryPrompt = ai.definePrompt({
     name: 'lectureSummaryPrompt',
     input: { schema: SummaryRequestSchema },
     output: { schema: SummaryResponseSchema },
-    model: 'googleai/gemini-2.0-flash',
+    model: 'googleai/gemini-2.5-flash',
     prompt: `
         Based on the following lecture notes, please generate:
         1. A list of 3-5 key learning objectives.
