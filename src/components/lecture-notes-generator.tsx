@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { marked } from 'marked';
+import { jsPDF } from 'jspdf';
 
 type Font = UserSettings['font'];
 const fonts: { name: Font; label: string; variable: string }[] = [
@@ -55,9 +56,10 @@ export function LectureNotesGenerator() {
 
     try {
       if (file.type === 'application/pdf') {
-        const pdfjs = await import('pdfjs-dist/build/pdf');
+        const pdfjs = await import('pdfjs-dist');
         // @ts-ignore
-        pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.mjs');
+        pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
         const arrayBuffer = await file.arrayBuffer();
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
@@ -79,9 +81,9 @@ export function LectureNotesGenerator() {
       } else {
         toast({ variant: 'destructive', title: 'Unsupported file type', description: 'Please upload a PDF or DOCX file.' });
       }
-    } catch(e) {
+    } catch(e: any) {
         console.error("File parsing error:", e);
-        toast({ variant: 'destructive', title: 'Failed to read file.' });
+        toast({ variant: 'destructive', title: 'Failed to read file.', description: e.message });
     } finally {
         setIsLoading(false);
     }
@@ -113,7 +115,7 @@ export function LectureNotesGenerator() {
     try {
       const notes = await generateLectureNotes({ sourceText });
       setResult(notes);
-    } catch (error) {
+    } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to generate notes', description: (error as Error).message });
     } finally {
       setIsLoading(false);
@@ -125,11 +127,61 @@ export function LectureNotesGenerator() {
     exportLectureNotesToDocx(result.title, result.notes, selectedFont);
   }
 
+  const handleReset = () => {
+    setSourceText('');
+    setFileName('');
+    setResult(null);
+    setIsLoading(false);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8 border rounded-lg bg-muted/50">
+        <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
+        <h3 className="text-xl font-semibold font-headline">Generating Your Notes...</h3>
+        <p className="text-muted-foreground">The AI is hard at work. This may take a moment.</p>
+      </div>
+    );
+  }
+  
+  if (result) {
+    return (
+      <Card className="flex-1 flex flex-col h-full">
+        <CardHeader>
+            <div className="flex justify-between items-center">
+                <CardTitle>Your AI-Generated Lecture Notes</CardTitle>
+                <div className="flex items-center gap-2">
+                    <Button onClick={handleReset} variant="outline">Generate New</Button>
+                    <Button onClick={handleExport}><Download /> Export to Word</Button>
+                </div>
+            </div>
+            <CardDescription>Review the generated notes and export them.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-y-auto">
+            <div className="space-y-2 mb-4">
+                <Label htmlFor="font-select">Export Font</Label>
+                <Select value={selectedFont} onValueChange={setSelectedFont}>
+                    <SelectTrigger id="font-select" className="w-[200px]">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {fonts.map(f => <SelectItem key={f.name} value={f.label} style={{fontFamily: f.variable}}>{f.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+             <ScrollArea className="h-[calc(100%-4rem)] rounded-md border p-4 bg-background">
+                <div className="prose dark:prose-invert" dangerouslySetInnerHTML={{ __html: marked(result.notes) as string }} style={{fontFamily: fonts.find(f => f.label === selectedFont)?.variable}}></div>
+             </ScrollArea>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="grid md:grid-cols-2 gap-6 h-full min-h-0">
-        <Card className="flex flex-col">
+    <div className="flex items-center justify-center h-full">
+        <Card className="w-full max-w-2xl">
             <CardHeader>
-                <CardTitle>1. Upload Your Document</CardTitle>
+                <CardTitle>Upload Your Document</CardTitle>
                 <CardDescription>Upload a PDF or DOCX file (max 15MB).</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-4">
@@ -147,49 +199,11 @@ export function LectureNotesGenerator() {
             </CardContent>
             <CardFooter>
                 <Button onClick={handleGenerate} disabled={isLoading || !sourceText} className="w-full">
-                    {isLoading && !result ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                    {isLoading && !result ? 'Processing...' : 'Generate Lecture Notes'}
+                    {isLoading ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                    {isLoading ? 'Processing...' : 'Generate Lecture Notes'}
                 </Button>
             </CardFooter>
-        </Card>
-        
-         <Card className="flex flex-col">
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle>2. Review & Export</CardTitle>
-                    {result && <Button onClick={handleExport} variant="outline"><Download /> Export to Word</Button>}
-                </div>
-                <CardDescription>Your AI-generated lecture notes will appear below.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto">
-                 {result && (
-                     <div className="space-y-2 mb-4">
-                        <Label htmlFor="font-select">Export Font</Label>
-                        <Select value={selectedFont} onValueChange={setSelectedFont}>
-                            <SelectTrigger id="font-select" className="w-[200px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {fonts.map(f => <SelectItem key={f.name} value={f.label} style={{fontFamily: f.variable}}>{f.label}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                 )}
-                 <ScrollArea className="h-[calc(100%-4rem)] rounded-md border p-4 bg-background">
-                     {isLoading && result === null ? (
-                        <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin h-8 w-8 text-primary" /><p className="ml-2">AI is generating notes...</p></div>
-                    ) : result ? (
-                        <div className="prose dark:prose-invert" dangerouslySetInnerHTML={{ __html: marked(result.notes) as string }} style={{fontFamily: fonts.find(f => f.label === selectedFont)?.variable}}></div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                            <Wand2 className="h-12 w-12 mb-2" />
-                            <p>Your generated notes will appear here.</p>
-                        </div>
-                    )}
-                 </ScrollArea>
-            </CardContent>
         </Card>
     </div>
   );
 }
-    
