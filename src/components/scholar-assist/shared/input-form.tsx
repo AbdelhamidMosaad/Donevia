@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -25,11 +24,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 // Setup worker path for pdf.js
 let pdfjs: any;
 
-const notesSchema = z.object({
-  noteStyle: z.enum(['detailed', 'bullet', 'outline', 'summary', 'concise']),
-  complexity: z.enum(['simple', 'medium', 'advanced']),
-});
-
 const quizSchema = z.object({
     numQuestions: z.coerce.number().min(1).max(100),
     questionTypes: z.array(z.string()).refine(value => value.some(item => item), {
@@ -45,7 +39,7 @@ const flashcardsSchema = z.object({
 
 const formSchema = z.object({
   sourceText: z.string().min(50, 'Source text must be at least 50 characters long.').optional(),
-}).extend(notesSchema.partial().shape).extend(quizSchema.partial().shape).extend(flashcardsSchema.partial().shape);
+}).extend(quizSchema.partial().shape).extend(flashcardsSchema.partial().shape);
 
 
 export type InputFormValues = z.infer<typeof formSchema>;
@@ -97,9 +91,6 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     resolver: zodResolver(formSchema),
     defaultValues: {
       sourceText: "",
-      // Notes defaults
-      noteStyle: 'concise',
-      complexity: settings.defaultComplexity || 'medium',
       // Quiz defaults
       numQuestions: 5,
       questionTypes: ['multiple-choice'],
@@ -531,5 +522,3 @@ export function InputForm({ onGenerate, isLoading, generationType }: InputFormPr
     </Form>
   );
 }
-
-    
